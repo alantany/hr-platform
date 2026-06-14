@@ -1,0 +1,19 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>客户管理</title><link rel="stylesheet" href="./styles.css" /><script defer src="./app.js"></script></head><body><div id="app"></div><script>
+window.__PAGE_BODY__ = `
+  <section class="metrics">
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户公司数</div></div><div class="metric-icon">○</div></div><div class="metric-value">368</div><div class="metric-label">当前在库客户</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">进行中项目</div></div><div class="metric-icon">△</div></div><div class="metric-value">42</div><div class="metric-label">持续推进中的招聘包</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">本月交付人数</div></div><div class="metric-icon">▣</div></div><div class="metric-value">45</div><div class="metric-label">比上月提升 8.2%</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户评分</div></div><div class="metric-icon">◌</div></div><div class="metric-value">4.6</div><div class="metric-label">综合满意度</div></div>
+  </section>
+  <section class="panel">
+    <div class="section-head"><div><h3>客户公司</h3><div class="section-sub">甲方公司及其项目推进概览。</div></div></div>
+    <div class="list">
+      <div class="list-item"><div class="item-top"><div><div class="item-title">科技有限公司A</div><div class="item-meta">3 个项目 · 8 个岗位 · 完成率 65%</div></div><span class="chip success">招聘中</span></div></div>
+      <div class="list-item"><div class="item-top"><div><div class="item-title">网络科技B</div><div class="item-meta">2 个项目 · 5 个岗位 · 完成率 40%</div></div><span class="chip success">招聘中</span></div></div>
+      <div class="list-item"><div class="item-top"><div><div class="item-title">金融服务C</div><div class="item-meta">1 个项目 · 3 个岗位 · 完成率 100%</div></div><span class="chip neutral">招聘完毕</span></div></div>
+    </div>
+  </section>
+`;
+window.addEventListener('DOMContentLoaded', () => renderApp());
+</script></body></html>

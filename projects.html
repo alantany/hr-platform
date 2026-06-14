@@ -1,0 +1,19 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>项目管理</title><link rel="stylesheet" href="./styles.css" /><script defer src="./app.js"></script></head><body><div id="app"></div><script>
+window.__PAGE_BODY__ = `
+  <section class="metrics">
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">项目总数</div></div><div class="metric-icon">○</div></div><div class="metric-value">10</div><div class="metric-label">客户招聘包</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">招聘中</div></div><div class="metric-icon">△</div></div><div class="metric-value">7</div><div class="metric-label">持续推进中</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">招聘完毕</div></div><div class="metric-icon">▣</div></div><div class="metric-value">3</div><div class="metric-label">已完成交付</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">◌</div></div><div class="metric-value">5</div><div class="metric-label">需要优先匹配</div></div>
+  </section>
+  <section class="panel">
+    <div class="section-head"><div><h3>项目列表</h3><div class="section-sub">以招聘包为单位管理多个岗位。</div></div></div>
+    <div class="list">
+      <div class="list-item"><div class="item-top"><div><div class="item-title">技术研发团队扩建项目</div><div class="item-meta">科技有限公司A · 北京市海淀区 · 招聘人数 10 人 · 岗位数 4</div></div><span class="chip success">招聘中</span></div></div>
+      <div class="list-item"><div class="item-top"><div><div class="item-title">客服团队扩建项目</div><div class="item-meta">电商平台D · 广州市天河区 · 招聘人数 15 人 · 岗位数 2</div></div><span class="chip success">招聘中</span></div></div>
+      <div class="list-item"><div class="item-top"><div><div class="item-title">金融科技项目</div><div class="item-meta">金融服务C · 深圳市南山区 · 招聘人数 5 人 · 岗位数 3</div></div><span class="chip neutral">招聘完毕</span></div></div>
+    </div>
+  </section>
+`;
+window.addEventListener('DOMContentLoaded', () => renderApp());
+</script></body></html>

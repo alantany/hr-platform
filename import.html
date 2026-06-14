@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>简历导入</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="hero import-layout" style="grid-template-columns:1.18fr .82fr">
+        <div class="import-stack">
+          <div class="hero-card featured">
+            <div class="intro-line">
+              <div class="eyebrow">批量导入 · 解析结果</div>
+              <div class="micro">接收外部程序下载好的简历池数据</div>
+            </div>
+            <div class="hero-actions">
+              <button class="btn primary">选择文件</button>
+              <button class="btn">查看导入历史</button>
+            </div>
+          </div>
+
+          <div class="panel import-records">
+            <div class="intro-line" style="margin-top:0">
+              <h3 style="margin:0">导入记录</h3>
+              <div class="micro">按时间查看导入结果和处理状态</div>
+            </div>
+            <div class="timeline">
+              <div class="list-item soft">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">2026-05-22 10:30</div>
+                    <div class="item-meta">新导入 5 份简历，已添加到数据池</div>
+                  </div>
+                  <span class="tag blue">成功</span>
+                </div>
+              </div>
+              <div class="list-item soft">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">2026-05-21 11:00</div>
+                    <div class="item-meta">批量导入完成，成功入库 12 份简历</div>
+                  </div>
+                  <span class="tag green">成功</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>导入概览</h3>
+          <p class="panel-sub">这组数字只回答一件事：今天导入是否顺利。</p>
+          <div class="summary-grid">
+            <div class="summary-chip success">
+              <div class="label">成功入库</div>
+              <div class="value">12</div>
+              <div class="note">份简历已进入数据池</div>
+            </div>
+            <div class="summary-chip danger">
+              <div class="label">失败待处理</div>
+              <div class="value" style="color:var(--danger)">3</div>
+              <div class="note">份简历需要重试</div>
+            </div>
+            <div class="summary-chip info">
+              <div class="label">解析成功率</div>
+              <div class="value">96.8%</div>
+              <div class="note">本次导入保持较高稳定性</div>
+            </div>
+            <div class="summary-chip warn">
+              <div class="label">待复核字段</div>
+              <div class="value">8</div>
+              <div class="note">条记录需要人工确认</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+    window.addEventListener('DOMContentLoaded', () => renderApp());
+  </script>
+</body>
+</html>

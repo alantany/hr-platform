@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>首页 - 招聘管理平台</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="hero">
+        <div class="hero-card">
+          <div class="eyebrow">招聘交付 · 全局视图</div>
+          <h2>把客户需求、项目推进和候选人流转放进同一张工作台里。</h2>
+          <p>这里展示的不是花哨大屏，而是猎头交付最关键的经营状态：今天推进了多少候选人、哪些项目最紧急、哪个团队正在失速。</p>
+          <div class="hero-actions">
+            <button class="btn primary">查看项目进度</button>
+            <button class="btn">进入求职者数据池</button>
+            <button class="btn warn">查看待办 3</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>今日概览</h3>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">紧急岗位</div><div class="item-meta">Java高级开发工程师仍需快速匹配简历</div></div><span class="tag orange">2 小时</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">质保提醒</div><div class="item-meta">孙七的质保期即将到期</div></div><span class="tag red">3 天</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">系统通知</div><div class="item-meta">本月统计报告已生成</div></div><span class="tag blue">查看</span></div></div>
+          </div>
+        </div>
+      </section>
+      <section class="stats-grid">
+        <div class="stat-card"><div class="stat-value">12,580</div><div class="stat-label">求职者总数</div><div class="stat-delta">↑ 3.2%</div></div>
+        <div class="stat-card"><div class="stat-value">368</div><div class="stat-label">客户公司数</div><div class="stat-delta">↑ 5 本月新增</div></div>
+        <div class="stat-card"><div class="stat-value">1,256</div><div class="stat-label">总推荐数</div><div class="stat-delta">↑ 12.5%</div></div>
+        <div class="stat-card"><div class="stat-value">23</div><div class="stat-label">待处理需求</div><div class="stat-delta" style="color:var(--accent)">需关注</div></div>
+        <div class="stat-card"><div class="stat-value">28</div><div class="stat-label">总操作员数</div><div class="stat-delta">活跃 24 人</div></div>
+      </section>
+      <section class="grid-2 page-section">
+        <div class="panel">
+          <h3>项目岗位进度</h3>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">Java高级开发工程师</div><div class="item-meta">科技有限公司A · 招 3 人 · 已推荐 3 / 3 · 已录用 1</div></div><span class="tag orange">紧急</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">前端高级工程师</div><div class="item-meta">科技有限公司A · 招 2 人 · 已推荐 1 / 2 · 已录用 0</div></div><span class="tag gray">推进中</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">产品经理</div><div class="item-meta">科技有限公司A · 招 2 人 · 已推荐 2 / 2 · 已录用 1</div></div><span class="tag green">完成度高</span></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>最近操作日志</h3>
+          <div class="timeline">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">张三</div><div class="item-meta">导入简历 · 批量导入 12 份 · 10:30</div></div><span class="tag blue">导入</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">李四</div><div class="item-meta">推荐简历 · 推荐至科技有限公司A · 09:45</div></div><span class="tag green">推荐</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">admin</div><div class="item-meta">修改权限 · 为张三分配项目 · 14:20</div></div><span class="tag gray">管理</span></div></div>
+          </div>
+        </div>
+      </section>
+      <section class="grid-3 page-section">
+        <div class="panel">
+          <h3>团队绩效排行</h3>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">刘主管</div><div class="item-meta">12 人 · 12 家</div></div><span class="tag green">186 次</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">陈主管</div><div class="item-meta">10 人 · 10 家</div></div><span class="tag blue">152 次</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">王主管</div><div class="item-meta">8 人 · 8 家</div></div><span class="tag gray">98 次</span></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>客户效果排行</h3>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">科技有限公司A</div><div class="item-meta">45 人交付 · 92% 通过率 · 4.6 评分</div></div><span class="tag green">Top 1</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">电商平台D</div><div class="item-meta">38 人交付 · 87% 通过率 · 4.3 评分</div></div><span class="tag blue">Top 2</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">网络科技B</div><div class="item-meta">32 人交付 · 81% 通过率 · 4.1 评分</div></div><span class="tag gray">Top 3</span></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>我的待办</h3>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">科技有限公司A-Java高级开发工程师需要紧急匹配简历</div><div class="item-meta">剩余 2 小时 · 2026-05-22 12:00</div></div><span class="tag orange">处理</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">候选人孙七简历质保期即将到期</div><div class="item-meta">剩余 3 天 · 2026-05-22 09:00</div></div><span class="tag red">提醒</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">系统使用统计报告已生成</div><div class="item-meta">2026-05-21 18:00</div></div><span class="tag blue">查看</span></div></div>
+          </div>
+        </div>
+      </section>
+    `;
+    window.addEventListener('DOMContentLoaded', () => renderApp());
+  </script>
+</body>
+</html>

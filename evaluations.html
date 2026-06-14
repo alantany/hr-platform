@@ -1,0 +1,18 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>评价体系</title><link rel="stylesheet" href="./styles.css" /><script defer src="./app.js"></script></head><body><div id="app"></div><script>
+window.__PAGE_BODY__ = `
+  <section class="metrics">
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">评价总数</div></div><div class="metric-icon">○</div></div><div class="metric-value">128</div><div class="metric-label">过程留痕</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">优秀</div></div><div class="metric-icon">△</div></div><div class="metric-value">76</div><div class="metric-label">高质量评价</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">良好</div></div><div class="metric-icon">▣</div></div><div class="metric-value">36</div><div class="metric-label">正常推进</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">待复盘</div></div><div class="metric-icon">◌</div></div><div class="metric-value">16</div><div class="metric-label">需要再次确认</div></div>
+  </section>
+  <section class="panel">
+    <div class="section-head"><div><h3>评价记录</h3><div class="section-sub">候选人、岗位、轮次三者绑定的过程评分。</div></div></div>
+    <div class="list">
+      <div class="list-item"><div class="item-top"><div><div class="item-title">张三 · Java高级开发工程师 · 第 1 轮</div><div class="item-meta">技术基础扎实，项目经验与岗位匹配度高</div></div><span class="chip success">良好 · 4 分</span></div></div>
+      <div class="list-item"><div class="item-top"><div><div class="item-title">李四 · 前端高级工程师 · 第 1 轮</div><div class="item-meta">前端技术功底扎实，Vue / React 均有经验</div></div><span class="chip primary">优秀 · 5 分</span></div></div>
+    </div>
+  </section>
+`;
+window.addEventListener('DOMContentLoaded', () => renderApp());
+</script></body></html>

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>求职者数据池</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card">
+          <div class="metric-top"><div><div class="section-sub">候选人总数</div></div><div class="metric-icon">○</div></div>
+          <div class="metric-value">12,580</div>
+          <div class="metric-label">覆盖全部简历资源</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-top"><div><div class="section-sub">今日新增</div></div><div class="metric-icon">△</div></div>
+          <div class="metric-value">156</div>
+          <div class="metric-label">比昨日增加 3.2%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-top"><div><div class="section-sub">今日搜索聊天次数</div></div><div class="metric-icon">▣</div></div>
+          <div class="metric-value">12</div>
+          <div class="metric-label">次搜索会话</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-top"><div><div class="section-sub">已锁定候选人</div></div><div class="metric-icon">◌</div></div>
+          <div class="metric-value">328</div>
+          <div class="metric-label">当前被项目占用</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <h3>搜索工具栏</h3>
+            <div class="section-sub">关键词、城市、职位组合搜索，快速定位候选人。</div>
+          </div>
+        </div>
+        <div class="toolbar" style="margin-bottom:0; padding:0; border:0; box-shadow:none; background:transparent;">
+          <input class="input wide" value="搜索公司、职位、专业、学校、行业、技能等关键词" />
+          <input class="input" value="期望城市（如：北京、上海、深圳）" />
+          <input class="input" value="职位" />
+          <button class="btn primary">搜索</button>
+          <button class="btn secondary">导入简历</button>
+          <button class="btn secondary">导出选中</button>
+          <div class="toolbar-note">今日搜索聊天次数：<strong>12</strong></div>
+        </div>
+      </section>
+
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section-head">
+            <div>
+              <h3>筛选条件</h3>
+              <div class="section-sub">学历、年龄、经验、院校等 11 个条件。</div>
+            </div>
+          </div>
+          <div class="list">
+            <div class="list-item">
+              <div class="item-top">
+                <div>
+                  <div class="item-title">学历要求</div>
+                  <div class="item-meta">不限 / 大专及以上 / 本科及以上 / 硕士及以上 / 自定义</div>
+                </div>
+                <span class="chip primary">展开</span>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="item-top">
+                <div>
+                  <div class="item-title">年龄要求</div>
+                  <div class="item-meta">不限 / 20-25 / 25-30 / 30-35 / 35-40 / 40以上 / 自定义</div>
+                </div>
+                <span class="chip neutral">展开</span>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="item-top">
+                <div>
+                  <div class="item-title">经验要求</div>
+                  <div class="item-meta">不限 / 无经验 / 应届 / 1-3年 / 3-5年 / 5-10年 / 自定义</div>
+                </div>
+                <span class="chip warning">展开</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="section-head">
+            <div>
+              <h3>快捷筛选</h3>
+              <div class="section-sub">保存高频搜索路径，减少重复筛选动作。</div>
+            </div>
+          </div>
+          <div class="list">
+            <div class="list-item">
+              <div class="item-top">
+                <div>
+                  <div class="item-title">猜你想搜</div>
+                  <div class="skills">
+                    <span class="skill-tag">销售</span>
+                    <span class="skill-tag">课程顾问</span>
+                    <span class="skill-tag">招聘</span>
+                    <span class="skill-tag">行政</span>
+                    <span class="skill-tag">客服</span>
+                    <span class="skill-tag">Java</span>
+                    <span class="skill-tag">前端</span>
+                    <span class="skill-tag">产品经理</span>
+                  </div>
+                </div>
+                <span class="chip primary">热词</span>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="item-top">
+                <div>
+                  <div class="item-title">排序</div>
+                  <div class="item-meta">综合排序 / 简历更新时间优先 / 匹配优先 / 距离优先</div>
+                </div>
+                <span class="chip neutral">排序</span>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="item-top">
+                <div>
+                  <div class="item-title">过滤</div>
+                  <div class="skills">
+                    <span class="skill-tag">未看过</span>
+                    <span class="skill-tag">未面试过</span>
+                    <span class="skill-tag">近一段工作相关</span>
+                    <span class="skill-tag">其他过滤条件</span>
+                  </div>
+                </div>
+                <span class="chip success">保存快捷搜索</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="padding:0;">
+        <div class="section-head" style="padding:16px 16px 0;">
+          <div>
+            <h3>候选人列表</h3>
+            <div class="section-sub">按岗位需求筛选、推进和管理候选人。</div>
+          </div>
+        </div>
+        <div class="table-card" style="border:0; box-shadow:none; border-radius:0; margin-top:10px;">
+          <div class="table-head">
+            <div><input type="checkbox" aria-label="全选" /></div>
+            <div>候选人</div>
+            <div>基本信息</div>
+            <div>期望职位</div>
+            <div>期望城市</div>
+            <div>薪资</div>
+            <div>来源</div>
+            <div>状态</div>
+            <div>活跃 / 操作</div>
+          </div>
+
+          <div class="table-row">
+            <div><input type="checkbox" aria-label="选择张三" /></div>
+            <div>
+              <div class="row-title">
+                <div class="avatar-sm"></div>
+                <div>
+                  <strong>张三</strong>
+                  <div class="row-sub">本科 · 28岁 · 3-5年</div>
+                </div>
+              </div>
+              <div class="skills">
+                <span class="skill-tag">Java</span>
+                <span class="skill-tag">Spring Boot</span>
+                <span class="skill-tag">MySQL</span>
+              </div>
+            </div>
+            <div>教育背景 / 工作经历</div>
+            <div>Java开发工程师</div>
+            <div>北京</div>
+            <div class="mono">15-20K</div>
+            <div>智联招聘</div>
+            <div><span class="state active">激活</span></div>
+            <div>
+              <div class="row-sub">2 小时前</div>
+              <div class="table-actions" style="margin-top:8px;">
+                <button class="btn-sm primary">详情</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-row">
+            <div><input type="checkbox" aria-label="选择李四" /></div>
+            <div>
+              <div class="row-title">
+                <div class="avatar-sm"></div>
+                <div>
+                  <strong>李四</strong>
+                  <div class="row-sub">本科 · 25岁 · 1-3年</div>
+                </div>
+              </div>
+              <div class="skills">
+                <span class="skill-tag">Vue</span>
+                <span class="skill-tag">React</span>
+                <span class="skill-tag">TypeScript</span>
+              </div>
+            </div>
+            <div>前端开发工程师</div>
+            <div>上海</div>
+            <div class="mono">10-15K</div>
+            <div>猎聘网</div>
+            <div><span class="state locked">锁定</span></div>
+            <div>
+              <div class="row-sub">1 天前</div>
+              <div class="table-actions" style="margin-top:8px;">
+                <button class="btn-sm primary">详情</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-row">
+            <div><input type="checkbox" aria-label="选择王五" /></div>
+            <div>
+              <div class="row-title">
+                <div class="avatar-sm"></div>
+                <div>
+                  <strong>王五</strong>
+                  <div class="row-sub">硕士 · 32岁 · 5-10年</div>
+                </div>
+              </div>
+              <div class="skills">
+                <span class="skill-tag">Java</span>
+                <span class="skill-tag">分布式</span>
+                <span class="skill-tag">Kubernetes</span>
+              </div>
+            </div>
+            <div>技术经理</div>
+            <div>深圳</div>
+            <div class="mono">20K以上</div>
+            <div>58招聘</div>
+            <div><span class="state released">释放</span></div>
+            <div>
+              <div class="row-sub">3 天前</div>
+              <div class="table-actions" style="margin-top:8px;">
+                <button class="btn-sm primary">详情</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-foot">
+            <div class="legend">
+              <span class="legend-item"><span class="legend-dot new"></span>新入库</span>
+              <span class="legend-item"><span class="legend-dot active"></span>激活</span>
+              <span class="legend-item"><span class="legend-dot locked"></span>锁定</span>
+              <span class="legend-item"><span class="legend-dot released"></span>释放</span>
+            </div>
+            <div>共 8 条记录 · 每页 10 条</div>
+          </div>
+        </div>
+      </section>
+    `;
+    window.addEventListener('DOMContentLoaded', () => renderApp());
+  </script>
+</body>
+</html>

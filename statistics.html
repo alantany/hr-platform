@@ -1,0 +1,15 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>统计管理</title><link rel="stylesheet" href="./styles.css" /><script defer src="./app.js"></script></head><body><div id="app"></div><script>
+window.__PAGE_BODY__ = `
+  <section class="metrics">
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">求职者总数</div></div><div class="metric-icon">○</div></div><div class="metric-value">12,580</div><div class="metric-label">系统总体规模</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">总推荐数</div></div><div class="metric-icon">△</div></div><div class="metric-value">1,256</div><div class="metric-label">交付漏斗起点</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">总录用数</div></div><div class="metric-icon">▣</div></div><div class="metric-value">342</div><div class="metric-label">最终转化结果</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">操作员数</div></div><div class="metric-icon">◌</div></div><div class="metric-value">28</div><div class="metric-label">活跃 24 人</div></div>
+  </section>
+  <section class="grid-2">
+    <div class="panel"><div class="section-head"><div><h3>转化漏斗</h3><div class="section-sub">推荐、面试、录用、留存的连续变化。</div></div></div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">推荐</div><div class="item-meta">1,256</div></div><span class="chip primary">100%</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">面试</div><div class="item-meta">856</div></div><span class="chip success">68.2%</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">录用</div><div class="item-meta">342</div></div><span class="chip warning">27.2%</span></div></div></div></div>
+    <div class="panel"><div class="section-head"><div><h3>部门推荐统计</h3><div class="section-sub">按组长维度观察推进效率。</div></div></div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">刘主管</div><div class="item-meta">186 次</div></div><span class="chip success">第一</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">陈主管</div><div class="item-meta">152 次</div></div><span class="chip primary">第二</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">王主管</div><div class="item-meta">128 次</div></div><span class="chip neutral">第三</span></div></div></div></div>
+  </section>
+`;
+window.addEventListener('DOMContentLoaded', () => renderApp());
+</script></body></html>
