@@ -742,6 +742,9 @@ async function handleGlobalButton(button) {
     document.querySelector('[data-candidate-detail-title2]').textContent = item?.current_title || '--';
     document.querySelector('[data-candidate-detail-status]').textContent = item?.locked ? '已锁定' : '激活';
     if (modal) modal.dataset.candidateId = String(item?.id || 0);
+    if (window.updateCandidatePanels) {
+      window.updateCandidatePanels(item?.id);
+    }
     return;
   }
   if (button.dataset.action === "edit-candidate") {

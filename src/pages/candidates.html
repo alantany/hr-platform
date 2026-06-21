@@ -649,47 +649,79 @@
         }
       });
 
+      window.updateCandidatePanels = async (candidateId) => {
+        if (!candidateId) return;
+        try {
+          const tracking = await window.hrApi.candidateTrackingEvents({ candidate_id: candidateId });
+          const trackingBox = document.querySelector('[data-tracking-events]');
+          if (trackingBox) {
+            trackingBox.innerHTML = tracking.slice(0, 3).map(e => `
+              <div class="list-item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">${e.event_type}</div>
+                    <div class="item-meta">${e.summary}</div>
+                  </div>
+                  <span class="chip primary">${e.status || '事件'}</span>
+                </div>
+              </div>
+            `).join('') || '<div class="list-item"><div class="item-meta">暂无跟踪事件记录</div></div>';
+          }
+        } catch (err) { console.warn(err); }
+        try {
+          const exports = await window.hrApi.exportRecords({ candidate_id: candidateId });
+          const history = document.querySelector('[data-export-history]');
+          if (history) {
+            history.innerHTML = exports.map(r => `
+              <div class="list-item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">${r.file_name}</div>
+                    <div class="item-meta">${r.company_name} · ${r.project_name} · ${r.position_name}</div>
+                    <div class="item-meta mono">${r.format} · ${r.created_at}</div>
+                  </div>
+                  <span class="chip ${r.watermarked ? 'success' : 'neutral'}">${r.watermarked ? '带水印' : '无水印'}</span>
+                </div>
+              </div>
+            `).join('') || '<div class="list-item"><div class="item-meta">暂无导出历史</div></div>';
+          }
+        } catch (err) { console.warn(err); }
+        try {
+          const interview = await window.hrApi.interviewRecords({ candidate_id: candidateId });
+          const salary = await window.hrApi.salaryRecords({ candidate_id: candidateId });
+          const employment = await window.hrApi.employmentRecords({ candidate_id: candidateId });
+          const followUps = await window.hrApi.candidateFollowUpRecords({ candidate_id: candidateId });
+          const lifecycle = document.querySelector('[data-lifecycle-events]');
+          if (lifecycle) {
+            const items = [];
+            if (interview[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${interview[0].round_name}</div><div class="item-meta">${interview[0].result} · ${interview[0].interviewer}</div></div><span class="chip success">面试</span></div></div>`);
+            if (salary[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">薪资</div><div class="item-meta">${salary[0].expected_salary} / ${salary[0].offered_salary}</div></div><span class="chip warning">${salary[0].service_status}</span></div></div>`);
+            if (employment[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${employment[0].company_name}</div><div class="item-meta">${employment[0].position_name} · ${employment[0].status}</div></div><span class="chip neutral">入职</span></div></div>`);
+            if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已录用</span></div></div>`);
+            lifecycle.innerHTML = items.join('') || '<div class="list-item"><div class="item-meta">暂无面试、入职等记录</div></div>';
+          }
+          const followupBlock = document.querySelector('[data-followup-block]');
+          if (followupBlock) {
+            followupBlock.innerHTML = followUps.map(item => `
+              <div class="list-item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">${item.follow_up_time || item.created_at}</div>
+                    <div class="item-meta">${item.content}</div>
+                  </div>
+                  <span class="chip primary">${item.status}</span>
+                </div>
+              </div>
+            `).join('') || '<div class="list-item"><div class="item-meta">暂无随访记录</div></div>';
+          }
+        } catch (err) { console.warn(err); }
+      };
+
       try {
-        const selectedCandidateId = Number(document.body.dataset.candidateId || 0);
-        const candidates = await window.hrApi.candidates();
-        const candidateId = selectedCandidateId || candidates[0]?.id || 0;
-        if (!candidateId) throw new Error('没有可用候选人');
-        const tracking = await window.hrApi.candidateTrackingEvents({ candidate_id: candidateId });
-        const trackingBox = document.querySelector('[data-tracking-events]');
-        if (trackingBox) trackingBox.innerHTML = tracking.slice(0, 3).map(e => `<div class="list-item"><div class="item-top"><div><div class="item-title">${e.event_type}</div><div class="item-meta">${e.summary}</div></div><span class="chip primary">${e.status || '事件'}</span></div></div>`).join('');
+        const candidateId = Number(document.body.dataset.candidateId || 0) || window.candidatesPageState.list[0]?.id || 0;
+        await window.updateCandidatePanels(candidateId);
       } catch (err) { console.warn(err); }
-      try {
-        const selectedCandidateId = Number(document.body.dataset.candidateId || 0);
-        const candidates = await window.hrApi.candidates();
-        const candidateId = selectedCandidateId || candidates[0]?.id || 0;
-        if (!candidateId) throw new Error('没有可用候选人');
-        const exports = await window.hrApi.exportRecords({ candidate_id: candidateId });
-        const history = document.querySelector('[data-export-history]');
-        if (history) history.innerHTML = exports.map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">${r.file_name}</div><div class="item-meta">${r.company_name} · ${r.project_name} · ${r.position_name}</div><div class="item-meta mono">${r.format} · ${r.created_at}</div></div><span class="chip ${r.watermarked ? 'success' : 'neutral'}">${r.watermarked ? '带水印' : '无水印'}</span></div></div>`).join('');
-      } catch (err) { console.warn(err); }
-      try {
-        const selectedCandidateId = Number(document.body.dataset.candidateId || 0);
-        const candidates = await window.hrApi.candidates();
-        const candidateId = selectedCandidateId || candidates[0]?.id || 0;
-        if (!candidateId) throw new Error('没有可用候选人');
-        const interview = await window.hrApi.interviewRecords({ candidate_id: candidateId });
-        const salary = await window.hrApi.salaryRecords({ candidate_id: candidateId });
-        const employment = await window.hrApi.employmentRecords({ candidate_id: candidateId });
-        const followUps = await window.hrApi.candidateFollowUpRecords({ candidate_id: candidateId });
-        const lifecycle = document.querySelector('[data-lifecycle-events]');
-        if (lifecycle) {
-          const items = [];
-          if (interview[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${interview[0].round_name}</div><div class="item-meta">${interview[0].result} · ${interview[0].interviewer}</div></div><span class="chip success">面试</span></div></div>`);
-          if (salary[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">薪资</div><div class="item-meta">${salary[0].expected_salary} / ${salary[0].offered_salary}</div></div><span class="chip warning">${salary[0].service_status}</span></div></div>`);
-          if (employment[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${employment[0].company_name}</div><div class="item-meta">${employment[0].position_name} · ${employment[0].status}</div></div><span class="chip neutral">入职</span></div></div>`);
-          if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已录用</span></div></div>`);
-          lifecycle.innerHTML = items.join('');
-        }
-        const followupBlock = document.querySelector('[data-followup-block]');
-        if (followupBlock) {
-          followupBlock.innerHTML = followUps.map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.follow_up_time || item.created_at}</div><div class="item-meta">${item.content}</div></div><span class="chip primary">${item.status}</span></div></div>`).join('');
-        }
-      } catch (err) { console.warn(err); }
+
       try {
         const presets = await window.hrApi.searchPresets();
         const list = document.querySelector('[data-search-presets]');

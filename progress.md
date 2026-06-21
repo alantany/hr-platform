@@ -4,7 +4,8 @@
 
 - **求职者数据池翻页与检索功能深度融合**：
   * 修改了 [candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html)，将翻页状态（`list`, `currentPage`, `pageSize`）及渲染逻辑（`render()`）封装为全局变量 `window.candidatesPageState`，统一求职者列表字段的渲染展现形式，避免字段错位。
-  * 重构了 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 中 `search-candidates`（查询）、`confirm-candidate-edit`（编辑）、`confirm-candidate-create`（新建）以及 `confirm-candidate-action`（锁定/释放）的逻辑，在执行上述操作后，不再使用硬编码 `slice(0, 8)` 重构全部列表，而是优先对 `window.candidatesPageState` 的列表数据和翻页渲染进行同步，完成了检索、增改、流转同翻页的有机结合。
+  * 重构了 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 中 `search-candidates`（查询）、`confirm-candidate-edit`（编辑）、`confirm-candidate-create`（新建）以及 `confirm-candidate-action`（锁定/释放）的逻辑，在执行上述操作后，不再使用硬编码 `slice(0, 8)` 重构全部列表，而是优先对 `window.candidatesPageState` 的列表数据 and 翻页渲染进行同步，完成了检索、增改、流转同翻页的有机结合。
+  * 在 [candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html) 定义了 `window.updateCandidatePanels(candidateId)`，在用户切换不同候选人的详情面板时，动态重载下方的跟踪、面试/录用生命周期、以及导出记录明细面板。
 
 ## 2026-06-21 (21:05 更新)
 
