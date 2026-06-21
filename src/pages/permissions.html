@@ -1,1 +1,86 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>权限管理</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../app.js"></script></head><body><div id="app"></div><script>window.__PAGE_BODY__ = `<section class="grid-2"><div class="panel"><h3>功能权限</h3><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">菜单权限</div><div class="item-meta">首页、客户、项目、候选人、统计。</div></div><span class="chip primary">配置</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">按钮权限</div><div class="item-meta">新增、编辑、删除、导入、导出。</div></div><span class="chip success">配置</span></div></div></div></div><div class="panel"><h3>数据权限</h3><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">客户范围</div><div class="item-meta">按团队与项目限制可见范围。</div></div><span class="chip neutral">范围</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">候选人范围</div><div class="item-meta">仅展示当前角色可操作数据。</div></div><span class="chip warning">范围</span></div></div></div></div></section>`;window.addEventListener('DOMContentLoaded', () => renderApp());</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>权限管理</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">功能权限</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-permission-total>0</div><div class="metric-label">角色权限记录</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">数据权限</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-permission-data>0</div><div class="metric-label">真实范围记录</div></div>
+      </section>
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section-head">
+            <div><h3>功能权限</h3><div class="section-sub">菜单、按钮和操作权限。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="open-role-permission-modal">保存权限</button></div>
+          </div>
+          <div class="list" data-role-permission-list>
+            <div class="list-item"><div class="item-meta">角色权限记录来自数据库。</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>数据权限</h3>
+          <div class="list" data-data-permission-list>
+            <div class="list-item"><div class="item-meta">数据权限记录来自数据库。</div></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="modal" data-role-permission-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>保存功能权限</h3>
+              <div class="section-sub">填写角色和权限信息后确认保存。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-role-permission-modal">取消</button>
+              <button class="btn primary" data-action="confirm-role-permission-upload">确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">角色编码</div><div class="item-meta">例如 ADMIN</div></div></div><input class="input" data-role-permission-role value="ADMIN" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">权限标识</div><div class="item-meta">例如 page:permissions</div></div></div><input class="input" data-role-permission-key value="page:permissions" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">权限类型</div><div class="item-meta">菜单、按钮或操作</div></div></div><select class="input" data-role-permission-type><option value="menu">menu</option><option value="button">button</option><option value="action">action</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">模块名称</div><div class="item-meta">用于页面展示</div></div></div><input class="input" data-role-permission-module value="权限管理" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">启用状态</div><div class="item-meta">默认启用</div></div></div><select class="input" data-role-permission-enabled><option value="true">启用</option><option value="false">停用</option></select></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>保存说明</h3>
+              <div class="list"><div class="list-item"><div class="item-meta">确认后会写入角色权限表并刷新列表。</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      try {
+        const perms = await window.hrApi.rolePermissions();
+        const data = await window.hrApi.dataPermissions();
+        const total = document.querySelector('[data-permission-total]');
+        const dataTotal = document.querySelector('[data-permission-data]');
+        const roleList = document.querySelector('[data-role-permission-list]');
+        const dataList = document.querySelector('[data-data-permission-list]');
+        if (total) total.textContent = String(perms.length);
+        if (dataTotal) dataTotal.textContent = String(data.length);
+        if (roleList) roleList.innerHTML = perms.slice(0, 8).map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.module || item.permission_key}</div><div class="item-meta">${item.role_code} · ${item.permission_type} · ${item.enabled ? '已启用' : '已停用'}</div></div><div class="table-actions"><button class="btn-sm" data-action="toggle-role-permission" data-role-code="${item.role_code}" data-key="${item.permission_key}" data-enabled="${item.enabled}">${item.enabled ? '停用' : '启用'}</button></div><span class="chip ${item.enabled ? 'primary' : 'neutral'}">${item.permission_type}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">角色权限明细来自数据库。</div></div>';
+        if (dataList) dataList.innerHTML = data.slice(0, 8).map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.scope_name || item.scope_type}</div><div class="item-meta">${item.scope_type} · ${item.granted_by}</div></div><div class="table-actions"><button class="btn-sm" data-action="toggle-data-permission" data-user-id="${item.user_id}" data-scope-type="${item.scope_type}" data-scope-id="${item.scope_id}" data-scope-name="${item.scope_name}" data-granted-by="${item.granted_by}" data-active="${item.active}">${item.active ? '停用' : '启用'}</button></div><span class="chip ${item.active ? 'success' : 'neutral'}">${item.active ? '启用' : '停用'}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">数据权限明细来自数据库。</div></div>';
+      } catch (err) {
+        console.warn(err);
+      }
+    });
+  </script>
+</body>
+</html>

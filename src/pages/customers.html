@@ -1,19 +1,96 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>客户管理</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../app.js"></script></head><body><div id="app"></div><script>
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>客户管理</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../frontend-api.js"></script><script defer src="../../app.js"></script></head><body><div id="app"></div><script>
 window.__PAGE_BODY__ = `
   <section class="metrics">
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户公司数</div></div><div class="metric-icon">○</div></div><div class="metric-value">368</div><div class="metric-label">当前在库客户</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">进行中项目</div></div><div class="metric-icon">△</div></div><div class="metric-value">42</div><div class="metric-label">持续推进中的招聘包</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">本月交付人数</div></div><div class="metric-icon">▣</div></div><div class="metric-value">45</div><div class="metric-label">比上月提升 8.2%</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户评分</div></div><div class="metric-icon">◌</div></div><div class="metric-value">4.6</div><div class="metric-label">综合满意度</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户公司数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-company-total>0</div><div class="metric-label">当前在库客户</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">进行中项目</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-company-projects>0</div><div class="metric-label">持续推进中的招聘包</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">本月交付人数</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-company-delivery>0</div><div class="metric-label">基于交付记录统计</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户评分</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-company-score>0.0</div><div class="metric-label">综合满意度</div></div>
   </section>
   <section class="panel">
-    <div class="section-head"><div><h3>客户公司</h3><div class="section-sub">甲方公司及其项目推进概览。</div></div></div>
+    <div class="section-head"><div><h3>客户公司</h3><div class="section-sub">甲方公司及其项目推进概览。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-company-modal">新建客户</button><button class="btn" data-action="refresh-page">刷新列表</button></div></div>
     <div class="list">
-      <div class="list-item"><div class="item-top"><div><div class="item-title">科技有限公司A</div><div class="item-meta">3 个项目 · 8 个岗位 · 完成率 65%</div></div><span class="chip success">招聘中</span></div></div>
-      <div class="list-item"><div class="item-top"><div><div class="item-title">网络科技B</div><div class="item-meta">2 个项目 · 5 个岗位 · 完成率 40%</div></div><span class="chip success">招聘中</span></div></div>
-      <div class="list-item"><div class="item-top"><div><div class="item-title">金融服务C</div><div class="item-meta">1 个项目 · 3 个岗位 · 完成率 100%</div></div><span class="chip neutral">招聘完毕</span></div></div>
+      <div class="list-item"><div class="item-top"><div><div class="item-title">暂无客户列表</div><div class="item-meta">客户列表来自数据库。</div></div><span class="chip success">客户</span></div></div>
     </div>
   </section>
+
+  <div class="modal" data-company-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+    <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+      <div class="section-head">
+        <div><h3>新建客户</h3><div class="section-sub">填写客户基础信息后确认保存。</div></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-company-modal">取消</button><button class="btn primary" data-action="confirm-company-upload">确认保存</button></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">客户名称</div><div class="item-meta">公司主体名称</div></div></div><input class="input" data-company-name /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">联系人</div><div class="item-meta">主要对接人</div></div></div><input class="input" data-company-contact /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">联系电话</div><div class="item-meta">联系方式</div></div></div><input class="input" data-company-phone /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">联系邮箱</div><div class="item-meta">邮箱地址</div></div></div><input class="input" data-company-email /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">公司地址</div><div class="item-meta">办公地址</div></div></div><input class="input" data-company-address /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">合作周期</div><div class="item-meta">起止日期</div></div></div><input class="input" data-company-period placeholder="例如 2026-06-01 ~ 2026-12-31" /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">默认招聘中</div></div></div><select class="input" data-company-status><option value="招聘中">招聘中</option><option value="空闲">空闲</option><option value="失效">失效</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">备注</div><div class="item-meta">补充说明</div></div></div><input class="input" data-company-remark /></div>
+          </div>
+        </div>
+        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+          <h3>保存说明</h3>
+          <div class="list"><div class="list-item"><div class="item-meta">确认后会写入客户表并刷新列表。</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" data-company-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+    <div class="panel" style="max-width:620px; margin:12vh auto 0; background:#fff;">
+      <div class="section-head">
+        <div><h3>客户操作确认</h3><div class="section-sub">确认后才会执行状态变更或删除。</div></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-company-action-modal">取消</button><button class="btn primary" data-action="confirm-company-action">确认执行</button></div>
+      </div>
+      <div class="list">
+        <div class="list-item"><div class="item-top"><div><div class="item-title" data-company-action-title>客户操作确认</div><div class="item-meta" data-company-action-desc>点击列表按钮后会在这里显示客户名称与动作。</div></div><span class="chip warning">确认</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" data-company-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+    <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+      <div class="section-head">
+        <div><h3>维护客户信息</h3><div class="section-sub">修改客户基础信息后保存。</div></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-company-edit-modal">取消</button><button class="btn primary" data-action="confirm-company-edit">确认保存</button></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">客户名称</div></div></div><input class="input" data-company-edit-name /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">联系人</div></div></div><input class="input" data-company-edit-contact /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">联系电话</div></div></div><input class="input" data-company-edit-phone /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">联系邮箱</div></div></div><input class="input" data-company-edit-email /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">公司地址</div></div></div><input class="input" data-company-edit-address /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">合作周期</div></div></div><input class="input" data-company-edit-period /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-company-edit-status><option value="招聘中">招聘中</option><option value="空闲">空闲</option><option value="失效">失效</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">备注</div></div></div><input class="input" data-company-edit-remark /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 `;
-window.addEventListener('DOMContentLoaded', () => renderApp());
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      try {
+        const companies = await window.hrApi.companies();
+        const projects = await window.hrApi.projects();
+        const deliveries = await window.hrApi.deliveries();
+        console.log("APP INNER HTML: ", document.getElementById("app").innerHTML.substring(0, 500)); document.querySelector('[data-company-total]').textContent = String(companies.length);
+        document.querySelector('[data-company-projects]').textContent = String(projects.length);
+        document.querySelector('[data-company-delivery]').textContent = String(deliveries.length);
+        document.querySelector('[data-company-score]').textContent = (deliveries.length ? (4.0 + Math.min(0.9, deliveries.length / 100)).toFixed(1) : '0.0');
+        const list = document.querySelector('.content .panel .list');
+        if (list) {
+          list.innerHTML = companies.slice(0, 3).map(c => `<div class="list-item"><div class="item-top"><div><div class="item-title">${c.name}</div><div class="item-meta">${c.contact_name || ''} · ${c.contact_phone || ''}${c.contact_email ? ` · ${c.contact_email}` : ''}${c.address ? ` · ${c.address}` : ''}${c.cooperation_period ? ` · ${c.cooperation_period}` : ''}${c.remark ? ` · ${c.remark}` : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-company" data-id="${c.id}">编辑</button><button class="btn-sm" data-action="toggle-company" data-id="${c.id}">${c.status === '失效' ? '恢复' : '失效'}</button><button class="btn-sm" data-action="delete-company" data-id="${c.id}">删除</button></div><span class="chip ${c.status === '失效' ? 'neutral' : 'success'}">${c.status || '招聘中'}</span></div></div>`).join('');
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    });
 </script></body></html>

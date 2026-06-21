@@ -1,1 +1,106 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>用户管理</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../app.js"></script></head><body><div id="app"></div><script>window.__PAGE_BODY__ = `<section class="metrics"><div class="metric-card"><div class="metric-top"><div><div class="section-sub">用户总数</div></div><div class="metric-icon">○</div></div><div class="metric-value">28</div><div class="metric-label">系统账号</div></div><div class="metric-card"><div class="metric-top"><div><div class="section-sub">在线用户</div></div><div class="metric-icon">△</div></div><div class="metric-value">24</div><div class="metric-label">当前活跃</div></div><div class="metric-card"><div class="metric-top"><div><div class="section-sub">待审批</div></div><div class="metric-icon">▣</div></div><div class="metric-value">3</div><div class="metric-label">待激活账号</div></div><div class="metric-card"><div class="metric-top"><div><div class="section-sub">组长数</div></div><div class="metric-icon">◌</div></div><div class="metric-value">7</div><div class="metric-label">团队管理者</div></div></section><section class="panel"><div class="section-head"><div><h3>用户管理</h3><div class="section-sub">系统内部账号、角色和组织归属。</div></div></div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">admin</div><div class="item-meta">管理员 · 超级管理员 · 人力资源部</div></div><span class="chip success">启用</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">张三</div><div class="item-meta">组员 · 一组 · 研发交付线</div></div><span class="chip primary">启用</span></div></div></div></section>`;window.addEventListener('DOMContentLoaded', () => renderApp());</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用户管理</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">用户总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-user-total>0</div><div class="metric-label">系统账号</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">在线用户</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-user-active>0</div><div class="metric-label">当前活跃</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">待审批</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-user-pending>0</div><div class="metric-label">待激活账号</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">组长数</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-user-leader>0</div><div class="metric-label">团队管理者</div></div>
+      </section>
+      <section class="panel">
+        <div class="section-head">
+          <div><h3>用户管理</h3><div class="section-sub">系统内部账号、角色和组织归属。</div></div>
+          <div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-user-modal">新增用户</button><button class="btn" data-action="refresh-page">刷新</button></div>
+        </div>
+        <div class="list" data-user-list>
+          <div class="list-item"><div class="item-meta">用户账号来自数据库。</div></div>
+        </div>
+      </section>
+
+      <div class="modal" data-user-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>新增用户</h3><div class="section-sub">填写账号、姓名和角色后确认保存。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-user-modal">取消</button><button class="btn primary" data-action="confirm-user-upload">确认保存</button></div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">登录账号</div></div></div><input class="input" data-user-username /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">真实姓名</div></div></div><input class="input" data-user-fullname /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">角色</div><div class="item-meta">默认操作员</div></div></div><input class="input" data-user-role value="操作员" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">密码</div><div class="item-meta">默认 dev</div></div></div><input class="input" type="password" data-user-password value="dev" /></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>保存说明</h3>
+              <div class="list"><div class="list-item"><div class="item-meta">确认后会写入用户表并刷新列表。</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-user-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>编辑用户</h3><div class="section-sub">用户名不可修改，保存后会同步到数据库并重新计算角色归属。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-user-edit-modal">取消</button><button class="btn primary" data-action="confirm-user-edit">确认保存</button></div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">登录账号，不支持修改</div></div></div><input class="input" data-user-edit-username readonly /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">展示在系统右上角和列表中</div></div></div><input class="input" data-user-edit-fullname /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">角色</div><div class="item-meta">修改后会影响菜单和权限范围</div></div></div><input class="input" data-user-edit-role /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">启用后允许登录</div></div></div><input class="input" data-user-edit-active /></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>编辑说明</h3>
+              <div class="list"><div class="list-item"><div class="item-meta">保存后会刷新用户列表和统计，并留下审计日志。</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-user-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:620px; margin:12vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>用户状态确认</h3><div class="section-sub">确认后才会启用或停用该账号。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-user-action-modal">取消</button><button class="btn primary" data-action="confirm-user-action">确认执行</button></div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-user-action-title>用户状态确认</div><div class="item-meta" data-user-action-desc>点击列表按钮后会在这里显示用户名称与动作。</div></div><span class="chip warning">确认</span></div></div>
+          </div>
+        </div>
+      </div>
+    `;
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      try {
+        const items = await window.hrApi.users();
+        const total = document.querySelector('[data-user-total]');
+        const list = document.querySelector('[data-user-list]');
+        if (total) total.textContent = String(items.length);
+        document.querySelector('[data-user-active]').textContent = String(items.filter(u => u.is_active).length);
+        document.querySelector('[data-user-pending]').textContent = String(items.filter(u => !u.is_active).length);
+        document.querySelector('[data-user-leader]').textContent = String(items.filter(u => String(u.role).includes('组长') || String(u.role).includes('主管')).length);
+        if (list) list.innerHTML = items.map(u => `<div class="list-item"><div class="item-top"><div><div class="item-title">${u.username}</div><div class="item-meta">${u.full_name} · ${u.role}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-user" data-id="${u.id}">编辑</button><button class="btn-sm" data-action="toggle-user" data-id="${u.id}">${u.is_active ? '停用' : '启用'}</button><button class="btn-sm" data-action="reset-user-password" data-id="${u.id}">重置密码</button></div><span class="chip ${u.is_active ? 'success' : 'neutral'}">${u.is_active ? '启用' : '停用'}</span></div></div>`).join('');
+      } catch (err) {
+        console.warn(err);
+      }
+    });
+  </script>
+</body>
+</html>

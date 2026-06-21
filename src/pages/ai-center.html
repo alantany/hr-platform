@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI能力中心</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const state = { tasks: [] };
+
+    function renderTasks(tasks) {
+      const list = document.querySelector('[data-ai-task-list]');
+      if (!list) return;
+      list.innerHTML = tasks.length
+        ? tasks.map((t) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${t.task_type}</div><div class="item-meta">${t.output_text}</div><div class="item-meta mono">${t.created_at || ''}</div></div><span class="chip ${t.status === '完成' || t.status === 'completed' ? 'success' : 'primary'}">${t.status}</span></div></div>`).join('')
+        : '<div class="list-item"><div class="item-meta">暂无 AI 任务，请先执行一次任务。</div></div>';
+    }
+
+    async function loadTasks() {
+      const tasks = await window.hrApi.aiTasks();
+      state.tasks = tasks;
+      renderTasks(tasks);
+    }
+
+    async function createTask(taskType, inputText) {
+      const task = await window.hrApi.createAiTask({ task_type: taskType, input_text: inputText });
+      await loadTasks();
+      showToast(`已创建任务：${task.task_type}`);
+    }
+
+    window.__PAGE_BODY__ = `
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section-head"><div><h3>AI 能力中心</h3><div class="section-sub">简历解析、JD 生成、智能推荐和抓取任务入口，结果会落到任务表并进入通知链路。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="ai-resume-parse">解析简历</button><button class="btn" data-action="ai-jd-generate">生成 JD</button><button class="btn" data-action="ai-candidate-match">简历匹配</button><button class="btn" data-action="ai-resume-fetch">抓取简历</button></div></div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">简历解析</div><div class="item-meta">从简历文本中提取结构化字段，并保存 AI 任务记录</div></div><span class="chip success">任务</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">JD 生成</div><div class="item-meta">根据岗位描述生成 JD 草稿，并保存 AI 任务记录</div></div><span class="chip primary">任务</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">简历匹配</div><div class="item-meta">根据岗位要求与候选人标签输出匹配建议</div></div><span class="chip neutral">任务</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">简历抓取</div><div class="item-meta">根据岗位条件生成抓取任务，并保存任务记录</div></div><span class="chip neutral">任务</span></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="section-head"><div><h3>最近任务</h3><div class="section-sub">查看本地 AI 任务执行结果。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn" data-action="refresh-ai-tasks">刷新任务</button></div></div>
+          <div class="list" data-ai-task-list>
+            <div class="list-item"><div class="item-meta">暂无 AI 任务</div></div>
+          </div>
+        </div>
+      </section>
+    `;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      await loadTasks().catch((err) => console.warn(err));
+    });
+
+    document.addEventListener('click', async (event) => {
+      const btn = event.target.closest('[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'refresh-ai-tasks') {
+        await loadTasks().catch((err) => console.warn(err));
+        showToast('AI 任务已刷新');
+      }
+      if (btn.dataset.action === 'ai-resume-parse') {
+        await createTask('resume_parse', '解析上传的简历').catch((err) => console.warn(err));
+      }
+      if (btn.dataset.action === 'ai-jd-generate') {
+        await createTask('jd_generate', '根据岗位描述生成 JD').catch((err) => console.warn(err));
+      }
+      if (btn.dataset.action === 'ai-candidate-match') {
+        await createTask('candidate_match', '按标签匹配候选人与岗位').catch((err) => console.warn(err));
+      }
+      if (btn.dataset.action === 'ai-resume-fetch') {
+        await createTask('resume_fetch', '按岗位条件抓取候选简历').catch((err) => console.warn(err));
+      }
+    });
+  </script>
+</body>
+</html>

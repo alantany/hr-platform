@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>系统配置</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section-head"><div><h3>系统配置</h3><div class="section-sub">系统名称、水印、日志保留等配置。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-system-config-modal">保存配置</button><button class="btn" data-action="refresh-page">刷新配置</button></div></div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">系统名称</div><div class="item-meta" data-system-name>系统名称将显示在页面顶部</div></div><span class="chip primary">保存</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">水印内容</div><div class="item-meta" data-system-watermark>导出与预览时使用的水印文案</div></div><span class="chip success">保存</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">日志保留</div><div class="item-meta" data-system-logs>用于控制审计日志的保存周期</div></div><span class="chip neutral">保存</span></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="section-head"><div><h3>邮件配置</h3><div class="section-sub">SMTP 和发送人配置。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-email-config-modal">保存邮件</button><button class="btn" data-action="test-email-config">测试连接</button><button class="btn" data-action="refresh-page">刷新配置</button></div></div>
+          <div class="list" data-email-config-list>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">SMTP Host</div><div class="item-meta">邮件服务器地址与发件配置</div></div><span class="chip success">邮件</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">TLS</div><div class="item-meta">是否启用加密传输</div></div><span class="chip neutral">邮件</span></div></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="modal" data-system-config-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>系统配置</h3>
+              <div class="section-sub">修改系统名称、水印和日志保留天数，确认后保存。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-system-config-modal">取消</button>
+              <button class="btn primary" data-action="confirm-system-config-upload">确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">系统名称</div><div class="item-meta">用于页面品牌展示</div></div></div><input class="input" data-system-name-input /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">水印内容</div><div class="item-meta">导出和预览时使用</div></div></div><input class="input" data-system-watermark-input /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">日志保留天数</div><div class="item-meta">超过后可清理历史日志</div></div></div><input class="input" type="number" min="1" data-system-logs-input /></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>邮件配置</h3>
+              <div class="list" data-email-config-list-modal>
+                <div class="list-item"><div class="item-meta">邮件配置摘要来自数据库。</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-email-config-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>邮件配置</h3>
+              <div class="section-sub">填写 SMTP 和发件信息后确认保存。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-email-config-modal">取消</button>
+              <button class="btn primary" data-action="confirm-email-config-upload">确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">SMTP Host</div><div class="item-meta">邮件服务器地址</div></div></div><input class="input" data-email-host-input /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">端口</div><div class="item-meta">默认 25 / 465 / 587</div></div></div><input class="input" type="number" min="1" data-email-port-input /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">发件人</div><div class="item-meta">用于外发邮件显示</div></div></div><input class="input" data-email-sender-input /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">SMTP 登录账号</div></div></div><input class="input" data-email-username-input /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">密码</div><div class="item-meta">SMTP 登录密码</div></div></div><input class="input" type="password" data-email-password-input /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">TLS</div><div class="item-meta">是否启用加密传输</div></div></div><select class="input" data-email-tls-input><option value="true">启用</option><option value="false">关闭</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">启用状态</div><div class="item-meta">是否允许系统发送邮件</div></div></div><select class="input" data-email-enabled-input><option value="true">启用</option><option value="false">停用</option></select></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>当前配置</h3>
+              <div class="list" data-email-config-preview>
+                <div class="list-item"><div class="item-meta">确认后会刷新邮件配置列表。</div></div>
+              </div>
+              <div class="list" data-email-test-result>
+                <div class="list-item"><div class="item-meta">点击“测试连接”后这里会显示结果。</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      try {
+        const configs = await window.hrApi.systemConfigs();
+        const email = await window.hrApi.emailConfig();
+        const left = document.querySelector('.content .panel:first-of-type .list');
+        const right = document.querySelector('[data-email-config-list]');
+        if (left) {
+          left.innerHTML = configs.map(c => `<div class="list-item"><div class="item-top"><div><div class="item-title">${c.key}</div><div class="item-meta">${c.value}</div></div><span class="chip primary">配置</span></div></div>`).join('');
+        }
+        const siteName = configs.find(c => c.key === 'site_name');
+        const watermark = configs.find(c => c.key === 'watermark');
+        const logDays = configs.find(c => c.key === 'log_retention_days');
+        const siteNameNode = document.querySelector('[data-system-name]');
+        const watermarkNode = document.querySelector('[data-system-watermark]');
+        const logDaysNode = document.querySelector('[data-system-logs]');
+        if (siteNameNode && siteName) siteNameNode.textContent = siteName.value;
+        if (watermarkNode && watermark) watermarkNode.textContent = watermark.value;
+        if (logDaysNode && logDays) logDaysNode.textContent = `${logDays.value} 天`;
+        if (right && email) {
+          right.innerHTML = `<div class="list-item"><div class="item-top"><div><div class="item-title">${email.host}</div><div class="item-meta">${email.sender} · ${email.port}</div></div><span class="chip success">${email.enabled ? '启用' : '停用'}</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">TLS</div><div class="item-meta">${email.use_tls ? '启用' : '关闭'}</div></div><span class="chip ${email.use_tls ? 'success' : 'neutral'}">真实配置</span></div></div>`;
+        }
+      } catch (err) { console.warn(err); }
+    });
+  </script>
+</body>
+</html>

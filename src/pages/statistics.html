@@ -1,15 +1,146 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>统计管理</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../app.js"></script></head><body><div id="app"></div><script>
-window.__PAGE_BODY__ = `
-  <section class="metrics">
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">求职者总数</div></div><div class="metric-icon">○</div></div><div class="metric-value">12,580</div><div class="metric-label">系统总体规模</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">总推荐数</div></div><div class="metric-icon">△</div></div><div class="metric-value">1,256</div><div class="metric-label">交付漏斗起点</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">总录用数</div></div><div class="metric-icon">▣</div></div><div class="metric-value">342</div><div class="metric-label">最终转化结果</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">操作员数</div></div><div class="metric-icon">◌</div></div><div class="metric-value">28</div><div class="metric-label">活跃 24 人</div></div>
-  </section>
-  <section class="grid-2">
-    <div class="panel"><div class="section-head"><div><h3>转化漏斗</h3><div class="section-sub">推荐、面试、录用、留存的连续变化。</div></div></div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">推荐</div><div class="item-meta">1,256</div></div><span class="chip primary">100%</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">面试</div><div class="item-meta">856</div></div><span class="chip success">68.2%</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">录用</div><div class="item-meta">342</div></div><span class="chip warning">27.2%</span></div></div></div></div>
-    <div class="panel"><div class="section-head"><div><h3>部门推荐统计</h3><div class="section-sub">按组长维度观察推进效率。</div></div></div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">刘主管</div><div class="item-meta">186 次</div></div><span class="chip success">第一</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">陈主管</div><div class="item-meta">152 次</div></div><span class="chip primary">第二</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">王主管</div><div class="item-meta">128 次</div></div><span class="chip neutral">第三</span></div></div></div></div>
-  </section>
-`;
-window.addEventListener('DOMContentLoaded', () => renderApp());
-</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>统计管理</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const state = { summary: null };
+
+    function pct(a, b) {
+      return b ? `${((a / b) * 100).toFixed(1)}%` : '0.0%';
+    }
+
+    function renderSummary(s) {
+      const teamRows = (s.team_rankings || []).map((item, idx) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.name}</div><div class="item-meta">${item.total} 条推荐 · 活跃 ${item.active} 条</div></div><span class="tag ${idx === 0 ? 'green' : idx === 1 ? 'blue' : 'gray'}">${item.total} 次</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">团队排行来自数据库。</div></div>';
+      const customerRows = (s.customer_rankings || []).map((item, idx) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.name}</div><div class="item-meta">${item.total} 个项目 · 进行中 ${item.active}</div></div><span class="tag ${idx === 0 ? 'green' : idx === 1 ? 'blue' : 'gray'}">Top ${idx + 1}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">客户排行来自数据库。</div></div>';
+      return `
+        <section class="metrics">
+          <div class="metric-card"><div class="metric-top"><div><div class="section-sub">求职者总数</div></div><div class="metric-icon">○</div></div><div class="metric-value">${s.candidate_count}</div><div class="metric-label">系统总体规模</div></div>
+          <div class="metric-card"><div class="metric-top"><div><div class="section-sub">公司 / 项目</div></div><div class="metric-icon">△</div></div><div class="metric-value">${s.company_count} / ${s.project_count}</div><div class="metric-label">客户侧核心对象</div></div>
+          <div class="metric-card"><div class="metric-top"><div><div class="section-sub">岗位 / 用户</div></div><div class="metric-icon">▣</div></div><div class="metric-value">${s.position_count} / ${s.user_count}</div><div class="metric-label">招聘执行与协作人数</div></div>
+          <div class="metric-card"><div class="metric-top"><div><div class="section-sub">推荐 / 交付</div></div><div class="metric-icon">◌</div></div><div class="metric-value">${s.recommendation_count} / ${s.delivery_count}</div><div class="metric-label">业务流转结果</div></div>
+        </section>
+        <section class="panel" style="margin-bottom:16px;">
+          <div class="section-head">
+            <div>
+              <h3>本地统计摘要</h3>
+              <div class="section-sub">当前数据库中的真实统计快照。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="refresh-page">刷新摘要</button>
+            </div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">评价 / 通知 / 标签 / 质保</div><div class="item-meta">${s.evaluation_count} / ${s.notification_count} / ${s.tag_count} / ${s.warranty_rule_count}</div></div><span class="chip primary">统计</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">审计日志</div><div class="item-meta">${s.audit_log_count} 条</div></div><span class="chip neutral">留痕</span></div></div>
+          </div>
+        </section>
+        <section class="grid-2">
+          <div class="panel">
+            <div class="section-head">
+              <div><h3>转化漏斗</h3><div class="section-sub">推荐、面试、录用的连续变化。</div></div>
+              <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="refresh-page">刷新摘要</button></div>
+            </div>
+            <div class="list">
+              <div class="list-item"><div class="item-top"><div><div class="item-title">推荐</div><div class="item-meta">${s.recommendation_count}</div></div><span class="chip primary">100%</span></div></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">面试</div><div class="item-meta">${Math.max(0, s.recommendation_count - s.delivery_count)}</div></div><span class="chip success">${pct(Math.max(0, s.recommendation_count - s.delivery_count), s.recommendation_count)}</span></div></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">录用</div><div class="item-meta">${s.delivery_count}</div></div><span class="chip warning">${pct(s.delivery_count, s.recommendation_count)}</span></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div><h3>部门推荐统计</h3><div class="section-sub">按组长维度观察推进效率。</div></div>
+              <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="refresh-page">刷新摘要</button></div>
+            </div>
+            <div class="list">${teamRows}</div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div><h3>客户效果排行</h3><div class="section-sub">按项目推进状态观察客户侧效果。</div></div>
+              <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="refresh-page">刷新摘要</button></div>
+            </div>
+            <div class="list">${customerRows}</div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div><h3>推荐统计</h3><div class="section-sub">按时间、岗位、操作员筛选推荐结果。</div></div>
+              <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="load-recommendation-stats">加载统计</button></div>
+            </div>
+            <div class="toolbar" style="margin:0 0 12px; padding:0; border:0; box-shadow:none; background:transparent;">
+              <input class="input" type="date" data-recommendation-stat-date-from />
+              <input class="input" type="date" data-recommendation-stat-date-to />
+              <input class="input" placeholder="岗位ID" data-recommendation-stat-position />
+              <input class="input" placeholder="操作员" data-recommendation-stat-operator />
+            </div>
+            <div class="list" data-recommendation-stat-panel>
+              <div class="list-item"><div class="item-meta">推荐统计来自数据库。</div></div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    async function loadSummary() {
+      const s = await window.hrApi.analyticsSummary();
+      state.summary = s;
+      document.querySelector('[data-stat-root]').innerHTML = renderSummary(s);
+    }
+
+    window.__PAGE_BODY__ = `
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <h3>统计管理</h3>
+            <div class="section-sub">基于数据库实时快照的运营概览。</div>
+          </div>
+          <div class="hero-actions" style="margin-top:0">
+            <button class="btn" data-action="refresh-page">刷新摘要</button>
+          </div>
+        </div>
+        <div data-stat-root>
+          <div class="list"><div class="list-item"><div class="item-meta">统计摘要来自数据库。</div></div></div>
+        </div>
+      </section>
+    `;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      document.addEventListener('click', async (event) => {
+        const btn = event.target.closest('[data-action]');
+        if (!btn) return;
+        if (btn.dataset.action === 'load-recommendation-stats') {
+          const params = {};
+          const df = document.querySelector('[data-recommendation-stat-date-from]')?.value;
+          const dt = document.querySelector('[data-recommendation-stat-date-to]')?.value;
+          const pid = document.querySelector('[data-recommendation-stat-position]')?.value;
+          const op = document.querySelector('[data-recommendation-stat-operator]')?.value?.trim();
+          if (df) params.date_from = `${df}T00:00:00`;
+          if (dt) params.date_to = `${dt}T23:59:59`;
+          if (pid) params.position_id = pid;
+          if (op) params.operator = op;
+          const stats = await window.hrApi.request(`/recommendation-stats?${new URLSearchParams(params).toString()}`);
+          const panel = document.querySelector('[data-recommendation-stat-panel]');
+          if (panel) {
+            panel.innerHTML = [
+              `<div class="list-item"><div class="item-top"><div><div class="item-title">统计总数</div><div class="item-meta">${stats.total}</div></div><span class="chip primary">推荐</span></div></div>`,
+              ...(stats.by_position || []).map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.position_name}</div><div class="item-meta">推荐 ${item.recommendation} · 面试 ${item.interview} · 录用 ${item.delivery}</div></div><span class="chip success">${item.recommendation}</span></div></div>`),
+              ...(stats.by_operator || []).map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.name}</div><div class="item-meta">推荐 ${item.recommendation} · 面试 ${item.interview} · 录用 ${item.delivery}</div></div><span class="chip neutral">${item.recommendation}</span></div></div>`),
+            ].join('');
+          }
+        }
+      });
+      await loadSummary().catch((err) => {
+        const root = document.querySelector('[data-stat-root]');
+        if (root) root.innerHTML = `<div class="list"><div class="list-item"><div class="item-meta">加载失败：${err.message || err}</div></div></div>`;
+      });
+    });
+  </script>
+</body>
+</html>

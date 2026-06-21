@@ -1,1 +1,208 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>操作日志</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../app.js"></script></head><body><div id="app"></div><script>window.__PAGE_BODY__ = `<section class="metrics"><div class="metric-card"><div class="metric-top"><div><div class="section-sub">操作总数</div></div><div class="metric-icon">○</div></div><div class="metric-value">1,284</div><div class="metric-label">近 30 天记录</div></div><div class="metric-card"><div class="metric-top"><div><div class="section-sub">导入日志</div></div><div class="metric-icon">△</div></div><div class="metric-value">356</div><div class="metric-label">简历导入相关</div></div><div class="metric-card"><div class="metric-top"><div><div class="section-sub">推荐日志</div></div><div class="metric-icon">▣</div></div><div class="metric-value">416</div><div class="metric-label">推荐与面试流转</div></div><div class="metric-card"><div class="metric-top"><div><div class="section-sub">权限变更</div></div><div class="metric-icon">◌</div></div><div class="metric-value">52</div><div class="metric-label">组织管理操作</div></div></section><section class="panel"><h3>操作日志</h3><p class="panel-sub">查看导入、推荐、权限变更等关键操作记录。</p><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">张三</div><div class="item-meta">导入简历 · 批量导入 12 份 · 10:30</div></div><span class="chip primary">导入</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">李四</div><div class="item-meta">推荐简历 · 推荐至科技有限公司A · 09:45</div></div><span class="chip success">推荐</span></div></div></div></section>`;window.addEventListener('DOMContentLoaded', () => renderApp());</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>操作日志</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">操作总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-audit-total>0</div><div class="metric-label">当前筛选结果</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">导入日志</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-audit-import>0</div><div class="metric-label">简历导入相关</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">推荐日志</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-audit-recommend>0</div><div class="metric-label">推荐与面试流转</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">权限变更</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-audit-permission>0</div><div class="metric-label">组织管理操作</div></div>
+      </section>
+      <section class="panel">
+        <div class="section-head">
+          <div><h3>操作日志管理</h3><p class="panel-sub">支持按时间、用户、模块、动作和对象检索，并导出当前结果。</p></div>
+          <div class="hero-actions" style="margin-top:0">
+            <button class="btn" data-action="refresh-audit-logs">刷新</button>
+            <button class="btn primary" data-action="export-audit-logs">导出当前结果</button>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="list">
+              <div class="list-item"><div class="item-top"><div><div class="item-title">操作人</div><div class="item-meta">模糊匹配账号或姓名</div></div></div><input class="input" data-audit-filter-actor placeholder="例如 admin" /></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">模块</div><div class="item-meta">例如 候选人池 / 权限管理</div></div></div><input class="input" data-audit-filter-module placeholder="例如 权限管理" /></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">动作</div><div class="item-meta">例如 新增、编辑、导出</div></div></div><input class="input" data-audit-filter-action placeholder="例如 导出简历" /></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">对象类型</div><div class="item-meta">user / candidate / company 等</div></div></div><input class="input" data-audit-filter-target placeholder="例如 candidate" /></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">结果</div><div class="item-meta">成功 / 失败</div></div></div>
+                <select class="input" data-audit-filter-result>
+                  <option value="">全部</option>
+                  <option value="成功">成功</option>
+                  <option value="失败">失败</option>
+                </select>
+              </div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">关键词</div><div class="item-meta">匹配对象、详情、结果</div></div></div><input class="input" data-audit-filter-keyword placeholder="例如 简历导入" /></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">开始时间</div><div class="item-meta">ISO 时间或日期</div></div></div><input class="input" type="datetime-local" data-audit-filter-from /></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">结束时间</div><div class="item-meta">ISO 时间或日期</div></div></div><input class="input" type="datetime-local" data-audit-filter-to /></div>
+            </div>
+          </div>
+          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="list" data-audit-detail>
+              <div class="list-item"><div class="item-meta">选中任意一条日志查看完整详情。</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="list" data-audit-list style="margin-top:16px;">
+          <div class="list-item"><div class="item-meta">审计日志来自数据库。</div></div>
+        </div>
+      </section>`;
+
+    const auditState = { rows: [] };
+
+    function valueOf(selector) {
+      return document.querySelector(selector)?.value?.trim?.() || '';
+    }
+
+    function selectedFilters() {
+      const params = {};
+      const actor = valueOf('[data-audit-filter-actor]');
+      const module = valueOf('[data-audit-filter-module]');
+      const action = valueOf('[data-audit-filter-action]');
+      const target_type = valueOf('[data-audit-filter-target]');
+      const result = valueOf('[data-audit-filter-result]');
+      const keyword = valueOf('[data-audit-filter-keyword]');
+      const date_from = valueOf('[data-audit-filter-from]');
+      const date_to = valueOf('[data-audit-filter-to]');
+      if (actor) params.actor = actor;
+      if (module) params.module = module;
+      if (action) params.action = action;
+      if (target_type) params.target_type = target_type;
+      if (result) params.result = result;
+      if (keyword) params.keyword = keyword;
+      if (date_from) params.date_from = date_from;
+      if (date_to) params.date_to = date_to;
+      params.limit = '200';
+      return params;
+    }
+
+    function renderRows(logs) {
+      const list = document.querySelector('[data-audit-list]');
+      if (!list) return;
+      list.innerHTML = logs.map((log, index) => `
+        <div class="list-item" data-log-index="${index}">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${log.actor}</div>
+              <div class="item-meta">${log.module} · ${log.action} · ${log.created_at}</div>
+              <div class="item-meta mono">${log.target_type || 'none'} / ${log.target_id || 'none'}</div>
+            </div>
+            <div class="table-actions">
+              <button class="btn-sm" data-action="view-audit-log" data-log-index="${index}">查看详情</button>
+              <button class="btn-sm" data-action="jump-audit-module" data-module="${log.module}">跳转模块</button>
+            </div>
+            <span class="chip ${log.result === '成功' ? 'success' : 'neutral'}">${log.result}</span>
+          </div>
+        </div>
+      `).join('') || '<div class="list-item"><div class="item-meta">当前筛选条件下没有日志。</div></div>';
+    }
+
+    function renderDetail(log) {
+      const host = document.querySelector('[data-audit-detail]');
+      if (!host) return;
+      if (!log) {
+        host.innerHTML = '<div class="list-item"><div class="item-meta">选中任意一条日志查看完整详情。</div></div>';
+        return;
+      }
+      host.innerHTML = `
+        <div class="list-item"><div class="item-top"><div><div class="item-title">${log.action}</div><div class="item-meta">${log.module} · ${log.actor}</div></div><span class="chip ${log.result === '成功' ? 'success' : 'neutral'}">${log.result}</span></div></div>
+        <div class="list-item"><div class="item-top"><div><div class="item-title">对象</div><div class="item-meta">${log.target_type || 'none'} / ${log.target_id || 'none'}</div></div></div></div>
+        <div class="list-item"><div class="item-top"><div><div class="item-title">详情</div><div class="item-meta">${log.detail || '无'}</div></div></div></div>
+        <div class="list-item"><div class="item-top"><div><div class="item-title">时间</div><div class="item-meta mono">${log.created_at}</div></div></div></div>
+      `;
+    }
+
+    function downloadCsv(rows) {
+      const header = ['id','actor','module','action','target_type','target_id','result','detail','created_at'];
+      const lines = [header.join(',')];
+      rows.forEach((row) => {
+        const values = header.map((key) => {
+          const raw = String(row[key] ?? '');
+          return `"${raw.replaceAll('"', '""')}"`;
+        });
+        lines.push(values.join(','));
+      });
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit-logs-${new Date().toISOString().slice(0, 19).replaceAll(':', '-')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function loadLogs() {
+      const logs = await window.hrApi.auditLogs(selectedFilters());
+      auditState.rows = logs;
+      const total = document.querySelector('[data-audit-total]');
+      if (total) total.textContent = String(logs.length);
+      const imports = logs.filter(l => String(l.module).includes('导入')).length;
+      const recommends = logs.filter(l => String(l.module).includes('推荐') || String(l.module).includes('候选')).length;
+      const permissions = logs.filter(l => String(l.module).includes('权限')).length;
+      document.querySelector('[data-audit-import]').textContent = String(imports);
+      document.querySelector('[data-audit-recommend]').textContent = String(recommends);
+      document.querySelector('[data-audit-permission]').textContent = String(permissions);
+      renderRows(logs);
+      renderDetail(logs[0]);
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      await loadLogs().catch((err) => console.warn(err));
+    });
+
+    document.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+      if (button.dataset.action === 'refresh-audit-logs') {
+        await loadLogs().catch((err) => console.warn(err));
+        showToast('日志已刷新');
+      }
+      if (button.dataset.action === 'export-audit-logs') {
+        downloadCsv(auditState.rows);
+        showToast('已导出当前筛选结果');
+      }
+      if (button.dataset.action === 'view-audit-log') {
+        const index = Number(button.dataset.logIndex || 0);
+        renderDetail(auditState.rows[index]);
+      }
+      if (button.dataset.action === 'jump-audit-module') {
+        const module = String(button.dataset.module || '');
+        const mapping = [
+          ['候选人池', 'candidates.html'],
+          ['客户公司管理', 'companies.html'],
+          ['项目管理', 'projects.html'],
+          ['岗位管理', 'positions.html'],
+          ['权限管理', 'permissions.html'],
+          ['数据权限', 'data-permissions.html'],
+          ['操作日志', 'logs.html'],
+          ['系统配置', 'system-config.html'],
+          ['邮件配置', 'email-config.html'],
+        ];
+        const target = mapping.find(([key]) => module.includes(key));
+        if (target) {
+          window.location.href = `./${target[1]}`;
+        } else {
+          showToast(`未找到 ${module} 的跳转入口`);
+        }
+      }
+    });
+
+    document.addEventListener('input', async (event) => {
+      if (!event.target.closest('[data-audit-filter-actor], [data-audit-filter-module], [data-audit-filter-action], [data-audit-filter-target], [data-audit-filter-result], [data-audit-filter-keyword], [data-audit-filter-from], [data-audit-filter-to]')) return;
+      clearTimeout(window.__AUDIT_FILTER_TIMER__);
+      window.__AUDIT_FILTER_TIMER__ = setTimeout(() => {
+        loadLogs().catch((err) => console.warn(err));
+      }, 350);
+    });
+  </script>
+</body>
+</html>

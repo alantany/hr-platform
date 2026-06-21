@@ -1,18 +1,160 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>质保期管理</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../app.js"></script></head><body><div id="app"></div><script>
-window.__PAGE_BODY__ = `
-  <section class="metrics">
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">激活中</div></div><div class="metric-icon">○</div></div><div class="metric-value">248</div><div class="metric-label">可继续服务的候选人</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">即将到期</div></div><div class="metric-icon">△</div></div><div class="metric-value">18</div><div class="metric-label">需关注候选人</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">已失效</div></div><div class="metric-icon">▣</div></div><div class="metric-value">34</div><div class="metric-label">已过质保期</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">可重新激活</div></div><div class="metric-icon">◌</div></div><div class="metric-value">12</div><div class="metric-label">可恢复使用</div></div>
-  </section>
-  <section class="panel">
-    <div class="section-head"><div><h3>质保期管理</h3><div class="section-sub">统一配置质保期并查看候选人到期状态。</div></div></div>
-    <div class="list">
-      <div class="list-item"><div class="item-top"><div><div class="item-title">孙七</div><div class="item-meta">2026-02-15 入库 · 还剩 87 天</div></div><span class="chip success">激活</span></div></div>
-      <div class="list-item"><div class="item-top"><div><div class="item-title">吴九</div><div class="item-meta">2025-11-20 入库 · 已过期 2 天</div></div><span class="chip danger">已失效</span></div></div>
-    </div>
-  </section>
-`;
-window.addEventListener('DOMContentLoaded', () => renderApp());
-</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>质保期管理</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const state = { rules: [] };
+
+    function refreshMetrics(rules) {
+      const counts = rules.reduce((acc, rule) => {
+        acc[rule.scope] = (acc[rule.scope] || 0) + 1;
+        return acc;
+      }, {});
+      document.querySelector('[data-warranty-count="简历"]').textContent = String(counts.简历 || 0);
+      document.querySelector('[data-warranty-count="客户"]').textContent = String(counts.客户 || 0);
+      document.querySelector('[data-warranty-count="项目"]').textContent = String(counts.项目 || 0);
+      document.querySelector('[data-warranty-count="岗位"]').textContent = String(counts.岗位 || 0);
+    }
+
+    const scopeOrder = ['简历', '客户', '项目', '岗位'];
+
+    function renderList(rules) {
+      const list = document.querySelector('[data-warranty-list]');
+      if (!list) return;
+      const grouped = scopeOrder.map(scope => {
+        const items = rules.filter(rule => rule.scope === scope);
+        return `
+          <div class="list-item">
+            <div class="item-top">
+              <div>
+                <div class="item-title">${scope} 质保</div>
+                <div class="item-meta">${items.length ? `${items[0].months} 个月 · 提前 ${items[0].remind_days} 天提醒` : '尚未配置'}</div>
+              </div>
+              <div class="table-actions">
+                <button class="btn-sm primary" data-action="create-warranty" data-scope="${scope}">配置</button>
+                ${items[0] ? `<button class="btn-sm" data-action="edit-warranty-rule" data-scope="${items[0].scope}" data-months="${items[0].months}" data-remind-days="${items[0].remind_days}" data-auto-expire="${items[0].auto_expire}">查看摘要</button>` : ''}
+              </div>
+              <span class="chip ${items[0]?.auto_expire ? 'success' : 'neutral'}">${items[0]?.auto_expire ? '自动失效' : '手动失效'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      list.innerHTML = rules.length ? grouped + rules.filter(r => !scopeOrder.includes(r.scope)).map(r => `
+        <div class="list-item">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${r.scope} 质保</div>
+              <div class="item-meta">${r.months} 个月 · 提前 ${r.remind_days} 天提醒${r.auto_expire ? '' : ' · 手动失效'}</div>
+            </div>
+            <div class="table-actions">
+              <button class="btn-sm" data-action="edit-warranty-rule" data-scope="${r.scope}" data-months="${r.months}" data-remind-days="${r.remind_days}" data-auto-expire="${r.auto_expire}">查看摘要</button>
+            </div>
+            <span class="chip ${r.auto_expire ? 'success' : 'neutral'}">${r.auto_expire ? '自动失效' : '手动失效'}</span>
+          </div>
+        </div>
+      `).join('') : '<div class="list-item"><div class="item-meta">暂无质保规则，请先新增。</div></div>';
+    }
+
+    async function loadRules() {
+      const rules = await window.hrApi.warrantyRules();
+      state.rules = rules;
+      refreshMetrics(rules);
+      renderList(rules);
+      const preview = document.querySelector('[data-warranty-preview]');
+      if (preview) {
+        const latest = rules[0];
+        preview.innerHTML = latest
+          ? `<div class="list-item"><div class="item-top"><div><div class="item-title">${latest.scope}</div><div class="item-meta">${latest.months} 个月 · 提前 ${latest.remind_days} 天提醒</div></div><span class="chip ${latest.auto_expire ? 'success' : 'neutral'}">${latest.auto_expire ? '自动失效' : '手动失效'}</span></div></div>`
+          : '<div class="list-item"><div class="item-meta">确认后会写入质保规则表，并刷新当前列表。</div></div>';
+      }
+    }
+
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">简历</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-warranty-count="简历">0</div><div class="metric-label">简历质保规则</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-warranty-count="客户">0</div><div class="metric-label">客户质保规则</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">项目</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-warranty-count="项目">0</div><div class="metric-label">项目质保规则</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">岗位</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-warranty-count="岗位">0</div><div class="metric-label">岗位质保规则</div></div>
+      </section>
+      <section class="panel">
+        <div class="section-head"><div><h3>质保期管理</h3><div class="section-sub">按简历、客户、项目、岗位分别配置质保规则。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="create-warranty" data-scope="简历">简历</button><button class="btn primary" data-action="create-warranty" data-scope="客户">客户</button><button class="btn primary" data-action="create-warranty" data-scope="项目">项目</button><button class="btn primary" data-action="create-warranty" data-scope="岗位">岗位</button><button class="btn" data-action="refresh-page">刷新规则</button></div></div>
+        <div class="grid-2">
+          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="list" data-warranty-list>
+              <div class="list-item"><div class="item-meta">暂无质保规则</div></div>
+            </div>
+          </div>
+          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <h3>保存说明</h3>
+            <div class="list" data-warranty-preview>
+              <div class="list-item"><div class="item-meta">确认后会写入质保规则表，并刷新当前列表。</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="modal" data-warranty-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3 data-warranty-modal-title>新增质保规则</h3>
+              <div class="section-sub">确认范围、月数和提醒天数后保存。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-warranty-modal">取消</button>
+              <button class="btn primary" data-action="confirm-warranty-upload">确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">适用范围</div><div class="item-meta">简历 / 客户 / 项目 / 岗位</div></div></div>
+                  <select class="input" data-warranty-scope>
+                    <option value="简历">简历</option>
+                    <option value="客户">客户</option>
+                    <option value="项目">项目</option>
+                    <option value="岗位">岗位</option>
+                  </select>
+                </div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">质保月数</div><div class="item-meta">默认 6 个月</div></div></div><input class="input" type="number" min="1" data-warranty-months value="6" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">提醒天数</div><div class="item-meta">到期前多少天提醒</div></div></div><input class="input" type="number" min="1" data-warranty-remind value="5" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">自动失效</div><div class="item-meta">关闭后按手动失效处理</div></div></div><select class="input" data-warranty-auto><option value="true">启用</option><option value="false">关闭</option></select></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>保存说明</h3>
+              <div class="list" data-warranty-preview>
+                <div class="list-item"><div class="item-meta">确认后会写入质保规则表，并刷新当前列表。</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      await loadRules().catch((err) => console.warn(err));
+    });
+
+    document.addEventListener('click', async (event) => {
+      const btn = event.target.closest('[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'edit-warranty-rule') {
+        const summary = document.querySelector('[data-warranty-preview]');
+        if (summary) {
+          summary.innerHTML = `<div class="list-item"><div class="item-top"><div><div class="item-title">${btn.dataset.scope}</div><div class="item-meta">${btn.dataset.months} 个月 · 提前 ${btn.dataset.remindDays} 天提醒</div></div><span class="chip ${btn.dataset.autoExpire === 'true' ? 'success' : 'neutral'}">${btn.dataset.autoExpire === 'true' ? '自动失效' : '手动失效'}</span></div></div>`;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

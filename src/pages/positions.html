@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>岗位管理</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">岗位总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-position-total>0</div><div class="metric-label">全部岗位</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">待招岗位</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-position-open>0</div><div class="metric-label">继续推进中</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-position-urgent>0</div><div class="metric-label">需要优先处理</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">项目数</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-position-projects>0</div><div class="metric-label">关联项目</div></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div><h3>岗位列表</h3><div class="section-sub">按项目统一管理岗位需求、薪资范围和招聘状态。</div></div>
+          <div class="hero-actions" style="margin-top:0">
+            <button class="btn primary" data-action="open-position-modal">新建岗位</button>
+            <button class="btn" data-action="refresh-page">刷新列表</button>
+          </div>
+        </div>
+        <div class="list" data-position-list>
+          <div class="list-item"><div class="item-meta">岗位数据来自数据库。</div></div>
+        </div>
+      </section>
+
+      <div class="modal" data-position-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>新建岗位</h3><div class="section-sub">选择所属项目并填写岗位需求。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-position-modal">取消</button><button class="btn primary" data-action="confirm-position-create">确认保存</button></div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">所属项目</div><div class="item-meta">岗位必须挂载到项目</div></div></div><select class="input" data-position-project></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">岗位名称</div><div class="item-meta">招聘职位</div></div></div><input class="input" data-position-name /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">紧急程度</div><div class="item-meta">高 / 中 / 低</div></div></div><select class="input" data-position-urgency><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div><div class="item-meta">岗位需求数量</div></div></div><input class="input" type="number" min="1" data-position-count value="1" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">最低薪资</div><div class="item-meta">月薪下限</div></div></div><input class="input" type="number" min="0" data-position-salary-min /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">最高薪资</div><div class="item-meta">月薪上限</div></div></div><input class="input" type="number" min="0" data-position-salary-max /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div><div class="item-meta">岗位地点</div></div></div><input class="input" data-position-location /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">默认待招</div></div></div><select class="input" data-position-status><option value="待招">待招</option><option value="招聘中">招聘中</option><option value="暂停招聘">暂停招聘</option><option value="已关闭">已关闭</option></select></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-position-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>编辑岗位</h3><div class="section-sub">修改岗位信息后保存，会同步到数据库。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-position-edit-modal">取消</button><button class="btn primary" data-action="confirm-position-edit">确认保存</button></div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">所属项目</div></div></div><select class="input" data-position-edit-project></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">岗位名称</div></div></div><input class="input" data-position-edit-name /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">紧急程度</div></div></div><select class="input" data-position-edit-urgency><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div></div></div><input class="input" type="number" min="1" data-position-edit-count /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">最低薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-min /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">最高薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-max /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div></div></div><input class="input" data-position-edit-location /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-position-edit-status><option value="待招">待招</option><option value="招聘中">招聘中</option><option value="暂停招聘">暂停招聘</option><option value="已关闭">已关闭</option></select></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      try {
+        const [positions, projects] = await Promise.all([window.hrApi.positions(), window.hrApi.projects()]);
+        document.querySelector('[data-position-total]').textContent = String(positions.length);
+        document.querySelector('[data-position-open]').textContent = String(positions.filter(p => p.status !== '已关闭').length);
+        document.querySelector('[data-position-urgent]').textContent = String(positions.filter(p => p.urgency === '高').length);
+        document.querySelector('[data-position-projects]').textContent = String(new Set(positions.map(p => p.project_id)).size);
+        const projectOptions = projects.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+        document.querySelector('[data-position-project]').innerHTML = `<option value="">请选择项目</option>${projectOptions}`;
+        document.querySelector('[data-position-edit-project]').innerHTML = `<option value="">请选择项目</option>${projectOptions}`;
+        const list = document.querySelector('[data-position-list]');
+        if (list) {
+          list.innerHTML = positions.map((p) => `
+            <div class="list-item">
+              <div class="item-top">
+                <div>
+                  <div class="item-title">${p.name}</div>
+                  <div class="item-meta">${p.project_id} · ${p.location || ''} · 招聘人数 ${p.hiring_count}${p.salary_min || p.salary_max ? ` · ${p.salary_min || ''}-${p.salary_max || ''}` : ''}</div>
+                </div>
+                <div class="table-actions">
+                  <button class="btn-sm" data-action="edit-position" data-id="${p.id}">编辑</button>
+                  <button class="btn-sm" data-action="toggle-position-status" data-id="${p.id}" data-status="${p.status}">${p.status === '已关闭' ? '恢复' : '关闭'}</button>
+                </div>
+                <span class="chip ${p.status === '已关闭' ? 'neutral' : p.urgency === '高' ? 'warning' : 'success'}">${p.status}</span>
+              </div>
+            </div>`).join('') || '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    });
+
+    document.addEventListener('click', async (event) => {
+      const btn = event.target.closest('[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'open-position-modal') {
+        document.querySelector('[data-position-modal]').style.display = 'block';
+      }
+      if (btn.dataset.action === 'close-position-modal') {
+        document.querySelector('[data-position-modal]').style.display = 'none';
+      }
+      if (btn.dataset.action === 'confirm-position-create') {
+        const payload = {
+          project_id: Number(document.querySelector('[data-position-project]')?.value || 0),
+          name: document.querySelector('[data-position-name]')?.value?.trim() || '',
+          urgency: document.querySelector('[data-position-urgency]')?.value || '中',
+          hiring_count: Number(document.querySelector('[data-position-count]')?.value || 1),
+          salary_min: Number(document.querySelector('[data-position-salary-min]')?.value || 0) || null,
+          salary_max: Number(document.querySelector('[data-position-salary-max]')?.value || 0) || null,
+          location: document.querySelector('[data-position-location]')?.value?.trim() || '',
+          status: document.querySelector('[data-position-status]')?.value || '待招',
+        };
+        if (!payload.project_id || !payload.name) throw new Error('请先选择项目并填写岗位名称');
+        await window.hrApi.createPosition(payload);
+        location.reload();
+      }
+      if (btn.dataset.action === 'edit-position') {
+        const [positions, projects] = await Promise.all([window.hrApi.positions(), window.hrApi.projects()]);
+        const item = positions.find(p => p.id === Number(btn.dataset.id));
+        if (!item) throw new Error('未找到岗位');
+        const modal = document.querySelector('[data-position-edit-modal]');
+        document.querySelector('[data-position-edit-project]').innerHTML = `<option value="">请选择项目</option>${projects.map((p) => `<option value="${p.id}">${p.name}</option>`).join('')}`;
+        document.querySelector('[data-position-edit-project]').value = String(item.project_id || '');
+        document.querySelector('[data-position-edit-name]').value = item.name || '';
+        document.querySelector('[data-position-edit-urgency]').value = item.urgency || '中';
+        document.querySelector('[data-position-edit-count]').value = String(item.hiring_count || 1);
+        document.querySelector('[data-position-edit-salary-min]').value = item.salary_min || '';
+        document.querySelector('[data-position-edit-salary-max]').value = item.salary_max || '';
+        document.querySelector('[data-position-edit-location]').value = item.location || '';
+        document.querySelector('[data-position-edit-status]').value = item.status || '待招';
+        modal.dataset.target = JSON.stringify({ id: item.id });
+        modal.style.display = 'block';
+      }
+      if (btn.dataset.action === 'close-position-edit-modal') {
+        document.querySelector('[data-position-edit-modal]').style.display = 'none';
+      }
+      if (btn.dataset.action === 'confirm-position-edit') {
+        const modal = document.querySelector('[data-position-edit-modal]');
+        const target = modal?.dataset.target ? JSON.parse(modal.dataset.target) : null;
+        if (!target) throw new Error('没有待编辑的岗位');
+        const payload = {
+          project_id: Number(document.querySelector('[data-position-edit-project]')?.value || 0),
+          name: document.querySelector('[data-position-edit-name]')?.value?.trim() || '',
+          urgency: document.querySelector('[data-position-edit-urgency]')?.value || '中',
+          hiring_count: Number(document.querySelector('[data-position-edit-count]')?.value || 1),
+          salary_min: Number(document.querySelector('[data-position-edit-salary-min]')?.value || 0) || null,
+          salary_max: Number(document.querySelector('[data-position-edit-salary-max]')?.value || 0) || null,
+          location: document.querySelector('[data-position-edit-location]')?.value?.trim() || '',
+          status: document.querySelector('[data-position-edit-status]')?.value || '待招',
+        };
+        if (!payload.project_id || !payload.name) throw new Error('请先选择项目并填写岗位名称');
+        await window.hrApi.updatePosition(target.id, payload);
+        location.reload();
+      }
+      if (btn.dataset.action === 'toggle-position-status') {
+        const [positions] = await Promise.all([window.hrApi.positions()]);
+        const item = positions.find(p => p.id === Number(btn.dataset.id));
+        if (!item) throw new Error('未找到岗位');
+        await window.hrApi.updatePosition(item.id, { status: item.status === '已关闭' ? '待招' : '已关闭' });
+        location.reload();
+      }
+    });
+  </script>
+</body>
+</html>

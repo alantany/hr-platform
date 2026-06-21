@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>求职者数据池</title>
   <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
   <script defer src="../../app.js"></script>
 </head>
 <body>
@@ -14,22 +15,22 @@
       <section class="metrics">
         <div class="metric-card">
           <div class="metric-top"><div><div class="section-sub">候选人总数</div></div><div class="metric-icon">○</div></div>
-          <div class="metric-value">12,580</div>
+          <div class="metric-value" data-candidate-total>0</div>
           <div class="metric-label">覆盖全部简历资源</div>
         </div>
         <div class="metric-card">
           <div class="metric-top"><div><div class="section-sub">今日新增</div></div><div class="metric-icon">△</div></div>
-          <div class="metric-value">156</div>
+          <div class="metric-value" data-candidate-new>0</div>
           <div class="metric-label">比昨日增加 3.2%</div>
         </div>
         <div class="metric-card">
           <div class="metric-top"><div><div class="section-sub">今日搜索聊天次数</div></div><div class="metric-icon">▣</div></div>
-          <div class="metric-value">12</div>
+          <div class="metric-value" data-candidate-search>0</div>
           <div class="metric-label">次搜索会话</div>
         </div>
         <div class="metric-card">
           <div class="metric-top"><div><div class="section-sub">已锁定候选人</div></div><div class="metric-icon">◌</div></div>
-          <div class="metric-value">328</div>
+          <div class="metric-value" data-candidate-locked>0</div>
           <div class="metric-label">当前被项目占用</div>
         </div>
       </section>
@@ -40,15 +41,18 @@
             <h3>搜索工具栏</h3>
             <div class="section-sub">关键词、城市、职位组合搜索，快速定位候选人。</div>
           </div>
+          <div class="hero-actions" style="margin-top:0">
+            <button class="btn primary" data-action="open-candidate-create-modal">新建候选人</button>
+            <button class="btn primary" data-action="search-candidates">搜索</button>
+            <button class="btn secondary" data-action="nav-import">导入简历</button>
+            <button class="btn secondary" data-action="open-export-modal">导出选中</button>
+          </div>
         </div>
         <div class="toolbar" style="margin-bottom:0; padding:0; border:0; box-shadow:none; background:transparent;">
-          <input class="input wide" value="搜索公司、职位、专业、学校、行业、技能等关键词" />
-          <input class="input" value="期望城市（如：北京、上海、深圳）" />
-          <input class="input" value="职位" />
-          <button class="btn primary">搜索</button>
-          <button class="btn secondary">导入简历</button>
-          <button class="btn secondary">导出选中</button>
-          <div class="toolbar-note">今日搜索聊天次数：<strong>12</strong></div>
+          <input class="input wide" data-field="candidate-keyword" placeholder="搜索公司、职位、专业、学校、行业、技能等关键词" />
+          <input class="input" data-field="candidate-city" placeholder="期望城市（如：北京、上海、深圳）" />
+          <input class="input" data-field="candidate-status" placeholder="职位" />
+          <div class="toolbar-note">今日搜索聊天次数：<strong data-candidate-search-note>0</strong></div>
         </div>
       </section>
 
@@ -136,7 +140,7 @@
                     <span class="skill-tag">其他过滤条件</span>
                   </div>
                 </div>
-                <span class="chip success">保存快捷搜索</span>
+                <button class="chip success" data-action="open-search-preset-modal">保存快捷搜索</button>
               </div>
             </div>
           </div>
@@ -163,107 +167,537 @@
             <div>活跃 / 操作</div>
           </div>
 
-          <div class="table-row">
-            <div><input type="checkbox" aria-label="选择张三" /></div>
+          <div class="table-row" data-candidate-empty>
+            <div><input type="checkbox" aria-label="候选人空状态" disabled /></div>
             <div>
               <div class="row-title">
                 <div class="avatar-sm"></div>
                 <div>
-                  <strong>张三</strong>
-                  <div class="row-sub">本科 · 28岁 · 3-5年</div>
+                  <strong>暂无候选人数据</strong>
+                  <div class="row-sub">候选人列表来自数据库记录。</div>
                 </div>
               </div>
-              <div class="skills">
-                <span class="skill-tag">Java</span>
-                <span class="skill-tag">Spring Boot</span>
-                <span class="skill-tag">MySQL</span>
-              </div>
             </div>
-            <div>教育背景 / 工作经历</div>
-            <div>Java开发工程师</div>
-            <div>北京</div>
-            <div class="mono">15-20K</div>
-            <div>智联招聘</div>
-            <div><span class="state active">激活</span></div>
+            <div>姓名 / 职位</div>
+            <div>城市 / 联系</div>
+            <div>状态 / 来源</div>
+            <div class="mono">--</div>
+            <div>--</div>
+            <div><span class="state active">待同步</span></div>
             <div>
-              <div class="row-sub">2 小时前</div>
-              <div class="table-actions" style="margin-top:8px;">
-                <button class="btn-sm primary">详情</button>
-              </div>
+              <div class="row-sub">--</div>
             </div>
           </div>
 
-          <div class="table-row">
-            <div><input type="checkbox" aria-label="选择李四" /></div>
-            <div>
-              <div class="row-title">
-                <div class="avatar-sm"></div>
-                <div>
-                  <strong>李四</strong>
-                  <div class="row-sub">本科 · 25岁 · 1-3年</div>
-                </div>
-              </div>
-              <div class="skills">
-                <span class="skill-tag">Vue</span>
-                <span class="skill-tag">React</span>
-                <span class="skill-tag">TypeScript</span>
-              </div>
-            </div>
-            <div>前端开发工程师</div>
-            <div>上海</div>
-            <div class="mono">10-15K</div>
-            <div>猎聘网</div>
-            <div><span class="state locked">锁定</span></div>
-            <div>
-              <div class="row-sub">1 天前</div>
-              <div class="table-actions" style="margin-top:8px;">
-                <button class="btn-sm primary">详情</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="table-row">
-            <div><input type="checkbox" aria-label="选择王五" /></div>
-            <div>
-              <div class="row-title">
-                <div class="avatar-sm"></div>
-                <div>
-                  <strong>王五</strong>
-                  <div class="row-sub">硕士 · 32岁 · 5-10年</div>
-                </div>
-              </div>
-              <div class="skills">
-                <span class="skill-tag">Java</span>
-                <span class="skill-tag">分布式</span>
-                <span class="skill-tag">Kubernetes</span>
-              </div>
-            </div>
-            <div>技术经理</div>
-            <div>深圳</div>
-            <div class="mono">20K以上</div>
-            <div>58招聘</div>
-            <div><span class="state released">释放</span></div>
-            <div>
-              <div class="row-sub">3 天前</div>
-              <div class="table-actions" style="margin-top:8px;">
-                <button class="btn-sm primary">详情</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="table-foot">
+          <div class="table-foot" style="display:flex; justify-content:space-between; align-items:center;">
             <div class="legend">
               <span class="legend-item"><span class="legend-dot new"></span>新入库</span>
               <span class="legend-item"><span class="legend-dot active"></span>激活</span>
               <span class="legend-item"><span class="legend-dot locked"></span>锁定</span>
               <span class="legend-item"><span class="legend-dot released"></span>释放</span>
             </div>
-            <div>共 8 条记录 · 每页 10 条</div>
+            <div style="display:flex; align-items:center; gap:12px; margin-left:auto;">
+              <span data-candidate-foot>共 0 条记录</span>
+              <div class="pagination-buttons" style="display:flex; align-items:center; gap:6px;">
+                <button class="btn small" data-action="prev-page" style="padding:2px 8px; font-size:12px; height:auto; line-height:1.2;">上一页</button>
+                <span data-page-indicator style="font-size:13px; font-weight:500; min-width:48px; text-align:center; display:inline-block;">1 / 1</span>
+                <button class="btn small" data-action="next-page" style="padding:2px 8px; font-size:12px; height:auto; line-height:1.2;">下一页</button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
+
+      <section class="grid-2 page-section">
+        <div class="panel">
+          <div class="section-head">
+            <div>
+              <h3>候选人跟踪</h3>
+              <div class="section-sub">推荐、面试、薪资、入职的真实跟踪明细。</div>
+            </div>
+          </div>
+          <div class="list" data-tracking-events>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">推荐事件</div><div class="item-meta">候选人状态、推荐岗位和推荐人会写入跟踪表</div></div><span class="chip primary">跟踪</span></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="section-head">
+            <div>
+              <h3>面试 / 薪资 / 入职</h3>
+              <div class="section-sub">按候选人查看生命周期内的后续事件。</div>
+            </div>
+          </div>
+          <div class="list" data-lifecycle-events>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">面试记录</div><div class="item-meta">第 1 轮、面试结果、面试官、时间</div></div><span class="chip success">面试</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">薪资记录</div><div class="item-meta">期望薪资、offer 薪资、服务状态</div></div><span class="chip warning">薪资</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">入职记录</div><div class="item-meta">公司、岗位、入职日期、入职状态</div></div><span class="chip neutral">入职</span></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <h3>导出历史</h3>
+            <div class="section-sub">查看候选人导出的真实记录。</div>
+          </div>
+        </div>
+        <div class="list" data-export-history>
+          <div class="list-item"><div class="item-meta">导出记录来自数据库，可按候选人回看。</div></div>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <h3>快捷搜索记录</h3>
+            <div class="section-sub">保存过的筛选条件可重复使用。</div>
+          </div>
+        </div>
+        <div class="list" data-search-presets>
+          <div class="list-item"><div class="item-meta">快捷搜索记录来自数据库，可重复使用。</div></div>
+        </div>
+      </section>
+
+      <div class="modal" data-export-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>简历导出</h3>
+              <div class="section-sub">选择客户、项目、岗位和格式后确认导出，系统会生成带水印的导出记录。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-export-modal">取消</button>
+              <button class="btn primary" data-action="confirm-export-upload">确认导出</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>导出参数</h3>
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">候选人</div><div class="item-meta">选择要导出的候选人</div></div></div><select class="input" data-export-candidate></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">客户公司</div><div class="item-meta">选择本次导出的客户公司</div></div></div><select class="input" data-export-company></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">项目</div><div class="item-meta">选择本次导出的项目</div></div></div><select class="input" data-export-project></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">岗位</div><div class="item-meta">选择本次导出的岗位</div></div></div><select class="input" data-export-position></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">格式</div><div class="item-meta">Word 或 PDF</div></div></div><select class="input" data-export-format><option value="PDF">PDF</option><option value="Word">Word</option></select></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>导出历史</h3>
+              <div class="list" data-export-history-modal>
+                <div class="list-item"><div class="item-meta">导出记录来自数据库，可按候选人回看。</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-search-preset-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:680px; margin:10vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>保存快捷搜索</h3>
+              <div class="section-sub">给当前筛选条件起一个名字，方便后面重复使用。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-search-preset-modal">取消</button>
+              <button class="btn primary" data-action="confirm-search-preset-upload">确认保存</button>
+            </div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">预设名称</div><div class="item-meta">用于在列表中识别这组条件</div></div></div><input class="input" data-search-preset-name /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">当前条件</div><div class="item-meta">会保存关键词、城市和职位条件</div></div></div><div class="item-meta" data-search-preset-summary>关键词：全部 · 城市：全部 · 职位：全部</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-candidate-detail-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:840px; margin:8vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3 data-candidate-detail-title>候选人详情</h3>
+              <div class="section-sub" data-candidate-detail-sub>查看候选人的真实数据、状态和后续动作。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-candidate-detail-modal">关闭</button>
+              <button class="btn" data-action="toggle-candidate-lock">锁定 / 释放</button>
+              <button class="btn" data-action="open-candidate-salary-modal">薪资记录</button>
+              <button class="btn" data-action="open-candidate-employment-modal">入职状态</button>
+              <button class="btn" data-action="open-candidate-followup-modal">随访记录</button>
+              <button class="btn primary" data-action="open-candidate-mail-modal">发送邮件</button>
+            </div>
+          </div>
+        <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta" data-candidate-detail-name>--</div></div><span class="chip primary">基础</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">基本信息</div><div class="item-meta" data-candidate-detail-basic>--</div></div><span class="chip primary">基础</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta" data-candidate-detail-salary>--</div></div><span class="chip neutral">期望</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta" data-candidate-detail-phone>--</div></div><span class="chip neutral">联系</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">城市</div><div class="item-meta" data-candidate-detail-city>--</div></div><span class="chip success">地区</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div><div class="item-meta" data-candidate-detail-title2>--</div></div><span class="chip warning">岗位</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta" data-candidate-detail-status>--</div></div><span class="chip neutral">状态</span></div></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>后续动作</h3>
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">锁定 / 释放</div><div class="item-meta">从详情窗中直接流转候选人状态。</div></div><span class="chip primary">真实操作</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">推荐 / 面试</div><div class="item-meta">后续可继续在推荐和面试模块中推进。</div></div><span class="chip success">流程</span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-candidate-salary-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:10vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>薪资记录</h3>
+              <div class="section-sub">填写候选人的薪资跟踪信息并保存到数据库。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-candidate-salary-modal">取消</button>
+              <button class="btn primary" data-action="confirm-candidate-salary">确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta">例如：20k-30k</div></div></div><input class="input" data-candidate-salary-expected /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">Offer 薪资</div><div class="item-meta">例如：25k</div></div></div><input class="input" data-candidate-salary-offered /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">服务状态</div><div class="item-meta">未进行 / 进行中 / 已完成</div></div></div><select class="input" data-candidate-salary-status><option value="未进行">未进行</option><option value="进行中">进行中</option><option value="已完成">已完成</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">备注</div><div class="item-meta">补充跟踪说明</div></div></div><textarea class="input" rows="5" data-candidate-salary-note></textarea></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>保存后</h3>
+              <div class="list"><div class="list-item"><div class="item-meta">会写入薪资记录表，并刷新候选人生命周期区块。</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-candidate-employment-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:10vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>入职状态</h3>
+              <div class="section-sub">填写候选人入职状态并保存到数据库。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-candidate-employment-modal">取消</button>
+              <button class="btn primary" data-action="confirm-candidate-employment">确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">已入职 / 未入职</div></div></div><select class="input" data-candidate-employment-status><option value="已入职">已入职</option><option value="未入职">未入职</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">公司名称</div><div class="item-meta">已入职时填写</div></div></div><input class="input" data-candidate-employment-company /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">岗位名称</div><div class="item-meta">录用岗位</div></div></div><input class="input" data-candidate-employment-position /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">入职日期</div><div class="item-meta">日期时间</div></div></div><input class="input" type="datetime-local" data-candidate-employment-onboard /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">备注</div><div class="item-meta">未入职原因或证明文件说明</div></div></div><textarea class="input" rows="5" data-candidate-employment-note></textarea></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>保存后</h3>
+              <div class="list"><div class="list-item"><div class="item-meta">会写入入职状态记录，并刷新候选人生命周期区块。</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-candidate-followup-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:10vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>随访记录</h3>
+              <div class="section-sub">仅已录用候选人可以添加随访记录。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-candidate-followup-modal">取消</button>
+              <button class="btn primary" data-action="confirm-candidate-followup">确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">随访时间</div><div class="item-meta">系统记录时间</div></div></div><input class="input" type="datetime-local" data-candidate-followup-time /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">随访内容</div><div class="item-meta">记录跟进细节</div></div></div><textarea class="input" rows="7" data-candidate-followup-content></textarea></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>随访历史</h3>
+              <div class="list" data-followup-block>
+                <div class="list-item"><div class="item-meta">保存后会显示真实随访记录。</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-candidate-mail-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:840px; margin:8vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3 data-candidate-mail-title>发送邮件</h3>
+              <div class="section-sub">确认邮件地址、主题、正文和附件后发送，系统会写入发送记录。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-candidate-mail-modal">取消</button>
+              <button class="btn primary" data-action="confirm-candidate-mail">确认发送</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">收件邮箱</div><div class="item-meta">客户公司的邮箱</div></div></div><input class="input" data-candidate-mail-to /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">邮件主题</div><div class="item-meta">求职者姓名-岗位名</div></div></div><input class="input" data-candidate-mail-subject /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">附件名</div><div class="item-meta">求职者姓名-岗位名.pdf</div></div></div><input class="input" data-candidate-mail-attachment /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">邮件正文</div><div class="item-meta">自动生成候选人信息、轮次、日期等摘要</div></div></div><textarea class="input" rows="7" data-candidate-mail-body></textarea></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>发送历史</h3>
+              <div class="list" data-mail-history>
+                <div class="list-item"><div class="item-meta">发送后会写入邮件发送记录。</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-candidate-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:840px; margin:8vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>编辑候选人</h3>
+              <div class="section-sub">姓名不可修改，保存后会写入候选人表并刷新列表。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-candidate-edit-modal">取消</button>
+              <button class="btn primary" data-action="confirm-candidate-edit">确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">不可修改</div></div></div><input class="input" data-candidate-edit-name readonly /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta">联系方式</div></div></div><input class="input" data-candidate-edit-phone /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta">可选</div></div></div><input class="input" data-candidate-edit-email /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div><div class="item-meta">现任岗位</div></div></div><input class="input" data-candidate-edit-title /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">城市</div><div class="item-meta">期望或所在城市</div></div></div><input class="input" data-candidate-edit-city /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">激活 / 锁定 / 释放</div></div></div><select class="input" data-candidate-edit-status><option value="激活">激活</option><option value="锁定">锁定</option><option value="释放">释放</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta">页面创建 / 导入 / 推荐</div></div></div><input class="input" data-candidate-edit-source /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-candidate-create-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:840px; margin:8vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>新建候选人</h3>
+              <div class="section-sub">填写基础信息后确认保存，系统会真实写入候选人表。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-candidate-create-modal">取消</button>
+              <button class="btn primary" data-action="confirm-candidate-create">确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">候选人真实姓名</div></div></div><input class="input" data-candidate-name /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta">用于联系</div></div></div><input class="input" data-candidate-phone /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta">可选</div></div></div><input class="input" data-candidate-email /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div><div class="item-meta">现任岗位</div></div></div><input class="input" data-candidate-title /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">城市</div><div class="item-meta">期望或所在城市</div></div></div><input class="input" data-candidate-city-create /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta">手动创建 / 导入 / 推荐</div></div></div><input class="input" data-candidate-source value="页面创建" /></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>保存说明</h3>
+              <div class="list"><div class="list-item"><div class="item-meta">确认后会写入候选人表并刷新当前列表与快照。</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-candidate-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:620px; margin:12vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>候选人状态确认</h3><div class="section-sub">确认后才会执行锁定或释放。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-candidate-action-modal">取消</button><button class="btn primary" data-action="confirm-candidate-action">确认执行</button></div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-candidate-action-title>等待操作</div><div class="item-meta" data-candidate-action-desc>点击列表或详情按钮后会在这里确认。</div></div><span class="chip warning">确认</span></div></div>
+          </div>
+        </div>
+      </div>
     `;
-    window.addEventListener('DOMContentLoaded', () => renderApp());
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      window.candidatesPageState = {
+        list: [],
+        currentPage: 1,
+        pageSize: 10,
+        render() {
+          const total = this.list.length;
+          const totalPages = Math.max(1, Math.ceil(total / this.pageSize));
+          if (this.currentPage > totalPages) this.currentPage = totalPages;
+          if (this.currentPage < 1) this.currentPage = 1;
+
+          const start = (this.currentPage - 1) * this.pageSize;
+          const end = start + this.pageSize;
+          const pageItems = this.list.slice(start, end);
+
+          const totalNode = document.querySelector('[data-candidate-total]');
+          const newNode = document.querySelector('[data-candidate-new]');
+          const searchNode = document.querySelector('[data-candidate-search]');
+          const lockedNode = document.querySelector('[data-candidate-locked]');
+          if (totalNode) totalNode.textContent = String(total);
+          if (newNode) newNode.textContent = String(this.list.filter(i => String(i.status).includes('新') || String(i.status).includes('激活')).length);
+          if (lockedNode) lockedNode.textContent = String(this.list.filter(i => i.locked).length);
+
+          const footNode = document.querySelector('[data-candidate-foot]');
+          const pageIndicator = document.querySelector('[data-page-indicator]');
+          if (footNode) footNode.textContent = `共 ${total} 条记录`;
+          if (pageIndicator) pageIndicator.textContent = `${this.currentPage} / ${totalPages}`;
+
+          const table = document.querySelector('.table-card');
+          if (table) {
+            table.querySelectorAll('.table-row').forEach(row => row.remove());
+            
+            const rows = pageItems.map(i => {
+              const basicInfo = [
+                i.gender,
+                i.age ? i.age + '岁' : '',
+                i.education,
+                i.experience_years ? i.experience_years + '年' : ''
+              ].filter(Boolean).join(' / ') || '--';
+
+              return `
+                <div class="table-row">
+                  <div><input type="checkbox" aria-label="选择${i.name}" /></div>
+                  <div>
+                    <div class="row-title">
+                      <div class="avatar-sm"></div>
+                      <div>
+                        <strong>${i.name || ''}</strong>
+                        <div class="row-sub">${i.city || ''} · ${i.current_title || ''}</div>
+                      </div>
+                    </div>
+                    <div class="skills">
+                      <span class="skill-tag">${i.source || '来源'}</span>
+                      <span class="skill-tag">${i.locked ? '已锁定' : '未锁定'}</span>
+                    </div>
+                  </div>
+                  <div>${basicInfo}</div>
+                  <div>${i.current_title || '--'}</div>
+                  <div>${i.city || '--'}</div>
+                  <div class="mono">${i.expected_salary || '--'}</div>
+                  <div>${i.source || '--'}</div>
+                  <div><span class="state ${i.locked ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
+                  <div>
+                    <div class="row-sub">${i.created_at || ''}</div>
+                    <div class="table-actions" style="margin-top:8px;">
+                      <button class="btn-sm primary" data-action="view-detail" data-id="${i.id}" data-title="${i.name}">详情</button>
+                      <button class="btn-sm" data-action="edit-candidate" data-id="${i.id}">编辑</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('') || `<div class="table-row"><div><input type="checkbox" aria-label="候选人空状态" disabled /></div><div><div class="row-title"><div class="avatar-sm"></div><div><strong>暂无候选人数据</strong><div class="row-sub">没有符合条件的候选人数据。</div></div></div></div><div>--</div><div>--</div><div>--</div><div class="mono">--</div><div>--</div><div><span class="state active">无数据</span></div><div><div class="row-sub">--</div></div></div>`;
+            
+            const head = table.querySelector('.table-head');
+            if (head) {
+              head.insertAdjacentHTML('afterend', rows);
+            }
+          }
+        }
+      };
+
+      try {
+        window.candidatesPageState.list = await window.hrApi.candidates();
+        const searchNode = document.querySelector('[data-candidate-search]');
+        if (searchNode) searchNode.textContent = String((await window.hrApi.searchPresets()).length);
+        
+        window.candidatesPageState.render();
+      } catch (err) { console.warn(err); }
+
+      document.addEventListener('click', (e) => {
+        const prevBtn = e.target.closest('[data-action="prev-page"]');
+        if (prevBtn) {
+          if (window.candidatesPageState.currentPage > 1) {
+            window.candidatesPageState.currentPage--;
+            window.candidatesPageState.render();
+          }
+          return;
+        }
+        const nextBtn = e.target.closest('[data-action="next-page"]');
+        if (nextBtn) {
+          const totalPages = Math.ceil(window.candidatesPageState.list.length / window.candidatesPageState.pageSize);
+          if (window.candidatesPageState.currentPage < totalPages) {
+            window.candidatesPageState.currentPage++;
+            window.candidatesPageState.render();
+          }
+          return;
+        }
+      });
+
+      try {
+        const selectedCandidateId = Number(document.body.dataset.candidateId || 0);
+        const candidates = await window.hrApi.candidates();
+        const candidateId = selectedCandidateId || candidates[0]?.id || 0;
+        if (!candidateId) throw new Error('没有可用候选人');
+        const tracking = await window.hrApi.candidateTrackingEvents({ candidate_id: candidateId });
+        const trackingBox = document.querySelector('[data-tracking-events]');
+        if (trackingBox) trackingBox.innerHTML = tracking.slice(0, 3).map(e => `<div class="list-item"><div class="item-top"><div><div class="item-title">${e.event_type}</div><div class="item-meta">${e.summary}</div></div><span class="chip primary">${e.status || '事件'}</span></div></div>`).join('');
+      } catch (err) { console.warn(err); }
+      try {
+        const selectedCandidateId = Number(document.body.dataset.candidateId || 0);
+        const candidates = await window.hrApi.candidates();
+        const candidateId = selectedCandidateId || candidates[0]?.id || 0;
+        if (!candidateId) throw new Error('没有可用候选人');
+        const exports = await window.hrApi.exportRecords({ candidate_id: candidateId });
+        const history = document.querySelector('[data-export-history]');
+        if (history) history.innerHTML = exports.map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">${r.file_name}</div><div class="item-meta">${r.company_name} · ${r.project_name} · ${r.position_name}</div><div class="item-meta mono">${r.format} · ${r.created_at}</div></div><span class="chip ${r.watermarked ? 'success' : 'neutral'}">${r.watermarked ? '带水印' : '无水印'}</span></div></div>`).join('');
+      } catch (err) { console.warn(err); }
+      try {
+        const selectedCandidateId = Number(document.body.dataset.candidateId || 0);
+        const candidates = await window.hrApi.candidates();
+        const candidateId = selectedCandidateId || candidates[0]?.id || 0;
+        if (!candidateId) throw new Error('没有可用候选人');
+        const interview = await window.hrApi.interviewRecords({ candidate_id: candidateId });
+        const salary = await window.hrApi.salaryRecords({ candidate_id: candidateId });
+        const employment = await window.hrApi.employmentRecords({ candidate_id: candidateId });
+        const followUps = await window.hrApi.candidateFollowUpRecords({ candidate_id: candidateId });
+        const lifecycle = document.querySelector('[data-lifecycle-events]');
+        if (lifecycle) {
+          const items = [];
+          if (interview[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${interview[0].round_name}</div><div class="item-meta">${interview[0].result} · ${interview[0].interviewer}</div></div><span class="chip success">面试</span></div></div>`);
+          if (salary[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">薪资</div><div class="item-meta">${salary[0].expected_salary} / ${salary[0].offered_salary}</div></div><span class="chip warning">${salary[0].service_status}</span></div></div>`);
+          if (employment[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${employment[0].company_name}</div><div class="item-meta">${employment[0].position_name} · ${employment[0].status}</div></div><span class="chip neutral">入职</span></div></div>`);
+          if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已录用</span></div></div>`);
+          lifecycle.innerHTML = items.join('');
+        }
+        const followupBlock = document.querySelector('[data-followup-block]');
+        if (followupBlock) {
+          followupBlock.innerHTML = followUps.map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.follow_up_time || item.created_at}</div><div class="item-meta">${item.content}</div></div><span class="chip primary">${item.status}</span></div></div>`).join('');
+        }
+      } catch (err) { console.warn(err); }
+      try {
+        const presets = await window.hrApi.searchPresets();
+        const list = document.querySelector('[data-search-presets]');
+        if (list) {
+          list.innerHTML = presets.slice(0, 5).map(p => `<div class="list-item"><div class="item-top"><div><div class="item-title">${p.name}</div><div class="item-meta">${p.keyword || '全部关键词'} · ${p.city || '全部城市'} · ${p.status || '全部状态'}</div></div><span class="chip primary">${p.created_by}</span></div></div>`).join('');
+        }
+      } catch (err) { console.warn(err); }
+    });
   </script>
 </body>
 </html>

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>通知提醒</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const renderRows = (items) => items.map((item) => `
+      <div class="list-item ${item.read ? '' : 'soft'}">
+        <div class="item-top">
+          <div>
+            <div class="item-title">${item.title}</div>
+            <div class="item-meta">${item.type || '通知'} · ${item.user || ''}</div>
+            <div class="item-meta mono">${item.created_at || ''}${item.target_path ? ` · 跳转：${item.target_path}` : ''}</div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span class="chip ${item.read ? 'neutral' : 'primary'}">${item.read ? '已读' : '未读'}</span>
+            <button class="btn-sm" data-action="view-notification" data-id="${item.id}" data-target="${item.target_path || ''}">查看</button>
+            ${item.read ? '' : `<button class="btn-sm primary" data-action="read-notification" data-id="${item.id}">标记已读</button>`}
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    const state = { items: [] };
+
+    function readFilter(selector) {
+      return document.querySelector(selector)?.value?.trim?.() || '';
+    }
+
+    function buildParams() {
+      const params = {};
+      const type = readFilter('[data-notice-type]');
+      const read = readFilter('[data-notice-read]');
+      const keyword = readFilter('[data-notice-keyword]');
+      const from = readFilter('[data-notice-from]');
+      const to = readFilter('[data-notice-to]');
+      if (type) params.type = type;
+      if (read === 'true') params.read = 'true';
+      if (read === 'false') params.read = 'false';
+      if (keyword) params.keyword = keyword;
+      if (from) params.date_from = from;
+      if (to) params.date_to = to;
+      return params;
+    }
+
+    async function loadNotifications() {
+      const items = await window.hrApi.notifications(buildParams());
+      state.items = items;
+      document.querySelector('[data-notice-total]').textContent = String(items.length);
+      document.querySelector('[data-notice-unread]').textContent = String(items.filter((item) => !item.read).length);
+      document.querySelector('[data-notice-types]').textContent = String(new Set(items.map((item) => item.type || '通知')).size);
+      document.querySelector('[data-notification-list]').innerHTML = items.length ? renderRows(items) : '<div class="list-item"><div class="item-meta">当前筛选条件下没有通知。</div></div>';
+    }
+
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">通知总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-notice-total>0</div><div class="metric-label">当前筛选结果</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">未读通知</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-notice-unread>0</div><div class="metric-label">需要处理的消息</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">通知类型</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-notice-types>0</div><div class="metric-label">导入 / 项目 / 评价 / 质保 / 系统</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">跳转目标</div></div><div class="metric-icon">◌</div></div><div class="metric-value">直达</div><div class="metric-label">点击可回到业务页面</div></div>
+      </section>
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <h3>通知列表</h3>
+            <div class="section-sub">支持按类型、已读状态、关键词和时间范围筛选，查看后可直接跳转业务页。</div>
+          </div>
+          <div class="hero-actions" style="margin-top:0">
+            <button class="btn secondary" data-action="refresh-notifications">刷新</button>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="list">
+              <div class="list-item"><div class="item-top"><div><div class="item-title">通知类型</div><div class="item-meta">按导入、评价、系统等类型筛选</div></div></div><input class="input" data-notice-type placeholder="例如 导入" /></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">已读状态</div><div class="item-meta">只看已读或未读</div></div></div>
+                <select class="input" data-notice-read>
+                  <option value="">全部</option>
+                  <option value="false">未读</option>
+                  <option value="true">已读</option>
+                </select>
+              </div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">关键词</div><div class="item-meta">匹配标题、类型、跳转地址</div></div></div><input class="input" data-notice-keyword placeholder="例如 简历导入" /></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">开始时间</div><div class="item-meta">ISO 时间或日期</div></div></div><input class="input" type="datetime-local" data-notice-from /></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">结束时间</div><div class="item-meta">ISO 时间或日期</div></div></div><input class="input" type="datetime-local" data-notice-to /></div>
+            </div>
+          </div>
+          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="list" data-notice-preview>
+              <div class="list-item"><div class="item-meta">选择一条通知后会在这里显示详情。</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="list" data-notification-list>
+          <div class="list-item"><div class="item-meta">通知列表来自数据库。</div></div>
+        </div>
+      </section>`;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      await loadNotifications().catch((err) => {
+        const list = document.querySelector('[data-notification-list]');
+        if (list) list.innerHTML = `<div class="list-item"><div class="item-meta">加载失败：${err.message || err}</div></div>`;
+      });
+    });
+
+    document.addEventListener('click', async (event) => {
+      const btn = event.target.closest('[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'refresh-notifications') {
+        await loadNotifications().catch((err) => console.warn(err));
+        showToast('通知已刷新');
+      }
+      if (btn.dataset.action === 'read-notification') {
+        try {
+          const item = await window.hrApi.readNotification(btn.dataset.id);
+          await loadNotifications();
+          if (item.target_path) location.href = item.target_path;
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+      if (btn.dataset.action === 'view-notification') {
+        const current = state.items.find((item) => String(item.id) === String(btn.dataset.id));
+        const preview = document.querySelector('[data-notice-preview]');
+        if (!current || !preview) return;
+        preview.innerHTML = `
+          <div class="list-item"><div class="item-top"><div><div class="item-title">${current.title}</div><div class="item-meta">${current.type} · ${current.user}</div></div><span class="chip ${current.read ? 'neutral' : 'primary'}">${current.read ? '已读' : '未读'}</span></div></div>
+          <div class="list-item"><div class="item-meta">${current.target_path || '暂无跳转地址'}</div></div>
+          <div class="list-item"><div class="item-meta mono">${current.created_at}</div></div>
+        `;
+        if (current.target_path) location.href = current.target_path;
+      }
+    });
+
+    let timer = null;
+    document.addEventListener('input', (event) => {
+      if (!event.target.closest('[data-notice-type], [data-notice-read], [data-notice-keyword], [data-notice-from], [data-notice-to]')) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => loadNotifications().catch((err) => console.warn(err)), 250);
+    });
+  </script>
+</body>
+</html>

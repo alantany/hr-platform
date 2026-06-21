@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+changed_files="$(git diff --cached --name-only)"
+
+if printf '%s\n' "$changed_files" | grep -Eq '^(app\.js|styles\.css|src/pages/|outputs/|task_plan\.md|findings\.md|AGENTS\.md)'; then
+  if ! printf '%s\n' "$changed_files" | grep -q '^progress\.md$'; then
+    echo "pre-commit: progress.md was not staged."
+    echo "Run: ${repo_root}/scripts/update-progress.sh"
+    echo "Then stage progress.md before committing."
+    exit 1
+  fi
+fi

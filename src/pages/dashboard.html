@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>首页 - 招聘管理平台</title>
   <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
   <script defer src="../../app.js"></script>
 </head>
 <body>
@@ -17,42 +18,52 @@
           <h2>把客户需求、项目推进和候选人流转放进同一张工作台里。</h2>
           <p>这里展示的不是花哨大屏，而是猎头交付最关键的经营状态：今天推进了多少候选人、哪些项目最紧急、哪个团队正在失速。</p>
           <div class="hero-actions">
-            <button class="btn primary">查看项目进度</button>
-            <button class="btn">进入求职者数据池</button>
-            <button class="btn warn">查看待办 3</button>
+            <button class="btn primary" data-action="nav-projects">查看项目进度</button>
+            <button class="btn" data-action="nav-candidates">进入求职者数据池</button>
+            <button class="btn warn" data-action="nav-logs">查看待办</button>
           </div>
         </div>
         <div class="panel">
           <h3>今日概览</h3>
           <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title">紧急岗位</div><div class="item-meta">Java高级开发工程师仍需快速匹配简历</div></div><span class="tag orange">2 小时</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">质保提醒</div><div class="item-meta">孙七的质保期即将到期</div></div><span class="tag red">3 天</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">系统通知</div><div class="item-meta">本月统计报告已生成</div></div><span class="tag blue">查看</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">紧急岗位</div><div class="item-meta">根据真实项目与岗位数据自动展示</div></div><span class="tag orange" data-dashboard-urgent-tag>自动</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">质保提醒</div><div class="item-meta">根据真实质保规则自动展示</div></div><span class="tag red" data-dashboard-warranty-tag>自动</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">系统通知</div><div class="item-meta">根据真实通知列表自动展示</div></div><span class="tag blue" data-dashboard-notice-tag>自动</span></div></div>
           </div>
         </div>
       </section>
       <section class="stats-grid">
-        <div class="stat-card"><div class="stat-value">12,580</div><div class="stat-label">求职者总数</div><div class="stat-delta">↑ 3.2%</div></div>
-        <div class="stat-card"><div class="stat-value">368</div><div class="stat-label">客户公司数</div><div class="stat-delta">↑ 5 本月新增</div></div>
-        <div class="stat-card"><div class="stat-value">1,256</div><div class="stat-label">总推荐数</div><div class="stat-delta">↑ 12.5%</div></div>
-        <div class="stat-card"><div class="stat-value">23</div><div class="stat-label">待处理需求</div><div class="stat-delta" style="color:var(--accent)">需关注</div></div>
-        <div class="stat-card"><div class="stat-value">28</div><div class="stat-label">总操作员数</div><div class="stat-delta">活跃 24 人</div></div>
+        <div class="stat-card"><div class="stat-value" data-stat-card="candidates">0</div><div class="stat-label">求职者总数</div><div class="stat-delta">来自数据库统计</div></div>
+        <div class="stat-card"><div class="stat-value" data-stat-card="companies">0</div><div class="stat-label">客户公司数</div><div class="stat-delta">来自数据库统计</div></div>
+        <div class="stat-card"><div class="stat-value" data-stat-card="recommendations">0</div><div class="stat-label">总推荐数</div><div class="stat-delta">来自数据库统计</div></div>
+        <div class="stat-card"><div class="stat-value" data-stat-card="pending">0</div><div class="stat-label">待处理需求</div><div class="stat-delta" style="color:var(--accent)">来自数据库统计</div></div>
+        <div class="stat-card"><div class="stat-value" data-stat-card="users">0</div><div class="stat-label">总操作员数</div><div class="stat-delta">来自数据库统计</div></div>
       </section>
       <section class="grid-2 page-section">
         <div class="panel">
           <h3>项目岗位进度</h3>
-          <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title">Java高级开发工程师</div><div class="item-meta">科技有限公司A · 招 3 人 · 已推荐 3 / 3 · 已录用 1</div></div><span class="tag orange">紧急</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">前端高级工程师</div><div class="item-meta">科技有限公司A · 招 2 人 · 已推荐 1 / 2 · 已录用 0</div></div><span class="tag gray">推进中</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">产品经理</div><div class="item-meta">科技有限公司A · 招 2 人 · 已推荐 2 / 2 · 已录用 1</div></div><span class="tag green">完成度高</span></div></div>
+          <div class="list" data-dashboard-project-progress>
+            <div class="list-item"><div class="item-meta">项目推进进度来自数据库。</div></div>
           </div>
         </div>
         <div class="panel">
           <h3>最近操作日志</h3>
-          <div class="timeline">
-            <div class="list-item"><div class="item-top"><div><div class="item-title">张三</div><div class="item-meta">导入简历 · 批量导入 12 份 · 10:30</div></div><span class="tag blue">导入</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">李四</div><div class="item-meta">推荐简历 · 推荐至科技有限公司A · 09:45</div></div><span class="tag green">推荐</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">admin</div><div class="item-meta">修改权限 · 为张三分配项目 · 14:20</div></div><span class="tag gray">管理</span></div></div>
+          <div class="timeline" data-dashboard-audit-logs>
+            <div class="list-item"><div class="item-meta">最近的操作留痕来自审计日志。</div></div>
+          </div>
+        </div>
+      </section>
+      <section class="grid-2 page-section">
+        <div class="panel">
+          <h3>最近推荐</h3>
+          <div class="list" data-recommendation-list>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">暂无推荐记录</div><div class="item-meta">推荐进展来自推荐记录。</div></div><span class="tag blue">推荐</span></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>最近交付</h3>
+          <div class="list" data-delivery-list>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">暂无交付记录</div><div class="item-meta">交付进展来自交付记录。</div></div><span class="tag green">交付</span></div></div>
           </div>
         </div>
       </section>
@@ -60,30 +71,164 @@
         <div class="panel">
           <h3>团队绩效排行</h3>
           <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title">刘主管</div><div class="item-meta">12 人 · 12 家</div></div><span class="tag green">186 次</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">陈主管</div><div class="item-meta">10 人 · 10 家</div></div><span class="tag blue">152 次</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">王主管</div><div class="item-meta">8 人 · 8 家</div></div><span class="tag gray">98 次</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-team-name="1">当前暂无团队排行</div><div class="item-meta" data-team-meta="1">组长维度的推进统计来自统计表。</div></div><span class="tag green" data-team-score="1">0 次</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-team-name="2">当前暂无团队排行</div><div class="item-meta" data-team-meta="2">组长维度的推进统计来自统计表。</div></div><span class="tag blue" data-team-score="2">0 次</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-team-name="3">当前暂无团队排行</div><div class="item-meta" data-team-meta="3">组长维度的推进统计来自统计表。</div></div><span class="tag gray" data-team-score="3">0 次</span></div></div>
           </div>
         </div>
         <div class="panel">
           <h3>客户效果排行</h3>
           <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title">科技有限公司A</div><div class="item-meta">45 人交付 · 92% 通过率 · 4.6 评分</div></div><span class="tag green">Top 1</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">电商平台D</div><div class="item-meta">38 人交付 · 87% 通过率 · 4.3 评分</div></div><span class="tag blue">Top 2</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">网络科技B</div><div class="item-meta">32 人交付 · 81% 通过率 · 4.1 评分</div></div><span class="tag gray">Top 3</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-customer-name="1">当前暂无客户排行</div><div class="item-meta" data-customer-meta="1">客户维度的项目推进情况来自统计表。</div></div><span class="tag green" data-customer-rank="1">Top 1</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-customer-name="2">当前暂无客户排行</div><div class="item-meta" data-customer-meta="2">客户维度的项目推进情况来自统计表。</div></div><span class="tag blue" data-customer-rank="2">Top 2</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-customer-name="3">当前暂无客户排行</div><div class="item-meta" data-customer-meta="3">客户维度的项目推进情况来自统计表。</div></div><span class="tag gray" data-customer-rank="3">Top 3</span></div></div>
           </div>
         </div>
         <div class="panel">
           <h3>我的待办</h3>
           <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title">科技有限公司A-Java高级开发工程师需要紧急匹配简历</div><div class="item-meta">剩余 2 小时 · 2026-05-22 12:00</div></div><span class="tag orange">处理</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">候选人孙七简历质保期即将到期</div><div class="item-meta">剩余 3 天 · 2026-05-22 09:00</div></div><span class="tag red">提醒</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">系统使用统计报告已生成</div><div class="item-meta">2026-05-21 18:00</div></div><span class="tag blue">查看</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无待办</div><div class="item-meta">业务待处理事项来自待办表。</div></div><span class="tag orange">处理</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无待办</div><div class="item-meta">业务待处理事项来自待办表。</div></div><span class="tag red">提醒</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无待办</div><div class="item-meta">业务待处理事项来自待办表。</div></div><span class="tag blue">查看</span></div></div>
           </div>
         </div>
       </section>
+
+      <div class="modal" data-recommendation-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:10vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>推荐状态确认</h3>
+              <div class="section-sub">确认后才会真实更新推荐记录并写入通知。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-recommendation-modal">取消</button>
+              <button class="btn primary" data-action="confirm-recommendation-status">确认保存</button>
+            </div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-recommendation-modal-title>等待选择推荐</div><div class="item-meta" data-recommendation-modal-desc>点击推荐按钮后确认推进状态。</div></div><span class="tag blue">确认</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">推进状态</div><div class="item-meta">客户已收 / 客户未收 / 安排面试 / 拒绝</div></div></div><select class="input" data-recommendation-modal-status><option value="客户已收">客户已收</option><option value="客户未收">客户未收</option><option value="安排面试">安排面试</option><option value="拒绝">拒绝</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">客户反馈</div><div class="item-meta">保存推荐结果追踪记录</div></div></div><textarea class="input" rows="4" data-recommendation-modal-feedback placeholder="填写客户反馈"></textarea></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">客户评语</div><div class="item-meta">补充客户对候选人的评价</div></div></div><textarea class="input" rows="4" data-recommendation-modal-comment placeholder="填写客户评语"></textarea></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">反馈历史</div><div class="item-meta">每次状态变化都会保留记录</div></div></div><div class="list" data-recommendation-feedback-list><div class="list-item"><div class="item-meta">暂无反馈记录。</div></div></div></div>
+          </div>
+        </div>
+      </div>
     `;
-    window.addEventListener('DOMContentLoaded', () => renderApp());
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      try {
+        const summary = await window.hrApi.dashboardSummary();
+        const recommendations = await window.hrApi.recommendations();
+        const app = document.querySelector('#app');
+        if (app && summary) {
+          const statNodes = [
+            { node: app.querySelector('.stats-grid .stat-card:nth-child(1) .stat-value'), value: summary.candidate_count },
+            { node: app.querySelector('.stats-grid .stat-card:nth-child(2) .stat-value'), value: summary.company_count },
+            { node: app.querySelector('.stats-grid .stat-card:nth-child(3) .stat-value'), value: summary.recommendation_count },
+            { node: app.querySelector('.stats-grid .stat-card:nth-child(4) .stat-value'), value: summary.project_count },
+            { node: app.querySelector('.stats-grid .stat-card:nth-child(5) .stat-value'), value: summary.user_count },
+          ];
+          statNodes.forEach(({ node, value }) => { if (node) node.textContent = String(value); });
+          const marker = document.createElement('div');
+          marker.className = 'panel';
+          marker.style.marginTop = '16px';
+          marker.innerHTML = `
+            <h3>业务概览</h3>
+            <div class="list">
+          <div class="list-item"><div class="item-top"><div><div class="item-title">候选人 / 客户 / 项目 / 岗位</div><div class="item-meta">${summary.candidate_count} / ${summary.company_count} / ${summary.project_count} / ${summary.position_count}</div></div><span class="tag blue">概览</span></div></div>
+              <div class="list-item"><div class="item-top"><div><div class="item-title">推荐 / 交付 / 审计</div><div class="item-meta">${summary.recommendation_count} / ${summary.delivery_count} / ${summary.audit_log_count}</div></div><span class="tag green">统计</span></div></div>
+            </div>
+          `;
+          app.querySelector('.content').appendChild(marker);
+        }
+      } catch (err) {
+        console.warn('dashboard api load failed', err);
+      }
+      try {
+        const projects = await window.hrApi.projects();
+        const warranties = await window.hrApi.warrantyRules();
+        const notices = await window.hrApi.notifications();
+        const auditLogs = await window.hrApi.auditLogs();
+        const urgentTag = document.querySelector('[data-dashboard-urgent-tag]');
+        const warrantyTag = document.querySelector('[data-dashboard-warranty-tag]');
+        const noticeTag = document.querySelector('[data-dashboard-notice-tag]');
+        if (urgentTag) urgentTag.textContent = projects.some(p => (p.hiring_count || 0) > 5) ? '自动' : '正常';
+        if (warrantyTag) warrantyTag.textContent = warranties.some(r => Number(r.remind_days || 0) <= 7) ? '自动' : '正常';
+        if (noticeTag) noticeTag.textContent = notices.length ? '自动' : '空';
+        const mainList = document.querySelector('.hero .panel .list');
+        if (mainList) {
+          const urgentProject = projects.find(p => (p.hiring_count || 0) > 5) || projects[0];
+          const warrantyRule = warranties.find(r => Number(r.remind_days || 0) <= 7) || warranties[0];
+          const notice = notices[0];
+          const items = [];
+          if (urgentProject) {
+            items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${urgentProject.name}</div><div class="item-meta">${urgentProject.work_location || '待补充'} · 招聘人数 ${urgentProject.hiring_count || 0}</div></div><span class="tag orange">${(urgentProject.hiring_count || 0) > 5 ? '紧急' : '推进中'}</span></div></div>`);
+          }
+          if (warrantyRule) {
+            items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">质保：${warrantyRule.scope}</div><div class="item-meta">${warrantyRule.months} 个月 · 提前 ${warrantyRule.remind_days} 天提醒</div></div><span class="tag red">${warrantyRule.auto_expire ? '自动' : '手动'}</span></div></div>`);
+          }
+          if (notice) {
+            items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${notice.title}</div><div class="item-meta">${notice.type || '通知'} · ${notice.content || ''}</div></div><span class="tag blue">${notice.read ? '已读' : '未读'}</span></div></div>`);
+          }
+          if (items.length) mainList.innerHTML = items.join('');
+        }
+        const progressList = document.querySelector('[data-dashboard-project-progress]');
+        if (progressList) {
+          progressList.innerHTML = projects.slice(0, 3).map(project => {
+            const ratio = project.hiring_count ? Math.min(100, Math.round(((project.hiring_count || 0) / Math.max(1, (project.hiring_count || 0))) * 100)) : 0;
+            return `<div class="list-item"><div class="item-top"><div><div class="item-title">${project.name}</div><div class="item-meta">${project.work_location || '待补充'} · 招聘人数 ${project.hiring_count || 0} · 级别 ${project.level || 'A'}</div></div><span class="tag ${project.status === '招聘完毕' ? 'green' : 'orange'}">${project.status || '招聘中'}</span></div><div class="item-meta mono">${ratio}%</div></div>`;
+          }).join('') || '<div class="list-item"><div class="item-meta">项目数据来自数据库。</div></div>';
+        }
+        const auditList = document.querySelector('[data-dashboard-audit-logs]');
+        if (auditList) {
+          auditList.innerHTML = auditLogs.slice(0, 3).map(log => `<div class="list-item"><div class="item-top"><div><div class="item-title">${log.actor}</div><div class="item-meta">${log.module} · ${log.action} · ${log.created_at}</div></div><span class="tag ${String(log.module).includes('权限') ? 'gray' : String(log.module).includes('推荐') ? 'green' : 'blue'}">${log.result}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">审计日志来自数据库。</div></div>';
+        }
+        const teamPanel = document.querySelector('.grid-3 .panel:nth-child(1) .list');
+        if (teamPanel) {
+          const teams = Object.values((recommendations || []).reduce((acc, r) => {
+            const key = r.recommender || '未命名';
+            if (!acc[key]) acc[key] = { name: key, total: 0, active: 0 };
+            acc[key].total += 1;
+            if (['客户已收', '安排面试', '已录用'].includes(r.status)) acc[key].active += 1;
+            return acc;
+          }, {})).sort((a, b) => b.total - a.total);
+          teamPanel.innerHTML = teams.slice(0, 3).map((team, idx) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${team.name}</div><div class="item-meta">${team.total} 条推荐 · 活跃 ${team.active} 条</div></div><span class="tag ${idx === 0 ? 'green' : idx === 1 ? 'blue' : 'gray'}">${team.total} 次</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">团队排行来自数据库。</div></div>';
+        }
+        const customerPanel = document.querySelector('.grid-3 .panel:nth-child(2) .list');
+        if (customerPanel) {
+          const customers = Object.values(projects.reduce((acc, p) => {
+            const key = p.company_name;
+            if (!acc[key]) acc[key] = { name: key, total: 0, active: 0 };
+            acc[key].total += 1;
+            if (p.status !== '招聘完毕') acc[key].active += 1;
+            return acc;
+          }, {})).sort((a, b) => b.active - a.active);
+          customerPanel.innerHTML = customers.slice(0, 3).map((customer, idx) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${customer.name}</div><div class="item-meta">${customer.total} 个项目 · 进行中 ${customer.active}</div></div><span class="tag ${idx === 0 ? 'green' : idx === 1 ? 'blue' : 'gray'}">Top ${idx + 1}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">客户排行来自数据库。</div></div>';
+        }
+        const todoPanel = document.querySelector('.grid-3 .panel:last-of-type .list');
+        const todos = await window.hrApi.dashboardTodos();
+        if (todoPanel) {
+          todoPanel.innerHTML = todos.map(todo => `<div class="list-item"><div class="item-top"><div><div class="item-title">${todo.title}</div><div class="item-meta">${todo.meta}</div></div><span class="tag ${todo.color}">${todo.tag}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">待办事项来自数据库。</div></div>';
+        }
+      } catch (err) {
+        console.warn('dashboard top cards load failed', err);
+      }
+      try {
+        const deliveries = await window.hrApi.deliveries();
+        const rList = document.querySelector('[data-recommendation-list]');
+        const dList = document.querySelector('[data-delivery-list]');
+        if (rList) {
+          rList.innerHTML = recommendations.slice(0, 3).map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">候选人 ${r.candidate_id} → 岗位 ${r.position_id}</div><div class="item-meta">${r.recommender} · ${r.status} · ${r.feedback || ''}${r.customer_comment ? ` · ${r.customer_comment}` : ''}</div></div><div class="table-actions"><button class="btn-sm primary" data-action="recommendation-status" data-id="${r.id}" data-status="客户已收">客户已收</button><button class="btn-sm" data-action="recommendation-status" data-id="${r.id}" data-status="客户未收">客户未收</button><button class="btn-sm" data-action="recommendation-status" data-id="${r.id}" data-status="安排面试">安排面试</button><button class="btn-sm" data-action="recommendation-status" data-id="${r.id}" data-status="拒绝">拒绝</button></div></div></div>`).join('');
+        }
+        if (dList) {
+          dList.innerHTML = deliveries.slice(0, 3).map(d => `<div class="list-item"><div class="item-top"><div><div class="item-title">推荐 ${d.recommendation_id}</div><div class="item-meta">${d.delivered_by} · ${d.channel} · ${d.delivered_at}</div></div><span class="tag green">交付</span></div></div>`).join('');
+        }
+      } catch (err) {
+        console.warn('recommendation delivery load failed', err);
+      }
+    });
   </script>
 </body>
 </html>

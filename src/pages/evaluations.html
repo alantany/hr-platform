@@ -1,18 +1,181 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>评价体系</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../app.js"></script></head><body><div id="app"></div><script>
-window.__PAGE_BODY__ = `
-  <section class="metrics">
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">评价总数</div></div><div class="metric-icon">○</div></div><div class="metric-value">128</div><div class="metric-label">过程留痕</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">优秀</div></div><div class="metric-icon">△</div></div><div class="metric-value">76</div><div class="metric-label">高质量评价</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">良好</div></div><div class="metric-icon">▣</div></div><div class="metric-value">36</div><div class="metric-label">正常推进</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">待复盘</div></div><div class="metric-icon">◌</div></div><div class="metric-value">16</div><div class="metric-label">需要再次确认</div></div>
-  </section>
-  <section class="panel">
-    <div class="section-head"><div><h3>评价记录</h3><div class="section-sub">候选人、岗位、轮次三者绑定的过程评分。</div></div></div>
-    <div class="list">
-      <div class="list-item"><div class="item-top"><div><div class="item-title">张三 · Java高级开发工程师 · 第 1 轮</div><div class="item-meta">技术基础扎实，项目经验与岗位匹配度高</div></div><span class="chip success">良好 · 4 分</span></div></div>
-      <div class="list-item"><div class="item-top"><div><div class="item-title">李四 · 前端高级工程师 · 第 1 轮</div><div class="item-meta">前端技术功底扎实，Vue / React 均有经验</div></div><span class="chip primary">优秀 · 5 分</span></div></div>
-    </div>
-  </section>
-`;
-window.addEventListener('DOMContentLoaded', () => renderApp());
-</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>评价体系</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">评价总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-eval-total>0</div><div class="metric-label">过程留痕</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">优秀</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-eval-excellent>0</div><div class="metric-label">高质量评价</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">良好</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-eval-good>0</div><div class="metric-label">正常推进</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">待复盘</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-eval-review>0</div><div class="metric-label">需要再次确认</div></div>
+      </section>
+      <section class="grid-2 page-section">
+        <div class="panel">
+          <h3>评价等级分布</h3>
+          <div class="list" data-eval-grade-summary>
+          <div class="list-item"><div class="item-meta">评价等级分布来自数据库。</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>最近评价追溯</h3>
+          <div class="list" data-eval-history-summary>
+          <div class="list-item"><div class="item-meta">最近评价历史来自数据库。</div></div>
+          </div>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="section-head"><div><h3>评价记录</h3><div class="section-sub">候选人、岗位、轮次三者绑定的过程评分。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-evaluation-modal">新增评价</button><button class="btn" data-action="refresh-page">刷新记录</button></div></div>
+        <div class="list" data-evaluation-list>
+          <div class="list-item"><div class="item-meta">评价记录来自数据库。</div></div>
+        </div>
+      </section>
+
+      <section class="panel page-section">
+        <div class="section-head"><div><h3>评价等级管理</h3><div class="section-sub">仅超级管理员可维护评价等级。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-level-modal">新增等级</button></div></div>
+        <div class="list" data-level-list>
+          <div class="list-item"><div class="item-meta">评价等级来自数据库。</div></div>
+        </div>
+      </section>
+
+      <div class="modal" data-evaluation-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>新增评价</h3>
+              <div class="section-sub">先选择候选人和轮次，再填写等级、分值和备注后确认保存。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-evaluation-modal">取消</button>
+              <button class="btn primary" data-action="confirm-evaluation-upload">确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">候选人</div><div class="item-meta">选择需要评价的候选人</div></div></div><select class="input" data-eval-candidate></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">岗位</div><div class="item-meta">选择对应岗位</div></div></div><select class="input" data-eval-position></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">轮次</div><div class="item-meta">如：第 1 轮 / 第 2 轮</div></div></div><input class="input" data-eval-round placeholder="第 1 轮" /></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">评价等级</div><div class="item-meta">优秀 / 良好 / 一般 / 较差 / 不合格</div></div></div><select class="input" data-eval-grade><option value="优秀" data-score="5">优秀</option><option value="良好" data-score="4" selected>良好</option><option value="一般" data-score="3">一般</option><option value="较差" data-score="2">较差</option><option value="不合格" data-score="1">不合格</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">评分</div><div class="item-meta">1 - 5 分</div></div></div><input class="input" type="number" min="1" max="5" value="4" data-eval-score /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">备注</div><div class="item-meta">填写评价内容</div></div></div><textarea class="input" rows="4" data-eval-content placeholder="请输入评价备注"></textarea></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-level-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:740px; margin:8vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>新增评价等级</h3><div class="section-sub">维护评价等级、分值、颜色和排序。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-level-modal">取消</button><button class="btn primary" data-action="confirm-level-upload">确认保存</button></div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">等级名称</div><div class="item-meta">如：优秀</div></div></div><input class="input" data-level-name /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">分数</div><div class="item-meta">1 - 100</div></div></div><input class="input" type="number" data-level-score /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">说明</div><div class="item-meta">等级解释</div></div></div><textarea class="input" rows="4" data-level-description></textarea></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">颜色</div><div class="item-meta">用于标签展示</div></div></div><input class="input" data-level-color placeholder="green" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">排序</div><div class="item-meta">数字越小越靠前</div></div></div><input class="input" type="number" data-level-sort value="0" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">启用</div><div class="item-meta">是否参与选择</div></div></div><select class="input" data-level-enabled><option value="true">启用</option><option value="false">禁用</option></select></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      document.addEventListener('change', (event) => {
+        const select = event.target.closest('[data-eval-grade]');
+        if (!select) return;
+        const score = Number(select.selectedOptions[0]?.dataset.score || 0);
+        const scoreInput = document.querySelector('[data-eval-score]');
+        if (scoreInput && score) scoreInput.value = String(score);
+      });
+      try {
+        const candidates = await window.hrApi.candidates();
+        const positions = await window.hrApi.positions();
+        const items = await window.hrApi.evaluations();
+        const levels = await window.hrApi.evaluationLevels();
+        document.querySelector('[data-eval-total]').textContent = String(items.length);
+        document.querySelector('[data-eval-excellent]').textContent = String(items.filter(i => i.grade === '优秀').length);
+        document.querySelector('[data-eval-good]').textContent = String(items.filter(i => i.grade === '良好').length);
+        document.querySelector('[data-eval-review]').textContent = String(items.filter(i => i.grade !== '优秀' && i.grade !== '良好').length);
+        const gradeSummary = document.querySelector('[data-eval-grade-summary]');
+        if (gradeSummary) {
+          const grades = ['优秀', '良好', '一般', '较差', '不合格'];
+          gradeSummary.innerHTML = grades.map(grade => {
+            const count = items.filter(item => item.grade === grade).length;
+            return `<div class="list-item"><div class="item-top"><div><div class="item-title">${grade}</div><div class="item-meta">${count} 条评价</div></div><span class="chip ${grade === '优秀' ? 'success' : grade === '良好' ? 'primary' : grade === '一般' ? 'warning' : 'neutral'}">${count}</span></div></div>`;
+          }).join('');
+        }
+        const historySummary = document.querySelector('[data-eval-history-summary]');
+        if (historySummary) {
+          historySummary.innerHTML = items.slice(0, 3).map(item => {
+            const candidate = candidates.find(c => c.id === item.candidate_id);
+            const position = positions.find(p => p.id === item.position_id);
+            return `<div class="list-item"><div class="item-top"><div><div class="item-title">${candidate?.name || `候选人 ${item.candidate_id}`}</div><div class="item-meta">${position?.name || `岗位 ${item.position_id || '--'}`} · ${item.round_name}</div></div><span class="chip success">${item.grade} · ${item.score} 分</span></div><div class="item-meta">${item.content}</div></div>`;
+          }).join('') || '<div class="list-item"><div class="item-meta">评价历史来自数据库。</div></div>';
+        }
+        const list = document.querySelector('[data-evaluation-list]');
+        if (list) {
+          list.innerHTML = items.slice(0, 3).map(i => {
+            const candidate = candidates.find(c => c.id === i.candidate_id);
+            const position = positions.find(p => p.id === i.position_id);
+            return `<div class="list-item"><div class="item-top"><div><div class="item-title">${candidate?.name || `候选人 ${i.candidate_id}`}</div><div class="item-meta">${position?.name || `岗位 ${i.position_id || '--'}`} · ${i.evaluator} · ${i.round_name}</div></div><span class="chip success">${i.grade} · ${i.score} 分</span></div><div class="item-meta">${i.content}</div></div>`;
+          }).join('');
+        }
+        const levelList = document.querySelector('[data-level-list]');
+        if (levelList) {
+          levelList.innerHTML = levels.map(level => `<div class="list-item"><div class="item-top"><div><div class="item-title">${level.name}</div><div class="item-meta">分值 ${level.score} · ${level.description || '无说明'}</div></div><span class="chip ${level.enabled ? 'success' : 'neutral'}">${level.color || 'default'}</span></div></div>`).join('');
+        }
+        document.addEventListener('click', async (event) => {
+          const btn = event.target.closest('[data-action]');
+          if (!btn) return;
+          if (btn.dataset.action === 'open-level-modal') {
+            document.querySelector('[data-level-modal]').style.display = 'block';
+          }
+          if (btn.dataset.action === 'close-level-modal') {
+            document.querySelector('[data-level-modal]').style.display = 'none';
+          }
+          if (btn.dataset.action === 'confirm-level-upload') {
+            const payload = {
+              name: document.querySelector('[data-level-name]').value.trim(),
+              score: Number(document.querySelector('[data-level-score]').value || 0),
+              description: document.querySelector('[data-level-description]').value.trim(),
+              color: document.querySelector('[data-level-color]').value.trim(),
+              sort_order: Number(document.querySelector('[data-level-sort]').value || 0),
+              enabled: document.querySelector('[data-level-enabled]').value === 'true',
+            };
+            if (!payload.name || !payload.score) throw new Error('请先填写等级名称和分数');
+            await window.hrApi.createEvaluationLevel(payload);
+            document.querySelector('[data-level-modal]').style.display = 'none';
+            location.reload();
+          }
+        });
+      } catch (err) {
+        console.warn(err);
+      }
+    });
+  </script>
+</body>
+</html>

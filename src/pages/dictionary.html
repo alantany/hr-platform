@@ -1,1 +1,82 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>标签字典</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../app.js"></script></head><body><div id="app"></div><script>window.__PAGE_BODY__ = `<section class="metrics"><div class="metric-card"><div class="metric-top"><div><div class="section-sub">标签总量</div></div><div class="metric-icon">○</div></div><div class="metric-value">56</div><div class="metric-label">当前标签词库</div></div><div class="metric-card"><div class="metric-top"><div><div class="section-sub">技术类</div></div><div class="metric-icon">△</div></div><div class="metric-value">22</div><div class="metric-label">技能标签</div></div><div class="metric-card"><div class="metric-top"><div><div class="section-sub">职能类</div></div><div class="metric-icon">▣</div></div><div class="metric-value">14</div><div class="metric-label">岗位标签</div></div><div class="metric-card"><div class="metric-top"><div><div class="section-sub">启用中</div></div><div class="metric-icon">◌</div></div><div class="metric-value">48</div><div class="metric-label">可直接使用</div></div></section><section class="panel"><h3>标签字典</h3><p class="panel-sub">统一候选人、岗位与项目标签口径。</p><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">技术类</div><div class="item-meta">Java、前端、算法、测试、运维</div></div><span class="chip success">启用</span></div></div><div class="list-item"><div class="item-top"><div><div class="item-title">职能类</div><div class="item-meta">产品、运营、市场、行政</div></div><span class="chip primary">启用</span></div></div></div></section>`;window.addEventListener('DOMContentLoaded', () => renderApp());</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>标签字典</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">标签总量</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-tag-total>0</div><div class="metric-label">当前标签词库</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">技术类</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-tag-tech>0</div><div class="metric-label">技能标签</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">职能类</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-tag-role>0</div><div class="metric-label">岗位标签</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">启用中</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-tag-enabled>0</div><div class="metric-label">可直接使用</div></div>
+      </section>
+      <section class="panel">
+        <div class="section-head">
+          <div><h3>标签字典</h3><p class="panel-sub">统一候选人、岗位与项目标签口径。</p></div>
+          <div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-tag-modal">新增标签</button><button class="btn" data-action="refresh-tags">刷新词库</button></div>
+        </div>
+        <div class="list" data-tag-list><div class="list-item"><div class="item-top"><div><div class="item-title">暂无标签词库</div><div class="item-meta">标签词库来自数据库。</div></div><span class="chip success">标签</span></div></div></div>
+      </section>
+
+      <div class="modal" data-tag-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>新增标签</h3><div class="section-sub">填写标签分类、名称和状态后确认保存。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-tag-modal">取消</button><button class="btn primary" data-action="confirm-tag-upload">确认保存</button></div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">分类</div><div class="item-meta">技术、职能、岗位等</div></div></div><input class="input" data-tag-category /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">名称</div><div class="item-meta">标签内容</div></div></div><input class="input" data-tag-name /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">颜色</div><div class="item-meta">可选色值</div></div></div><input class="input" data-tag-color /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">启用状态</div><div class="item-meta">默认启用</div></div></div><select class="input" data-tag-enabled-input><option value="true">启用</option><option value="false">停用</option></select></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>保存说明</h3>
+              <div class="list"><div class="list-item"><div class="item-meta">确认后会写入标签表并刷新列表。</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-tag-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:620px; margin:12vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>标签操作确认</h3><div class="section-sub">确认后才会执行启用、禁用或删除。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-tag-action-modal">取消</button><button class="btn primary" data-action="confirm-tag-action">确认执行</button></div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-tag-action-title>标签操作确认</div><div class="item-meta" data-tag-action-desc>点击列表按钮后会在这里显示标签名称与动作。</div></div><span class="chip warning">确认</span></div></div>
+          </div>
+        </div>
+      </div>
+    `;
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      try {
+        const tags = await window.hrApi.tags();
+        document.querySelector('[data-tag-total]').textContent = String(tags.length);
+        document.querySelector('[data-tag-tech]').textContent = String(tags.filter(t => String(t.category).includes('技术')).length);
+        document.querySelector('[data-tag-role]').textContent = String(tags.filter(t => String(t.category).includes('职能') || String(t.category).includes('岗位')).length);
+        document.querySelector('[data-tag-enabled]').textContent = String(tags.filter(t => t.enabled).length);
+        const list = document.querySelector('[data-tag-list]');
+        if (list) {
+          list.innerHTML = tags.slice(0, 5).map(t => `<div class="list-item"><div class="item-top"><div><div class="item-title">${t.category}</div><div class="item-meta">${t.name}</div></div><div class="table-actions"><button class="btn-sm" data-action="toggle-tag" data-id="${t.id}" data-enabled="${t.enabled}">${t.enabled ? '禁用' : '启用'}</button><button class="btn-sm" data-action="delete-tag" data-id="${t.id}">删除</button></div></div></div>`).join('');
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    });
+  </script>
+</body>
+</html>

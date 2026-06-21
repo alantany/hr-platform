@@ -1,19 +1,102 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>项目管理</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../app.js"></script></head><body><div id="app"></div><script>
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>项目管理</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../frontend-api.js"></script><script defer src="../../app.js"></script></head><body><div id="app"></div><script>
 window.__PAGE_BODY__ = `
   <section class="metrics">
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">项目总数</div></div><div class="metric-icon">○</div></div><div class="metric-value">10</div><div class="metric-label">客户招聘包</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">招聘中</div></div><div class="metric-icon">△</div></div><div class="metric-value">7</div><div class="metric-label">持续推进中</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">招聘完毕</div></div><div class="metric-icon">▣</div></div><div class="metric-value">3</div><div class="metric-label">已完成交付</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">◌</div></div><div class="metric-value">5</div><div class="metric-label">需要优先匹配</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">项目总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-project-total>0</div><div class="metric-label">客户招聘包</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">招聘中</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-project-active>0</div><div class="metric-label">持续推进中</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">招聘完毕</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-project-finished>0</div><div class="metric-label">已完成交付</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-project-urgent>0</div><div class="metric-label">需要优先匹配</div></div>
   </section>
   <section class="panel">
-    <div class="section-head"><div><h3>项目列表</h3><div class="section-sub">以招聘包为单位管理多个岗位。</div></div></div>
+    <div class="section-head"><div><h3>项目列表</h3><div class="section-sub">以招聘包为单位管理多个岗位。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-project-modal">新建项目</button><button class="btn" data-action="refresh-page">刷新列表</button></div></div>
     <div class="list">
-      <div class="list-item"><div class="item-top"><div><div class="item-title">技术研发团队扩建项目</div><div class="item-meta">科技有限公司A · 北京市海淀区 · 招聘人数 10 人 · 岗位数 4</div></div><span class="chip success">招聘中</span></div></div>
-      <div class="list-item"><div class="item-top"><div><div class="item-title">客服团队扩建项目</div><div class="item-meta">电商平台D · 广州市天河区 · 招聘人数 15 人 · 岗位数 2</div></div><span class="chip success">招聘中</span></div></div>
-      <div class="list-item"><div class="item-top"><div><div class="item-title">金融科技项目</div><div class="item-meta">金融服务C · 深圳市南山区 · 招聘人数 5 人 · 岗位数 3</div></div><span class="chip neutral">招聘完毕</span></div></div>
+      <div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无项目列表</div><div class="item-meta">项目表中的真实项目来自数据库。</div></div><span class="chip success">项目</span></div></div>
     </div>
   </section>
+
+  <div class="modal" data-project-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+    <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+      <div class="section-head">
+        <div><h3>新建项目</h3><div class="section-sub">先选择客户，再填写项目基本信息。</div></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-project-modal">取消</button><button class="btn primary" data-action="confirm-project-upload">确认保存</button></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">客户</div><div class="item-meta">从客户表选择关联公司</div></div></div><select class="input" data-project-company></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">项目名称</div><div class="item-meta">招聘项目名称</div></div></div><input class="input" data-project-name /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">默认招聘中</div></div></div><select class="input" data-project-status><option value="招聘中">招聘中</option><option value="招聘完毕">招聘完毕</option><option value="招聘中止">招聘中止</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">级别</div><div class="item-meta">A / B / C</div></div></div><select class="input" data-project-level><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div><div class="item-meta">岗位总需求</div></div></div><input class="input" type="number" min="1" data-project-count value="1" /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div><div class="item-meta">办公或驻场地点</div></div></div><input class="input" data-project-location /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">项目周期</div><div class="item-meta">起止日期</div></div></div><input class="input" data-project-period placeholder="例如 2026-06-01 ~ 2026-12-31" /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">项目备注</div><div class="item-meta">补充说明</div></div></div><input class="input" data-project-desc /></div>
+          </div>
+        </div>
+        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+          <h3>保存说明</h3>
+          <div class="list"><div class="list-item"><div class="item-meta">确认后会写入项目表并刷新列表。</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" data-project-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+    <div class="panel" style="max-width:620px; margin:12vh auto 0; background:#fff;">
+      <div class="section-head">
+        <div><h3>项目操作确认</h3><div class="section-sub">确认后才会执行状态变更或删除。</div></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-project-action-modal">取消</button><button class="btn primary" data-action="confirm-project-action">确认执行</button></div>
+      </div>
+      <div class="list">
+        <div class="list-item"><div class="item-top"><div><div class="item-title" data-project-action-title>项目操作确认</div><div class="item-meta" data-project-action-desc>点击列表按钮后会在这里显示项目名称与动作。</div></div><span class="chip warning">确认</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" data-project-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+    <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+      <div class="section-head">
+        <div><h3>维护项目信息</h3><div class="section-sub">修改项目基础信息后保存。</div></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-project-edit-modal">取消</button><button class="btn primary" data-action="confirm-project-edit">确认保存</button></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title">客户</div></div></div><select class="input" data-project-edit-company></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">项目名称</div></div></div><input class="input" data-project-edit-name /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-project-edit-status><option value="招聘中">招聘中</option><option value="招聘完毕">招聘完毕</option><option value="招聘中止">招聘中止</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">级别</div></div></div><select class="input" data-project-edit-level><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div></div></div><input class="input" type="number" min="1" data-project-edit-count /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div></div></div><input class="input" data-project-edit-location /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">项目周期</div></div></div><input class="input" data-project-edit-period /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">项目备注</div></div></div><input class="input" data-project-edit-desc /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 `;
-window.addEventListener('DOMContentLoaded', () => renderApp());
+window.addEventListener('DOMContentLoaded', async () => {
+  await renderApp();
+  try {
+    const projects = await window.hrApi.projects();
+    const companies = await window.hrApi.companies();
+    const total = document.querySelector('[data-project-total]');
+    const active = document.querySelector('[data-project-active]');
+    const finished = document.querySelector('[data-project-finished]');
+    const urgent = document.querySelector('[data-project-urgent]');
+    if (total) total.textContent = String(projects.length);
+    if (active) active.textContent = String(projects.filter(p => p.status !== '招聘完毕').length);
+    if (finished) finished.textContent = String(projects.filter(p => p.status === '招聘完毕').length);
+    if (urgent) urgent.textContent = String(projects.filter(p => (p.hiring_count || 0) > 5).length);
+    const companyOptions = companies.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+    const createCompany = document.querySelector('[data-project-company]');
+    const editCompany = document.querySelector('[data-project-edit-company]');
+    if (createCompany) createCompany.innerHTML = `<option value="">请选择客户</option>${companyOptions}`;
+    if (editCompany) editCompany.innerHTML = `<option value="">请选择客户</option>${companyOptions}`;
+    const list = document.querySelector('.content .panel .list');
+    if (list) {
+      list.innerHTML = projects.slice(0, 3).map(p => `<div class="list-item"><div class="item-top"><div><div class="item-title">${p.name}</div><div class="item-meta">${p.company_name || ''} · ${p.work_location || ''} · 招聘人数 ${p.hiring_count}${p.description ? ` · ${p.description}` : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-project" data-id="${p.id}">编辑</button><button class="btn-sm" data-action="toggle-project" data-id="${p.id}">${p.status === '招聘完毕' ? '恢复' : '完结'}</button><button class="btn-sm" data-action="delete-project" data-id="${p.id}">删除</button></div><span class="chip ${p.status==='招聘完毕'?'neutral':'success'}">${p.status}</span></div></div>`).join('');
+    }
+  } catch (err) { console.warn(err); }
+});
 </script></body></html>

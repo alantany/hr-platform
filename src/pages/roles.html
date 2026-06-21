@@ -1,1 +1,71 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>角色管理</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../app.js"></script></head><body><div id="app"></div><script>window.__PAGE_BODY__ = `<section class="grid-3"><div class="panel"><h3>管理员</h3><p class="panel-sub">全局管理、权限配置、数据范围控制。</p></div><div class="panel"><h3>组长</h3><p class="panel-sub">团队管理、项目推进、绩效查看。</p></div><div class="panel"><h3>组员</h3><p class="panel-sub">候选人筛选、推荐、面试跟踪。</p></div></section>`;window.addEventListener('DOMContentLoaded', () => renderApp());</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>角色管理</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="panel">
+        <div class="section-head">
+          <div><h3>角色管理</h3><div class="section-sub">定义管理员、组长、组员等角色及基础说明。</div></div>
+          <div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-role-modal">新增角色</button><button class="btn" data-action="refresh-page">刷新</button></div>
+        </div>
+        <div class="list" data-role-list>
+          <div class="list-item"><div class="item-meta">角色记录来自数据库。</div></div>
+        </div>
+      </section>
+
+      <div class="modal" data-role-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>新增角色</h3><div class="section-sub">填写角色编码、名称和说明后确认保存。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-role-modal">取消</button><button class="btn primary" data-action="confirm-role-upload">确认保存</button></div>
+          </div>
+          <div class="grid-2">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">角色编码</div><div class="item-meta">如 ADMIN</div></div></div><input class="input" data-role-code /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">角色名称</div><div class="item-meta">如 管理员</div></div></div><input class="input" data-role-name /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">说明</div><div class="item-meta">角色职责说明</div></div></div><input class="input" data-role-desc /></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>保存说明</h3>
+              <div class="list"><div class="list-item"><div class="item-meta">确认后会写入角色表并刷新列表。</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-role-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:620px; margin:12vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>角色操作确认</h3><div class="section-sub">确认后才会执行角色处理。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-role-action-modal">取消</button><button class="btn primary" data-action="confirm-role-action">确认执行</button></div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-role-action-title>角色操作确认</div><div class="item-meta" data-role-action-desc>点击列表按钮后会在这里显示角色名称与动作。</div></div><span class="chip warning">确认</span></div></div>
+          </div>
+        </div>
+      </div>
+    `;
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      try {
+        const items = await window.hrApi.roles();
+        const list = document.querySelector('[data-role-list]');
+        if (list) list.innerHTML = items.map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">${r.name}</div><div class="item-meta">${r.code} · ${r.description}</div></div><div class="table-actions"><button class="btn-sm" data-action="toggle-role" data-id="${r.id}">状态</button><button class="btn-sm" data-action="delete-role" data-id="${r.id}">删除</button></div><span class="chip primary">角色</span></div></div>`).join('');
+      } catch (err) {
+        console.warn(err);
+      }
+    });
+  </script>
+</body>
+</html>

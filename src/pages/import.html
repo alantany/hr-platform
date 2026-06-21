@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>简历导入</title>
   <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
   <script defer src="../../app.js"></script>
 </head>
 <body>
@@ -18,34 +19,37 @@
               <div class="eyebrow">批量导入 · 解析结果</div>
               <div class="micro">接收外部程序下载好的简历池数据</div>
             </div>
-            <div class="hero-actions">
-              <button class="btn primary">选择文件</button>
-              <button class="btn">查看导入历史</button>
-            </div>
+          <div class="hero-actions">
+            <button class="btn primary" data-action="open-import-modal">选择文件</button>
+            <button class="btn" data-action="open-batch-import-modal">批量导入</button>
+            <button class="btn" data-action="refresh-page">查看导入历史</button>
           </div>
+        </div>
 
           <div class="panel import-records">
             <div class="intro-line" style="margin-top:0">
               <h3 style="margin:0">导入记录</h3>
               <div class="micro">按时间查看导入结果和处理状态</div>
             </div>
-            <div class="timeline">
+            <div class="list" style="margin-top:12px;">
               <div class="list-item soft">
                 <div class="item-top">
                   <div>
-                    <div class="item-title">2026-05-22 10:30</div>
-                    <div class="item-meta">新导入 5 份简历，已添加到数据池</div>
+                    <div class="item-title">导入预览</div>
+                    <div class="item-meta" data-import-preview>选择文件后会先检查同名候选人；若命中重复，会记录为待复核导入。</div>
                   </div>
-                  <span class="tag blue">成功</span>
+                  <span class="tag blue">复核</span>
                 </div>
               </div>
+            </div>
+            <div class="timeline" data-import-history>
               <div class="list-item soft">
                 <div class="item-top">
                   <div>
-                    <div class="item-title">2026-05-21 11:00</div>
-                    <div class="item-meta">批量导入完成，成功入库 12 份简历</div>
+                    <div class="item-title">暂无导入记录</div>
+                    <div class="item-meta">最近的导入结果来自数据库。</div>
                   </div>
-                  <span class="tag green">成功</span>
+                  <span class="tag blue">导入</span>
                 </div>
               </div>
             </div>
@@ -58,29 +62,243 @@
           <div class="summary-grid">
             <div class="summary-chip success">
               <div class="label">成功入库</div>
-              <div class="value">12</div>
+              <div class="value" data-import-success>0</div>
               <div class="note">份简历已进入数据池</div>
             </div>
             <div class="summary-chip danger">
               <div class="label">失败待处理</div>
-              <div class="value" style="color:var(--danger)">3</div>
+              <div class="value" style="color:var(--danger)" data-import-failed>0</div>
               <div class="note">份简历需要重试</div>
             </div>
             <div class="summary-chip info">
               <div class="label">解析成功率</div>
-              <div class="value">96.8%</div>
+              <div class="value" data-import-rate>0%</div>
               <div class="note">本次导入保持较高稳定性</div>
             </div>
             <div class="summary-chip warn">
               <div class="label">待复核字段</div>
-              <div class="value">8</div>
-              <div class="note">条记录需要人工确认</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <div class="panel">
+            <h3>导入概览</h3>
+            <p class="panel-sub">这组数字只回答一件事：今天导入是否顺利。</p>
+            <div class="summary-grid">
+              <div class="summary-chip success">
+                <div class="label">成功入库</div>
+                <div class="value" data-import-success>0</div>
+                <div class="note">份简历已进入数据池</div>
+              </div>
+              <div class="summary-chip danger">
+                <div class="label">失败待处理</div>
+                <div class="value" style="color:var(--danger)" data-import-failed>0</div>
+                <div class="note">份简历需要重试</div>
+              </div>
+              <div class="summary-chip info">
+                <div class="label">解析成功率</div>
+                <div class="value" data-import-rate>0%</div>
+                <div class="note">本次导入保持较高稳定性</div>
+              </div>
+              <div class="summary-chip warn">
+                <div class="label">待复核字段</div>
+                <div class="value" data-import-review>0</div>
+                <div class="note">条记录需要人工确认</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>智联抓取库同步</h3>
+            <p class="panel-sub">直接选用简历抓取端爬取到的最新简历数据</p>
+            <div class="list" data-recruit-list style="margin-top:12px; max-height:420px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+              <div class="list-item soft">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">正在加载抓取简历...</div>
+                    <div class="item-meta">正在与共享数据库同步</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
+
+      <div class="modal" data-import-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:640px; margin:8vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>导入简历</h3>
+              <div class="section-sub">选择 Word / PDF 文件后确认导入，系统会记录导入结果与日志；若命中同名候选人，会落待复核记录。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-import-modal">取消</button>
+              <button class="btn primary" data-action="confirm-import-upload">确认导入</button>
+            </div>
+          </div>
+          <div class="list">
+            <div class="list-item">
+              <div class="item-top">
+                <div>
+                  <div class="item-title">简历文件</div>
+                  <div class="item-meta">支持 .doc / .docx / .pdf</div>
+                </div>
+              </div>
+              <input class="input" type="file" accept=".doc,.docx,.pdf" data-import-file />
+            </div>
+            <div class="list-item">
+              <div class="item-top">
+                <div>
+                  <div class="item-title">导入说明</div>
+                  <div class="item-meta">导入后会进入求职者数据池，并生成导入历史和审计日志。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-batch-import-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:640px; margin:8vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3>批量导入</h3>
+              <div class="section-sub">一次选择多个简历文件，系统会逐个检查同名候选人并写入导入记录。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-batch-import-modal">取消</button>
+              <button class="btn primary" data-action="confirm-batch-import-upload">确认导入</button>
+            </div>
+          </div>
+          <div class="list">
+            <div class="list-item">
+              <div class="item-top">
+                <div>
+                  <div class="item-title">简历文件</div>
+                  <div class="item-meta">支持多选 .doc / .docx / .pdf</div>
+                </div>
+              </div>
+              <input class="input" type="file" accept=".doc,.docx,.pdf" multiple data-batch-import-files />
+            </div>
+          </div>
+        </div>
+      </div>
     `;
-    window.addEventListener('DOMContentLoaded', () => renderApp());
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      const refreshImportSummary = async () => {
+        const [items, candidates] = await Promise.all([window.hrApi.importRecords(), window.hrApi.candidates()]);
+        document.querySelector('[data-import-success]').textContent = String(items.reduce((sum, i) => sum + Number(i.imported_count || 0), 0));
+        document.querySelector('[data-import-failed]').textContent = String(items.reduce((sum, i) => sum + Number(i.failed_count || 0), 0));
+        document.querySelector('[data-import-rate]').textContent = items.length ? `${((items.reduce((sum, i) => sum + Number(i.imported_count || 0), 0) / Math.max(1, items.reduce((sum, i) => sum + Number(i.imported_count || 0) + Number(i.failed_count || 0), 0))) * 100).toFixed(1)}%` : '0%';
+        document.querySelector('[data-import-review]').textContent = String(items.filter(i => String(i.note || '').includes('复核')).length);
+        const history = document.querySelector('[data-import-history]');
+        if (history) {
+          history.innerHTML = items.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
+        }
+        const preview = document.querySelector('[data-import-preview]');
+        if (preview) {
+          preview.textContent = candidates.length ? `当前数据池已有 ${candidates.length} 位候选人，导入时会先按姓名检索，存在同名时会记录为待复核。` : '当前数据池暂无候选人，导入后会写入数据池。';
+        }
+      };
+      
+      const refreshRecruitList = async () => {
+        const listContainer = document.querySelector('[data-recruit-list]');
+        if (!listContainer) return;
+        try {
+          const items = await window.hrApi.recruitCandidates();
+          if (!items || items.length === 0) {
+            listContainer.innerHTML = `
+              <div class="list-item soft">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">暂无抓取简历</div>
+                    <div class="item-meta">共享数据库中未查到爬虫爬取的简历数据。</div>
+                  </div>
+                </div>
+              </div>`;
+            return;
+          }
+          listContainer.innerHTML = items.map(item => `
+            <div class="list-item soft" style="padding:12px;">
+              <div class="item-top" style="justify-content:space-between; align-items:flex-start;">
+                <div style="flex:1; padding-right:12px;">
+                  <div class="item-title" style="font-weight:600; font-size:14px;">${item.candidate_name}</div>
+                  <div class="item-meta" style="margin-top:4px; font-size:12px;">
+                    年龄: ${item.candidate_age || '未知'} · 学历: ${item.candidate_education || '未知'}
+                  </div>
+                  <div class="item-meta" style="margin-top:4px; color:var(--text-muted); font-size:11px; line-height:1.4;">
+                    意向岗位: ${item.job_title} <br>
+                    更新时间: ${item.updated_at}
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                  <button class="btn primary small" data-action="import-recruit" data-id="${item.candidate_agent_id}" style="padding:4px 10px; font-size:12px; height:auto; line-height:1;">导入</button>
+                  ${item.file_path ? `<button class="btn small" data-action="preview-recruit" data-id="${item.candidate_agent_id}" style="padding:4px 10px; font-size:12px; height:auto; line-height:1;">预览</button>` : ''}
+                </div>
+              </div>
+            </div>
+          `).join('');
+        } catch (e) {
+          console.error(e);
+          listContainer.innerHTML = `
+            <div class="list-item soft">
+              <div class="item-top">
+                <div>
+                  <div class="item-title" style="color:var(--danger)">同步加载失败</div>
+                  <div class="item-meta">${e.message || '请检查共享数据库状态'}</div>
+                </div>
+              </div>
+            </div>`;
+        }
+      };
+
+      refreshImportSummary().catch(console.warn);
+      refreshRecruitList().catch(console.warn);
+
+      document.addEventListener('change', async (event) => {
+        const fileInput = event.target.closest('[data-import-file]');
+        if (!fileInput) return;
+        const file = fileInput.files?.[0];
+        const preview = document.querySelector('[data-import-preview]');
+        if (preview) preview.textContent = file ? `已选择 ${file.name}，点击确认后将进行导入并检查同名候选人。` : '选择文件后会先检查是否存在同名候选人，命中后会记录为待复核。';
+      });
+
+      document.addEventListener('click', async (event) => {
+        const importBtn = event.target.closest('[data-action="import-recruit"]');
+        if (importBtn) {
+          const agentId = importBtn.getAttribute('data-id');
+          importBtn.disabled = true;
+          importBtn.textContent = '正在导入';
+          try {
+            const res = await window.hrApi.importRecruitCandidate(agentId);
+            alert(res.message || '导入成功！');
+            await Promise.all([refreshImportSummary(), refreshRecruitList()]);
+          } catch (err) {
+            alert('导入失败: ' + err.message);
+          } finally {
+            importBtn.disabled = false;
+            importBtn.textContent = '导入';
+          }
+          return;
+        }
+
+        const previewBtn = event.target.closest('[data-action="preview-recruit"]');
+        if (previewBtn) {
+          const agentId = previewBtn.getAttribute('data-id');
+          try {
+            const blob = await window.hrApi.downloadRecruitResume(agentId);
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+          } catch (err) {
+            alert('获取或预览简历文件失败: ' + err.message);
+          }
+          return;
+        }
+      });
+    });
   </script>
 </body>
 </html>
