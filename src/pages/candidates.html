@@ -718,7 +718,8 @@
       };
 
       try {
-        const candidateId = Number(document.body.dataset.candidateId || 0) || window.candidatesPageState.list[0]?.id || 0;
+        const rawId = document.body.dataset.candidateId || '';
+        const candidateId = rawId ? (isNaN(Number(rawId)) ? rawId : Number(rawId)) : (window.candidatesPageState.list[0]?.id || 0);
         await window.updateCandidatePanels(candidateId);
       } catch (err) { console.warn(err); }
 

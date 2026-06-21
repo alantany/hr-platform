@@ -19,6 +19,12 @@ const nav = [
   ["logs.html", "操作日志", "日志"],
 ];
 
+const parseId = (val) => {
+  if (val === undefined || val === null || val === '') return 0;
+  const num = Number(val);
+  return isNaN(num) ? String(val) : num;
+};
+
 const pages = {
   dashboard: {
     crumbs: "首页 / 数据看板",
@@ -1165,15 +1171,23 @@ async function handleGlobalButton(button) {
       const followupButton = document.querySelector('[data-action="open-candidate-followup-modal"]');
       if (followupButton) followupButton.style.display = result.status === '已录用' ? '' : 'none';
       if (window.candidatesPageState) {
-        const itemIndex = window.candidatesPageState.list.findIndex(i => String(i.id) === String(result.id));
+        const itemIndex = window.candidatesPageState.list.findIndex(i => 
+          String(i.id) === String(result.id) || 
+          (i.candidate_agent_id && String(i.candidate_agent_id) === String(result.candidate_agent_id))
+        );
         if (itemIndex > -1) {
           window.candidatesPageState.list[itemIndex] = {
             ...window.candidatesPageState.list[itemIndex],
+            id: result.id,
             locked: result.locked,
             status: result.status
           };
           window.candidatesPageState.render();
         }
+      }
+      const detailModal = document.querySelector('[data-candidate-detail-modal]');
+      if (detailModal) {
+        detailModal.dataset.candidateId = String(result.id);
       }
       const rows = document.querySelectorAll('.table-row');
     rows.forEach((row) => {
