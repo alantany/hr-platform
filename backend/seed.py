@@ -30,7 +30,7 @@ def seed() -> None:
             company = Company(name="科技有限公司A", contact_name="王总", contact_phone="13800000000", status="招聘中", remark="种子客户")
             project = Project(name="2026核心招聘", status="招聘中", level="A", hiring_count=3, work_location="北京", description="核心岗位")
             position = Position(name="Java高级开发工程师", urgency="高", hiring_count=3, salary_min=30000, salary_max=45000, location="北京", status="紧急")
-            candidate = Candidate(name="张三", phone="13811111111", email="zhangsan@example.com", current_title="Java开发工程师", city="北京", status="未锁定", source="手动创建", locked=False)
+            candidate = Candidate(name="张三", phone="13811111111", email="zhangsan@example.com", current_title="Java开发工程师", city="北京", status="未锁定", source="导入", locked=False)
             recommendation = Recommendation(recommender="admin", status="已推荐", feedback="种子推荐")
             delivery = Delivery(delivered_by="admin", channel="系统交付", note="种子交付")
             candidate.recommendations.append(recommendation)

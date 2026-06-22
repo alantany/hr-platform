@@ -199,7 +199,7 @@ class CandidateCreate(BaseModel):
     current_title: str | None = ""
     city: str | None = ""
     status: str | None = "未锁定"
-    source: str | None = "手动创建"
+    source: str | None = "导入"
     locked: bool | None = False
     gender: str | None = ""
     age: int | None = None

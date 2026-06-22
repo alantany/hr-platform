@@ -124,7 +124,7 @@ class Candidate(Base, TimestampMixin):
     current_title: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     city: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="未锁定", nullable=False)
-    source: Mapped[str] = mapped_column(String(64), default="手动创建", nullable=False)
+    source: Mapped[str] = mapped_column(String(64), default="导入", nullable=False)
     locked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     gender: Mapped[str] = mapped_column(String(16), default="", nullable=False)
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
