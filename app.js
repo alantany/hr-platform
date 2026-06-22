@@ -776,6 +776,10 @@ async function handleGlobalButton(button) {
     document.querySelector('[data-candidate-detail-title2]').textContent = item?.current_title || '--';
     document.querySelector('[data-candidate-detail-status]').textContent = item?.locked ? '已锁定' : '激活';
     if (modal) modal.dataset.candidateId = resolvedId;
+    const editBtn = document.querySelector('[data-candidate-detail-modal] [data-action="edit-candidate"]');
+    if (editBtn) {
+      editBtn.dataset.id = resolvedId;
+    }
     if (window.updateCandidatePanels) {
       window.updateCandidatePanels(item?.id);
     }
@@ -829,6 +833,15 @@ async function handleGlobalButton(button) {
       window.candidatesPageState.render();
       if (modal) modal.style.display = 'none';
       showToast(`候选人已更新：${candidate.name}`);
+      
+      const detailModal = document.querySelector('[data-candidate-detail-modal]');
+      if (detailModal && detailModal.style.display === 'block') {
+        const fakeBtn = {
+          dataset: { action: 'view-detail', id: target.id },
+          textContent: ''
+        };
+        handleGlobalButton(fakeBtn).catch(err => console.warn(err));
+      }
       return;
     }
     const mainTable = document.querySelector('.table-card');
@@ -860,7 +873,6 @@ async function handleGlobalButton(button) {
                 <div class="row-sub">${i.created_at || ''}</div>
                 <div class="table-actions" style="margin-top:8px;">
                   <button class="btn-sm primary" data-action="view-detail" data-id="${i.id}" data-title="${i.name}">详情</button>
-                  <button class="btn-sm" data-action="edit-candidate" data-id="${i.id}">编辑</button>
                 </div>
               </div>
             </div>
@@ -933,7 +945,6 @@ async function handleGlobalButton(button) {
                 <div class="row-sub">${i.created_at || ''}</div>
                 <div class="table-actions" style="margin-top:8px;">
                   <button class="btn-sm primary" data-action="view-detail" data-id="${i.id}" data-title="${i.name}">详情</button>
-                  <button class="btn-sm" data-action="edit-candidate" data-id="${i.id}">编辑</button>
                 </div>
               </div>
             </div>

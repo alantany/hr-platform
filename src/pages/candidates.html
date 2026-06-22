@@ -363,6 +363,7 @@
             </div>
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" data-action="close-candidate-detail-modal">关闭</button>
+              <button class="btn" data-action="edit-candidate" data-id="">编辑资料</button>
               <button class="btn" data-action="toggle-candidate-lock">锁定 / 释放</button>
               <button class="btn" data-action="open-candidate-salary-modal">薪资记录</button>
               <button class="btn" data-action="open-candidate-employment-modal">入职状态</button>
@@ -770,7 +771,6 @@
                     <div class="row-sub">${i.created_at || ''}</div>
                     <div class="table-actions" style="margin-top:8px;">
                       <button class="btn-sm primary" data-action="view-detail" data-id="${i.id}" data-title="${i.name}">详情</button>
-                      <button class="btn-sm" data-action="edit-candidate" data-id="${i.id}">编辑</button>
                     </div>
                   </div>
                 </div>
