@@ -1295,3 +1295,7 @@
 - 响应需求，将行内的手风琴展开按钮从右侧操作栏移动至左侧候选人姓名旁边，优化布局紧凑度。
 - 输出了 AI 简历解析的精细化 Prompt 模板，明确定义了包含枚举映射规则的 JSON Schema，并固化保存至 `outputs/resume_parsing_prompt.md` 中供后续集成调用。
 - 完整实现了基于独立后台 Worker 机制的 AI 简历解析功能闭环。新增了 ResumeParseTask 任务表用于管控解析状态，编写了 `queue_resume_tasks.py` 实现历史数据的批量待办注入，以及主力的 `resume_parser_worker.py`，包含 pdfplumber 取词、OpenRouter LLM 调用以及严格按照 Prompt Schema 输出并回写候选人数据库的能力。目前已在本地排队注入 91 份历史简历待解析任务。
+- 将 `resume_parser_worker.py` 升级为无限循环守护进程（Daemon Worker），利用 `NOT IN` 差集逻辑动态监听并拉取 `recruit.resume_downloads` 中不断增长的新简历，实现了 24 小时无人值守式流式解析与 Upsert 入库。
+- 将 `resume_parse_tasks` 添加至后端 `allowed_tables` 与前端探针数组，使其在“数据库资源探针”页面中透明可见。并解除了前后端的条数截断限制（100 -> 100000），确保全量表数据精准展示。
+- 修复候选人列表中的大量数据重复 Bug。将原代码中针对外部消息表 `recruit.candidate_profiles` 的查询基座纠正为 `recruit.resume_downloads`，并在拼装层（`crud.list_candidates`）加入了基于 Name 与 ID 的 Python 级内存 Deduplication 防重过滤，确保真实候选人和历史冗余原件均精准按唯一自然人渲染。
+- 新增撰写了 `outputs/AI简历解析流水线-数据关联机制.md` 文档，归档了核心 ID（`candidate_agent_id`、`resume_download_id`、`candidate_id`）从生成到串接流转的技术设计。

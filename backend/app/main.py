@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from . import crud, models, schemas
 from .config import settings
 from .database import Base, engine, get_db
-from .models import AuditLog, AiTask, Candidate, CandidateFollowUpRecord, CandidateMailRecord, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat
+from .models import AuditLog, AiTask, Candidate, CandidateFollowUpRecord, CandidateMailRecord, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
 from .security import get_current_user
 from backend.seed import seed as seed_data
 
@@ -1298,7 +1298,7 @@ def import_recruit_candidate(agent_id: str, db: Session = Depends(get_db), user:
 @app.get("/api/db-tables")
 def get_db_table_data(
     table_name: str,
-    limit: int = Query(default=100, ge=1, le=1000),
+    limit: int = Query(default=10000, ge=1, le=100000),
     db: Session = Depends(get_db),
     user: User = Depends(require_user)
 ):
@@ -1309,7 +1309,7 @@ def get_db_table_data(
         "candidate_follow_up_records", "candidate_mail_records", "search_presets", "export_records",
         "import_records", "deliveries", "audit_logs", "warranty_rules", "system_configs",
         "email_configs", "ai_tasks", "candidate_profiles", "resume_downloads",
-        "employees", "job_postings", "daily_task_stats"
+        "employees", "job_postings", "daily_task_stats", "resume_parse_tasks"
     }
     if (table_name not in allowed_tables):
         raise HTTPException(status_code=400, detail="不支持查询该表")
@@ -1341,6 +1341,7 @@ def get_db_table_data(
         "system_configs": SystemConfig,
         "email_configs": EmailConfig,
         "ai_tasks": AiTask,
+        "resume_parse_tasks": ResumeParseTask,
         "candidate_profiles": RecruitCandidateProfile,
         "resume_downloads": RecruitResumeDownload,
         "employees": RecruitEmployee,

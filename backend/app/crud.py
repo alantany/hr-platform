@@ -208,20 +208,28 @@ def create_candidate(db: Session, payload):
 
 
 def list_candidates(db: Session, keyword: str | None = None, city: str | None = None, status: str | None = None):
-    from .models import RecruitCandidateProfile, RecruitResumeDownload, Candidate
+    from .models import RecruitResumeDownload, Candidate
     
-    # 1. 联合查询：用 SQLAlchemy 的 outerjoin 将抓取端主表与交付端扩展表进行 LEFT JOIN
-    rows = db.query(RecruitCandidateProfile, Candidate).outerjoin(
-        Candidate, Candidate.candidate_agent_id == RecruitCandidateProfile.candidate_agent_id
+    # 1. 联合查询：用 SQLAlchemy 的 outerjoin 将抓取端的简历下载表与交付端扩展表进行 LEFT JOIN
+    rows = db.query(RecruitResumeDownload, Candidate).outerjoin(
+        Candidate, Candidate.candidate_agent_id == RecruitResumeDownload.candidate_agent_id
     ).all()
     
     # 2. 查出交付端纯手动创建（未绑定抓取端 ID）的候选人
     local_only = db.query(Candidate).filter(Candidate.candidate_agent_id == None).all()
     
     merged_results = []
+    seen_candidate_ids = set()
+    seen_names = set()
     
     # 首先把纯手创的候选人放进结果集
     for c in local_only:
+        if c.id in seen_candidate_ids:
+            continue
+        seen_candidate_ids.add(c.id)
+        if c.name:
+            seen_names.add(c.name)
+            
         merged_results.append({
             "id": c.id,
             "name": c.name,
@@ -258,33 +266,28 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
         })
         
     # 处理联合查询的结果
-    for p, c in rows:
-        download = db.query(RecruitResumeDownload).filter(
-            RecruitResumeDownload.candidate_agent_id == p.candidate_agent_id
-        ).order_by(RecruitResumeDownload.created_at.desc()).first()
-        
-        import re
-        age_val = None
-        if p.candidate_age:
-            m = re.search(r'\d+', p.candidate_age)
-            if m:
-                age_val = int(m.group(0))
-                
+    for d, c in rows:
         if c:
+            if c.id in seen_candidate_ids:
+                continue
+            seen_candidate_ids.add(c.id)
+            if c.name:
+                seen_names.add(c.name)
+                
             # 已关联的候选人，取交付表数据，并补充可能的抓取基本信息
             merged_results.append({
                 "id": c.id,
-                "name": c.name or p.candidate_name,
+                "name": c.name or d.candidate_name,
                 "phone": c.phone,
                 "email": c.email,
-                "current_title": c.current_title or (download.job_title if download else ""),
+                "current_title": c.current_title or d.job_title,
                 "city": c.city,
                 "status": c.status,
                 "source": c.source or "简历库",
                 "locked": c.locked,
                 "gender": c.gender,
-                "age": c.age or age_val,
-                "education": c.education or p.candidate_education or "",
+                "age": c.age,
+                "education": c.education,
                 "experience_years": c.experience_years,
                 "expected_salary": c.expected_salary,
                 "id_number": c.id_number,
@@ -302,25 +305,29 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "salary_structure": c.salary_structure,
                 "job_intention": c.job_intention,
                 "project_history": c.project_history,
-                "candidate_agent_id": p.candidate_agent_id,
-                "created_at": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else (download.created_at if download else p.updated_at),
-                "file_path": download.file_path if download else None
+                "candidate_agent_id": d.candidate_agent_id,
+                "created_at": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else d.created_at,
+                "file_path": d.file_path
             })
         else:
+            if d.candidate_name in seen_names:
+                continue
+            seen_names.add(d.candidate_name)
+            
             # 纯抓取来的候选人，未同步，不做任何写入与硬编码硬塞值，独有字段全为 None
             merged_results.append({
-                "id": download.id if download else p.candidate_agent_id, # 整数虚拟 ID，直接使用下载记录 ID；无下载记录时以 agent_id 兜底
-                "name": p.candidate_name,
+                "id": d.id, # 整数虚拟 ID，直接使用下载记录 ID
+                "name": d.candidate_name,
                 "phone": None,
                 "email": None,
-                "current_title": download.job_title if download else "",
+                "current_title": d.job_title or "",
                 "city": None,
                 "status": "未锁定",
                 "source": "简历库",
                 "locked": False,
                 "gender": None,
-                "age": age_val,
-                "education": p.candidate_education or "",
+                "age": None,
+                "education": "",
                 "experience_years": None,
                 "expected_salary": None,
                 "id_number": None,
@@ -338,9 +345,9 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "salary_structure": None,
                 "job_intention": None,
                 "project_history": None,
-                "candidate_agent_id": p.candidate_agent_id,
-                "created_at": download.created_at if download else p.updated_at,
-                "file_path": download.file_path if download else None
+                "candidate_agent_id": d.candidate_agent_id,
+                "created_at": d.created_at,
+                "file_path": d.file_path
             })
 
     # 4. 在内存中进行过滤

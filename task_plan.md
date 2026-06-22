@@ -138,3 +138,13 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 修改前端候选人“编辑”表单下拉框和状态判断逻辑，彻底收拢并只保留“锁定/未锁定”二元状态。
 - [x] 清理后端代码中冗余的“新入库”、“激活”状态默认值，统一替换为“未锁定”。
 - [x] 深度重置环境，成功清除数据库 public schema 下的所有业务测试脏数据，并确保底层表结构依然完好。
+
+### Phase 13 - AI 简历自动化解析与入库流水线（已完成）
+
+- [x] 创建 `resume_parse_tasks` 任务缓冲表，连接外部 `recruit.resume_downloads` 数据源与内部业务模型。
+- [x] 编写 `resume_parser_worker.py`，实现基于 OpenRouter 大模型的非结构化简历批量解析。
+- [x] 实现健壮的候选人 Upsert 逻辑（优先使用 `candidate_agent_id`，降级匹配手机、邮箱、姓名）。
+- [x] 升级 Worker 为守护进程（Daemon），利用 `NOT IN` 差集排查法实现 24 小时无遗漏新数据同步拉取。
+- [x] 修复 `crud.py` 候选人列表接口：更正外部关联表为 `resume_downloads`，并加入名字/ID 级业务防重墙，彻底解决 UI 大量冗余记录问题。
+- [x] 解除“数据库资源探针”前后端的 Pagination 限制，支持大表全量透视诊断。
+- **Status:** complete

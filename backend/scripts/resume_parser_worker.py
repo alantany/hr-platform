@@ -82,7 +82,7 @@ def call_llm_for_json(resume_text: str) -> dict:
 def process_pending_tasks():
     db = SessionLocal()
     try:
-        tasks = db.query(ResumeParseTask).filter(ResumeParseTask.status == "PENDING").all()
+        tasks = db.query(ResumeParseTask).filter(ResumeParseTask.status == "PENDING").order_by(ResumeParseTask.id.asc()).all()
         if not tasks:
             print("No pending tasks.")
             return
@@ -94,12 +94,14 @@ def process_pending_tasks():
             
             try:
                 # 1. Fetch file_path from recruit.resume_downloads
-                sql = text("SELECT candidate_name, file_path FROM recruit.resume_downloads WHERE id = :id")
+                sql = text("SELECT candidate_name, candidate_agent_id, file_path FROM recruit.resume_downloads WHERE id = :id")
                 result = db.execute(sql, {"id": task.resume_download_id}).mappings().first()
                 if not result:
                     raise Exception(f"resume_download_id {task.resume_download_id} not found.")
                 
                 file_path = result["file_path"]
+                candidate_agent_id = result.get("candidate_agent_id")
+                
                 # Assuming file_path is like 'data/resumes/test/数据开发工程师'
                 # Prepend 'recruit/' if it's a relative path to root
                 full_path = os.path.join(BASE_DIR, "recruit", file_path)
@@ -138,7 +140,9 @@ def process_pending_tasks():
                 
                 # Try to find existing candidate
                 candidate = None
-                if phone:
+                if candidate_agent_id:
+                    candidate = db.query(Candidate).filter(Candidate.candidate_agent_id == candidate_agent_id).first()
+                if not candidate and phone:
                     candidate = db.query(Candidate).filter(Candidate.phone == phone).first()
                 if not candidate and email:
                     candidate = db.query(Candidate).filter(Candidate.email == email).first()
@@ -170,11 +174,15 @@ def process_pending_tasks():
                     candidate.education_detail = parsed_data.get("education_detail") or candidate.education_detail
                     candidate.work_history = parsed_data.get("work_history") or candidate.work_history
                     candidate.project_history = parsed_data.get("project_history") or candidate.project_history
+                    # status remains as is
+                    if candidate_agent_id and not candidate.candidate_agent_id:
+                        candidate.candidate_agent_id = candidate_agent_id
                     print(f"Updated existing candidate: {candidate.id}")
                 else:
                     # Insert new candidate
                     candidate = Candidate(
                         name=candidate_name,
+                        candidate_agent_id=candidate_agent_id,
                         phone=phone,
                         email=email,
                         gender=parsed_data.get("gender") or "",
@@ -217,8 +225,38 @@ def process_pending_tasks():
     finally:
         db.close()
 
+def sync_new_downloads(db):
+    sql = text("""
+        SELECT id FROM recruit.resume_downloads 
+        WHERE id NOT IN (SELECT resume_download_id FROM resume_parse_tasks)
+    """)
+    results = db.execute(sql).fetchall()
+    
+    queued = 0
+    for row in results:
+        download_id = row[0]
+        task = ResumeParseTask(
+            resume_download_id=download_id,
+            status="PENDING"
+        )
+        db.add(task)
+        queued += 1
+        
+    if queued > 0:
+        db.commit()
+        print(f"Synced {queued} new resumes into parse queue.")
+
 if __name__ == "__main__":
-    print("Starting Resume Parser Worker...")
-    # Just run once for now. Can be placed in a while loop later.
-    process_pending_tasks()
-    print("Done.")
+    import time
+    print("Starting Resume Parser Worker Daemon...")
+    while True:
+        db = SessionLocal()
+        try:
+            sync_new_downloads(db)
+        except Exception as e:
+            print(f"Error syncing queue: {e}")
+        finally:
+            db.close()
+            
+        process_pending_tasks()
+        time.sleep(10) # wait 10 seconds before checking again

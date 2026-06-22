@@ -334,7 +334,7 @@ window.hrApi = {
       "candidate_follow_up_records", "candidate_mail_records", "search_presets", "export_records",
       "import_records", "deliveries", "audit_logs", "warranty_rules", "system_configs",
       "email_configs", "ai_tasks", "candidate_profiles", "resume_downloads",
-      "employees", "job_postings", "daily_task_stats"
+      "employees", "job_postings", "daily_task_stats", "resume_parse_tasks"
     ]);
   },
   dbTableData(tableName, params = {}) {
