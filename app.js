@@ -761,6 +761,7 @@ async function handleGlobalButton(button) {
     const set = (sel, val) => { const el = document.querySelector(sel); if (el) el.textContent = val || '--'; };
     set('[data-candidate-detail-name]', item?.name);
     set('[data-candidate-detail-gender]', item?.gender);
+    set('[data-candidate-detail-age]', item?.age);
     set('[data-candidate-detail-birth-date]', item?.birth_date);
     set('[data-candidate-detail-hukou]', item?.hukou_location);
     set('[data-candidate-detail-city]', item?.city);
@@ -805,6 +806,7 @@ async function handleGlobalButton(button) {
     const fill = (sel, val) => { const el = document.querySelector(sel); if (el) el.value = val || ''; };
     fill('[data-candidate-edit-name]', item.name);
     fill('[data-candidate-edit-gender]', item.gender);
+    fill('[data-candidate-edit-age]', item.age || '');
     fill('[data-candidate-edit-birth-date]', item.birth_date);
     fill('[data-candidate-edit-hukou]', item.hukou_location);
     fill('[data-candidate-edit-city]', item.city);
@@ -882,6 +884,7 @@ async function handleGlobalButton(button) {
       status: get('[data-candidate-edit-status]') || '激活',
       source: get('[data-candidate-edit-source]'),
       gender: get('[data-candidate-edit-gender]'),
+      age: get('[data-candidate-edit-age]') ? parseInt(get('[data-candidate-edit-age]'), 10) : null,
       birth_date: get('[data-candidate-edit-birth-date]'),
       hukou_location: get('[data-candidate-edit-hukou]'),
       id_number,
