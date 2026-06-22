@@ -364,10 +364,6 @@
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" data-action="close-candidate-detail-modal">关闭</button>
               <button class="btn" data-action="edit-candidate" data-id="">编辑资料</button>
-              <button class="btn" data-action="toggle-candidate-lock">锁定 / 释放</button>
-              <button class="btn" data-action="open-candidate-salary-modal">薪资记录</button>
-              <button class="btn" data-action="open-candidate-employment-modal">入职状态</button>
-              <button class="btn" data-action="open-candidate-followup-modal">随访记录</button>
               <button class="btn primary" data-action="open-candidate-mail-modal">发送邮件</button>
             </div>
           </div>
@@ -535,6 +531,25 @@
                 <div class="list-item"><div class="item-top"><div><div class="item-title">城市</div><div class="item-meta">期望或所在城市</div></div></div><input class="input" data-candidate-edit-city /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">激活 / 锁定 / 释放</div></div></div><select class="input" data-candidate-edit-status><option value="激活">激活</option><option value="锁定">锁定</option><option value="释放">释放</option></select></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta">页面创建 / 导入 / 推荐</div></div></div><input class="input" data-candidate-edit-source /></div>
+              </div>
+            </div>
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <h3>流转状态管理</h3>
+              <div class="list">
+                <div class="list-item">
+                  <div class="item-top">
+                    <div>
+                      <div class="item-title">锁定与流转</div>
+                      <div class="item-meta">流转候选人状态，记录随访、薪资与入职流程</div>
+                    </div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+                    <button class="btn" data-action="toggle-candidate-lock" style="width:100%;">锁定 / 释放</button>
+                    <button class="btn" data-action="open-candidate-salary-modal" style="width:100%;">薪资记录</button>
+                    <button class="btn" data-action="open-candidate-employment-modal" style="width:100%;">入职状态</button>
+                    <button class="btn" data-action="open-candidate-followup-modal" style="width:100%;">随访记录</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

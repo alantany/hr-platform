@@ -807,6 +807,7 @@ async function handleGlobalButton(button) {
     if (source) source.value = item.source || '';
     if (modal) {
       modal.style.display = 'block';
+      modal.dataset.candidateId = String(item.id);
       modal.dataset.target = JSON.stringify({ id: item.id });
     }
     return;
@@ -965,9 +966,10 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "toggle-candidate-lock") {
-    const modal = document.querySelector('[data-candidate-detail-modal]');
-    const candidateId = modal?.dataset.candidateId || '';
-    if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
+    const editModal = document.querySelector('[data-candidate-edit-modal]');
+    const detailModal = document.querySelector('[data-candidate-detail-modal]');
+    const candidateId = String(button.dataset.candidateId || editModal?.dataset.candidateId || detailModal?.dataset.candidateId || '');
+    if (!candidateId || candidateId === '0') throw new Error('请先选择候选人');
     const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
     const actionModal = document.querySelector('[data-candidate-action-modal]');
@@ -1045,8 +1047,8 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "open-candidate-salary-modal") {
-    const candidateId = String(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
-    if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
+    const candidateId = String(button.dataset.candidateId || document.querySelector('[data-candidate-edit-modal]')?.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
+    if (!candidateId || candidateId === '0') throw new Error('请先选择候选人');
     const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
     const modal = document.querySelector('[data-candidate-salary-modal]');
@@ -1094,8 +1096,8 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "open-candidate-employment-modal") {
-    const candidateId = String(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
-    if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
+    const candidateId = String(button.dataset.candidateId || document.querySelector('[data-candidate-edit-modal]')?.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
+    if (!candidateId || candidateId === '0') throw new Error('请先选择候选人');
     const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
     const modal = document.querySelector('[data-candidate-employment-modal]');
@@ -1154,8 +1156,8 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "open-candidate-followup-modal") {
-    const candidateId = String(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
-    if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
+    const candidateId = String(button.dataset.candidateId || document.querySelector('[data-candidate-edit-modal]')?.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
+    if (!candidateId || candidateId === '0') throw new Error('请先选择候选人');
     const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
     if (candidate.status !== '已录用') {
