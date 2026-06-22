@@ -517,8 +517,7 @@ async function handleGlobalButton(button) {
                   </div>
                 </div>
                 <div class="skills">
-                  <span class="skill-tag">${i.source || '来源'}</span>
-                  <span class="skill-tag">${i.locked ? '已锁定' : '未锁定'}</span>
+                  <span class="skill-tag">${i.locked ? '🔒 已锁定' : '🔓 未锁定'}</span>
                 </div>
               </div>
               <div>${i.current_title || '--'}</div>
@@ -940,8 +939,7 @@ async function handleGlobalButton(button) {
                   </div>
                 </div>
                 <div class="skills">
-                  <span class="skill-tag">${i.source || '来源'}</span>
-                  <span class="skill-tag">${i.locked ? '已锁定' : '未锁定'}</span>
+                  <span class="skill-tag">${i.locked ? '🔒 已锁定' : '🔓 未锁定'}</span>
                 </div>
               </div>
               <div>${i.current_title || '--'}</div>
@@ -1010,8 +1008,7 @@ async function handleGlobalButton(button) {
                   </div>
                 </div>
                 <div class="skills">
-                  <span class="skill-tag">${i.source || '来源'}</span>
-                  <span class="skill-tag">${i.locked ? '已锁定' : '未锁定'}</span>
+                  <span class="skill-tag">${i.locked ? '🔒 已锁定' : '🔓 未锁定'}</span>
                 </div>
               </div>
               <div>${i.current_title || '--'}</div>
