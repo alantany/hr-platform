@@ -520,14 +520,14 @@ async function handleGlobalButton(button) {
               <div>${i.city || '--'}</div>
               <div class="mono">${i.expected_salary || '--'}</div>
               <div>${i.source || '--'}</div>
-              <div><span class="state ${i.status === '锁定' ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
+              <div>${i.age ? i.age + '岁' : '--'}</div>
               <div>
                 <div class="table-actions">
                   <button class="btn-sm primary" data-action="view-detail" data-id="${i.id}" data-title="${i.name}">详情</button>
                 </div>
               </div>
             </div>
-          `).join('') || `<div class="table-row"><div><input type="checkbox" aria-label="候选人空状态" disabled /></div><div><div class="row-title"><div class="avatar-sm"></div><div><strong>等待真实候选人数据</strong><div class="row-sub">候选人列表来自接口返回的数据库记录。</div></div></div></div><div>--</div><div>--</div><div class="mono">--</div><div>--</div><div><span class="state active">待同步</span></div><div>--</div></div>`;
+          `).join('') || `<div class="table-row"><div><input type="checkbox" aria-label="候选人空状态" disabled /></div><div><div class="row-title"><div class="avatar-sm"></div><div><strong>等待真实候选人数据</strong><div class="row-sub">候选人列表来自接口返回的数据库记录。</div></div></div></div><div>--</div><div>--</div><div class="mono">--</div><div>--</div><div>--</div><div>--</div></div>`;
       const marker = mainTable.querySelector('[data-candidate-empty]') || mainTable.querySelector('.table-row');
       if (marker) {
         const container = document.createElement('div');
