@@ -490,21 +490,19 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "search-candidates") {
-    const keyword = document.querySelector('[data-field="candidate-keyword"]')?.value?.trim() || "";
-    const city = document.querySelector('[data-field="candidate-city"]')?.value?.trim() || "";
-    const status = document.querySelector('[data-field="candidate-status"]')?.value?.trim() || "";
-    const items = await window.hrApi.candidates({ keyword, city, status });
-    const target = document.querySelector('[data-candidate-results]');
-    if (target) {
-      target.innerHTML = items.slice(0, 6).map(i => `<div class="list-item"><div class="item-top"><div><div class="item-title">${i.name}</div><div class="item-meta">${i.current_title || ''} · ${i.city || ''} · ${i.status || ''}</div></div><span class="chip ${i.locked ? 'warning' : 'success'}">${i.locked ? '已锁定' : '可操作'}</span></div></div>`).join("") || '<div class="list-item"><div class="item-meta">没有找到匹配候选人</div></div>';
-    }
     if (window.candidatesPageState) {
-      window.candidatesPageState.list = items;
-      window.candidatesPageState.currentPage = 1;
-      window.candidatesPageState.render();
-      showToast(`已按条件筛选 ${items.length} 条候选人`);
+      window.candidatesPageState.applyFilters();
+      showToast(`已按条件筛选 ${window.candidatesPageState.list.length} 条候选人`);
       return;
     }
+    const keyword = document.querySelector('[data-field="candidate-keyword"]')?.value?.trim() || "";
+    const city = document.querySelector('[data-field="candidate-city"]')?.value?.trim() || "";
+    const items = await window.hrApi.candidates({ keyword, city });
+    const target = document.querySelector('[data-candidate-results]');
+    if (target) {
+      target.innerHTML = items.slice(0, 6).map(i => `<div class="list-item"><div class="item-top"><div><div class="item-title">${i.name}</div><div class="item-meta">${i.current_title || ''} · ${i.city || ''}</div></div><span class="chip ${i.locked ? 'warning' : 'success'}">${i.locked ? '已锁定' : '可操作'}</span></div></div>`).join("") || '<div class="list-item"><div class="item-meta">没有找到匹配候选人</div></div>';
+    }
+    return;
     const mainTable = document.querySelector('.table-card');
     if (mainTable) {
       const rowHtml = items.slice(0, 8).map(i => `

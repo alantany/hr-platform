@@ -591,6 +591,8 @@
         currentPage: 1,
         pageSize: 10,
         applyFilters() {
+          const keyword = document.querySelector('[data-field="candidate-keyword"]')?.value?.trim() || "";
+          const city = document.querySelector('[data-field="candidate-city"]')?.value?.trim() || "";
           const education = document.querySelector('[data-filter-education]')?.value || "";
           const ageRange = document.querySelector('[data-filter-age]')?.value || "";
           const expRange = document.querySelector('[data-filter-experience]')?.value || "";
@@ -600,6 +602,30 @@
           const activeHotkeys = Array.from(document.querySelectorAll('[data-hotkey].active')).map(el => el.getAttribute('data-hotkey'));
           
           let filtered = [...this.rawList];
+
+          // 关键词过滤
+          if (keyword) {
+            const kw = keyword.toLowerCase();
+            filtered = filtered.filter(i => {
+              return [
+                i.name,
+                i.current_title,
+                i.education,
+                i.city,
+                i.source,
+                i.gender,
+                i.age ? String(i.age) : '',
+                i.experience_years ? String(i.experience_years) : '',
+                i.expected_salary
+              ].join(" ").toLowerCase().includes(kw);
+            });
+          }
+
+          // 城市过滤
+          if (city) {
+            const cVal = city.toLowerCase();
+            filtered = filtered.filter(i => (i.city || "").toLowerCase().includes(cVal));
+          }
           
           // 1. 学历要求过滤
           if (education) {
