@@ -482,7 +482,7 @@ button, input, select { font: inherit; }
   display: grid;
   gap: 10px;
   align-items: center;
-  grid-template-columns: 1.1fr 1.3fr 1fr .9fr .8fr 1fr .9fr .7fr .9fr;
+  grid-template-columns: 1.1fr 1.3fr .9fr .8fr 1fr .9fr .7fr .9fr;
 }
 .table-head {
   padding: 12px 14px;
