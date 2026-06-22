@@ -32,46 +32,66 @@ def ensure_schema() -> None:
         with engine.begin() as conn:
             conn.execute(text("CREATE SCHEMA IF NOT EXISTS recruit"))
     Base.metadata.create_all(bind=engine)
-    if engine.url.get_backend_name() == "sqlite":
-        with engine.begin() as conn:
-            cols = {row[1] for row in conn.execute(text("PRAGMA table_info(recommendations)")).fetchall()}
-            if "customer_comment" not in cols:
-                conn.execute(text("ALTER TABLE recommendations ADD COLUMN customer_comment TEXT NOT NULL DEFAULT ''"))
-            eval_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(evaluations)")).fetchall()}
-            if "position_id" not in eval_cols:
-                conn.execute(text("ALTER TABLE evaluations ADD COLUMN position_id INTEGER NOT NULL DEFAULT 1"))
-            company_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(companies)")).fetchall()}
-            for column, ddl in {
-                "contact_email": "ALTER TABLE companies ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''",
-                "address": "ALTER TABLE companies ADD COLUMN address TEXT NOT NULL DEFAULT ''",
-                "cooperation_period": "ALTER TABLE companies ADD COLUMN cooperation_period TEXT NOT NULL DEFAULT ''",
-            }.items():
-                if column not in company_cols:
-                    conn.execute(text(ddl))
-            project_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(projects)")).fetchall()}
-            if "project_period" not in project_cols:
-                conn.execute(text("ALTER TABLE projects ADD COLUMN project_period TEXT NOT NULL DEFAULT ''"))
-            mail_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(candidate_mail_records)")).fetchall()}
-            for column, ddl in {
-                "recipient_email": "ALTER TABLE candidate_mail_records ADD COLUMN recipient_email TEXT NOT NULL DEFAULT ''",
-                "mail_subject": "ALTER TABLE candidate_mail_records ADD COLUMN mail_subject TEXT NOT NULL DEFAULT ''",
-                "mail_body": "ALTER TABLE candidate_mail_records ADD COLUMN mail_body TEXT NOT NULL DEFAULT ''",
-                "attachment_name": "ALTER TABLE candidate_mail_records ADD COLUMN attachment_name TEXT NOT NULL DEFAULT ''",
-                "sent_by": "ALTER TABLE candidate_mail_records ADD COLUMN sent_by TEXT NOT NULL DEFAULT ''",
-                "status": "ALTER TABLE candidate_mail_records ADD COLUMN status TEXT NOT NULL DEFAULT '已发送'",
-            }.items():
-                if column not in mail_cols:
-                    conn.execute(text(ddl))
-            follow_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(candidate_follow_up_records)")).fetchall()}
-            for column, ddl in {
-                "status": "ALTER TABLE candidate_follow_up_records ADD COLUMN status TEXT NOT NULL DEFAULT '已录用'",
-                "follow_up_time": "ALTER TABLE candidate_follow_up_records ADD COLUMN follow_up_time DATETIME",
-                "content": "ALTER TABLE candidate_follow_up_records ADD COLUMN content TEXT NOT NULL DEFAULT ''",
-                "operator": "ALTER TABLE candidate_follow_up_records ADD COLUMN operator TEXT NOT NULL DEFAULT ''",
-            }.items():
-                if column not in follow_cols:
-                    conn.execute(text(ddl))
-            level_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(evaluation_levels)")).fetchall()}
+
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+
+    with engine.begin() as conn:
+        # recommendations
+        rec_cols = {col['name'] for col in inspector.get_columns("recommendations")}
+        if "customer_comment" not in rec_cols:
+            conn.execute(text("ALTER TABLE recommendations ADD COLUMN customer_comment TEXT NOT NULL DEFAULT ''"))
+
+        # evaluations
+        eval_cols = {col['name'] for col in inspector.get_columns("evaluations")}
+        if "position_id" not in eval_cols:
+            conn.execute(text("ALTER TABLE evaluations ADD COLUMN position_id INTEGER NOT NULL DEFAULT 1"))
+
+        # companies
+        comp_cols = {col['name'] for col in inspector.get_columns("companies")}
+        for column, ddl in {
+            "contact_email": "ALTER TABLE companies ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''",
+            "address": "ALTER TABLE companies ADD COLUMN address TEXT NOT NULL DEFAULT ''",
+            "cooperation_period": "ALTER TABLE companies ADD COLUMN cooperation_period TEXT NOT NULL DEFAULT ''",
+        }.items():
+            if column not in comp_cols:
+                conn.execute(text(ddl))
+
+        # projects
+        proj_cols = {col['name'] for col in inspector.get_columns("projects")}
+        if "project_period" not in proj_cols:
+            conn.execute(text("ALTER TABLE projects ADD COLUMN project_period TEXT NOT NULL DEFAULT ''"))
+
+        # candidate_mail_records
+        mail_cols = {col['name'] for col in inspector.get_columns("candidate_mail_records")}
+        for column, ddl in {
+            "recipient_email": "ALTER TABLE candidate_mail_records ADD COLUMN recipient_email TEXT NOT NULL DEFAULT ''",
+            "mail_subject": "ALTER TABLE candidate_mail_records ADD COLUMN mail_subject TEXT NOT NULL DEFAULT ''",
+            "mail_body": "ALTER TABLE candidate_mail_records ADD COLUMN mail_body TEXT NOT NULL DEFAULT ''",
+            "attachment_name": "ALTER TABLE candidate_mail_records ADD COLUMN attachment_name TEXT NOT NULL DEFAULT ''",
+            "sent_by": "ALTER TABLE candidate_mail_records ADD COLUMN sent_by TEXT NOT NULL DEFAULT ''",
+            "status": "ALTER TABLE candidate_mail_records ADD COLUMN status TEXT NOT NULL DEFAULT '已发送'",
+        }.items():
+            if column not in mail_cols:
+                conn.execute(text(ddl))
+
+        # candidate_follow_up_records
+        follow_cols = {col['name'] for col in inspector.get_columns("candidate_follow_up_records")}
+        for column, ddl in {
+            "status": "ALTER TABLE candidate_follow_up_records ADD COLUMN status TEXT NOT NULL DEFAULT '已录用'",
+            "follow_up_time": "ALTER TABLE candidate_follow_up_records ADD COLUMN follow_up_time DATETIME" if engine.url.get_backend_name() == "sqlite" else "ALTER TABLE candidate_follow_up_records ADD COLUMN follow_up_time TIMESTAMP",
+            "content": "ALTER TABLE candidate_follow_up_records ADD COLUMN content TEXT NOT NULL DEFAULT ''",
+            "operator": "ALTER TABLE candidate_follow_up_records ADD COLUMN operator TEXT NOT NULL DEFAULT ''",
+        }.items():
+            if column not in follow_cols:
+                conn.execute(text(ddl))
+
+        # evaluation_levels
+        level_cols = {col['name'] for col in inspector.get_columns("evaluation_levels")} if "evaluation_levels" in inspector.get_table_names() else set()
+        if not level_cols:
+            if engine.url.get_backend_name() == "sqlite":
+                conn.execute(text("CREATE TABLE IF NOT EXISTS evaluation_levels (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL DEFAULT '', score INTEGER NOT NULL DEFAULT 5, description TEXT NOT NULL DEFAULT '', color TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0, enabled BOOLEAN NOT NULL DEFAULT 1, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
+        else:
             for column, ddl in {
                 "name": "ALTER TABLE evaluation_levels ADD COLUMN name TEXT NOT NULL DEFAULT ''",
                 "score": "ALTER TABLE evaluation_levels ADD COLUMN score INTEGER NOT NULL DEFAULT 5",
@@ -82,34 +102,51 @@ def ensure_schema() -> None:
             }.items():
                 if column not in level_cols:
                     conn.execute(text(ddl))
-            if not level_cols:
-                conn.execute(text("CREATE TABLE IF NOT EXISTS evaluation_levels (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL DEFAULT '', score INTEGER NOT NULL DEFAULT 5, description TEXT NOT NULL DEFAULT '', color TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0, enabled BOOLEAN NOT NULL DEFAULT 1, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
-            feedback_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(recommendation_feedbacks)")).fetchall()}
-            if not feedback_cols:
-                conn.execute(text("CREATE TABLE IF NOT EXISTS recommendation_feedbacks (id INTEGER PRIMARY KEY AUTOINCREMENT, recommendation_id INTEGER NOT NULL, status TEXT NOT NULL, feedback TEXT NOT NULL DEFAULT '', customer_comment TEXT NOT NULL DEFAULT '', operator TEXT NOT NULL DEFAULT '', created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
-            candidate_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(candidates)")).fetchall()}
-            for column, ddl in {
-                "gender": "ALTER TABLE candidates ADD COLUMN gender TEXT NOT NULL DEFAULT ''",
-                "age": "ALTER TABLE candidates ADD COLUMN age INTEGER",
-                "education": "ALTER TABLE candidates ADD COLUMN education TEXT NOT NULL DEFAULT ''",
-                "experience_years": "ALTER TABLE candidates ADD COLUMN experience_years INTEGER",
-                "expected_salary": "ALTER TABLE candidates ADD COLUMN expected_salary TEXT NOT NULL DEFAULT ''",
-                "id_number": "ALTER TABLE candidates ADD COLUMN id_number TEXT NOT NULL DEFAULT ''",
-                "tags": "ALTER TABLE candidates ADD COLUMN tags TEXT NOT NULL DEFAULT ''",
-                "candidate_agent_id": "ALTER TABLE candidates ADD COLUMN candidate_agent_id TEXT",
-            }.items():
-                if column not in candidate_cols:
-                    conn.execute(text(ddl))
 
-            position_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(positions)")).fetchall()}
-            for column, ddl in {
-                "age_requirement": "ALTER TABLE positions ADD COLUMN age_requirement TEXT NOT NULL DEFAULT ''",
-                "education_requirement": "ALTER TABLE positions ADD COLUMN education_requirement TEXT NOT NULL DEFAULT ''",
-                "experience_requirement": "ALTER TABLE positions ADD COLUMN experience_requirement TEXT NOT NULL DEFAULT ''",
-                "description": "ALTER TABLE positions ADD COLUMN description TEXT NOT NULL DEFAULT ''",
-            }.items():
-                if column not in position_cols:
-                    conn.execute(text(ddl))
+        # recommendation_feedbacks
+        feedback_cols = {col['name'] for col in inspector.get_columns("recommendation_feedbacks")} if "recommendation_feedbacks" in inspector.get_table_names() else set()
+        if not feedback_cols:
+            if engine.url.get_backend_name() == "sqlite":
+                conn.execute(text("CREATE TABLE IF NOT EXISTS recommendation_feedbacks (id INTEGER PRIMARY KEY AUTOINCREMENT, recommendation_id INTEGER NOT NULL, status TEXT NOT NULL, feedback TEXT NOT NULL DEFAULT '', customer_comment TEXT NOT NULL DEFAULT '', operator TEXT NOT NULL DEFAULT '', created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
+
+        # candidates
+        cand_cols = {col['name'] for col in inspector.get_columns("candidates")}
+        for column, ddl in {
+            "gender": "ALTER TABLE candidates ADD COLUMN gender TEXT NOT NULL DEFAULT ''",
+            "age": "ALTER TABLE candidates ADD COLUMN age INTEGER",
+            "education": "ALTER TABLE candidates ADD COLUMN education TEXT NOT NULL DEFAULT ''",
+            "experience_years": "ALTER TABLE candidates ADD COLUMN experience_years INTEGER",
+            "expected_salary": "ALTER TABLE candidates ADD COLUMN expected_salary TEXT NOT NULL DEFAULT ''",
+            "id_number": "ALTER TABLE candidates ADD COLUMN id_number TEXT NOT NULL DEFAULT ''",
+            "tags": "ALTER TABLE candidates ADD COLUMN tags TEXT NOT NULL DEFAULT ''",
+            "candidate_agent_id": "ALTER TABLE candidates ADD COLUMN candidate_agent_id TEXT",
+            "birth_date": "ALTER TABLE candidates ADD COLUMN birth_date TEXT NOT NULL DEFAULT ''",
+            "hukou_location": "ALTER TABLE candidates ADD COLUMN hukou_location TEXT NOT NULL DEFAULT ''",
+            "onboard_cycle": "ALTER TABLE candidates ADD COLUMN onboard_cycle TEXT NOT NULL DEFAULT ''",
+            "education_detail": "ALTER TABLE candidates ADD COLUMN education_detail TEXT NOT NULL DEFAULT ''",
+            "certificates": "ALTER TABLE candidates ADD COLUMN certificates TEXT NOT NULL DEFAULT ''",
+            "comprehensive_evaluation": "ALTER TABLE candidates ADD COLUMN comprehensive_evaluation TEXT NOT NULL DEFAULT ''",
+            "work_history": "ALTER TABLE candidates ADD COLUMN work_history TEXT NOT NULL DEFAULT ''",
+            "core_value": "ALTER TABLE candidates ADD COLUMN core_value TEXT NOT NULL DEFAULT ''",
+            "job_status": "ALTER TABLE candidates ADD COLUMN job_status TEXT NOT NULL DEFAULT ''",
+            "family_status": "ALTER TABLE candidates ADD COLUMN family_status TEXT NOT NULL DEFAULT ''",
+            "salary_structure": "ALTER TABLE candidates ADD COLUMN salary_structure TEXT NOT NULL DEFAULT ''",
+            "job_intention": "ALTER TABLE candidates ADD COLUMN job_intention TEXT NOT NULL DEFAULT ''",
+            "project_history": "ALTER TABLE candidates ADD COLUMN project_history TEXT NOT NULL DEFAULT ''",
+        }.items():
+            if column not in cand_cols:
+                conn.execute(text(ddl))
+
+        # positions
+        pos_cols = {col['name'] for col in inspector.get_columns("positions")}
+        for column, ddl in {
+            "age_requirement": "ALTER TABLE positions ADD COLUMN age_requirement TEXT NOT NULL DEFAULT ''",
+            "education_requirement": "ALTER TABLE positions ADD COLUMN education_requirement TEXT NOT NULL DEFAULT ''",
+            "experience_requirement": "ALTER TABLE positions ADD COLUMN experience_requirement TEXT NOT NULL DEFAULT ''",
+            "description": "ALTER TABLE positions ADD COLUMN description TEXT NOT NULL DEFAULT ''",
+        }.items():
+            if column not in pos_cols:
+                conn.execute(text(ddl))
 
 
 ensure_schema()

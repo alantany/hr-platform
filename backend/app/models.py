@@ -136,6 +136,21 @@ class Candidate(Base, TimestampMixin):
     tags: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     candidate_agent_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
 
+    # Resume template fields
+    birth_date: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    hukou_location: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    onboard_cycle: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    education_detail: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    certificates: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    comprehensive_evaluation: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    work_history: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    core_value: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    job_status: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    family_status: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    salary_structure: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    job_intention: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    project_history: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
     recommendations = relationship("Recommendation", back_populates="candidate")
     tracking_events = relationship("CandidateTrackingEvent", back_populates="candidate", cascade="all, delete-orphan")
     interview_records = relationship("InterviewRecord", back_populates="candidate", cascade="all, delete-orphan")

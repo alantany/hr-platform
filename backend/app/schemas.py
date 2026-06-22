@@ -209,6 +209,21 @@ class CandidateCreate(BaseModel):
     id_number: str | None = ""
     tags: str | None = ""
     candidate_agent_id: str | None = None
+    
+    # Resume template fields
+    birth_date: str | None = ""
+    hukou_location: str | None = ""
+    onboard_cycle: str | None = ""
+    education_detail: str | None = ""
+    certificates: str | None = ""
+    comprehensive_evaluation: str | None = ""
+    work_history: str | None = ""
+    core_value: str | None = ""
+    job_status: str | None = ""
+    family_status: str | None = ""
+    salary_structure: str | None = ""
+    job_intention: str | None = ""
+    project_history: str | None = ""
 
 
 class CandidateOut(CandidateCreate):
@@ -360,6 +375,21 @@ class CandidateUpdate(BaseModel):
     expected_salary: str | None = None
     id_number: str | None = None
     tags: str | None = None
+    
+    # Resume template fields
+    birth_date: str | None = None
+    hukou_location: str | None = None
+    onboard_cycle: str | None = None
+    education_detail: str | None = None
+    certificates: str | None = None
+    comprehensive_evaluation: str | None = None
+    work_history: str | None = None
+    core_value: str | None = None
+    job_status: str | None = None
+    family_status: str | None = None
+    salary_structure: str | None = None
+    job_intention: str | None = None
+    project_history: str | None = None
 
 
 class SearchPresetCreate(BaseModel):

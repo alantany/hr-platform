@@ -1,6 +1,21 @@
 # Progress
 
+## 2026-06-22 (候选人简历模板字段库扩充)
+
+- **对照客户简历模板，补齐 Candidate 数据模型缺失字段**：
+  * 分析了用户上传的客户候选人简历模板，梳理出 13 个缺失维度字段。
+  * 在 `backend/app/models.py` 的 `Candidate` 模型中，追加以下新字段：`birth_date`（出生日期）、`hukou_location`（户口所在地）、`onboard_cycle`（到岗周期）、`education_detail`（教育背景详情）、`certificates`（证书）、`comprehensive_evaluation`（综合评估）、`work_history`（职业经历）、`core_value`（核心价值）、`job_status`（职位状态）、`family_status`（家庭情况）、`salary_structure`（薪资结构）、`job_intention`（求职意向）、`project_history`（项目经历）。
+  * 同步更新了 `backend/app/schemas.py` 中的 `CandidateCreate` 和 `CandidateUpdate` 类，确保新字段支持创建与 PATCH 更新操作。
+  * **重构了 `ensure_schema()`**：原来 SQLite 的 PRAGMA + 手动 ALTER 方案仅支持 SQLite；重构后统一使用 SQLAlchemy `inspect()` API 检测已有列，消除了 SQLite/PostgreSQL 双路分支冗余代码，并解决了 PostgreSQL 因权限不足而报错的根本问题（先改表 owner 再运行）。
+  * **PostgreSQL 表权限修复**：创建了一次性脚本 `scratch/change_table_owners.py`，将 `public` schema 下所有表及序列的 owner 改为 `user_delivery`，解决了 `ensure_schema()` 在 PG 模式下 `ALTER TABLE ... ADD COLUMN` 报 `InsufficientPrivilege` 的问题。
+- **验证结论**：
+  * PostgreSQL `candidates` 表已成功包含全部 32 个字段（含 13 个新增字段）。
+  * SQLite `candidates` 表也已通过 `ensure_schema()` 自动迁移，成功包含全部 32 个字段。
+  * 全量 4 个自动化测试通过，无回归。
+  * 后端服务器正常启动，无报错。
+
 ## 2026-06-22 (搜索工具栏精简与期望城市省市级联选择器实现)
+
 
 - **搜索工具栏大瘦身与操作合并**：
   * 删除了冗余的【导入简历】和原有的【职位】输入框。
