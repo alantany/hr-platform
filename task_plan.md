@@ -134,3 +134,7 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 运行 Alembic / 数据库表自动生成，校验两套表在 PG 中的创建情况
 - [x] 运行 Pytest 烟测脚本，校验标准 SQL 兼容性，确保业务功能正常
 - **Status:** complete
+- [x] 优化候选人列表 UI：去掉多余的基本信息、时间、来源标签，头像内置精确到状态的 SVG 锁图标。
+- [x] 修改前端候选人“编辑”表单下拉框和状态判断逻辑，彻底收拢并只保留“锁定/未锁定”二元状态。
+- [x] 清理后端代码中冗余的“新入库”、“激活”状态默认值，统一替换为“未锁定”。
+- [x] 深度重置环境，成功清除数据库 public schema 下的所有业务测试脏数据，并确保底层表结构依然完好。
