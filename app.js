@@ -743,6 +743,29 @@ async function handleGlobalButton(button) {
     showToast(`推荐状态已更新：${rec.status}`);
     return;
   }
+  if (button.dataset.action === "toggle-details") {
+    const id = button.dataset.id;
+    const details = document.getElementById(`details-${id}`);
+    if (!details) return;
+    
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        const icon = button.querySelector('svg');
+        if (icon) icon.style.transform = 'rotate(180deg)';
+        if (!details.dataset.fetched) {
+            if (window.fetchCandidatePanels) {
+                window.fetchCandidatePanels(id, details);
+            }
+            details.dataset.fetched = 'true';
+        }
+    } else {
+        details.style.display = 'none';
+        const icon = button.querySelector('svg');
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+    return;
+  }
+  
   if (button.dataset.action === "view-detail") {
     const title = button.dataset.title || text || "详情";
     // 保留字符串形式的 ID，兼容来自 Recruit 的字符串 agent_id
@@ -1147,7 +1170,7 @@ async function handleGlobalButton(button) {
     const service_status = document.querySelector('[data-candidate-salary-status]')?.value?.trim() || '未进行';
     const note = document.querySelector('[data-candidate-salary-note]')?.value?.trim() || '';
     const record = await window.hrApi.createSalaryRecord({ candidate_id: candidateId, expected_salary, offered_salary, service_status, note });
-    const lifecycle = document.querySelector('[data-lifecycle-events]');
+    const lifecycle = document.querySelector(`[data-lifecycle-events="${candidateId}"]`);
     if (lifecycle) {
       const list = await window.hrApi.salaryRecords({ candidate_id: candidateId });
       const salary = list[0];
@@ -1207,7 +1230,7 @@ async function handleGlobalButton(button) {
       note,
     };
     const record = await window.hrApi.createEmploymentRecord(payload);
-    const lifecycle = document.querySelector('[data-lifecycle-events]');
+    const lifecycle = document.querySelector(`[data-lifecycle-events="${candidateId}"]`);
     if (lifecycle) {
       const list = await window.hrApi.employmentRecords({ candidate_id: candidateId });
       const employment = list[0];
@@ -1258,11 +1281,11 @@ async function handleGlobalButton(button) {
       content,
       operator: 'admin',
     });
-    const lifecycle = document.querySelector('[data-lifecycle-events]');
+    const lifecycle = document.querySelector(`[data-lifecycle-events="${candidateId}"]`);
     if (lifecycle) {
       const records = await window.hrApi.candidateFollowUpRecords({ candidate_id: candidateId });
       const followHtml = records.map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.follow_up_time || item.created_at}</div><div class="item-meta">${item.content}</div></div><span class="chip primary">${item.status}</span></div></div>`).join('');
-      const block = document.querySelector('[data-followup-block]');
+      const block = document.querySelector(`[data-tracking-events="${candidateId}"]`);
       if (block) block.innerHTML = followHtml;
     }
     if (modal) modal.style.display = 'none';
@@ -2611,3 +2634,40 @@ document.addEventListener("focusout", (event) => {
 });
 
 window.renderApp = render;
+
+window.fetchCandidatePanels = async function(candidateId, container) {
+  try {
+    const interview = await window.hrApi.interviewRecords({ candidate_id: candidateId });
+    const salary = await window.hrApi.salaryRecords({ candidate_id: candidateId });
+    const employment = await window.hrApi.employmentRecords({ candidate_id: candidateId });
+    const followUps = await window.hrApi.candidateFollowUpRecords({ candidate_id: candidateId });
+    
+    const trackingList = container.querySelector(`[data-tracking-events="${candidateId}"]`);
+    const lifecycleList = container.querySelector(`[data-lifecycle-events="${candidateId}"]`);
+    
+    if (lifecycleList) {
+      const items = [];
+      if (interview[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${interview[0].round_name}</div><div class="item-meta">${interview[0].result} · ${interview[0].interviewer}</div></div><span class="chip success">面试</span></div></div>`);
+      if (salary[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">薪资</div><div class="item-meta">${salary[0].expected_salary} / ${salary[0].offered_salary}</div></div><span class="chip warning">${salary[0].service_status}</span></div></div>`);
+      if (employment[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${employment[0].company_name}</div><div class="item-meta">${employment[0].position_name} · ${employment[0].status}</div></div><span class="chip neutral">入职</span></div></div>`);
+      if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已录用</span></div></div>`);
+      lifecycleList.innerHTML = items.join('') || '<div class="list-item"><div class="item-meta">暂无面试、入职等生命周期记录</div></div>';
+    }
+    
+    if (trackingList) {
+      trackingList.innerHTML = followUps.map(item => `
+        <div class="list-item">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${item.follow_up_time || item.created_at}</div>
+              <div class="item-meta">${item.content}</div>
+            </div>
+            <span class="chip primary">${item.status}</span>
+          </div>
+        </div>
+      `).join('') || '<div class="list-item"><div class="item-meta">暂无跟踪事件记录</div></div>';
+    }
+  } catch (err) {
+    console.warn('Failed to fetch candidate panels:', err);
+  }
+};
