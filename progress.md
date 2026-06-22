@@ -1,5 +1,26 @@
 # Progress
 
+## 2026-06-23 (最新)
+
+- **简历解析导入逻辑异步化（非阻塞）**：
+  * 重构了 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 里的单选与多选简历导入点击确认事件处理函数（`confirm-import-upload` 和 `confirm-batch-import-upload`），将原先的同步阻塞 `await` 请求变更为异步的 Promise (`.then().catch()`) 逻辑。
+  * 用户点击确认导入后，弹窗会**立刻关闭**，重置选择器，并且弹出“简历正在后台解析导入中，请稍候...”的提示，彻底解决了大模型调用耗时造成的前端“界面卡住、无反应”的交互痛点。在解析完成后，会自动静默刷新导入统计数、历史 timeline 并弹出成功/同名复核通知。
+- **美化简历上传选择框样式**：
+  * 在 [styles.css](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/styles.css) 中新增了拖拽/点击上传卡片样式 `.file-upload-zone`，并配置了虚线边框、现代轻量背景，以及精致的 PDF 图标动画与悬浮交互效果。
+  * 修改了 [import.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/import.html)，将单选和多选的文件上传控件重构为了高颜值的 `.file-upload-zone` 上传卡片，隐藏了原本简陋丑陋的浏览器原生 input 文件选择器，并在 `DOMContentLoaded` 动态绑定了所选文件名或文件数量的回显逻辑，避免了反引号模板字符串的插值解析冲突。
+- **限制简历导入仅支持 PDF 格式**：
+  * **前端限制**：修改了 [import.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/import.html) 中的文件单选与多选 input，将 `accept` 属性限制为 `".pdf"`，并且更新了文案以提示用户只支持 PDF 格式。
+  * **前端脚本校验**：在 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 相关的 `import-smoke`、`confirm-import-upload`、`confirm-batch-import-upload` 操作中，将 `allowed` 文件后缀列表由 `[".doc", ".docx", ".pdf"]` 过滤限制为仅 `[".pdf"]`，并把格式错误异常提示信息统一优化为 `"目前只支持PDF格式的简历文件，请重新上传"`。
+  * **测试验证**：运行 `python3 e2e_all_pages.py` 执行 Playwright 页面端到端静态测试验证，证明所有页面正常加载，无任何报错和阻塞。
+- **修复修改候选人姓名后刷新页面显示没变的问题**：
+  * **定位根因**：经过分析，发现由于前端 [candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html) 将翻页与筛选状态（`list`, `currentPage`, `pageSize`）及渲染逻辑（`render()`）封装为全局变量 `window.candidatesPageState`，且每次调用 `render()` 都会执行 `applyFilters()`，在内存中由 `this.rawList` 作为源数据重新过滤并覆盖 `this.list`。
+  * **发现漏洞**：但在 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 执行 `confirm-candidate-edit` (编辑修改)、`confirm-candidate-create` (新建创建) 和 `confirm-candidate-action` (锁定/释放) 操作成功重新请求最新的候选人列表后，仅更新了 `window.candidatesPageState.list`，而**未同步更新 `window.candidatesPageState.rawList`**。这导致一旦触发 `render()`，内存的筛选机制立刻将旧的 `rawList` 数据重新覆盖回了 `list`，页面更新的数据瞬间被抹除，产生了“保存成功但刷新列表/重新渲染后变回旧值”的假象。
+  * **修复方案**：已对 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 中这三处更新 `candidatesPageState` 列表的地方进行重构，在赋值 `list` 的同时，同步更新 `rawList` (全量更新或对应状态更新)，彻底解决了候选人姓名及其他属性在前端修改后，页面重新渲染被旧数据覆盖回退的交互 Bug。
+- **简化简历导入页面结构**：
+  * 根据用户指示，去除了简历导入页面（[import.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/import.html)）上的“导入概览”统计面板和“智联抓取库同步”同步面板。
+  * 重构了页面布局，将剩下的“上传文件”卡片和“导入记录/导入历史”时间轴调整为了平衡的左右双栏布局（`style="grid-template-columns:1.1fr .9fr"`），提高了版面整洁度和对齐美感。
+  * 精简了对应的页面脚本，移除了无用的抓取数据拉取及按钮监听代码，并在历史统计变量前加挂了必要的判空保护，保证无死交互。
+
 ## 2026-06-22 (Bug修复与表单体验优化)
 
 - 修复了后端 `crud.py` 中 `list_candidates` 接口因字典手动构建遗漏新增字段，导致前台详情页信息为空白的 Bug。

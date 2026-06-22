@@ -262,7 +262,7 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
             "project_history": c.project_history,
             "candidate_agent_id": None,
             "created_at": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else None,
-            "file_path": None
+            "file_path": getattr(c, "file_path", None) or None
         })
         
     # 处理联合查询的结果
@@ -307,7 +307,7 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "project_history": c.project_history,
                 "candidate_agent_id": d.candidate_agent_id,
                 "created_at": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else d.created_at,
-                "file_path": d.file_path
+                "file_path": getattr(c, "file_path", None) or d.file_path
             })
         else:
             if d.candidate_name in seen_names:

@@ -16,6 +16,15 @@ from .database import Base, engine, get_db
 from .models import AuditLog, AiTask, Candidate, CandidateFollowUpRecord, CandidateMailRecord, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
 from .security import get_current_user
 from backend.seed import seed as seed_data
+import os
+import json
+import time
+import pdfplumber
+from openai import OpenAI
+from dotenv import load_dotenv
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+load_dotenv(os.path.join(ROOT_DIR, '.env'))
 
 
 app = FastAPI(title="招聘管理系统 API", version="0.1.0")
@@ -122,6 +131,7 @@ def ensure_schema() -> None:
             "salary_structure": "ALTER TABLE candidates ADD COLUMN salary_structure TEXT NOT NULL DEFAULT ''",
             "job_intention": "ALTER TABLE candidates ADD COLUMN job_intention TEXT NOT NULL DEFAULT ''",
             "project_history": "ALTER TABLE candidates ADD COLUMN project_history TEXT NOT NULL DEFAULT ''",
+            "file_path": "ALTER TABLE candidates ADD COLUMN file_path TEXT NOT NULL DEFAULT ''",
         }.items():
             if column not in cand_cols:
                 conn.execute(text(ddl))
@@ -1093,34 +1103,179 @@ def upsert_data_permission(payload: schemas.DataPermissionCreate, db: Session = 
     db.commit()
     db.refresh(obj)
     return obj
+# 初始化 OpenAI 客户端（OpenRouter 适配）
+OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o")
+
+openai_client = OpenAI(
+    base_url=OPENROUTER_BASE_URL,
+    api_key=OPENROUTER_API_KEY,
+)
+
+PROMPT_FILE_PATH = os.path.join(ROOT_DIR, "outputs", "resume_parsing_prompt.md")
+
+def get_system_prompt() -> str:
+    if os.path.exists(PROMPT_FILE_PATH):
+        with open(PROMPT_FILE_PATH, "r", encoding="utf-8") as f:
+            return f.read()
+    return "You are an expert HR recruitment assistant. Please parse the resume text and return structured candidate JSON."
+
+def call_llm_for_json(resume_text: str) -> dict:
+    if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "your_api_key_here":
+         raise ValueError("OpenRouter API Key is not configured. Please check your .env file.")
+         
+    system_prompt = get_system_prompt()
+    
+    response = openai_client.chat.completions.create(
+        model=OPENROUTER_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"请解析以下简历文本并严格返回要求的 JSON 格式：\n\n{resume_text}"}
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.1
+    )
+    
+    raw_response = response.choices[0].message.content.strip()
+    if raw_response.startswith("```json"):
+        raw_response = raw_response[7:]
+    elif raw_response.startswith("```"):
+         raw_response = raw_response[3:]
+    if raw_response.endswith("```"):
+         raw_response = raw_response[:-3]
+         
+    return json.loads(raw_response.strip())
+
+def parse_and_create_candidate(db: Session, full_path: str, save_name: str, username: str) -> dict:
+    text_content = ""
+    with pdfplumber.open(full_path) as pdf:
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text_content += page_text + "\n"
+                
+    if not text_content.strip():
+        raise Exception("无法从PDF中提取出任何文本内容。")
+        
+    parsed_data = call_llm_for_json(text_content)
+    candidate_name = parsed_data.get("name") or Path(full_path).stem
+    candidate_name = candidate_name.strip()
+    
+    duplicate = db.query(Candidate).filter(Candidate.name == candidate_name).order_by(Candidate.created_at.desc()).first()
+    if duplicate:
+        return {"status": "duplicate", "candidate_name": candidate_name, "duplicate": duplicate}
+        
+    relative_file_path = f"data/resumes/imported/{save_name}"
+    
+    candidate = Candidate(
+        name=candidate_name,
+        phone=parsed_data.get("phone") or "",
+        email=parsed_data.get("email") or "",
+        gender=parsed_data.get("gender") or "",
+        birth_date=parsed_data.get("birth_date") or "",
+        age=parsed_data.get("age") or 0,
+        city=parsed_data.get("city") or "",
+        hukou_location=parsed_data.get("hukou_location") or "",
+        family_status=parsed_data.get("family_status") or "",
+        job_status=parsed_data.get("job_status") or "离职",
+        onboard_cycle=parsed_data.get("onboard_cycle") or "",
+        expected_salary=parsed_data.get("expected_salary") or "",
+        job_intention=parsed_data.get("job_intention") or "",
+        education=parsed_data.get("education") or "",
+        experience_years=parsed_data.get("experience_years") or 0,
+        current_title=parsed_data.get("current_title") or "",
+        core_value=parsed_data.get("core_value") or "",
+        certificates=parsed_data.get("certificates") or "",
+        education_detail=parsed_data.get("education_detail") or "",
+        work_history=parsed_data.get("work_history") or "",
+        project_history=parsed_data.get("project_history") or "",
+        file_path=relative_file_path,
+        source="AI解析",
+        status="未锁定"
+    )
+    db.add(candidate)
+    db.flush()
+    return {"status": "success", "candidate": candidate}
+
 @app.post("/api/imports/smoke")
 def import_smoke(file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_user)):
-    name = Path(file.filename or "").stem or "未命名简历"
-    duplicate = db.query(Candidate).filter(Candidate.name == name).order_by(Candidate.created_at.desc()).first()
-    if duplicate:
+    filename = file.filename or ""
+    if not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="目前只支持PDF格式的简历文件。")
+        
+    import_dir = os.path.join(ROOT_DIR, "recruit", "data", "resumes", "imported")
+    os.makedirs(import_dir, exist_ok=True)
+    
+    timestamp = int(time.time())
+    save_name = f"{timestamp}_{filename}"
+    full_path = os.path.join(import_dir, save_name)
+    
+    with open(full_path, "wb") as f:
+        f.write(file.file.read())
+        
+    try:
+        result = parse_and_create_candidate(db, full_path, save_name, user.username)
+        if result["status"] == "duplicate":
+            duplicate = result["duplicate"]
+            candidate_name = result["candidate_name"]
+            import_record = crud.create_import_record(
+                db,
+                schemas.ImportRecordCreate(
+                    file_name=filename,
+                    imported_by=user.username,
+                    imported_count=0,
+                    failed_count=1,
+                    status="复核",
+                    note=f"检测到同名候选人：{candidate_name}，等待覆盖确认",
+                ),
+            )
+            crud.add_audit(db, user.username, "简历导入", "导入简历复核", "candidate", str(duplicate.id), result="失败", detail=filename)
+            db.commit()
+            db.refresh(import_record)
+            return {
+                "imported": 0,
+                "duplicate": schemas.CandidateOut.model_validate(duplicate, from_attributes=True).model_dump(),
+                "import_record": schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump()
+            }
+        else:
+            candidate = result["candidate"]
+            import_record = crud.create_import_record(
+                db,
+                schemas.ImportRecordCreate(
+                    file_name=filename,
+                    imported_by=user.username,
+                    imported_count=1,
+                    failed_count=0,
+                    status="成功",
+                    note=f"导入候选人 {candidate.name}"
+                )
+            )
+            crud.add_audit(db, user.username, "简历导入", "导入简历", "candidate", str(candidate.id), detail=filename)
+            db.commit()
+            db.refresh(candidate)
+            db.refresh(import_record)
+            return {
+                "imported": 1,
+                "candidate": schemas.CandidateOut.model_validate(candidate, from_attributes=True).model_dump(),
+                "import_record": schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump()
+            }
+    except Exception as e:
         import_record = crud.create_import_record(
             db,
             schemas.ImportRecordCreate(
-                file_name=file.filename or name,
+                file_name=filename,
                 imported_by=user.username,
                 imported_count=0,
                 failed_count=1,
-                status="复核",
-                note=f"检测到同名候选人：{duplicate.name}，等待覆盖确认",
-            ),
+                status="失败",
+                note=f"解析失败: {str(e)}"
+            )
         )
-        crud.add_audit(db, user.username, "简历导入", "导入简历复核", "candidate", str(duplicate.id), result="失败", detail=file.filename or "")
+        crud.add_audit(db, user.username, "简历导入", "导入解析失败", "candidate", "error", result="失败", detail=filename)
         db.commit()
         db.refresh(import_record)
-        return {"imported": 0, "duplicate": schemas.CandidateOut.model_validate(duplicate, from_attributes=True).model_dump(), "import_record": schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump()}
-    candidate = Candidate(name=name, source="导入", status="未锁定", locked=False)
-    db.add(candidate)
-    import_record = crud.create_import_record(db, schemas.ImportRecordCreate(file_name=file.filename or name, imported_by=user.username, imported_count=1, failed_count=0, status="成功", note=f"导入候选人 {name}"))
-    crud.add_audit(db, user.username, "简历导入", "导入简历", "candidate", "new", detail=file.filename or "")
-    db.commit()
-    db.refresh(candidate)
-    db.refresh(import_record)
-    return {"imported": 1, "candidate": schemas.CandidateOut.model_validate(candidate, from_attributes=True).model_dump(), "import_record": schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump()}
+        raise HTTPException(status_code=400, detail=f"简历导入解析失败: {str(e)}")
 
 
 @app.post("/api/imports/batch")
@@ -1129,37 +1284,81 @@ def import_batch(files: list[UploadFile] = File(...), db: Session = Depends(get_
     duplicates = 0
     records = []
     candidates = []
+    
+    # 1. 校验所有的文件只能是 PDF
     for file in files:
-        name = Path(file.filename or "").stem or "未命名简历"
-        duplicate = db.query(Candidate).filter(Candidate.name == name).order_by(Candidate.created_at.desc()).first()
-        if duplicate:
-            duplicates += 1
+        filename = file.filename or ""
+        if not filename.lower().endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="目前只支持PDF格式的简历文件。")
+            
+    # 2. 遍历并保存和解析
+    import_dir = os.path.join(ROOT_DIR, "recruit", "data", "resumes", "imported")
+    os.makedirs(import_dir, exist_ok=True)
+    
+    for file in files:
+        filename = file.filename or ""
+        timestamp = int(time.time())
+        save_name = f"{timestamp}_{filename}"
+        full_path = os.path.join(import_dir, save_name)
+        
+        with open(full_path, "wb") as f:
+            f.write(file.file.read())
+            
+        try:
+            result = parse_and_create_candidate(db, full_path, save_name, user.username)
+            if result["status"] == "duplicate":
+                duplicates += 1
+                duplicate = result["duplicate"]
+                candidate_name = result["candidate_name"]
+                import_record = crud.create_import_record(
+                    db,
+                    schemas.ImportRecordCreate(
+                        file_name=filename,
+                        imported_by=user.username,
+                        imported_count=0,
+                        failed_count=1,
+                        status="复核",
+                        note=f"检测到同名候选人：{candidate_name}，等待覆盖确认",
+                    ),
+                )
+                crud.add_audit(db, user.username, "简历导入", "批量导入复核", "candidate", str(duplicate.id), result="失败", detail=filename)
+                db.flush()
+                records.append(schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump())
+            else:
+                imported += 1
+                candidate = result["candidate"]
+                import_record = crud.create_import_record(
+                    db,
+                    schemas.ImportRecordCreate(
+                        file_name=filename,
+                        imported_by=user.username,
+                        imported_count=1,
+                        failed_count=0,
+                        status="成功",
+                        note=f"导入候选人 {candidate.name}",
+                    ),
+                )
+                crud.add_audit(db, user.username, "简历导入", "批量导入简历", "candidate", str(candidate.id), detail=filename)
+                db.flush()
+                candidates.append(candidate)
+                records.append(schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump())
+                
+        except Exception as e:
             import_record = crud.create_import_record(
                 db,
                 schemas.ImportRecordCreate(
-                    file_name=file.filename or name,
+                    file_name=filename,
                     imported_by=user.username,
                     imported_count=0,
                     failed_count=1,
-                    status="复核",
-                    note=f"检测到同名候选人：{duplicate.name}，等待覆盖确认",
+                    status="失败",
+                    note=f"解析失败: {str(e)}",
                 ),
             )
-            crud.add_audit(db, user.username, "简历导入", "批量导入复核", "candidate", str(duplicate.id), result="失败", detail=file.filename or "")
+            crud.add_audit(db, user.username, "简历导入", "批量解析失败", "candidate", "error", result="失败", detail=filename)
             db.flush()
             records.append(schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump())
-            continue
-        candidate = Candidate(name=name, source="导入", status="未锁定", locked=False)
-        db.add(candidate)
-        import_record = crud.create_import_record(
-            db,
-            schemas.ImportRecordCreate(file_name=file.filename or name, imported_by=user.username, imported_count=1, failed_count=0, status="成功", note=f"导入候选人 {name}"),
-        )
-        crud.add_audit(db, user.username, "简历导入", "批量导入简历", "candidate", "new", detail=file.filename or "")
-        db.flush()
-        candidates.append(candidate)
-        records.append(schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump())
-        imported += 1
+            
     db.commit()
     for item in candidates:
         db.refresh(item)

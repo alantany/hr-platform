@@ -209,6 +209,7 @@ class CandidateCreate(BaseModel):
     id_number: str | None = ""
     tags: str | None = ""
     candidate_agent_id: str | None = None
+    file_path: str | None = ""
     
     # Resume template fields
     birth_date: str | None = ""
@@ -366,6 +367,7 @@ class CandidateUpdate(BaseModel):
     expected_salary: str | None = None
     id_number: str | None = None
     tags: str | None = None
+    file_path: str | None = None
     
     # Resume template fields
     birth_date: str | None = None

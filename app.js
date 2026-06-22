@@ -909,6 +909,7 @@ async function handleGlobalButton(button) {
     }
     
     const payload = {
+      name: get('[data-candidate-edit-name]'),
       phone,
       email,
       current_title: get('[data-candidate-edit-title]'),
@@ -940,6 +941,7 @@ async function handleGlobalButton(button) {
     const candidate = await window.hrApi.updateCandidate(target.id, payload);
     if (window.candidatesPageState) {
       const items = await window.hrApi.candidates();
+      window.candidatesPageState.rawList = items;
       window.candidatesPageState.list = items;
       window.candidatesPageState.render();
       if (modal) modal.style.display = 'none';
@@ -1015,6 +1017,7 @@ async function handleGlobalButton(button) {
     if (modal) modal.style.display = 'none';
     if (window.candidatesPageState) {
       const items = await window.hrApi.candidates();
+      window.candidatesPageState.rawList = items;
       window.candidatesPageState.list = items;
       window.candidatesPageState.render();
       showToast(`已创建候选人：${candidate.name}`);
@@ -1321,12 +1324,28 @@ async function handleGlobalButton(button) {
           (i.candidate_agent_id && String(i.candidate_agent_id) === String(result.candidate_agent_id))
         );
         if (itemIndex > -1) {
-          window.candidatesPageState.list[itemIndex] = {
+          const updatedItem = {
             ...window.candidatesPageState.list[itemIndex],
             id: result.id,
             locked: result.locked,
             status: result.status
           };
+          window.candidatesPageState.list[itemIndex] = updatedItem;
+          
+          if (window.candidatesPageState.rawList) {
+            const rawIndex = window.candidatesPageState.rawList.findIndex(i =>
+              String(i.id) === String(result.id) ||
+              (i.candidate_agent_id && String(i.candidate_agent_id) === String(result.candidate_agent_id))
+            );
+            if (rawIndex > -1) {
+              window.candidatesPageState.rawList[rawIndex] = {
+                ...window.candidatesPageState.rawList[rawIndex],
+                id: result.id,
+                locked: result.locked,
+                status: result.status
+              };
+            }
+          }
           window.candidatesPageState.render();
         }
       }
@@ -1372,9 +1391,9 @@ async function handleGlobalButton(button) {
     const fileInput = document.querySelector('[data-import-file]');
     const file = fileInput?.files?.[0];
     if (!file) throw new Error("请先在导入窗口选择真实简历文件");
-    const allowed = [".doc", ".docx", ".pdf"];
+    const allowed = [".pdf"];
     const name = (file.name || "").toLowerCase();
-    if (!allowed.some(ext => name.endsWith(ext))) throw new Error("格式文件不符，请重新上传");
+    if (!allowed.some(ext => name.endsWith(ext))) throw new Error("目前只支持PDF格式的简历文件，请重新上传");
     const result = await window.hrApi.importSmoke(file);
     await window.hrApi.createNotification({
       user: "admin",
@@ -1403,83 +1422,135 @@ async function handleGlobalButton(button) {
     const fileInput = document.querySelector('[data-import-file]');
     const file = fileInput?.files?.[0];
     if (!file) throw new Error("请先选择简历文件");
-    const allowed = [".doc", ".docx", ".pdf"];
+    const allowed = [".pdf"];
     const name = (file.name || "").toLowerCase();
-    if (!allowed.some(ext => name.endsWith(ext))) throw new Error("格式文件不符，请重新上传");
-    const result = await window.hrApi.importSmoke(file);
-    await window.hrApi.createNotification({
-      user: "admin",
-      title: `新简历导入：${result.candidate.name}`,
-      type: "导入通知",
-      content: `${result.candidate.name} 已进入候选人池，来源：${result.candidate.source || "导入"}`,
-      target_path: "./candidates.html",
-      read: false,
-    });
+    if (!allowed.some(ext => name.endsWith(ext))) throw new Error("目前只支持PDF格式的简历文件，请重新上传");
+
+    // 立刻关闭弹窗
     const modal = document.querySelector('[data-import-modal]');
     if (modal) modal.style.display = "none";
-    const preview = document.querySelector('[data-import-preview]');
-    if (preview) preview.textContent = `已导入 ${file.name}，候选人 ${result.candidate.name} 已进入数据池，若有同名记录请在导入历史中复核。`;
-    const records = document.querySelector(".import-records .timeline");
-    if (records) {
-      const row = document.createElement("div");
-      row.className = "list-item soft";
-      row.innerHTML = `<div class="item-top"><div><div class="item-title">${file.name}</div><div class="item-meta">${result.candidate.name} 已进入候选人池</div></div><span class="tag green">成功</span></div>`;
-      records.prepend(row);
-    }
-    const historyItems = await window.hrApi.importRecords();
-    const success = document.querySelector('[data-import-success]');
-    const failed = document.querySelector('[data-import-failed]');
-    const rate = document.querySelector('[data-import-rate]');
-    const review = document.querySelector('[data-import-review]');
-    if (success) success.textContent = String(historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0), 0));
-    if (failed) failed.textContent = String(historyItems.reduce((sum, i) => sum + Number(i.failed_count || 0), 0));
-    if (rate) rate.textContent = historyItems.length ? `${((historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0), 0) / Math.max(1, historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0) + Number(i.failed_count || 0), 0))) * 100).toFixed(1)}%` : '0%';
-    if (review) review.textContent = String(historyItems.filter(i => String(i.note || '').includes('复核')).length);
-    if (records) {
-      records.innerHTML = historyItems.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
-    }
-    const snapshot = document.querySelector("[data-candidate-results]");
-    if (snapshot) {
-      const item = result.candidate;
-      snapshot.prepend(Object.assign(document.createElement("div"), { className: "list-item", innerHTML: `<div class="item-top"><div><div class="item-title">${item.name}</div><div class="item-meta">${item.current_title || ""} · ${item.city || ""} · ${item.status || ""}</div></div><span class="chip success">可操作</span></div>` }));
-    }
-    showToast(`已导入：${result.candidate.name}`);
+
+    // 重置选择
+    fileInput.value = "";
+    const filenameEl = document.querySelector('[data-import-filename]');
+    if (filenameEl) filenameEl.textContent = '未选择任何文件';
+
+    showToast("简历正在后台解析导入中，请稍候...");
+
+    // 异步执行接口请求
+    window.hrApi.importSmoke(file).then(async (result) => {
+      await window.hrApi.createNotification({
+        user: "admin",
+        title: `新简历导入：${result.candidate?.name || result.duplicate?.name || '未知'}`,
+        type: "导入通知",
+        content: `${result.candidate?.name || result.duplicate?.name || '未知'} 已进入候选人池，来源：${result.candidate?.source || "导入"}`,
+        target_path: "./candidates.html",
+        read: false,
+      });
+
+      if (result.imported === 0 && result.duplicate) {
+        showToast(`检测到同名候选人 ${result.duplicate.name}，已写入待复核历史！`);
+      } else {
+        showToast(`导入成功：${result.candidate.name}`);
+      }
+
+      const preview = document.querySelector('[data-import-preview]');
+      if (preview) {
+        if (result.imported === 0 && result.duplicate) {
+          preview.textContent = `导入完成，检测到同名候选人 ${result.duplicate.name}，已存入导入历史等待复核。`;
+        } else {
+          preview.textContent = `已导入 ${file.name}，候选人 ${result.candidate.name} 已进入数据池，若有同名记录请在导入历史中复核。`;
+        }
+      }
+
+      const historyItems = await window.hrApi.importRecords();
+      const records = document.querySelector(".import-records .timeline");
+      if (records) {
+        records.innerHTML = historyItems.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
+      }
+
+      const success = document.querySelector('[data-import-success]');
+      const failed = document.querySelector('[data-import-failed]');
+      const rate = document.querySelector('[data-import-rate]');
+      const review = document.querySelector('[data-import-review]');
+      if (success) success.textContent = String(historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0), 0));
+      if (failed) failed.textContent = String(historyItems.reduce((sum, i) => sum + Number(i.failed_count || 0), 0));
+      if (rate) rate.textContent = historyItems.length ? `${((historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0), 0) / Math.max(1, historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0) + Number(i.failed_count || 0), 0))) * 100).toFixed(1)}%` : '0%';
+      if (review) review.textContent = String(historyItems.filter(i => String(i.note || '').includes('复核')).length);
+
+      const snapshot = document.querySelector("[data-candidate-results]");
+      if (snapshot && result.candidate) {
+        const item = result.candidate;
+        snapshot.prepend(Object.assign(document.createElement("div"), { className: "list-item", innerHTML: `<div class="item-top"><div><div class="item-title">${item.name}</div><div class="item-meta">${item.current_title || ""} · ${item.city || ""} · ${item.status || ""}</div></div><span class="chip success">可操作</span></div>` }));
+      }
+    }).catch(err => {
+      showToast(`简历导入解析失败: ${err.message || err}`);
+      window.hrApi.importRecords().then(historyItems => {
+        const records = document.querySelector(".import-records .timeline");
+        if (records) {
+          records.innerHTML = historyItems.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
+        }
+      });
+    });
     return;
   }
   if (button.dataset.action === "confirm-batch-import-upload") {
     const fileInput = document.querySelector('[data-batch-import-files]');
     const files = Array.from(fileInput?.files || []);
     if (!files.length) throw new Error("请先选择一个或多个简历文件");
-    const allowed = [".doc", ".docx", ".pdf"];
+    const allowed = [".pdf"];
     for (const file of files) {
       const name = (file.name || "").toLowerCase();
-      if (!allowed.some(ext => name.endsWith(ext))) throw new Error("格式文件不符，请重新上传");
+      if (!allowed.some(ext => name.endsWith(ext))) throw new Error("目前只支持PDF格式的简历文件，请重新上传");
     }
-    const result = await window.hrApi.importBatch(files);
-    await window.hrApi.createNotification({
-      user: "admin",
-      title: `批量简历导入：${result.imported} 成功`,
-      type: "导入通知",
-      content: `批量导入完成，成功 ${result.imported}，重复 ${result.duplicates || 0}`,
-      target_path: "./import.html",
-      read: false,
-    });
+
+    // 立刻关闭弹窗
     const modal = document.querySelector('[data-batch-import-modal]');
     if (modal) modal.style.display = "none";
-    const historyItems = await window.hrApi.importRecords();
-    const records = document.querySelector(".import-records .timeline");
-    if (records) {
-      records.innerHTML = historyItems.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
-    }
-    const success = document.querySelector('[data-import-success]');
-    const failed = document.querySelector('[data-import-failed]');
-    const rate = document.querySelector('[data-import-rate]');
-    const review = document.querySelector('[data-import-review]');
-    if (success) success.textContent = String(historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0), 0));
-    if (failed) failed.textContent = String(historyItems.reduce((sum, i) => sum + Number(i.failed_count || 0), 0));
-    if (rate) rate.textContent = historyItems.length ? `${((historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0), 0) / Math.max(1, historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0) + Number(i.failed_count || 0), 0))) * 100).toFixed(1)}%` : '0%';
-    if (review) review.textContent = String(historyItems.filter(i => String(i.note || '').includes('复核')).length);
-    showToast(`批量导入完成：${result.imported} 条`);
+
+    // 重置选择
+    fileInput.value = "";
+    const filenameEl = document.querySelector('[data-batch-import-filenames]');
+    if (filenameEl) filenameEl.textContent = '未选择任何文件';
+
+    showToast("多份简历正在后台解析导入中，请稍候...");
+
+    // 异步执行接口请求
+    window.hrApi.importBatch(files).then(async (result) => {
+      await window.hrApi.createNotification({
+        user: "admin",
+        title: `批量简历导入：${result.imported} 成功`,
+        type: "导入通知",
+        content: `批量导入完成，成功 ${result.imported}，重复 ${result.duplicates || 0}`,
+        target_path: "./import.html",
+        read: false,
+      });
+
+      showToast(`批量导入完成：成功 ${result.imported} 条` + (result.duplicates ? `，重复 ${result.duplicates} 条` : ''));
+
+      const historyItems = await window.hrApi.importRecords();
+      const records = document.querySelector(".import-records .timeline");
+      if (records) {
+        records.innerHTML = historyItems.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
+      }
+
+      const success = document.querySelector('[data-import-success]');
+      const failed = document.querySelector('[data-import-failed]');
+      const rate = document.querySelector('[data-import-rate]');
+      const review = document.querySelector('[data-import-review]');
+      if (success) success.textContent = String(historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0), 0));
+      if (failed) failed.textContent = String(historyItems.reduce((sum, i) => sum + Number(i.failed_count || 0), 0));
+      if (rate) rate.textContent = historyItems.length ? `${((historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0), 0) / Math.max(1, historyItems.reduce((sum, i) => sum + Number(i.imported_count || 0) + Number(i.failed_count || 0), 0))) * 100).toFixed(1)}%` : '0%';
+      if (review) review.textContent = String(historyItems.filter(i => String(i.note || '').includes('复核')).length);
+    }).catch(err => {
+      showToast(`批量简历导入失败: ${err.message || err}`);
+      window.hrApi.importRecords().then(historyItems => {
+        const records = document.querySelector(".import-records .timeline");
+        if (records) {
+          records.innerHTML = historyItems.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
+        }
+      });
+    });
     return;
   }
   if (button.dataset.action === "create-company") {

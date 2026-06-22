@@ -134,6 +134,7 @@ class Candidate(Base, TimestampMixin):
     id_number: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     tags: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     candidate_agent_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    file_path: Mapped[str | None] = mapped_column(String(255), default="", nullable=True)
 
     # Resume template fields
     birth_date: Mapped[str] = mapped_column(String(64), default="", nullable=False)
