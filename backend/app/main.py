@@ -28,9 +28,8 @@ app.add_middleware(
 )
 
 def ensure_schema() -> None:
-    if engine.url.get_backend_name() != "sqlite":
-        with engine.begin() as conn:
-            conn.execute(text("CREATE SCHEMA IF NOT EXISTS recruit"))
+    with engine.begin() as conn:
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS recruit"))
     Base.metadata.create_all(bind=engine)
 
     from sqlalchemy import inspect
@@ -70,7 +69,7 @@ def ensure_schema() -> None:
             "mail_body": "ALTER TABLE candidate_mail_records ADD COLUMN mail_body TEXT NOT NULL DEFAULT ''",
             "attachment_name": "ALTER TABLE candidate_mail_records ADD COLUMN attachment_name TEXT NOT NULL DEFAULT ''",
             "sent_by": "ALTER TABLE candidate_mail_records ADD COLUMN sent_by TEXT NOT NULL DEFAULT ''",
-            "status": "ALTER TABLE candidate_mail_records ADD COLUMN status TEXT NOT NULL DEFAULT '已发送'",
+            "status": "ALTER TABLE candidate_mail_records ADD COLUMN status TEXT NOT NULL DEFAULT '\u5df2\u53d1\u9001'",
         }.items():
             if column not in mail_cols:
                 conn.execute(text(ddl))
@@ -78,36 +77,26 @@ def ensure_schema() -> None:
         # candidate_follow_up_records
         follow_cols = {col['name'] for col in inspector.get_columns("candidate_follow_up_records")}
         for column, ddl in {
-            "status": "ALTER TABLE candidate_follow_up_records ADD COLUMN status TEXT NOT NULL DEFAULT '已录用'",
-            "follow_up_time": "ALTER TABLE candidate_follow_up_records ADD COLUMN follow_up_time DATETIME" if engine.url.get_backend_name() == "sqlite" else "ALTER TABLE candidate_follow_up_records ADD COLUMN follow_up_time TIMESTAMP",
+            "status": "ALTER TABLE candidate_follow_up_records ADD COLUMN status TEXT NOT NULL DEFAULT '\u5df2\u5f55\u7528'",
+            "follow_up_time": "ALTER TABLE candidate_follow_up_records ADD COLUMN follow_up_time TIMESTAMP",
             "content": "ALTER TABLE candidate_follow_up_records ADD COLUMN content TEXT NOT NULL DEFAULT ''",
             "operator": "ALTER TABLE candidate_follow_up_records ADD COLUMN operator TEXT NOT NULL DEFAULT ''",
         }.items():
             if column not in follow_cols:
                 conn.execute(text(ddl))
 
-        # evaluation_levels
+        # evaluation_levels — PG uses Base.metadata.create_all, no manual CREATE needed
         level_cols = {col['name'] for col in inspector.get_columns("evaluation_levels")} if "evaluation_levels" in inspector.get_table_names() else set()
-        if not level_cols:
-            if engine.url.get_backend_name() == "sqlite":
-                conn.execute(text("CREATE TABLE IF NOT EXISTS evaluation_levels (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL DEFAULT '', score INTEGER NOT NULL DEFAULT 5, description TEXT NOT NULL DEFAULT '', color TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0, enabled BOOLEAN NOT NULL DEFAULT 1, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
-        else:
-            for column, ddl in {
-                "name": "ALTER TABLE evaluation_levels ADD COLUMN name TEXT NOT NULL DEFAULT ''",
-                "score": "ALTER TABLE evaluation_levels ADD COLUMN score INTEGER NOT NULL DEFAULT 5",
-                "description": "ALTER TABLE evaluation_levels ADD COLUMN description TEXT NOT NULL DEFAULT ''",
-                "color": "ALTER TABLE evaluation_levels ADD COLUMN color TEXT NOT NULL DEFAULT ''",
-                "sort_order": "ALTER TABLE evaluation_levels ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
-                "enabled": "ALTER TABLE evaluation_levels ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT 1",
-            }.items():
-                if column not in level_cols:
-                    conn.execute(text(ddl))
-
-        # recommendation_feedbacks
-        feedback_cols = {col['name'] for col in inspector.get_columns("recommendation_feedbacks")} if "recommendation_feedbacks" in inspector.get_table_names() else set()
-        if not feedback_cols:
-            if engine.url.get_backend_name() == "sqlite":
-                conn.execute(text("CREATE TABLE IF NOT EXISTS recommendation_feedbacks (id INTEGER PRIMARY KEY AUTOINCREMENT, recommendation_id INTEGER NOT NULL, status TEXT NOT NULL, feedback TEXT NOT NULL DEFAULT '', customer_comment TEXT NOT NULL DEFAULT '', operator TEXT NOT NULL DEFAULT '', created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
+        for column, ddl in {
+            "name": "ALTER TABLE evaluation_levels ADD COLUMN name TEXT NOT NULL DEFAULT ''",
+            "score": "ALTER TABLE evaluation_levels ADD COLUMN score INTEGER NOT NULL DEFAULT 5",
+            "description": "ALTER TABLE evaluation_levels ADD COLUMN description TEXT NOT NULL DEFAULT ''",
+            "color": "ALTER TABLE evaluation_levels ADD COLUMN color TEXT NOT NULL DEFAULT ''",
+            "sort_order": "ALTER TABLE evaluation_levels ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
+            "enabled": "ALTER TABLE evaluation_levels ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT true",
+        }.items():
+            if column not in level_cols:
+                conn.execute(text(ddl))
 
         # candidates
         cand_cols = {col['name'] for col in inspector.get_columns("candidates")}
@@ -1366,7 +1355,7 @@ def get_db_table_data(
     # Execute query
     try:
         recruit_tables = {"candidate_profiles", "resume_downloads", "employees", "job_postings", "daily_task_stats"}
-        schema = "recruit" if table_name in recruit_tables and engine.url.get_backend_name() != "sqlite" else None
+        schema = "recruit" if table_name in recruit_tables else None
         inspector = inspect(engine)
         columns = [col["name"] for col in inspector.get_columns(table_name, schema=schema)]
     except Exception:
