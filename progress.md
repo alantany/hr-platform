@@ -1270,3 +1270,4 @@
 - 统计页也补强了回归：`tests/test_phase2_smoke.py` 现在额外验证 `analytics/summary` 的团队排行和客户排行字段，防止只剩总数、排行是空壳。
 - 新增 `src/pages/positions.html` 岗位管理页，并补上 `frontend-api.js` 的 `updatePosition`、`app.js` 的页面导航与文案，使岗位从仅有接口变成可操作页面。
 - 为候选人编辑弹窗中的手机号、身份证、邮箱增加 focusout 实时失焦校验与边框标红提示，提升表单填写体验。
+- 将候选人编辑表单中的“家庭情况”字段改造为下拉选择器，包含未婚、已婚等标准选项，规范数据录入。
