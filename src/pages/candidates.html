@@ -354,12 +354,12 @@
         </div>
       </div>
 
-      <div class="modal" data-candidate-detail-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:840px; margin:8vh auto 0; background:#fff;">
+      <div class="modal" data-candidate-detail-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
+        <div class="panel" style="max-width:960px; margin:4vh auto 24px; background:#fff;">
           <div class="section-head">
             <div>
               <h3 data-candidate-detail-title>候选人详情</h3>
-              <div class="section-sub" data-candidate-detail-sub>查看候选人的真实数据、状态和后续动作。</div>
+              <div class="section-sub" data-candidate-detail-sub>查看候选人的完整信息。</div>
             </div>
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" data-action="close-candidate-detail-modal">关闭</button>
@@ -367,28 +367,56 @@
               <button class="btn primary" data-action="open-candidate-mail-modal">发送邮件</button>
             </div>
           </div>
-        <div class="grid-2">
+          <div class="grid-2">
             <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">基本信息</div>
               <div class="list">
                 <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta" data-candidate-detail-name>--</div></div><span class="chip primary">基础</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">基本信息</div><div class="item-meta" data-candidate-detail-basic>--</div></div><span class="chip primary">基础</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta" data-candidate-detail-salary>--</div></div><span class="chip neutral">期望</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">性别</div><div class="item-meta" data-candidate-detail-gender>--</div></div><span class="chip neutral">基础</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">出生日期</div><div class="item-meta" data-candidate-detail-birth-date>--</div></div><span class="chip neutral">基础</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">户口所在地</div><div class="item-meta" data-candidate-detail-hukou>--</div></div><span class="chip neutral">基础</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">所在城市</div><div class="item-meta" data-candidate-detail-city>--</div></div><span class="chip success">地区</span></div></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta" data-candidate-detail-phone>--</div></div><span class="chip neutral">联系</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">城市</div><div class="item-meta" data-candidate-detail-city>--</div></div><span class="chip success">地区</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta" data-candidate-detail-email>--</div></div><span class="chip neutral">联系</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">家庭情况</div><div class="item-meta" data-candidate-detail-family>--</div></div><span class="chip neutral">基础</span></div></div>
+              </div>
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">职业经历</div>
+              <div class="list">
                 <div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div><div class="item-meta" data-candidate-detail-title2>--</div></div><span class="chip warning">岗位</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta" data-candidate-detail-status>--</div></div><span class="chip neutral">状态</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">最高学历</div><div class="item-meta" data-candidate-detail-education>--</div></div><span class="chip neutral">学历</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">工作年限</div><div class="item-meta" data-candidate-detail-exp>--</div></div><span class="chip neutral">经验</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">教育背景</div></div></div><div class="item-meta" data-candidate-detail-edu-detail style="white-space:pre-wrap; padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">职业经历</div></div></div><div class="item-meta" data-candidate-detail-work-history style="white-space:pre-wrap; padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">项目经历</div></div></div><div class="item-meta" data-candidate-detail-project-history style="white-space:pre-wrap; padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">专业证书</div><div class="item-meta" data-candidate-detail-certificates>--</div></div><span class="chip neutral">资质</span></div></div>
               </div>
             </div>
             <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <h3>后续动作</h3>
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">求职意向</div>
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">锁定 / 释放</div><div class="item-meta">从详情窗中直接流转候选人状态。</div></div><span class="chip primary">真实操作</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">推荐 / 面试</div><div class="item-meta">后续可继续在推荐和面试模块中推进。</div></div><span class="chip success">流程</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta" data-candidate-detail-salary>--</div></div><span class="chip neutral">期望</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">薪资结构</div><div class="item-meta" data-candidate-detail-salary-structure>--</div></div><span class="chip neutral">薪酬</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">到岗周期</div><div class="item-meta" data-candidate-detail-onboard>--</div></div><span class="chip neutral">时效</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">职位状态</div><div class="item-meta" data-candidate-detail-job-status>--</div></div><span class="chip neutral">状态</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">求职意向</div></div></div><div class="item-meta" data-candidate-detail-intention style="white-space:pre-wrap; padding:4px 0;">--</div></div>
+              </div>
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">评估</div>
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">核心价值</div></div></div><div class="item-meta" data-candidate-detail-core-value style="white-space:pre-wrap; padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">综合评估</div></div></div><div class="item-meta" data-candidate-detail-evaluation style="white-space:pre-wrap; padding:4px 0;">--</div></div>
+              </div>
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">系统状态</div>
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">当前状态</div><div class="item-meta" data-candidate-detail-status>--</div></div><span class="chip neutral">状态</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta" data-candidate-detail-source>--</div></div><span class="chip neutral">来源</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">身份证号</div><div class="item-meta" data-candidate-detail-idnumber>--</div></div><span class="chip neutral">证件</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">标签</div><div class="item-meta" data-candidate-detail-tags>--</div></div><span class="chip neutral">标签</span></div></div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
 
       <div class="modal" data-candidate-salary-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:3000; padding:24px;">
         <div class="panel" style="max-width:760px; margin:10vh auto 0; background:#fff;">
@@ -509,12 +537,12 @@
         </div>
       </div>
 
-      <div class="modal" data-candidate-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:840px; margin:8vh auto 0; background:#fff;">
+      <div class="modal" data-candidate-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
+        <div class="panel" style="max-width:960px; margin:4vh auto 24px; background:#fff;">
           <div class="section-head">
             <div>
               <h3>编辑候选人</h3>
-              <div class="section-sub">姓名不可修改，保存后会写入候选人表并刷新列表。</div>
+              <div class="section-sub">保存后会写入候选人表并刷新列表。</div>
             </div>
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" data-action="close-candidate-edit-modal">取消</button>
@@ -522,15 +550,44 @@
             </div>
           </div>
           <div class="grid-2">
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08); overflow-y:auto; max-height:70vh;">
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">基本信息</div>
               <div class="list">
                 <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">不可修改</div></div></div><input class="input" data-candidate-edit-name readonly /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">性别</div><div class="item-meta">男 / 女</div></div></div><select class="input" data-candidate-edit-gender><option value="">不填</option><option value="男">男</option><option value="女">女</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">出生日期</div><div class="item-meta">格式：1990-01-01</div></div></div><input class="input" data-candidate-edit-birth-date placeholder="1990-01-01" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">户口所在地</div><div class="item-meta">省市</div></div></div><input class="input" data-candidate-edit-hukou /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">城市</div><div class="item-meta">所在或期望城市</div></div></div><input class="input" data-candidate-edit-city /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta">联系方式</div></div></div><input class="input" data-candidate-edit-phone /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta">可选</div></div></div><input class="input" data-candidate-edit-email /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">身份证号</div><div class="item-meta">可选</div></div></div><input class="input" data-candidate-edit-idnumber /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">家庭情况</div><div class="item-meta">婚育状况等</div></div></div><input class="input" data-candidate-edit-family /></div>
+              </div>
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">职业 & 学历</div>
+              <div class="list">
                 <div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div><div class="item-meta">现任岗位</div></div></div><input class="input" data-candidate-edit-title /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">城市</div><div class="item-meta">期望或所在城市</div></div></div><input class="input" data-candidate-edit-city /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">最高学历</div><div class="item-meta">本科 / 硕士 / 博士</div></div></div><input class="input" data-candidate-edit-education /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">工作年限</div><div class="item-meta">年（数字）</div></div></div><input class="input" type="number" data-candidate-edit-exp-years /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">专业证书</div><div class="item-meta">多个用逗号或换行分隔</div></div></div><textarea class="input" rows="3" data-candidate-edit-certificates></textarea></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">教育背景</div><div class="item-meta">详细教育经历</div></div></div><textarea class="input" rows="4" data-candidate-edit-edu-detail></textarea></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">职业经历</div><div class="item-meta">工作履历</div></div></div><textarea class="input" rows="5" data-candidate-edit-work-history></textarea></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">项目经历</div><div class="item-meta">核心项目</div></div></div><textarea class="input" rows="4" data-candidate-edit-project-history></textarea></div>
+              </div>
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">求职意向 & 评估</div>
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta">例：20k-30k</div></div></div><input class="input" data-candidate-edit-salary /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">薪资结构</div><div class="item-meta">例：12薪+2个月年终</div></div></div><input class="input" data-candidate-edit-salary-structure /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">到岗周期</div><div class="item-meta">例：一个月内</div></div></div><input class="input" data-candidate-edit-onboard /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">职位状态</div><div class="item-meta">离职 / 在职 / 随时到岗</div></div></div><input class="input" data-candidate-edit-job-status /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">求职意向</div><div class="item-meta">目标岗位、行业</div></div></div><textarea class="input" rows="3" data-candidate-edit-intention></textarea></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">核心价值</div><div class="item-meta">核心能力提炼</div></div></div><textarea class="input" rows="3" data-candidate-edit-core-value></textarea></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">综合评估</div><div class="item-meta">顾问评价总结</div></div></div><textarea class="input" rows="3" data-candidate-edit-evaluation></textarea></div>
+              </div>
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">系统字段</div>
+              <div class="list">
                 <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">激活 / 锁定 / 释放</div></div></div><select class="input" data-candidate-edit-status><option value="激活">激活</option><option value="锁定">锁定</option><option value="释放">释放</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta">页面创建 / 导入 / 推荐</div></div></div><input class="input" data-candidate-edit-source /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta">页面创建 / 导入</div></div></div><input class="input" data-candidate-edit-source /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">标签</div><div class="item-meta">逗号分隔</div></div></div><input class="input" data-candidate-edit-tags /></div>
               </div>
             </div>
             <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">

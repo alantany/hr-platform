@@ -765,16 +765,33 @@ async function handleGlobalButton(button) {
     document.body.dataset.candidateId = resolvedId;
     document.querySelector('[data-candidate-detail-title]').textContent = `${item?.name || title} 详情`;
     document.querySelector('[data-candidate-detail-sub]').textContent = `${item?.source || '来源未知'} · ${item?.status || '状态未知'}`;
-    document.querySelector('[data-candidate-detail-name]').textContent = item?.name || '--';
-    const basicInfo = [item?.gender, item?.age ? item.age+'岁' : '', item?.education, item?.experience_years ? item.experience_years+'年' : ''].filter(Boolean).join(' / ');
-    const basicEl = document.querySelector('[data-candidate-detail-basic]');
-    if (basicEl) basicEl.textContent = basicInfo || '--';
-    const salaryEl = document.querySelector('[data-candidate-detail-salary]');
-    if (salaryEl) salaryEl.textContent = item?.expected_salary || '--';
-    document.querySelector('[data-candidate-detail-phone]').textContent = item?.phone || '--';
-    document.querySelector('[data-candidate-detail-city]').textContent = item?.city || '--';
-    document.querySelector('[data-candidate-detail-title2]').textContent = item?.current_title || '--';
-    document.querySelector('[data-candidate-detail-status]').textContent = item?.locked ? '已锁定' : '激活';
+    const set = (sel, val) => { const el = document.querySelector(sel); if (el) el.textContent = val || '--'; };
+    set('[data-candidate-detail-name]', item?.name);
+    set('[data-candidate-detail-gender]', item?.gender);
+    set('[data-candidate-detail-birth-date]', item?.birth_date);
+    set('[data-candidate-detail-hukou]', item?.hukou_location);
+    set('[data-candidate-detail-city]', item?.city);
+    set('[data-candidate-detail-phone]', item?.phone);
+    set('[data-candidate-detail-email]', item?.email);
+    set('[data-candidate-detail-family]', item?.family_status);
+    set('[data-candidate-detail-title2]', item?.current_title);
+    set('[data-candidate-detail-education]', item?.education);
+    set('[data-candidate-detail-exp]', item?.experience_years ? item.experience_years + '年' : null);
+    set('[data-candidate-detail-edu-detail]', item?.education_detail);
+    set('[data-candidate-detail-work-history]', item?.work_history);
+    set('[data-candidate-detail-project-history]', item?.project_history);
+    set('[data-candidate-detail-certificates]', item?.certificates);
+    set('[data-candidate-detail-salary]', item?.expected_salary);
+    set('[data-candidate-detail-salary-structure]', item?.salary_structure);
+    set('[data-candidate-detail-onboard]', item?.onboard_cycle);
+    set('[data-candidate-detail-job-status]', item?.job_status);
+    set('[data-candidate-detail-intention]', item?.job_intention);
+    set('[data-candidate-detail-core-value]', item?.core_value);
+    set('[data-candidate-detail-evaluation]', item?.comprehensive_evaluation);
+    set('[data-candidate-detail-status]', item?.locked ? '已锁定' : (item?.status || '激活'));
+    set('[data-candidate-detail-source]', item?.source);
+    set('[data-candidate-detail-idnumber]', item?.id_number);
+    set('[data-candidate-detail-tags]', item?.tags);
     if (modal) modal.dataset.candidateId = resolvedId;
     const editBtn = document.querySelector('[data-candidate-detail-modal] [data-action="edit-candidate"]');
     if (editBtn) {
@@ -784,6 +801,7 @@ async function handleGlobalButton(button) {
       window.updateCandidatePanels(item?.id);
     }
     return;
+
   }
   if (button.dataset.action === "edit-candidate") {
     const list = await window.hrApi.candidates();
@@ -791,20 +809,33 @@ async function handleGlobalButton(button) {
     const item = list.find(i => String(i.id) === rawId);
     if (!item) throw new Error('未找到候选人');
     const modal = document.querySelector('[data-candidate-edit-modal]');
-    const name = document.querySelector('[data-candidate-edit-name]');
-    const phone = document.querySelector('[data-candidate-edit-phone]');
-    const email = document.querySelector('[data-candidate-edit-email]');
-    const currentTitle = document.querySelector('[data-candidate-edit-title]');
-    const city = document.querySelector('[data-candidate-edit-city]');
-    const status = document.querySelector('[data-candidate-edit-status]');
-    const source = document.querySelector('[data-candidate-edit-source]');
-    if (name) name.value = item.name || '';
-    if (phone) phone.value = item.phone || '';
-    if (email) email.value = item.email || '';
-    if (currentTitle) currentTitle.value = item.current_title || '';
-    if (city) city.value = item.city || '';
-    if (status) status.value = item.locked ? '锁定' : (item.status || '激活');
-    if (source) source.value = item.source || '';
+    const fill = (sel, val) => { const el = document.querySelector(sel); if (el) el.value = val || ''; };
+    fill('[data-candidate-edit-name]', item.name);
+    fill('[data-candidate-edit-gender]', item.gender);
+    fill('[data-candidate-edit-birth-date]', item.birth_date);
+    fill('[data-candidate-edit-hukou]', item.hukou_location);
+    fill('[data-candidate-edit-city]', item.city);
+    fill('[data-candidate-edit-phone]', item.phone);
+    fill('[data-candidate-edit-email]', item.email);
+    fill('[data-candidate-edit-idnumber]', item.id_number);
+    fill('[data-candidate-edit-family]', item.family_status);
+    fill('[data-candidate-edit-title]', item.current_title);
+    fill('[data-candidate-edit-education]', item.education);
+    fill('[data-candidate-edit-exp-years]', item.experience_years);
+    fill('[data-candidate-edit-certificates]', item.certificates);
+    fill('[data-candidate-edit-edu-detail]', item.education_detail);
+    fill('[data-candidate-edit-work-history]', item.work_history);
+    fill('[data-candidate-edit-project-history]', item.project_history);
+    fill('[data-candidate-edit-salary]', item.expected_salary);
+    fill('[data-candidate-edit-salary-structure]', item.salary_structure);
+    fill('[data-candidate-edit-onboard]', item.onboard_cycle);
+    fill('[data-candidate-edit-job-status]', item.job_status);
+    fill('[data-candidate-edit-intention]', item.job_intention);
+    fill('[data-candidate-edit-core-value]', item.core_value);
+    fill('[data-candidate-edit-evaluation]', item.comprehensive_evaluation);
+    fill('[data-candidate-edit-status]', item.locked ? '锁定' : (item.status || '激活'));
+    fill('[data-candidate-edit-source]', item.source);
+    fill('[data-candidate-edit-tags]', item.tags);
     if (modal) {
       modal.style.display = 'block';
       modal.dataset.candidateId = String(item.id);
@@ -821,13 +852,35 @@ async function handleGlobalButton(button) {
     const modal = document.querySelector('[data-candidate-edit-modal]');
     const target = modal?.dataset.target ? JSON.parse(modal.dataset.target) : null;
     if (!target) throw new Error('没有待编辑的候选人');
-    const phone = document.querySelector('[data-candidate-edit-phone]')?.value?.trim() || '';
-    const email = document.querySelector('[data-candidate-edit-email]')?.value?.trim() || '';
-    const currentTitle = document.querySelector('[data-candidate-edit-title]')?.value?.trim() || '';
-    const city = document.querySelector('[data-candidate-edit-city]')?.value?.trim() || '';
-    const status = document.querySelector('[data-candidate-edit-status]')?.value?.trim() || '激活';
-    const source = document.querySelector('[data-candidate-edit-source]')?.value?.trim() || '';
-    const candidate = await window.hrApi.updateCandidate(target.id, { phone, email, current_title: currentTitle, city, status, source });
+    const get = (sel) => document.querySelector(sel)?.value?.trim() || '';
+    const payload = {
+      phone: get('[data-candidate-edit-phone]'),
+      email: get('[data-candidate-edit-email]'),
+      current_title: get('[data-candidate-edit-title]'),
+      city: get('[data-candidate-edit-city]'),
+      status: get('[data-candidate-edit-status]') || '激活',
+      source: get('[data-candidate-edit-source]'),
+      gender: get('[data-candidate-edit-gender]'),
+      birth_date: get('[data-candidate-edit-birth-date]'),
+      hukou_location: get('[data-candidate-edit-hukou]'),
+      id_number: get('[data-candidate-edit-idnumber]'),
+      family_status: get('[data-candidate-edit-family]'),
+      education: get('[data-candidate-edit-education]'),
+      experience_years: parseInt(get('[data-candidate-edit-exp-years]')) || null,
+      certificates: get('[data-candidate-edit-certificates]'),
+      education_detail: get('[data-candidate-edit-edu-detail]'),
+      work_history: get('[data-candidate-edit-work-history]'),
+      project_history: get('[data-candidate-edit-project-history]'),
+      expected_salary: get('[data-candidate-edit-salary]'),
+      salary_structure: get('[data-candidate-edit-salary-structure]'),
+      onboard_cycle: get('[data-candidate-edit-onboard]'),
+      job_status: get('[data-candidate-edit-job-status]'),
+      job_intention: get('[data-candidate-edit-intention]'),
+      core_value: get('[data-candidate-edit-core-value]'),
+      comprehensive_evaluation: get('[data-candidate-edit-evaluation]'),
+      tags: get('[data-candidate-edit-tags]'),
+    };
+    const candidate = await window.hrApi.updateCandidate(target.id, payload);
     if (window.candidatesPageState) {
       const items = await window.hrApi.candidates();
       window.candidatesPageState.list = items;
