@@ -853,9 +853,37 @@ async function handleGlobalButton(button) {
     const target = modal?.dataset.target ? JSON.parse(modal.dataset.target) : null;
     if (!target) throw new Error('没有待编辑的候选人');
     const get = (sel) => document.querySelector(sel)?.value?.trim() || '';
+    
+    // 获取表单值
+    const phone = get('[data-candidate-edit-phone]');
+    const email = get('[data-candidate-edit-email]');
+    const id_number = get('[data-candidate-edit-idnumber]');
+    
+    // 正则表达式验证
+    if (phone) {
+      const phoneRegex = /^1[3-9]\d{9}$/;
+      if (!phoneRegex.test(phone)) {
+        throw new Error('请输入有效的中国11位手机号码');
+      }
+    }
+    
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error('请输入有效的电子邮箱地址');
+      }
+    }
+    
+    if (id_number) {
+      const idRegex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+      if (!idRegex.test(id_number)) {
+        throw new Error('请输入符合国家标准的身份证号码');
+      }
+    }
+    
     const payload = {
-      phone: get('[data-candidate-edit-phone]'),
-      email: get('[data-candidate-edit-email]'),
+      phone,
+      email,
       current_title: get('[data-candidate-edit-title]'),
       city: get('[data-candidate-edit-city]'),
       status: get('[data-candidate-edit-status]') || '激活',
@@ -863,7 +891,7 @@ async function handleGlobalButton(button) {
       gender: get('[data-candidate-edit-gender]'),
       birth_date: get('[data-candidate-edit-birth-date]'),
       hukou_location: get('[data-candidate-edit-hukou]'),
-      id_number: get('[data-candidate-edit-idnumber]'),
+      id_number,
       family_status: get('[data-candidate-edit-family]'),
       education: get('[data-candidate-edit-education]'),
       experience_years: parseInt(get('[data-candidate-edit-exp-years]')) || null,
@@ -880,6 +908,7 @@ async function handleGlobalButton(button) {
       comprehensive_evaluation: get('[data-candidate-edit-evaluation]'),
       tags: get('[data-candidate-edit-tags]'),
     };
+    
     const candidate = await window.hrApi.updateCandidate(target.id, payload);
     if (window.candidatesPageState) {
       const items = await window.hrApi.candidates();

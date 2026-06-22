@@ -231,16 +231,7 @@ class CandidateOut(CandidateCreate):
     created_at: datetime | str | None = None
     file_path: str | None = None
 
-    @field_validator('phone', mode='after')
-    @classmethod
-    def mask_phone(cls, v: str | None) -> str | None:
-        if not v:
-            return ""
-        if len(v) == 11:
-            return v[:3] + "****" + v[7:]
-        elif len(v) > 4:
-            return v[:-4] + "****"
-        return v
+
 
 
 class CandidateTrackingEventCreate(BaseModel):

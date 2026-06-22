@@ -561,17 +561,39 @@
               <div class="list">
                 <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">不可修改</div></div></div><input class="input" data-candidate-edit-name readonly /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">性别</div><div class="item-meta">男 / 女</div></div></div><select class="input" data-candidate-edit-gender><option value="">不填</option><option value="男">男</option><option value="女">女</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">出生日期</div><div class="item-meta">格式：1990-01-01</div></div></div><input class="input" data-candidate-edit-birth-date placeholder="1990-01-01" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">户口所在地</div><div class="item-meta">省市</div></div></div><input class="input" data-candidate-edit-hukou /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">城市</div><div class="item-meta">所在或期望城市</div></div></div><input class="input" data-candidate-edit-city /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta">联系方式</div></div></div><input class="input" data-candidate-edit-phone /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta">可选</div></div></div><input class="input" data-candidate-edit-email /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">出生日期</div><div class="item-meta">请选择日期</div></div></div><input class="input" type="date" data-candidate-edit-birth-date /></div>
+                <div class="list-item" style="position:relative;"><div class="item-top"><div><div class="item-title">户口所在地</div><div class="item-meta">点击选择省市</div></div></div>
+                  <div class="city-selector-wrapper" style="position: relative; width: 100%;">
+                    <input class="input" data-candidate-edit-hukou placeholder="请选择或搜索户口所在地" autocomplete="off" style="width: 100%;" />
+                    <div class="hukou-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1010; padding: 12px;">
+                      <div class="hukou-search-results" style="display: none; max-height: 240px; overflow-y: auto;"></div>
+                      <div class="hukou-cascade-view" style="display: flex; height: 240px;">
+                        <div class="hukou-province-list" style="width: 130px; border-right: 1px solid rgba(15,23,42,.06); overflow-y: auto; padding-right: 8px;"></div>
+                        <div class="hukou-city-list" style="flex: 1; overflow-y: auto; padding-left: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: start;"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="list-item" style="position:relative;"><div class="item-top"><div><div class="item-title">城市</div><div class="item-meta">点击选择城市</div></div></div>
+                  <div class="city-selector-wrapper" style="position: relative; width: 100%;">
+                    <input class="input" data-candidate-edit-city placeholder="请选择或搜索城市" autocomplete="off" style="width: 100%;" />
+                    <div class="editcity-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1010; padding: 12px;">
+                      <div class="editcity-search-results" style="display: none; max-height: 240px; overflow-y: auto;"></div>
+                      <div class="editcity-cascade-view" style="display: flex; height: 240px;">
+                        <div class="editcity-province-list" style="width: 130px; border-right: 1px solid rgba(15,23,42,.06); overflow-y: auto; padding-right: 8px;"></div>
+                        <div class="editcity-city-list" style="flex: 1; overflow-y: auto; padding-left: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: start;"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta">仅限中国11位手机号</div></div></div><input class="input" data-candidate-edit-phone placeholder="13912345678" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta">请输入有效邮箱</div></div></div><input class="input" type="email" data-candidate-edit-email placeholder="example@domain.com" /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">家庭情况</div><div class="item-meta">婚育状况等</div></div></div><input class="input" data-candidate-edit-family /></div>
               </div>
               <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">职业经历</div>
               <div class="list">
                 <div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div><div class="item-meta">现任岗位</div></div></div><input class="input" data-candidate-edit-title /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">最高学历</div><div class="item-meta">本科 / 硕士 / 博士</div></div></div><input class="input" data-candidate-edit-education /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">最高学历</div><div class="item-meta">请选择学历</div></div></div><select class="input" data-candidate-edit-education><option value="高中">高中</option><option value="大专">大专</option><option value="本科" selected>本科</option><option value="硕士">硕士</option><option value="博士">博士</option></select></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">工作年限</div><div class="item-meta">年（数字）</div></div></div><input class="input" type="number" data-candidate-edit-exp-years /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">教育背景</div><div class="item-meta">详细教育经历</div></div></div><textarea class="input" rows="4" data-candidate-edit-edu-detail></textarea></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">职业经历</div><div class="item-meta">工作履历</div></div></div><textarea class="input" rows="5" data-candidate-edit-work-history></textarea></div>
@@ -582,10 +604,10 @@
             <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08); margin:0;">
               <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">求职意向</div>
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta">例：20k-30k</div></div></div><input class="input" data-candidate-edit-salary /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta">仅限数字，单位（元/月）</div></div></div><input class="input" type="number" data-candidate-edit-salary placeholder="例如：25000" /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">薪资结构</div><div class="item-meta">例：12薪+2个月年终</div></div></div><input class="input" data-candidate-edit-salary-structure /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">到岗周期</div><div class="item-meta">例：一个月内</div></div></div><input class="input" data-candidate-edit-onboard /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">职位状态</div><div class="item-meta">离职 / 在职 / 随时到岗</div></div></div><input class="input" data-candidate-edit-job-status /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">到岗周期</div><div class="item-meta">选择到岗时间</div></div></div><select class="input" data-candidate-edit-onboard><option value="一周">一周</option><option value="两周">两周</option><option value="三周">三周</option><option value="一个月">一个月</option><option value="两个月">两个月</option><option value="三个月">三个月</option><option value="四个月">四个月</option><option value="五个月">五个月</option><option value="六个月">六个月</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">职位状态</div><div class="item-meta">选择当前工作状态</div></div></div><select class="input" data-candidate-edit-job-status><option value="在职">在职</option><option value="离职">离职</option><option value="随时到岗">随时到岗</option></select></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">求职意向</div><div class="item-meta">目标岗位、行业</div></div></div><textarea class="input" rows="3" data-candidate-edit-intention></textarea></div>
               </div>
               <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">评估</div>
@@ -595,9 +617,9 @@
               </div>
               <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">系统状态</div>
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">当前状态</div><div class="item-meta">激活 / 锁定 / 释放</div></div></div><select class="input" data-candidate-edit-status><option value="激活">激活</option><option value="锁定">锁定</option><option value="释放">释放</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta">页面创建 / 导入</div></div></div><input class="input" data-candidate-edit-source /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">身份证号</div><div class="item-meta">可选</div></div></div><input class="input" data-candidate-edit-idnumber /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">当前状态</div><div class="item-meta">锁定 / 释放 / 激活</div></div></div><select class="input" data-candidate-edit-status><option value="激活">激活</option><option value="锁定">锁定</option><option value="释放">释放</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta">选择简历来源渠道</div></div></div><select class="input" data-candidate-edit-source><option value="导入">导入</option><option value="简历池">简历池</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">身份证号</div><div class="item-meta">可选，做合规校验</div></div></div><input class="input" data-candidate-edit-idnumber placeholder="例如：110101199001011234" /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">标签</div><div class="item-meta">逗号分隔</div></div></div><input class="input" data-candidate-edit-tags /></div>
               </div>
             </div>
@@ -1363,6 +1385,137 @@
           });
         }
       } catch (err) { console.warn(err); }
+
+      // ----------------------------------------------------
+      // 编辑弹窗中的 城市 / 户口 级联下拉列表组件初始化
+      // ----------------------------------------------------
+      function setupCascadeSelector({
+        inputSel,
+        dropdownSel,
+        provinceListSel,
+        cityListSel,
+        searchResultsSel,
+        cascadeViewSel,
+        wrapperClass
+      }) {
+        const input = document.querySelector(inputSel);
+        const dropdown = document.querySelector(dropdownSel);
+        const provinceList = document.querySelector(provinceListSel);
+        const cityList = document.querySelector(cityListSel);
+        const searchResults = document.querySelector(searchResultsSel);
+        const cascadeView = document.querySelector(cascadeViewSel);
+
+        if (!input || !dropdown) return;
+
+        // 初始化省份列表
+        if (provinceList) {
+          provinceList.innerHTML = CITY_DATA.map((p, idx) => `
+            <div class="province-item ${idx === 0 ? 'active' : ''}" data-idx="${idx}">${p.province}</div>
+          `).join('');
+          
+          provinceList.addEventListener('click', (e) => {
+            const item = e.target.closest('.province-item');
+            if (!item) return;
+            provinceList.querySelectorAll('.province-item').forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+            const idx = parseInt(item.getAttribute('data-idx'));
+            renderLocalCities(idx);
+          });
+        }
+
+        function renderLocalCities(provinceIdx) {
+          if (!cityList) return;
+          const cities = CITY_DATA[provinceIdx].cities;
+          cityList.innerHTML = cities.map(c => `
+            <div class="city-item" data-val="${c}">${c}</div>
+          `).join('');
+        }
+
+        renderLocalCities(0);
+
+        input.addEventListener('focus', () => {
+          dropdown.style.display = 'block';
+          filterLocalDropdown();
+        });
+
+        input.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown.style.display = 'block';
+        });
+
+        input.addEventListener('input', () => {
+          filterLocalDropdown();
+        });
+
+        function filterLocalDropdown() {
+          if (!searchResults || !cascadeView) return;
+          const query = input.value.trim().toLowerCase();
+          if (!query) {
+            searchResults.style.display = 'none';
+            cascadeView.style.display = 'flex';
+            return;
+          }
+
+          const matches = [];
+          CITY_DATA.forEach(p => {
+            p.cities.forEach(c => {
+              if (c.toLowerCase().includes(query)) {
+                matches.push(c);
+              }
+            });
+          });
+
+          if (matches.length > 0) {
+            searchResults.innerHTML = matches.map(c => `
+              <div class="search-result-item" data-val="${c}">${c}</div>
+            `).join('');
+            searchResults.style.display = 'block';
+            cascadeView.style.display = 'none';
+          } else {
+            searchResults.innerHTML = '<div style="padding: 8px 12px; font-size: 12px; color: var(--muted-foreground);">未找到匹配城市</div>';
+            searchResults.style.display = 'block';
+            cascadeView.style.display = 'none';
+          }
+        }
+
+        // 处理下拉项点击选中
+        dropdown.addEventListener('click', (e) => {
+          const item = e.target.closest('.city-item, .search-result-item');
+          if (item) {
+            e.stopPropagation();
+            const val = item.getAttribute('data-val');
+            input.value = val;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            dropdown.style.display = 'none';
+          }
+        });
+
+        // 全局点击空白关闭
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest(inputSel) && !e.target.closest(dropdownSel)) {
+            dropdown.style.display = 'none';
+          }
+        });
+      }
+
+      // 初始化编辑候选人弹窗中的户口城市级联选择器
+      setupCascadeSelector({
+        inputSel: '[data-candidate-edit-hukou]',
+        dropdownSel: '.hukou-dropdown',
+        provinceListSel: '.hukou-province-list',
+        cityListSel: '.hukou-city-list',
+        searchResultsSel: '.hukou-search-results',
+        cascadeViewSel: '.hukou-cascade-view'
+      });
+
+      setupCascadeSelector({
+        inputSel: '[data-candidate-edit-city]',
+        dropdownSel: '.editcity-dropdown',
+        provinceListSel: '.editcity-province-list',
+        cityListSel: '.editcity-city-list',
+        searchResultsSel: '.editcity-search-results',
+        cascadeViewSel: '.editcity-cascade-view'
+      });
     });
   </script>
 </body>
