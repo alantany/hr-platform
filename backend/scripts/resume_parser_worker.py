@@ -133,34 +133,74 @@ def process_pending_tasks():
                 # If name is empty, fallback to candidate_name from DB
                 candidate_name = parsed_data.get("name") or result["candidate_name"] or "未知候选人"
                 
-                # Create candidate
-                candidate = Candidate(
-                    name=candidate_name,
-                    phone=parsed_data.get("phone") or "",
-                    email=parsed_data.get("email") or "",
-                    gender=parsed_data.get("gender") or "",
-                    birth_date=parsed_data.get("birth_date") or "",
-                    age=parsed_data.get("age") or 0,
-                    city=parsed_data.get("city") or "",
-                    hukou_location=parsed_data.get("hukou_location") or "",
-                    family_status=parsed_data.get("family_status") or "",
-                    job_status=parsed_data.get("job_status") or "离职",
-                    onboard_cycle=parsed_data.get("onboard_cycle") or "",
-                    expected_salary=parsed_data.get("expected_salary") or "",
-                    job_intention=parsed_data.get("job_intention") or "",
-                    education=parsed_data.get("education") or "",
-                    experience_years=parsed_data.get("experience_years") or 0,
-                    current_title=parsed_data.get("current_title") or "",
-                    core_value=parsed_data.get("core_value") or "",
-                    certificates=parsed_data.get("certificates") or "",
-                    education_detail=parsed_data.get("education_detail") or "",
-                    work_history=parsed_data.get("work_history") or "",
-                    project_history=parsed_data.get("project_history") or "",
-                    source="AI解析",
-                    status="未锁定"
-                )
+                phone = parsed_data.get("phone") or ""
+                email = parsed_data.get("email") or ""
                 
-                db.add(candidate)
+                # Try to find existing candidate
+                candidate = None
+                if phone:
+                    candidate = db.query(Candidate).filter(Candidate.phone == phone).first()
+                if not candidate and email:
+                    candidate = db.query(Candidate).filter(Candidate.email == email).first()
+                if not candidate:
+                    candidate = db.query(Candidate).filter(Candidate.name == candidate_name).first()
+                
+                if candidate:
+                    # Update existing candidate
+                    candidate.name = candidate_name
+                    candidate.phone = phone or candidate.phone
+                    candidate.email = email or candidate.email
+                    candidate.gender = parsed_data.get("gender") or candidate.gender
+                    candidate.birth_date = parsed_data.get("birth_date") or candidate.birth_date
+                    if parsed_data.get("age"):
+                        candidate.age = parsed_data.get("age")
+                    candidate.city = parsed_data.get("city") or candidate.city
+                    candidate.hukou_location = parsed_data.get("hukou_location") or candidate.hukou_location
+                    candidate.family_status = parsed_data.get("family_status") or candidate.family_status
+                    candidate.job_status = parsed_data.get("job_status") or candidate.job_status
+                    candidate.onboard_cycle = parsed_data.get("onboard_cycle") or candidate.onboard_cycle
+                    candidate.expected_salary = parsed_data.get("expected_salary") or candidate.expected_salary
+                    candidate.job_intention = parsed_data.get("job_intention") or candidate.job_intention
+                    candidate.education = parsed_data.get("education") or candidate.education
+                    if parsed_data.get("experience_years"):
+                        candidate.experience_years = parsed_data.get("experience_years")
+                    candidate.current_title = parsed_data.get("current_title") or candidate.current_title
+                    candidate.core_value = parsed_data.get("core_value") or candidate.core_value
+                    candidate.certificates = parsed_data.get("certificates") or candidate.certificates
+                    candidate.education_detail = parsed_data.get("education_detail") or candidate.education_detail
+                    candidate.work_history = parsed_data.get("work_history") or candidate.work_history
+                    candidate.project_history = parsed_data.get("project_history") or candidate.project_history
+                    print(f"Updated existing candidate: {candidate.id}")
+                else:
+                    # Insert new candidate
+                    candidate = Candidate(
+                        name=candidate_name,
+                        phone=phone,
+                        email=email,
+                        gender=parsed_data.get("gender") or "",
+                        birth_date=parsed_data.get("birth_date") or "",
+                        age=parsed_data.get("age") or 0,
+                        city=parsed_data.get("city") or "",
+                        hukou_location=parsed_data.get("hukou_location") or "",
+                        family_status=parsed_data.get("family_status") or "",
+                        job_status=parsed_data.get("job_status") or "离职",
+                        onboard_cycle=parsed_data.get("onboard_cycle") or "",
+                        expected_salary=parsed_data.get("expected_salary") or "",
+                        job_intention=parsed_data.get("job_intention") or "",
+                        education=parsed_data.get("education") or "",
+                        experience_years=parsed_data.get("experience_years") or 0,
+                        current_title=parsed_data.get("current_title") or "",
+                        core_value=parsed_data.get("core_value") or "",
+                        certificates=parsed_data.get("certificates") or "",
+                        education_detail=parsed_data.get("education_detail") or "",
+                        work_history=parsed_data.get("work_history") or "",
+                        project_history=parsed_data.get("project_history") or "",
+                        source="AI解析",
+                        status="未锁定"
+                    )
+                    db.add(candidate)
+                    print(f"Inserted new candidate.")
+                
                 db.flush() # get candidate.id
                 
                 task.candidate_id = candidate.id
