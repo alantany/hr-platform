@@ -366,12 +366,23 @@ class EvaluationLevel(Base, TimestampMixin):
 
 class TagDictionary(Base, TimestampMixin):
     __tablename__ = "tag_dictionaries"
-
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     color: Mapped[str] = mapped_column(String(32), default="", nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
+class ResumeParseTask(Base, TimestampMixin):
+    __tablename__ = "resume_parse_tasks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    resume_download_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    candidate_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("candidates.id", ondelete="SET NULL"), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="PENDING", nullable=False) # PENDING, PROCESSING, SUCCESS, FAILED
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    candidate = relationship("Candidate")
 
 
 class Notification(Base, TimestampMixin):
