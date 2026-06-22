@@ -2593,4 +2593,39 @@ document.addEventListener("click", (event) => {
   handleGlobalButton(btn).catch((err) => showToast(`操作失败：${err.message || err}`));
 });
 
+document.addEventListener("focusout", (event) => {
+  const target = event.target;
+  if (!target) return;
+  
+  if (target.hasAttribute("data-candidate-edit-phone")) {
+    const val = target.value.trim();
+    if (val && !/^1[3-9]\d{9}$/.test(val)) {
+      showToast("手机号格式不正确，请修改");
+      target.style.borderColor = "red";
+    } else {
+      target.style.borderColor = "";
+    }
+  }
+  
+  if (target.hasAttribute("data-candidate-edit-idnumber")) {
+    const val = target.value.trim();
+    if (val && !/(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/.test(val)) {
+      showToast("身份证格式不正确，请修改");
+      target.style.borderColor = "red";
+    } else {
+      target.style.borderColor = "";
+    }
+  }
+  
+  if (target.hasAttribute("data-candidate-edit-email")) {
+    const val = target.value.trim();
+    if (val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+      showToast("邮箱格式不正确，请修改");
+      target.style.borderColor = "red";
+    } else {
+      target.style.borderColor = "";
+    }
+  }
+});
+
 window.renderApp = render;
