@@ -1294,3 +1294,4 @@
 - 优化了候选人列表中面板展开的交互，引入了基于 CSS Grid 的平滑抽屉滑动动画。
 - 响应需求，将行内的手风琴展开按钮从右侧操作栏移动至左侧候选人姓名旁边，优化布局紧凑度。
 - 输出了 AI 简历解析的精细化 Prompt 模板，明确定义了包含枚举映射规则的 JSON Schema，并固化保存至 `outputs/resume_parsing_prompt.md` 中供后续集成调用。
+- 完整实现了基于独立后台 Worker 机制的 AI 简历解析功能闭环。新增了 ResumeParseTask 任务表用于管控解析状态，编写了 `queue_resume_tasks.py` 实现历史数据的批量待办注入，以及主力的 `resume_parser_worker.py`，包含 pdfplumber 取词、OpenRouter LLM 调用以及严格按照 Prompt Schema 输出并回写候选人数据库的能力。目前已在本地排队注入 91 份历史简历待解析任务。
