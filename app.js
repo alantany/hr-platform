@@ -521,7 +521,6 @@ async function handleGlobalButton(button) {
                   <span class="skill-tag">${i.locked ? '已锁定' : '未锁定'}</span>
                 </div>
               </div>
-              </div>
               <div>${i.current_title || '--'}</div>
               <div>${i.city || '--'}</div>
               <div class="mono">${i.expected_salary || '--'}</div>
@@ -945,15 +944,13 @@ async function handleGlobalButton(button) {
                   <span class="skill-tag">${i.locked ? '已锁定' : '未锁定'}</span>
                 </div>
               </div>
-              <div>${[i.gender, i.age ? i.age+'岁' : '', i.education, i.experience_years ? i.experience_years+'年' : ''].filter(Boolean).join(' / ') || '--'}</div>
               <div>${i.current_title || '--'}</div>
               <div>${i.city || '--'}</div>
               <div class="mono">${i.expected_salary || '--'}</div>
               <div>${i.source || '--'}</div>
               <div><span class="state ${i.locked ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
               <div>
-                <div class="row-sub">${i.created_at || ''}</div>
-                <div class="table-actions" style="margin-top:8px;">
+                <div class="table-actions">
                   <button class="btn-sm primary" data-action="view-detail" data-id="${i.id}" data-title="${i.name}">详情</button>
                 </div>
               </div>
@@ -1017,15 +1014,13 @@ async function handleGlobalButton(button) {
                   <span class="skill-tag">${i.locked ? '已锁定' : '未锁定'}</span>
                 </div>
               </div>
-              <div>${[i.gender, i.age ? i.age+'岁' : '', i.education, i.experience_years ? i.experience_years+'年' : ''].filter(Boolean).join(' / ') || '--'}</div>
               <div>${i.current_title || '--'}</div>
               <div>${i.city || '--'}</div>
               <div class="mono">${i.expected_salary || '--'}</div>
               <div>${i.source || '--'}</div>
               <div><span class="state ${i.locked ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
               <div>
-                <div class="row-sub">${i.created_at || ''}</div>
-                <div class="table-actions" style="margin-top:8px;">
+                <div class="table-actions">
                   <button class="btn-sm primary" data-action="view-detail" data-id="${i.id}" data-title="${i.name}">详情</button>
                 </div>
               </div>
