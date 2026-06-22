@@ -510,7 +510,7 @@ async function handleGlobalButton(button) {
               <div><input type="checkbox" aria-label="选择${i.name}" /></div>
               <div>
                 <div class="row-title">
-                  <div class="avatar-sm" style="display:flex; align-items:center; justify-content:center; background:#f3f4f6;">${i.locked ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#f59e0b;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#10b981;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>'}</div>
+                  <div class="avatar-sm" style="display:flex; align-items:center; justify-content:center; background:#f3f4f6;">${i.status === '锁定' ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#f59e0b;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#10b981;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>'}</div>
                   <div>
                     <strong>${i.name}</strong>
                   </div>
@@ -520,7 +520,7 @@ async function handleGlobalButton(button) {
               <div>${i.city || '--'}</div>
               <div class="mono">${i.expected_salary || '--'}</div>
               <div>${i.source || '--'}</div>
-              <div><span class="state ${i.locked ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
+              <div><span class="state ${i.status === '锁定' ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
               <div>
                 <div class="table-actions">
                   <button class="btn-sm primary" data-action="view-detail" data-id="${i.id}" data-title="${i.name}">详情</button>
@@ -938,7 +938,7 @@ async function handleGlobalButton(button) {
               <div>${i.city || '--'}</div>
               <div class="mono">${i.expected_salary || '--'}</div>
               <div>${i.source || '--'}</div>
-              <div><span class="state ${i.locked ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
+              <div><span class="state ${i.status === '锁定' ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
               <div>
                 <div class="table-actions">
                   <button class="btn-sm primary" data-action="view-detail" data-id="${i.id}" data-title="${i.name}">详情</button>
@@ -1003,7 +1003,7 @@ async function handleGlobalButton(button) {
               <div>${i.city || '--'}</div>
               <div class="mono">${i.expected_salary || '--'}</div>
               <div>${i.source || '--'}</div>
-              <div><span class="state ${i.locked ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
+              <div><span class="state ${i.status === '锁定' ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
               <div>
                 <div class="table-actions">
                   <button class="btn-sm primary" data-action="view-detail" data-id="${i.id}" data-title="${i.name}">详情</button>
