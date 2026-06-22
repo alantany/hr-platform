@@ -510,14 +510,10 @@ async function handleGlobalButton(button) {
               <div><input type="checkbox" aria-label="选择${i.name}" /></div>
               <div>
                 <div class="row-title">
-                  <div class="avatar-sm"></div>
+                  <div class="avatar-sm" style="display:flex; align-items:center; justify-content:center; font-size:18px;">${i.locked ? '🔒' : '🔓'}</div>
                   <div>
                     <strong>${i.name}</strong>
-                    <div class="row-sub">${i.city || ''} · ${i.current_title || ''}</div>
                   </div>
-                </div>
-                <div class="skills">
-                  <span class="skill-tag">${i.locked ? '🔒 已锁定' : '🔓 未锁定'}</span>
                 </div>
               </div>
               <div>${i.current_title || '--'}</div>
@@ -932,14 +928,10 @@ async function handleGlobalButton(button) {
               <div><input type="checkbox" aria-label="选择${i.name}" /></div>
               <div>
                 <div class="row-title">
-                  <div class="avatar-sm"></div>
+                  <div class="avatar-sm" style="display:flex; align-items:center; justify-content:center; font-size:18px;">${i.locked ? '🔒' : '🔓'}</div>
                   <div>
                     <strong>${i.name}</strong>
-                    <div class="row-sub">${i.city || ''} · ${i.current_title || ''}</div>
                   </div>
-                </div>
-                <div class="skills">
-                  <span class="skill-tag">${i.locked ? '🔒 已锁定' : '🔓 未锁定'}</span>
                 </div>
               </div>
               <div>${i.current_title || '--'}</div>
@@ -1001,14 +993,10 @@ async function handleGlobalButton(button) {
               <div><input type="checkbox" aria-label="选择${i.name}" /></div>
               <div>
                 <div class="row-title">
-                  <div class="avatar-sm"></div>
+                  <div class="avatar-sm" style="display:flex; align-items:center; justify-content:center; font-size:18px;">${i.locked ? '🔒' : '🔓'}</div>
                   <div>
                     <strong>${i.name}</strong>
-                    <div class="row-sub">${i.city || ''} · ${i.current_title || ''}</div>
                   </div>
-                </div>
-                <div class="skills">
-                  <span class="skill-tag">${i.locked ? '🔒 已锁定' : '🔓 未锁定'}</span>
                 </div>
               </div>
               <div>${i.current_title || '--'}</div>
