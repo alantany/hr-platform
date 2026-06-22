@@ -17,6 +17,7 @@ const nav = [
   ["ai-center.html", "AI能力中心", "AI"],
   ["system-config.html", "系统配置", "系统"],
   ["logs.html", "操作日志", "日志"],
+  ["db-explorer.html", "数据探针", "探针"],
 ];
 
 const parseId = (val) => {
@@ -84,6 +85,11 @@ const pages = {
   "ai-center": { crumbs: "AI中心 / 能力总览", title: "AI能力中心", desc: "提供简历解析、JD 生成和智能推荐任务入口，并记录任务结果。" },
   "system-config": { crumbs: "系统设置 / 系统配置", title: "系统配置", desc: "管理系统名称、邮件配置、水印和响应式规则。" },
   logs: { crumbs: "系统设置 / 操作日志", title: "操作日志", desc: "查看导入、推荐、权限变更等关键操作记录。" },
+  "db-explorer": {
+    crumbs: "系统设置 / 数据探针",
+    title: "数据库资源探针",
+    desc: "直接读取与呈现系统底层的数据库实体物理表数据，适配 SQLite / PostgreSQL，用于开发辅助及状态查验。"
+  },
 };
 
 const icons = {
@@ -122,6 +128,7 @@ function getNavVisibility(role) {
       "ai-center.html",
       "system-config.html",
       "logs.html",
+      "db-explorer.html",
     ]);
   }
   return new Set([
@@ -134,6 +141,7 @@ function getNavVisibility(role) {
       "evaluations.html",
       "notifications.html",
     "ai-center.html",
+    "db-explorer.html",
   ]);
 }
 
@@ -142,7 +150,7 @@ function shell(pageKey, body, currentUser = null) {
   const visible = getNavVisibility(currentUser?.role || currentUser?.role_name || "超级管理员");
   const navHtml = nav.filter(([href]) => visible.has(href)).map(([href, label, badge]) => `
     <a class="nav-item ${active(href) ? "active" : ""}" href="./${href}">
-      <span class="nav-icon">${badge === "概览" ? icons.home : badge === "资源" ? icons.users : badge === "导入" ? icons.file : badge === "客户" ? icons.building : badge === "项目" ? icons.inbox : badge === "评价" ? icons.star : badge === "质保" ? icons.settings : badge === "报表" ? icons.chart : badge === "账号" ? icons.users : badge === "角色" ? icons.settings : badge === "权限" ? icons.settings : badge === "范围" ? icons.settings : badge === "标签" ? icons.settings : icons.log}</span>
+      <span class="nav-icon">${badge === "概览" ? icons.home : badge === "资源" ? icons.users : badge === "导入" ? icons.file : badge === "客户" ? icons.building : badge === "项目" ? icons.inbox : badge === "评价" ? icons.star : badge === "质保" ? icons.settings : badge === "报表" ? icons.chart : badge === "账号" ? icons.users : badge === "角色" ? icons.settings : badge === "权限" ? icons.settings : badge === "范围" ? icons.settings : badge === "标签" ? icons.settings : badge === "探针" ? icons.settings : icons.log}</span>
       <span>${label}</span>
       <span class="nav-badge">${badge}</span>
     </a>`).join("");
@@ -647,8 +655,17 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "export-selected") {
+    const checkedBoxes = Array.from(document.querySelectorAll('.table-card .table-row input[type="checkbox"]:checked'));
+    const checkedIds = checkedBoxes.map(cb => Number(cb.dataset.id)).filter(Boolean);
+    
+    if (checkedIds.length === 0) {
+      showToast("请先勾选需要导出的候选人简历");
+      return;
+    }
+
     const modal = document.querySelector('[data-export-modal]');
     if (modal) modal.style.display = 'block';
+    
     const [candidates, companies, projects, positions, records] = await Promise.all([
       window.hrApi.candidates(),
       window.hrApi.companies(),
@@ -656,16 +673,24 @@ async function handleGlobalButton(button) {
       window.hrApi.positions(),
       window.hrApi.exportRecords(),
     ]);
+    
+    const filteredCandidates = candidates.filter(c => checkedIds.includes(c.id));
+    
     const candidateSel = document.querySelector('[data-export-candidate]');
     const companySel = document.querySelector('[data-export-company]');
     const projectSel = document.querySelector('[data-export-project]');
     const positionSel = document.querySelector('[data-export-position]');
     const history = document.querySelector('[data-export-history-modal]');
-    if (candidateSel) candidateSel.innerHTML = candidates.map(c => `<option value="${c.id}">${c.name} · ${c.current_title || ''} · ${c.city || ''}</option>`).join('');
+    
+    if (candidateSel) {
+      candidateSel.innerHTML = filteredCandidates.map(c => `<option value="${c.id}">${c.name} · ${c.current_title || ''} · ${c.city || ''}</option>`).join('');
+      if (filteredCandidates[0]) {
+        candidateSel.value = String(filteredCandidates[0].id);
+      }
+    }
     if (companySel) companySel.innerHTML = companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     if (projectSel) projectSel.innerHTML = projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
     if (positionSel) positionSel.innerHTML = positions.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-    if (candidateSel && candidates[0]) candidateSel.value = String(candidates[0].id);
     if (history) history.innerHTML = records.slice(0, 5).map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">${r.file_name}</div><div class="item-meta">${r.company_name} · ${r.project_name} · ${r.position_name}</div><div class="item-meta mono">${r.format} · ${r.created_at}</div></div><span class="chip ${r.watermarked ? 'success' : 'neutral'}">${r.watermarked ? '带水印' : '无水印'}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">暂无导出记录</div></div>';
     return;
   }
@@ -729,12 +754,17 @@ async function handleGlobalButton(button) {
   }
   if (button.dataset.action === "view-detail") {
     const title = button.dataset.title || text || "详情";
-    const id = Number(button.dataset.id);
+    // 保留字符串形式的 ID，兼容来自 Recruit 的字符串 agent_id
+    const rawId = button.dataset.id ? String(button.dataset.id) : '';
     const modal = document.querySelector('[data-candidate-detail-modal]');
     const list = await window.hrApi.candidates();
-    const item = id ? list.find(i => i.id === id) : (list.find(i => i.name === title) || list[0]);
+    // 优先按 ID 字符串匹配，找不到则按姓名匹配
+    const item = rawId
+      ? list.find(i => String(i.id) === rawId)
+      : (list.find(i => i.name === title) || list[0]);
     if (modal) modal.style.display = 'block';
-    document.body.dataset.candidateId = String(item?.id || 0);
+    const resolvedId = item?.id != null ? String(item.id) : '';
+    document.body.dataset.candidateId = resolvedId;
     document.querySelector('[data-candidate-detail-title]').textContent = `${item?.name || title} 详情`;
     document.querySelector('[data-candidate-detail-sub]').textContent = `${item?.source || '来源未知'} · ${item?.status || '状态未知'}`;
     document.querySelector('[data-candidate-detail-name]').textContent = item?.name || '--';
@@ -747,7 +777,7 @@ async function handleGlobalButton(button) {
     document.querySelector('[data-candidate-detail-city]').textContent = item?.city || '--';
     document.querySelector('[data-candidate-detail-title2]').textContent = item?.current_title || '--';
     document.querySelector('[data-candidate-detail-status]').textContent = item?.locked ? '已锁定' : '激活';
-    if (modal) modal.dataset.candidateId = String(item?.id || 0);
+    if (modal) modal.dataset.candidateId = resolvedId;
     if (window.updateCandidatePanels) {
       window.updateCandidatePanels(item?.id);
     }
@@ -755,7 +785,8 @@ async function handleGlobalButton(button) {
   }
   if (button.dataset.action === "edit-candidate") {
     const list = await window.hrApi.candidates();
-    const item = list.find(i => i.id === Number(button.dataset.id));
+    const rawId = button.dataset.id ? String(button.dataset.id) : '';
+    const item = list.find(i => String(i.id) === rawId);
     if (!item) throw new Error('未找到候选人');
     const modal = document.querySelector('[data-candidate-edit-modal]');
     const name = document.querySelector('[data-candidate-edit-name]');
@@ -926,9 +957,9 @@ async function handleGlobalButton(button) {
   }
   if (button.dataset.action === "toggle-candidate-lock") {
     const modal = document.querySelector('[data-candidate-detail-modal]');
-    const candidateId = Number(modal?.dataset.candidateId || 0);
-    if (!candidateId) throw new Error('请先打开候选人详情');
-    const candidate = await window.hrApi.candidates().then(list => list.find(i => i.id === candidateId));
+    const candidateId = modal?.dataset.candidateId || '';
+    if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
+    const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
     const actionModal = document.querySelector('[data-candidate-action-modal]');
     const actionTitle = document.querySelector('[data-candidate-action-title]');
@@ -943,9 +974,9 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "open-candidate-mail-modal") {
-    const candidateId = Number(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || 0);
-    if (!candidateId) throw new Error('请先打开候选人详情');
-    const candidate = await window.hrApi.candidates().then(list => list.find(i => i.id === candidateId));
+    const candidateId = String(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
+    if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
+    const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
     const modal = document.querySelector('[data-candidate-mail-modal]');
     const title = document.querySelector('[data-candidate-mail-title]');
@@ -971,8 +1002,8 @@ async function handleGlobalButton(button) {
   }
   if (button.dataset.action === "confirm-candidate-mail") {
     const modal = document.querySelector('[data-candidate-mail-modal]');
-    const candidateId = Number(modal?.dataset.candidateId || 0);
-    if (!candidateId) throw new Error('没有待发送邮件的候选人');
+    const candidateId = modal?.dataset.candidateId || '';
+    if (!candidateId || candidateId === '0') throw new Error('没有待发送邮件的候选人');
     const recipientEmail = document.querySelector('[data-candidate-mail-to]')?.value?.trim() || '';
     const subject = document.querySelector('[data-candidate-mail-subject]')?.value?.trim() || '';
     const body = document.querySelector('[data-candidate-mail-body]')?.value?.trim() || '';
@@ -1005,19 +1036,22 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "open-candidate-salary-modal") {
-    const candidateId = Number(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || 0);
-    if (!candidateId) throw new Error('请先打开候选人详情');
-    const candidate = await window.hrApi.candidates().then(list => list.find(i => i.id === candidateId));
+    const candidateId = String(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
+    if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
+    const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
     const modal = document.querySelector('[data-candidate-salary-modal]');
-    const expected = document.querySelector('[data-candidate-salary-expected]');
-    const offered = document.querySelector('[data-candidate-salary-offered]');
-    const status = document.querySelector('[data-candidate-salary-status]');
-    const note = document.querySelector('[data-candidate-salary-note]');
-    if (expected) expected.value = candidate.expected_salary || '';
-    if (offered) offered.value = candidate.offered_salary || '';
-    if (status) status.value = '未进行';
-    if (note) note.value = `候选人 ${candidate.name} 的薪资跟踪记录`;
+    const expectedEl = document.querySelector('[data-candidate-salary-expected]');
+    const offeredEl = document.querySelector('[data-candidate-salary-offered]');
+    const statusEl = document.querySelector('[data-candidate-salary-status]');
+    const noteEl = document.querySelector('[data-candidate-salary-note]');
+    // 先从数据库读取已有记录并回填，没有记录则用候选人的 expected_salary 作为预填充
+    const existingList = await window.hrApi.salaryRecords({ candidate_id: candidateId });
+    const existing = existingList && existingList[0];
+    if (expectedEl) expectedEl.value = existing?.expected_salary || candidate.expected_salary || '';
+    if (offeredEl) offeredEl.value = existing?.offered_salary || '';
+    if (statusEl) statusEl.value = existing?.service_status || '未进行';
+    if (noteEl) noteEl.value = existing?.note || '';
     if (modal) {
       modal.style.display = 'block';
       modal.dataset.candidateId = String(candidateId);
@@ -1031,8 +1065,8 @@ async function handleGlobalButton(button) {
   }
   if (button.dataset.action === "confirm-candidate-salary") {
     const modal = document.querySelector('[data-candidate-salary-modal]');
-    const candidateId = Number(modal?.dataset.candidateId || 0);
-    if (!candidateId) throw new Error('没有待保存的薪资记录');
+    const candidateId = modal?.dataset.candidateId || '';
+    if (!candidateId || candidateId === '0') throw new Error('没有待保存的薪资记录');
     const expected_salary = document.querySelector('[data-candidate-salary-expected]')?.value?.trim() || '';
     const offered_salary = document.querySelector('[data-candidate-salary-offered]')?.value?.trim() || '';
     const service_status = document.querySelector('[data-candidate-salary-status]')?.value?.trim() || '未进行';
@@ -1051,21 +1085,24 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "open-candidate-employment-modal") {
-    const candidateId = Number(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || 0);
-    if (!candidateId) throw new Error('请先打开候选人详情');
-    const candidate = await window.hrApi.candidates().then(list => list.find(i => i.id === candidateId));
+    const candidateId = String(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
+    if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
+    const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
     const modal = document.querySelector('[data-candidate-employment-modal]');
-    const status = document.querySelector('[data-candidate-employment-status]');
+    const statusEl = document.querySelector('[data-candidate-employment-status]');
     const company = document.querySelector('[data-candidate-employment-company]');
     const position = document.querySelector('[data-candidate-employment-position]');
     const onboard = document.querySelector('[data-candidate-employment-onboard]');
     const note = document.querySelector('[data-candidate-employment-note]');
-    if (status) status.value = '已入职';
-    if (company) company.value = '';
-    if (position) position.value = candidate.current_title || '';
-    if (onboard) onboard.value = new Date().toISOString().slice(0, 10);
-    if (note) note.value = `候选人 ${candidate.name} 的入职状态记录`;
+    // 先从数据库读取已有记录并回填，没有记录则使用空默认值
+    const existingList = await window.hrApi.employmentRecords({ candidate_id: candidateId });
+    const existing = existingList && existingList[0];
+    if (statusEl) statusEl.value = existing?.status || '未入职';
+    if (company) company.value = existing?.company_name || '';
+    if (position) position.value = existing?.position_name || candidate.current_title || '';
+    if (onboard) onboard.value = existing?.onboard_date ? existing.onboard_date.slice(0, 10) : '';
+    if (note) note.value = existing?.note || `候选人 ${candidate.name} 的入职状态记录`;
     if (modal) {
       modal.style.display = 'block';
       modal.dataset.candidateId = String(candidateId);
@@ -1079,8 +1116,8 @@ async function handleGlobalButton(button) {
   }
   if (button.dataset.action === "confirm-candidate-employment") {
     const modal = document.querySelector('[data-candidate-employment-modal]');
-    const candidateId = Number(modal?.dataset.candidateId || 0);
-    if (!candidateId) throw new Error('没有待保存的入职状态');
+    const candidateId = modal?.dataset.candidateId || '';
+    if (!candidateId || candidateId === '0') throw new Error('没有待保存的入职状态');
     const status = document.querySelector('[data-candidate-employment-status]')?.value?.trim() || '未入职';
     const company_name = document.querySelector('[data-candidate-employment-company]')?.value?.trim() || '';
     const position_name = document.querySelector('[data-candidate-employment-position]')?.value?.trim() || '';
@@ -1108,18 +1145,19 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "open-candidate-followup-modal") {
-    const candidateId = Number(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || 0);
-    if (!candidateId) throw new Error('请先打开候选人详情');
-    const candidate = await window.hrApi.candidates().then(list => list.find(i => i.id === candidateId));
+    const candidateId = String(button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
+    if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
+    const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
     if (candidate.status !== '已录用') {
       throw new Error('仅已录用候选人可添加随访记录');
     }
     const modal = document.querySelector('[data-candidate-followup-modal]');
-    const time = document.querySelector('[data-candidate-followup-time]');
-    const content = document.querySelector('[data-candidate-followup-content]');
-    if (time) time.value = new Date().toISOString().slice(0, 16);
-    if (content) content.value = `候选人 ${candidate.name} 的随访记录`;
+    const timeEl = document.querySelector('[data-candidate-followup-time]');
+    const contentEl = document.querySelector('[data-candidate-followup-content]');
+    // 随访记录是追加型（每次新建一条），时间默认为当前时间，内容清空让用户自己填
+    if (timeEl) timeEl.value = new Date().toISOString().slice(0, 16);
+    if (contentEl) contentEl.value = '';
     if (modal) {
       modal.style.display = 'block';
       modal.dataset.candidateId = String(candidateId);
@@ -1133,8 +1171,8 @@ async function handleGlobalButton(button) {
   }
   if (button.dataset.action === "confirm-candidate-followup") {
     const modal = document.querySelector('[data-candidate-followup-modal]');
-    const candidateId = Number(modal?.dataset.candidateId || 0);
-    if (!candidateId) throw new Error('没有待保存的随访记录');
+    const candidateId = modal?.dataset.candidateId || '';
+    if (!candidateId || candidateId === '0') throw new Error('没有待保存的随访记录');
     const follow_up_time = document.querySelector('[data-candidate-followup-time]')?.value?.trim() || '';
     const content = document.querySelector('[data-candidate-followup-content]')?.value?.trim() || '';
     if (!content) throw new Error('请填写随访内容');
@@ -1624,10 +1662,23 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "create-warranty") {
     const modal = document.querySelector('[data-warranty-modal]');
     const scopeInput = document.querySelector('[data-warranty-scope]');
-    const title = document.querySelector('[data-warranty-modal-title]');
-    if (scopeInput && button.dataset.scope) scopeInput.value = button.dataset.scope;
-    if (title && button.dataset.scope) title.textContent = `${button.dataset.scope} 质保规则`;
-    if (modal) modal.style.display = 'block';
+    const monthsInput = document.querySelector('[data-warranty-months]');
+    const remindInput = document.querySelector('[data-warranty-remind]');
+    const autoInput = document.querySelector('[data-warranty-auto]');
+    const titleEl = document.querySelector('[data-warranty-modal-title]');
+    const scope = button.dataset.scope || '';
+    if (scopeInput && scope) scopeInput.value = scope;
+    if (titleEl && scope) titleEl.textContent = `${scope} 质保规则`;
+    // 查询已有同 scope 的质保规则并回填
+    const rules = await window.hrApi.warrantyRules();
+    const existing = rules.find(r => r.scope === scope);
+    if (monthsInput) monthsInput.value = existing?.months || '';
+    if (remindInput) remindInput.value = existing?.remind_days || '';
+    if (autoInput) autoInput.value = existing?.auto_expire ? 'true' : 'false';
+    if (modal) {
+      modal.style.display = 'block';
+      modal.dataset.ruleId = existing?.id ? String(existing.id) : '';
+    }
     return;
   }
   if (button.dataset.action === "edit-warranty-rule") {
@@ -1643,7 +1694,10 @@ async function handleGlobalButton(button) {
   }
   if (button.dataset.action === "open-warranty-modal") {
     const modal = document.querySelector('[data-warranty-modal]');
-    if (modal) modal.style.display = 'block';
+    if (modal) {
+      modal.style.display = 'block';
+      modal.dataset.ruleId = '';
+    }
     return;
   }
   if (button.dataset.action === "close-warranty-modal") {
@@ -1652,13 +1706,27 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "confirm-warranty-upload") {
+    const modal = document.querySelector('[data-warranty-modal]');
+    const ruleId = modal?.dataset.ruleId || '';
     const scope = document.querySelector('[data-warranty-scope]')?.value?.trim() || '';
     const months = Number(document.querySelector('[data-warranty-months]')?.value || 0);
     const remindDays = Number(document.querySelector('[data-warranty-remind]')?.value || 0);
     const autoExpire = document.querySelector('[data-warranty-auto]')?.value === 'true';
     if (!scope || !months || !remindDays) throw new Error('请先填写质保范围、月数和提醒天数');
-    const rule = await window.hrApi.createWarrantyRule({ scope, months, remind_days: remindDays, auto_expire: autoExpire });
-    const modal = document.querySelector('[data-warranty-modal]');
+    // Upsert：有 ruleId 则更新，无则新建
+    let rule;
+    if (ruleId) {
+      rule = await window.hrApi.updateWarrantyRule(ruleId, { scope, months, remind_days: remindDays, auto_expire: autoExpire });
+    } else {
+      // 再次查询防止并发新建（用户手动改了 scope）
+      const rules = await window.hrApi.warrantyRules();
+      const sameScope = rules.find(r => r.scope === scope);
+      if (sameScope) {
+        rule = await window.hrApi.updateWarrantyRule(sameScope.id, { scope, months, remind_days: remindDays, auto_expire: autoExpire });
+      } else {
+        rule = await window.hrApi.createWarrantyRule({ scope, months, remind_days: remindDays, auto_expire: autoExpire });
+      }
+    }
     if (modal) modal.style.display = 'none';
     showToast(`已保存质保规则：${rule.scope}`);
     setTimeout(() => window.location.reload(), 250);

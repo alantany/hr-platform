@@ -1,6 +1,52 @@
 # Findings
 
+## 2026-06-22 (搜索工具栏精简与期望城市省市级联选择器实现)
+
+### 二级级联城市选择器性能与交互
+- **纯前端检索优势**：由于页面已通过 `window.candidatesPageState.rawList` 缓存候选人，省市数据字典使用纯前端的 JS 静态常量 `CITY_DATA`（包含 10 个省份及其代表城市）。输入检索和级联点击时，完全在前端由 DOM 响应并更新输入框，再触发底层的 `applyFilters` 在内存进行二次过滤。无需额外发起 HTTP 请求，大大提高了界面响应的即时性和交互的顺滑感。
+- **级联面板点击防呆**：对于通过 input 的 `focus` 触发的下拉浮层，需要同时监听全文档的 click 事件。如果用户点击了输入框或下拉弹层内部，则保持显示；如果点击在输入框和弹框包裹器 `city-selector-wrapper` 外部，则必须将 display 设为 `none`，以避免浮层常驻而遮挡其他下拉选项或列表内容。
+
+### 导出选中候选人的过滤条件同步
+- **基于 data-id 收集选中状态**：将【导出简历】按钮迁移至候选人列表标题右侧。当点击导出按钮时，脚本通过 `.table-card .table-row input[type="checkbox"]:checked` 收集已被勾选的元素，并映射出它们的 `data-id`。
+- **预设参数约束**：如果勾选为空，应直接利用 Toast 拦截提醒，不再调起导出弹窗；如果有勾选，则获取全部候选人数据后，使用 `candidates.filter(c => checkedIds.includes(c.id))` 过滤掉所有未被勾选的行，并使用这一精炼列表来拼装导出弹框的“候选人”选择下拉列表（`<select data-export-candidate>`），这极大地减少了操作失误，也方便了用户快速进行单人/目标人选的水印导出。
+
+## 2026-06-22 (PostgreSQL 迁移与隔离完成)
+
+### PostgreSQL 权限隔离与架构原则
+- **Schema 划分与用户细粒度控制**：
+  - **主站交付表** (25张) 默认位于 `public` schema 下，由后端使用的 `user_delivery` 角色拥有全量读写及关联 Sequence 自增权限。
+  - **Recruit 抓取表** (5张) 在 PostgreSQL 模式下被划分至独立的 `recruit` schema。
+  - 后端账号 `user_delivery` 对 `recruit` schema 仅拥有 `USAGE` 与 `SELECT`（只读查询）特权，任何对抓取表的数据写操作都会触发 `InsufficientPrivilege` 数据库异常，实现了强物理级别的数据安全隔离。
+- **SQLAlchemy 跨 Schema 反射元数据规则**：
+  - 在 PostgreSQL 多 Schema 架构下，使用 `inspect(engine).get_columns(table_name)` 时，默认只会检索 `public` schema。
+  - 对于划分到非默认 schema（如 `recruit`）的表，如果不显式传递 `schema="recruit"` 命名空间参数，反射机制将无法获取其列元数据（返回空列表），进而破坏动态行拼装逻辑。
+  - 在设计反射与数据探针等高度动态的元数据分析接口时，系统必须为被隔离在非默认命名空间下的表配置动态 schema 映射。
+- **动态方言支持**：
+  - 系统在 Python ORM 层判断当前 `database_url` 是否属于 SQLite。如果是，则不启用 schema 配置以完美兼容 SQLite 的单文件零依赖调试；如果是 PostgreSQL，则应用 schema 绑定，确保在不同数据库类型下表结构按需分配。
+- **防范 sequence 跳变破坏硬编码 ID 的测试与 Seed 约束**：
+  - 在 PostgreSQL 中，因为事务 rollback 导致 primary key 的自增序列发生跳变，所以在数据 seeding 与回归测试（`test_phase1_smoke.py`, `test_phase2_smoke.py` 等）中**绝对不要硬编码 ID 1 进行依赖级联插入**。
+  - 所有需要级联引用的种子数据和测试对象，必须在插入后调用 `db.flush()` 动态取得最新自增 ID，或通过 API/SQL 动态反查（如根据 `username='admin'` / `name='张三'` 获取实际 ID）来进行下游记录插入，确保在任何测试环境下脚本的完全幂等与健壮性。
+
+## 2026-06-22 (最新)
+
+### 候选人 ID 字符串/整数兼容性——系统级约束
+
+- **约束背景**：系统同时管理两类候选人：
+  1. **本地创建候选人**：`id` 是自增整数（如 `150`），存在 `candidates.id`。
+  2. **Recruit 抓取候选人**：未落库前 ID 是字符串 `candidate_agent_id`（如 `"C_2ea37f02..."`），落库后才有真实整数 `id`。
+- **前端规则**：所有涉及候选人 ID 的地方，**严禁 `Number(id)` 强制转型**（字符串 agent_id 会变 `NaN`，导致操作全部失效）。正确做法：保持字符串、用 `String(i.id) === candidateId` 比较，空值判断用 `!id || id === '0'`。
+- **后端规则**：`ensure_local_candidate(db, candidate_id)` 是统一 ID 解析入口，兼容整数和字符串：整数则直接查 `candidates.id`，字符串则按 `candidate_agent_id` 查询或惰性创建。**新增任何写入 `candidate_id` 的接口，必须先调用 `ensure_local_candidate`**。
+- **Schema 规则**：接收候选人操作的 `candidate_id` 字段类型应声明为 `int | str`（由 handler 层解析）。
+- **已接入 ensure_local_candidate 的接口**：`PATCH /api/candidates/{id}`、`POST /api/candidates/{id}/lock`、`POST /api/candidates/{id}/release`、`POST /api/salary-records`、`POST /api/employment-records`、`POST /api/candidate-follow-up-records`、`POST /api/candidate-mail-records`。
+
+### Recruit 候选人落库时机
+
+- 抓取候选人**首次触发写操作时自动落库**（锁定、释放、编辑、薪资记录、入职记录、随访记录、发送邮件），无需手动导入。
+- 落库后后端返回真实整数 `id`，前端 `confirm-candidate-action` 已将弹窗 `dataset.candidateId` 更新为新整数 ID，后续操作均使用真实整数 ID。
+- 此设计保障"未操作不污染数据库"原则，对用户完全透明。
+
 ## 2026-06-21 (20:45 更新)
+
 
 ### 智联招聘简历抓取端数据库互通结论
 *   **物理数据库统一**：成功将“招聘管理系统”的 SQLite 连接指向了 `Recruit/jobs/data/app.db`。在此共享数据库下，两个系统建立并管理各自独立的表结构。

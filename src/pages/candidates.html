@@ -5,6 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>求职者数据池</title>
   <link rel="stylesheet" href="../../styles.css" />
+  <style>
+    .province-item, .city-item, .search-result-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #334155;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    .province-item:hover, .city-item:hover, .search-result-item:hover {
+      background: rgba(15, 23, 42, 0.05);
+      color: #0f172a;
+    }
+    .province-item.active {
+      background: rgba(15, 23, 42, 0.08);
+      color: #0d9488;
+      font-weight: 600;
+    }
+  </style>
   <script defer src="../../frontend-api.js"></script>
   <script defer src="../../app.js"></script>
 </head>
@@ -12,7 +32,7 @@
   <div id="app"></div>
   <script>
     window.__PAGE_BODY__ = `
-      <section class="metrics">
+      <section class="metrics" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
         <div class="metric-card">
           <div class="metric-top"><div><div class="section-sub">候选人总数</div></div><div class="metric-icon">○</div></div>
           <div class="metric-value" data-candidate-total>0</div>
@@ -22,11 +42,6 @@
           <div class="metric-top"><div><div class="section-sub">今日新增</div></div><div class="metric-icon">△</div></div>
           <div class="metric-value" data-candidate-new>0</div>
           <div class="metric-label">比昨日增加 3.2%</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-top"><div><div class="section-sub">今日搜索聊天次数</div></div><div class="metric-icon">▣</div></div>
-          <div class="metric-value" data-candidate-search>0</div>
-          <div class="metric-label">次搜索会话</div>
         </div>
         <div class="metric-card">
           <div class="metric-top"><div><div class="section-sub">已锁定候选人</div></div><div class="metric-icon">◌</div></div>
@@ -39,20 +54,27 @@
         <div class="section-head">
           <div>
             <h3>搜索工具栏</h3>
-            <div class="section-sub">关键词、城市、职位组合搜索，快速定位候选人。</div>
+            <div class="section-sub">关键词、城市组合搜索，快速定位候选人。</div>
           </div>
           <div class="hero-actions" style="margin-top:0">
-            <button class="btn primary" data-action="open-candidate-create-modal">新建候选人</button>
             <button class="btn primary" data-action="search-candidates">搜索</button>
-            <button class="btn secondary" data-action="nav-import">导入简历</button>
-            <button class="btn secondary" data-action="open-export-modal">导出选中</button>
           </div>
         </div>
-        <div class="toolbar" style="margin-bottom:0; padding:0; border:0; box-shadow:none; background:transparent;">
-          <input class="input wide" data-field="candidate-keyword" placeholder="搜索公司、职位、专业、学校、行业、技能等关键词" />
-          <input class="input" data-field="candidate-city" placeholder="期望城市（如：北京、上海、深圳）" />
-          <input class="input" data-field="candidate-status" placeholder="职位" />
-          <div class="toolbar-note">今日搜索聊天次数：<strong data-candidate-search-note>0</strong></div>
+        <div class="toolbar" style="margin-bottom:0; padding:0; border:0; box-shadow:none; background:transparent; display:flex; gap:12px;">
+          <input class="input wide" data-field="candidate-keyword" placeholder="搜索公司、职位、专业、学校、行业、技能等关键词" style="flex:3;" />
+          <div class="city-selector-wrapper" style="position: relative; flex: 1; min-width: 220px;">
+            <input class="input" data-field="candidate-city" placeholder="期望城市（如：北京、上海、深圳）" autocomplete="off" style="width: 100%;" />
+            <div class="city-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1000; padding: 12px;">
+              <div class="city-search-results" style="display: none; max-height: 240px; overflow-y: auto;">
+              </div>
+              <div class="city-cascade-view" style="display: flex; height: 240px;">
+                <div class="province-list" style="width: 130px; border-right: 1px solid rgba(15,23,42,.06); overflow-y: auto; padding-right: 8px;">
+                </div>
+                <div class="city-list" style="flex: 1; overflow-y: auto; padding-left: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: start;">
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -61,35 +83,51 @@
           <div class="section-head">
             <div>
               <h3>筛选条件</h3>
-              <div class="section-sub">学历、年龄、经验、院校等 11 个条件。</div>
+              <div class="section-sub">学历、年龄、经验多维度下拉检索。</div>
             </div>
           </div>
           <div class="list">
             <div class="list-item">
               <div class="item-top">
-                <div>
-                  <div class="item-title">学历要求</div>
-                  <div class="item-meta">不限 / 大专及以上 / 本科及以上 / 硕士及以上 / 自定义</div>
+                <div style="width: 100%;">
+                  <div class="item-title" style="margin-bottom: 6px;">学历要求</div>
+                  <select class="input" data-filter-education style="width: 100%;">
+                    <option value="">不限</option>
+                    <option value="大专">大专及以上</option>
+                    <option value="本科">本科及以上</option>
+                    <option value="硕士">硕士及以上</option>
+                  </select>
                 </div>
-                <span class="chip primary">展开</span>
               </div>
             </div>
             <div class="list-item">
               <div class="item-top">
-                <div>
-                  <div class="item-title">年龄要求</div>
-                  <div class="item-meta">不限 / 20-25 / 25-30 / 30-35 / 35-40 / 40以上 / 自定义</div>
+                <div style="width: 100%;">
+                  <div class="item-title" style="margin-bottom: 6px;">年龄要求</div>
+                  <select class="input" data-filter-age style="width: 100%;">
+                    <option value="">不限</option>
+                    <option value="20-25">20-25岁</option>
+                    <option value="25-30">25-30岁</option>
+                    <option value="30-35">30-35岁</option>
+                    <option value="35-40">35-40岁</option>
+                    <option value="40+">40岁以上</option>
+                  </select>
                 </div>
-                <span class="chip neutral">展开</span>
               </div>
             </div>
             <div class="list-item">
               <div class="item-top">
-                <div>
-                  <div class="item-title">经验要求</div>
-                  <div class="item-meta">不限 / 无经验 / 应届 / 1-3年 / 3-5年 / 5-10年 / 自定义</div>
+                <div style="width: 100%;">
+                  <div class="item-title" style="margin-bottom: 6px;">经验要求</div>
+                  <select class="input" data-filter-experience style="width: 100%;">
+                    <option value="">不限</option>
+                    <option value="0">无经验/应届</option>
+                    <option value="1-3">1-3年</option>
+                    <option value="3-5">3-5年</option>
+                    <option value="5-10">5-10年</option>
+                    <option value="10+">10年以上</option>
+                  </select>
                 </div>
-                <span class="chip warning">展开</span>
               </div>
             </div>
           </div>
@@ -98,49 +136,52 @@
           <div class="section-head">
             <div>
               <h3>快捷筛选</h3>
-              <div class="section-sub">保存高频搜索路径，减少重复筛选动作。</div>
+              <div class="section-sub">选择热词、排序和过滤条件，并支持保存当前方案。</div>
             </div>
           </div>
           <div class="list">
             <div class="list-item">
               <div class="item-top">
                 <div>
-                  <div class="item-title">猜你想搜</div>
-                  <div class="skills">
-                    <span class="skill-tag">销售</span>
-                    <span class="skill-tag">课程顾问</span>
-                    <span class="skill-tag">招聘</span>
-                    <span class="skill-tag">行政</span>
-                    <span class="skill-tag">客服</span>
-                    <span class="skill-tag">Java</span>
-                    <span class="skill-tag">前端</span>
-                    <span class="skill-tag">产品经理</span>
+                  <div class="item-title" style="margin-bottom: 8px;">猜你想搜 (点击切换选中)</div>
+                  <div class="skills" data-hotkey-container>
+                    <span class="skill-tag" data-hotkey="销售" style="cursor:pointer; transition: all 0.15s;">销售</span>
+                    <span class="skill-tag" data-hotkey="课程顾问" style="cursor:pointer; transition: all 0.15s;">课程顾问</span>
+                    <span class="skill-tag" data-hotkey="招聘" style="cursor:pointer; transition: all 0.15s;">招聘</span>
+                    <span class="skill-tag" data-hotkey="行政" style="cursor:pointer; transition: all 0.15s;">行政</span>
+                    <span class="skill-tag" data-hotkey="客服" style="cursor:pointer; transition: all 0.15s;">客服</span>
+                    <span class="skill-tag" data-hotkey="Java" style="cursor:pointer; transition: all 0.15s;">Java</span>
+                    <span class="skill-tag" data-hotkey="前端" style="cursor:pointer; transition: all 0.15s;">前端</span>
+                    <span class="skill-tag" data-hotkey="产品经理" style="cursor:pointer; transition: all 0.15s;">产品经理</span>
                   </div>
                 </div>
-                <span class="chip primary">热词</span>
               </div>
             </div>
             <div class="list-item">
               <div class="item-top">
-                <div>
-                  <div class="item-title">排序</div>
-                  <div class="item-meta">综合排序 / 简历更新时间优先 / 匹配优先 / 距离优先</div>
+                <div style="width: 100%;">
+                  <div class="item-title" style="margin-bottom: 6px;">排序</div>
+                  <select class="input" data-filter-sort style="width: 100%;">
+                    <option value="default">默认关联排序</option>
+                    <option value="created_desc">更新/导入时间降序</option>
+                    <option value="age_asc">年龄升序</option>
+                  </select>
                 </div>
-                <span class="chip neutral">排序</span>
               </div>
             </div>
             <div class="list-item">
               <div class="item-top">
-                <div>
-                  <div class="item-title">过滤</div>
-                  <div class="skills">
-                    <span class="skill-tag">未看过</span>
-                    <span class="skill-tag">未面试过</span>
-                    <span class="skill-tag">近一段工作相关</span>
-                    <span class="skill-tag">其他过滤条件</span>
+                <div style="width: 100%; display:flex; justify-content:space-between; align-items:flex-end; gap: 12px;">
+                  <div style="flex: 1;">
+                    <div class="item-title" style="margin-bottom: 6px;">状态过滤</div>
+                    <select class="input" data-filter-exclude style="width: 100%;">
+                      <option value="">不限</option>
+                      <option value="unlocked">未锁定</option>
+                      <option value="locked">已锁定</option>
+                    </select>
                   </div>
+                  <button class="btn success" data-action="open-search-preset-modal" style="height: 38px;">保存搜索方案</button>
                 </div>
-                <button class="chip success" data-action="open-search-preset-modal">保存快捷搜索</button>
               </div>
             </div>
           </div>
@@ -148,15 +189,18 @@
       </section>
 
       <section class="panel" style="padding:0;">
-        <div class="section-head" style="padding:16px 16px 0;">
+        <div class="section-head" style="padding:16px 16px 0; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <h3>候选人列表</h3>
             <div class="section-sub">按岗位需求筛选、推进和管理候选人。</div>
           </div>
+          <div class="hero-actions" style="margin-top:0">
+            <button class="btn secondary" data-action="export-selected" style="height:38px;">导出简历</button>
+          </div>
         </div>
         <div class="table-card" style="border:0; box-shadow:none; border-radius:0; margin-top:10px;">
           <div class="table-head">
-            <div><input type="checkbox" aria-label="全选" /></div>
+            <div><input type="checkbox" data-action="toggle-all-candidates" aria-label="全选" /></div>
             <div>候选人</div>
             <div>基本信息</div>
             <div>期望职位</div>
@@ -543,9 +587,97 @@
       await renderApp();
       window.candidatesPageState = {
         list: [],
+        rawList: [],
         currentPage: 1,
         pageSize: 10,
-        render() {
+        applyFilters() {
+          const education = document.querySelector('[data-filter-education]')?.value || "";
+          const ageRange = document.querySelector('[data-filter-age]')?.value || "";
+          const expRange = document.querySelector('[data-filter-experience]')?.value || "";
+          const sortVal = document.querySelector('[data-filter-sort]')?.value || "default";
+          const excludeVal = document.querySelector('[data-filter-exclude]')?.value || "";
+          
+          const activeHotkeys = Array.from(document.querySelectorAll('[data-hotkey].active')).map(el => el.getAttribute('data-hotkey'));
+          
+          let filtered = [...this.rawList];
+          
+          // 1. 学历要求过滤
+          if (education) {
+            filtered = filtered.filter(i => {
+              const edu = String(i.education || "");
+              if (education === '硕士') return edu.includes('硕士') || edu.includes('研究生') || edu.includes('博士');
+              if (education === '本科') return edu.includes('本科') || edu.includes('硕士') || edu.includes('研究生') || edu.includes('博士');
+              if (education === '大专') return edu.includes('大专') || edu.includes('专科') || edu.includes('本科') || edu.includes('硕士');
+              return true;
+            });
+          }
+          
+          // 2. 年龄过滤
+          if (ageRange) {
+            filtered = filtered.filter(i => {
+              const age = Number(i.age);
+              if (!age) return false;
+              if (ageRange === '20-25') return age >= 20 && age <= 25;
+              if (ageRange === '25-30') return age >= 25 && age <= 30;
+              if (ageRange === '30-35') return age >= 30 && age <= 35;
+              if (ageRange === '35-40') return age >= 35 && age <= 40;
+              if (ageRange === '40+') return age > 40;
+              return true;
+            });
+          }
+          
+          // 3. 经验过滤
+          if (expRange) {
+            filtered = filtered.filter(i => {
+              const exp = Number(i.experience_years);
+              if (expRange === '0') return !exp || exp === 0;
+              if (expRange === '1-3') return exp >= 1 && exp <= 3;
+              if (expRange === '3-5') return exp >= 3 && exp <= 5;
+              if (expRange === '5-10') return exp >= 5 && exp <= 10;
+              if (expRange === '10+') return exp > 10;
+              return true;
+            });
+          }
+          
+          // 4. 状态过滤 (unlocked / locked)
+          if (excludeVal) {
+            if (excludeVal === 'unlocked') {
+              filtered = filtered.filter(i => !i.locked);
+            } else if (excludeVal === 'locked') {
+              filtered = filtered.filter(i => i.locked);
+            }
+          }
+          
+          // 5. 点击的热词额外检索匹配
+          if (activeHotkeys.length > 0) {
+            filtered = filtered.filter(i => {
+              const text = [
+                i.name,
+                i.current_title,
+                i.education,
+                i.city,
+                i.source
+              ].join(" ").toLowerCase();
+              return activeHotkeys.every(hk => text.includes(hk.toLowerCase()));
+            });
+          }
+          
+          // 6. 排序
+          if (sortVal === 'created_desc') {
+            filtered.sort((a, b) => {
+              const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+              const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+              return tB - tA;
+            });
+          } else if (sortVal === 'age_asc') {
+            filtered.sort((a, b) => (Number(a.age) || 999) - (Number(b.age) || 999));
+          }
+          
+          this.list = filtered;
+          this.currentPage = 1;
+          this.renderOnly();
+        },
+        renderOnly() {
           const total = this.list.length;
           const totalPages = Math.max(1, Math.ceil(total / this.pageSize));
           if (this.currentPage > totalPages) this.currentPage = totalPages;
@@ -557,10 +689,16 @@
 
           const totalNode = document.querySelector('[data-candidate-total]');
           const newNode = document.querySelector('[data-candidate-new]');
-          const searchNode = document.querySelector('[data-candidate-search]');
           const lockedNode = document.querySelector('[data-candidate-locked]');
           if (totalNode) totalNode.textContent = String(total);
-          if (newNode) newNode.textContent = String(this.list.filter(i => String(i.status).includes('新') || String(i.status).includes('激活')).length);
+          
+          const localDate = new Date();
+          const year = localDate.getFullYear();
+          const month = String(localDate.getMonth() + 1).padStart(2, '0');
+          const day = String(localDate.getDate()).padStart(2, '0');
+          const todayPrefix = `${year}-${month}-${day}`;
+          
+          if (newNode) newNode.textContent = String(this.list.filter(i => i.created_at && i.created_at.startsWith(todayPrefix)).length);
           if (lockedNode) lockedNode.textContent = String(this.list.filter(i => i.locked).length);
 
           const footNode = document.querySelector('[data-candidate-foot]');
@@ -582,7 +720,7 @@
 
               return `
                 <div class="table-row">
-                  <div><input type="checkbox" aria-label="选择${i.name}" /></div>
+                  <div><input type="checkbox" data-id="${i.id}" aria-label="选择${i.name}" /></div>
                   <div>
                     <div class="row-title">
                       <div class="avatar-sm"></div>
@@ -618,23 +756,291 @@
               head.insertAdjacentHTML('afterend', rows);
             }
           }
+        },
+        render() {
+          this.applyFilters();
         }
       };
 
       try {
-        window.candidatesPageState.list = await window.hrApi.candidates();
-        const searchNode = document.querySelector('[data-candidate-search]');
-        if (searchNode) searchNode.textContent = String((await window.hrApi.searchPresets()).length);
-        
+        window.candidatesPageState.rawList = await window.hrApi.candidates();
         window.candidatesPageState.render();
       } catch (err) { console.warn(err); }
 
+      // 城市二级联动及搜索数据字典
+      const CITY_DATA = [
+        {
+          province: "直辖市",
+          cities: ["北京", "上海", "天津", "重庆"]
+        },
+        {
+          province: "广东省",
+          cities: ["广州", "深圳", "珠海", "汕头", "佛山", "韶关", "湛江", "肇庆", "江门", "茂名", "惠州", "梅州", "汕尾", "河源", "阳江", "清远", "东莞", "中山", "潮州", "揭阳", "云浮"]
+        },
+        {
+          province: "浙江省",
+          cities: ["杭州", "宁波", "温州", "嘉兴", "湖州", "绍兴", "金华", "衢州", "舟山", "台州", "丽水"]
+        },
+        {
+          province: "江苏省",
+          cities: ["南京", "无锡", "徐州", "常州", "苏州", "南通", "连云港", "淮安", "盐城", "扬州", "镇江", "泰州", "宿迁"]
+        },
+        {
+          province: "四川省",
+          cities: ["成都", "自贡", "攀枝花", "泸州", "德阳", "绵阳", "广元", "遂宁", "内江", "乐山", "南充", "眉山", "宜宾", "广安", "达州", "雅安", "巴中", "资阳"]
+        },
+        {
+          province: "湖北省",
+          cities: ["武汉", "黄石", "十堰", "宜昌", "襄阳", "鄂州", "荆门", "孝感", "荆州", "黄冈", "咸宁", "随州"]
+        },
+        {
+          province: "湖南省",
+          cities: ["长沙", "株洲", "湘潭", "衡阳", "邵阳", "岳阳", "常德", "张家界", "益阳", "郴州", "永州", "怀化", "娄底"]
+        },
+        {
+          province: "福建省",
+          cities: ["福州", "厦门", "莆田", "三明", "泉州", "漳州", "南平", "龙岩", "宁德"]
+        },
+        {
+          province: "山东省",
+          cities: ["济南", "青岛", "淄博", "枣庄", "东营", "烟台", "潍坊", "济宁", "泰安", "威海", "日照", "临沂", "德州", "聊城", "滨州", "菏泽"]
+        },
+        {
+          province: "陕西省",
+          cities: ["西安", "铜川", "宝鸡", "咸阳", "渭南", "延安", "汉中", "榆林", "安康", "商洛"]
+        }
+      ];
+
+      const cityInput = document.querySelector('[data-field="candidate-city"]');
+      const cityDropdown = document.querySelector('.city-dropdown');
+      const provinceListEl = document.querySelector('.province-list');
+      const cityListEl = document.querySelector('.city-list');
+      const searchResultsEl = document.querySelector('.city-search-results');
+      const cascadeViewEl = document.querySelector('.city-cascade-view');
+
+      // 初始化渲染省份
+      if (provinceListEl) {
+        provinceListEl.innerHTML = CITY_DATA.map((p, idx) => `
+          <div class="province-item ${idx === 0 ? 'active' : ''}" data-idx="${idx}">${p.province}</div>
+        `).join('');
+        
+        provinceListEl.addEventListener('click', (e) => {
+          const item = e.target.closest('.province-item');
+          if (!item) return;
+          provinceListEl.querySelectorAll('.province-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+          const idx = parseInt(item.getAttribute('data-idx'));
+          renderCities(idx);
+        });
+      }
+
+      function renderCities(provinceIdx) {
+        if (!cityListEl) return;
+        const cities = CITY_DATA[provinceIdx].cities;
+        cityListEl.innerHTML = cities.map(c => `
+          <div class="city-item" data-val="${c}">${c}</div>
+        `).join('');
+      }
+
+      renderCities(0);
+
+      if (cityInput && cityDropdown) {
+        cityInput.addEventListener('focus', () => {
+          cityDropdown.style.display = 'block';
+          filterCityDropdown();
+        });
+        cityInput.addEventListener('click', (e) => {
+          e.stopPropagation();
+          cityDropdown.style.display = 'block';
+        });
+        cityInput.addEventListener('input', () => {
+          filterCityDropdown();
+        });
+      }
+
       document.addEventListener('click', (e) => {
+        const cityItem = e.target.closest('.city-item, .search-result-item');
+        if (cityItem) {
+          const val = cityItem.getAttribute('data-val');
+          if (cityInput) {
+            cityInput.value = val;
+            cityInput.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+          if (cityDropdown) cityDropdown.style.display = 'none';
+          window.candidatesPageState.applyFilters();
+          return;
+        }
+        
+        if (cityDropdown && !e.target.closest('.city-selector-wrapper')) {
+          cityDropdown.style.display = 'none';
+        }
+      });
+
+      function filterCityDropdown() {
+        if (!cityInput || !searchResultsEl || !cascadeViewEl) return;
+        const query = cityInput.value.trim().toLowerCase();
+        if (!query) {
+          searchResultsEl.style.display = 'none';
+          cascadeViewEl.style.display = 'flex';
+          return;
+        }
+
+        const matches = [];
+        CITY_DATA.forEach(p => {
+          p.cities.forEach(c => {
+            if (c.toLowerCase().includes(query)) {
+              matches.push(c);
+            }
+          });
+        });
+
+        if (matches.length > 0) {
+          searchResultsEl.innerHTML = matches.map(c => `
+            <div class="search-result-item" data-val="${c}">${c}</div>
+          `).join('');
+          searchResultsEl.style.display = 'block';
+          cascadeViewEl.style.display = 'none';
+        } else {
+          searchResultsEl.innerHTML = '<div style="padding: 8px 12px; font-size: 12px; color: var(--muted-foreground);">未找到匹配城市</div>';
+          searchResultsEl.style.display = 'block';
+          cascadeViewEl.style.display = 'none';
+        }
+      }
+
+      // 全选/反选逻辑
+      document.addEventListener('change', (e) => {
+        if (e.target.matches('[data-action="toggle-all-candidates"]')) {
+          const checked = e.target.checked;
+          document.querySelectorAll('.table-card .table-row input[type="checkbox"]').forEach(cb => {
+            if (!cb.disabled) {
+              cb.checked = checked;
+            }
+          });
+        }
+      });
+
+      // 监听下拉框 change 联动过滤
+      document.addEventListener('change', (e) => {
+        if (e.target.matches('[data-filter-education], [data-filter-age], [data-filter-experience], [data-filter-sort], [data-filter-exclude]')) {
+          window.candidatesPageState.applyFilters();
+        }
+      });
+
+      // 热词点击选中和高亮切换
+      const hotkeyContainer = document.querySelector('[data-hotkey-container]');
+      if (hotkeyContainer) {
+        hotkeyContainer.addEventListener('click', (e) => {
+          const span = e.target.closest('[data-hotkey]');
+          if (!span) return;
+          span.classList.toggle('active');
+          if (span.classList.contains('active')) {
+            span.style.background = 'var(--primary)';
+            span.style.color = 'white';
+          } else {
+            span.style.background = '';
+            span.style.color = '';
+          }
+          window.candidatesPageState.applyFilters();
+        });
+      }
+
+      document.addEventListener('click', async (e) => {
+        const openPresetBtn = e.target.closest('[data-action="open-search-preset-modal"]');
+        if (openPresetBtn) {
+          e.stopPropagation();
+          const modal = document.querySelector('[data-search-preset-modal]');
+          if (!modal) return;
+          
+          const nameInput = modal.querySelector('[data-search-preset-name]');
+          if (nameInput) {
+            nameInput.value = `搜索方案-${new Date().toLocaleTimeString()}`;
+          }
+          
+          const kw = document.querySelector('[data-field="candidate-keyword"]')?.value?.trim() || "无";
+          const city = document.querySelector('[data-field="candidate-city"]')?.value?.trim() || "无";
+          
+          const edu = document.querySelector('[data-filter-education]')?.value || "不限";
+          const age = document.querySelector('[data-filter-age]')?.value || "不限";
+          const exp = document.querySelector('[data-filter-experience]')?.value || "不限";
+          const sort = document.querySelector('[data-filter-sort]')?.value || "default";
+          const exclude = document.querySelector('[data-filter-exclude]')?.value || "不限";
+          const activeHotkeys = Array.from(document.querySelectorAll('[data-hotkey].active')).map(el => el.getAttribute('data-hotkey'));
+          
+          const sortTexts = { "default": "默认", "created_desc": "更新时间降序", "age_asc": "年龄升序" };
+          const excludeTexts = { "": "不限", "unlocked": "未锁定", "locked": "已锁定" };
+          
+          const parts = [
+            `关键词：${kw}`,
+            `城市：${city}`,
+            `学历：${edu}`,
+            `年龄：${age}`,
+            `经验：${exp}`,
+            `排序：${sortTexts[sort] || sort}`,
+            `过滤：${excludeTexts[exclude] || exclude}`
+          ];
+          if (activeHotkeys.length > 0) {
+            parts.push(`热词：${activeHotkeys.join('、')}`);
+          }
+          
+          const summaryNode = modal.querySelector('[data-search-preset-summary]');
+          if (summaryNode) {
+            summaryNode.textContent = parts.join(' · ');
+          }
+          
+          modal.style.display = 'block';
+          return;
+        }
+
+        const confirmPresetBtn = e.target.closest('[data-action="confirm-search-preset-upload"]');
+        if (confirmPresetBtn) {
+          e.stopPropagation();
+          const nameInput = document.querySelector('[data-search-preset-name]');
+          const presetName = nameInput?.value?.trim() || `快捷搜索-${Date.now().toString(36)}`;
+          
+          const keyword = document.querySelector('[data-field="candidate-keyword"]')?.value?.trim() || "";
+          const city = document.querySelector('[data-field="candidate-city"]')?.value?.trim() || "";
+          
+          const education = document.querySelector('[data-filter-education]')?.value || "";
+          const age = document.querySelector('[data-filter-age]')?.value || "";
+          const experience = document.querySelector('[data-filter-experience]')?.value || "";
+          const sort = document.querySelector('[data-filter-sort]')?.value || "default";
+          const exclude = document.querySelector('[data-filter-exclude]')?.value || "";
+          const activeHotkeys = Array.from(document.querySelectorAll('[data-hotkey].active')).map(el => el.getAttribute('data-hotkey'));
+          
+          const jsonKw = JSON.stringify({
+            keyword,
+            education,
+            age,
+            experience,
+            sort,
+            exclude,
+            activeHotkeys
+          });
+          
+          try {
+            const preset = await window.hrApi.createSearchPreset({
+              name: presetName,
+              keyword: jsonKw,
+              city,
+              status: "",
+              created_by: "admin"
+            });
+            
+            const modal = document.querySelector('[data-search-preset-modal]');
+            if (modal) modal.style.display = 'none';
+            showToast(`成功保存方案：${preset.name}`);
+            window.location.reload();
+          } catch(err) {
+            alert('保存失败: ' + err.message);
+          }
+          return;
+        }
+
         const prevBtn = e.target.closest('[data-action="prev-page"]');
         if (prevBtn) {
           if (window.candidatesPageState.currentPage > 1) {
             window.candidatesPageState.currentPage--;
-            window.candidatesPageState.render();
+            window.candidatesPageState.renderOnly();
           }
           return;
         }
@@ -643,7 +1049,7 @@
           const totalPages = Math.ceil(window.candidatesPageState.list.length / window.candidatesPageState.pageSize);
           if (window.candidatesPageState.currentPage < totalPages) {
             window.candidatesPageState.currentPage++;
-            window.candidatesPageState.render();
+            window.candidatesPageState.renderOnly();
           }
           return;
         }
@@ -727,7 +1133,72 @@
         const presets = await window.hrApi.searchPresets();
         const list = document.querySelector('[data-search-presets]');
         if (list) {
-          list.innerHTML = presets.slice(0, 5).map(p => `<div class="list-item"><div class="item-top"><div><div class="item-title">${p.name}</div><div class="item-meta">${p.keyword || '全部关键词'} · ${p.city || '全部城市'} · ${p.status || '全部状态'}</div></div><span class="chip primary">${p.created_by}</span></div></div>`).join('');
+          list.innerHTML = presets.slice(0, 5).map(p => {
+            let displayKw = p.keyword;
+            try {
+              const parsed = JSON.parse(p.keyword);
+              displayKw = parsed.keyword || "全部关键词";
+            } catch(e) {}
+            return `
+              <div class="list-item" data-preset-id="${p.id}" style="cursor:pointer;">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">${p.name}</div>
+                    <div class="item-meta">${displayKw} · ${p.city || '全部城市'} · ${p.status || '全部状态'}</div>
+                  </div>
+                  <span class="chip primary">${p.created_by}</span>
+                </div>
+              </div>
+            `;
+          }).join('') || '<div class="list-item"><div class="item-meta">暂无快捷搜索记录</div></div>';
+          
+          list.addEventListener('click', (e) => {
+            const item = e.target.closest('[data-preset-id]');
+            if (!item) return;
+            const presetId = Number(item.getAttribute('data-preset-id'));
+            const p = presets.find(x => x.id === presetId);
+            if (!p) return;
+            
+            try {
+              const config = JSON.parse(p.keyword);
+              document.querySelector('[data-field="candidate-keyword"]').value = config.keyword || "";
+              document.querySelector('[data-filter-education]').value = config.education || "";
+              document.querySelector('[data-filter-age]').value = config.age || "";
+              document.querySelector('[data-filter-experience]').value = config.experience || "";
+              document.querySelector('[data-filter-sort]').value = config.sort || "default";
+              document.querySelector('[data-filter-exclude]').value = config.exclude || "";
+              
+              document.querySelectorAll('[data-hotkey]').forEach(span => {
+                const hk = span.getAttribute('data-hotkey');
+                if (config.activeHotkeys && config.activeHotkeys.includes(hk)) {
+                  span.classList.add('active');
+                  span.style.background = 'var(--primary)';
+                  span.style.color = 'white';
+                } else {
+                  span.classList.remove('active');
+                  span.style.background = '';
+                  span.style.color = '';
+                }
+              });
+            } catch(err) {
+              document.querySelector('[data-field="candidate-keyword"]').value = p.keyword || "";
+              document.querySelector('[data-filter-education]').value = "";
+              document.querySelector('[data-filter-age]').value = "";
+              document.querySelector('[data-filter-experience]').value = "";
+              document.querySelector('[data-filter-sort]').value = "default";
+              document.querySelector('[data-filter-exclude]').value = "";
+              document.querySelectorAll('[data-hotkey]').forEach(span => {
+                span.classList.remove('active');
+                span.style.background = '';
+                span.style.color = '';
+              });
+            }
+            
+            document.querySelector('[data-field="candidate-city"]').value = p.city || "";
+            
+            showToast(`已加载搜索方案：${p.name}`);
+            window.candidatesPageState.applyFilters();
+          });
         }
       } catch (err) { console.warn(err); }
     });

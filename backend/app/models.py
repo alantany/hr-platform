@@ -6,6 +6,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, Uni
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
+from .config import settings
 
 
 class TimestampMixin:
@@ -414,6 +415,8 @@ class AiTask(Base, TimestampMixin):
 
 class RecruitCandidateProfile(Base):
     __tablename__ = "candidate_profiles"
+    if not settings.database_url.startswith("sqlite"):
+        __table_args__ = {"schema": "recruit"}
 
     candidate_agent_id: Mapped[str] = mapped_column(String(255), primary_key=True)
     candidate_name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -424,6 +427,8 @@ class RecruitCandidateProfile(Base):
 
 class RecruitResumeDownload(Base):
     __tablename__ = "resume_downloads"
+    if not settings.database_url.startswith("sqlite"):
+        __table_args__ = {"schema": "recruit"}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_posting_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -434,4 +439,55 @@ class RecruitResumeDownload(Base):
     issuer_login_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     time_folder: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class RecruitEmployee(Base):
+    __tablename__ = "employees"
+    if not settings.database_url.startswith("sqlite"):
+        __table_args__ = {"schema": "recruit"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    login_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[str] = mapped_column(String(64), nullable=False)
+    updated_at: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    is_admin: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+class RecruitJobPosting(Base):
+    __tablename__ = "job_postings"
+    if not settings.database_url.startswith("sqlite"):
+        __table_args__ = {"schema": "recruit"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    job_title: Mapped[str] = mapped_column(String(255), nullable=False)
+    work_location: Mapped[str] = mapped_column(String(255), nullable=False)
+    age_requirement: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    education: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[str] = mapped_column(String(64), nullable=False)
+    age_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    age_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    candidate_activity: Mapped[str] = mapped_column(String(64), nullable=False)
+    daily_greet_limit: Mapped[int] = mapped_column(Integer, nullable=False)
+    search_keyword: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_valid: Mapped[str] = mapped_column(String(8), nullable=False)
+
+
+class RecruitDailyTaskStat(Base):
+    __tablename__ = "daily_task_stats"
+    if not settings.database_url.startswith("sqlite"):
+        __table_args__ = {"schema": "recruit"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    stat_date: Mapped[str] = mapped_column(String(64), nullable=False)
+    job_posting_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    issuer_login_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    job_title: Mapped[str] = mapped_column(String(255), nullable=False)
+    greet_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    resume_request_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    resume_download_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    resume_ack_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    updated_at: Mapped[str] = mapped_column(String(64), nullable=False)
 

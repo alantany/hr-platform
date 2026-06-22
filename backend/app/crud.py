@@ -239,7 +239,9 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
             "expected_salary": c.expected_salary,
             "id_number": c.id_number,
             "tags": c.tags,
-            "candidate_agent_id": None
+            "candidate_agent_id": None,
+            "created_at": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else None,
+            "file_path": None
         })
         
     # 处理联合查询的结果
@@ -274,12 +276,14 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "expected_salary": c.expected_salary,
                 "id_number": c.id_number,
                 "tags": c.tags,
-                "candidate_agent_id": p.candidate_agent_id
+                "candidate_agent_id": p.candidate_agent_id,
+                "created_at": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else (download.created_at if download else p.updated_at),
+                "file_path": download.file_path if download else None
             })
         else:
             # 纯抓取来的候选人，未同步，不做任何写入与硬编码硬塞值，独有字段全为 None
             merged_results.append({
-                "id": p.candidate_agent_id, # 字符串虚拟 ID
+                "id": download.id if download else p.candidate_agent_id, # 整数虚拟 ID，直接使用下载记录 ID；无下载记录时以 agent_id 兜底
                 "name": p.candidate_name,
                 "phone": None,
                 "email": None,
@@ -287,7 +291,7 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "city": None,
                 "status": "新入库",
                 "source": "智联抓取",
-                "locked": None,
+                "locked": False,
                 "gender": None,
                 "age": age_val,
                 "education": p.candidate_education or "",
@@ -295,7 +299,9 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "expected_salary": None,
                 "id_number": None,
                 "tags": None,
-                "candidate_agent_id": p.candidate_agent_id
+                "candidate_agent_id": p.candidate_agent_id,
+                "created_at": download.created_at if download else p.updated_at,
+                "file_path": download.file_path if download else None
             })
 
     # 4. 在内存中进行过滤
@@ -320,40 +326,47 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 continue
         filtered.append(item)
     return filtered
-
-
 def ensure_local_candidate(db: Session, candidate_id: int | str) -> Candidate | None:
+    from .models import RecruitCandidateProfile, RecruitResumeDownload, Candidate
+    import re
+    
+    # 尝试把 candidate_id 解析为整数
+    val = None
     try:
         val = int(candidate_id)
-        return db.get(Candidate, val)
     except ValueError:
-        # 说明是字符串的 agent_id，需要在此处进行惰性创建
-        agent_id = str(candidate_id)
-        existing = db.query(Candidate).filter(Candidate.candidate_agent_id == agent_id).first()
+        pass
+        
+    if val is not None:
+        # 1. 如果能转成整数，优先查交付表 Candidate 是否已落库
+        existing = db.get(Candidate, val)
         if existing:
             return existing
             
-        from .models import RecruitCandidateProfile, RecruitResumeDownload
+        # 2. 若未落库，则以该 val (即 download.id) 去 resume_downloads 查找下载记录
+        download = db.get(RecruitResumeDownload, val)
+        if not download:
+            return None
+            
+        # 3. 找到下载记录，拉取抓取表的完整 Profile
+        agent_id = download.candidate_agent_id
         profile = db.query(RecruitCandidateProfile).filter(RecruitCandidateProfile.candidate_agent_id == agent_id).first()
         if not profile:
             return None
             
-        download = db.query(RecruitResumeDownload).filter(
-            RecruitResumeDownload.candidate_agent_id == agent_id
-        ).order_by(RecruitResumeDownload.created_at.desc()).first()
-        
-        import re
         age_val = None
         if profile.candidate_age:
             m = re.search(r'\d+', profile.candidate_age)
             if m:
                 age_val = int(m.group(0))
                 
+        # 4. 显式指定 id=val 创建交付表记录，实现主键一致
         new_c = Candidate(
+            id=val,
             name=profile.candidate_name,
             phone="",
             email="",
-            current_title=download.job_title if download else "",
+            current_title=download.job_title,
             city="",
             status="新入库",
             source="智联抓取",
@@ -368,7 +381,50 @@ def ensure_local_candidate(db: Session, candidate_id: int | str) -> Candidate | 
         db.commit()
         db.refresh(new_c)
         return new_c
-
+    else:
+        # 如果是字符串形式的 agent_id (即 "C_xxx")
+        agent_id = str(candidate_id)
+        existing = db.query(Candidate).filter(Candidate.candidate_agent_id == agent_id).first()
+        if existing:
+            return existing
+            
+        profile = db.query(RecruitCandidateProfile).filter(RecruitCandidateProfile.candidate_agent_id == agent_id).first()
+        if not profile:
+            return None
+            
+        download = db.query(RecruitResumeDownload).filter(
+            RecruitResumeDownload.candidate_agent_id == agent_id
+        ).order_by(RecruitResumeDownload.created_at.desc()).first()
+        if not download:
+            return None
+            
+        age_val = None
+        if profile.candidate_age:
+            m = re.search(r'\d+', profile.candidate_age)
+            if m:
+                age_val = int(m.group(0))
+                
+        # 也是显式指定 id=download.id 插入
+        new_c = Candidate(
+            id=download.id,
+            name=profile.candidate_name,
+            phone="",
+            email="",
+            current_title=download.job_title,
+            city="",
+            status="新入库",
+            source="智联抓取",
+            gender="",
+            age=age_val,
+            education=profile.candidate_education or "",
+            expected_salary="",
+            tags="",
+            candidate_agent_id=agent_id
+        )
+        db.add(new_c)
+        db.commit()
+        db.refresh(new_c)
+        return new_c
 
 
 def update_candidate(db: Session, candidate: Candidate, payload):
@@ -425,6 +481,13 @@ def create_salary_record(db: Session, payload):
     return obj
 
 
+def update_salary_record(db: Session, record: SalaryRecord, payload):
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        if key != 'candidate_id':
+            setattr(record, key, value)
+    return record
+
+
 def list_salary_records(db: Session, candidate_id: int | None = None):
     query = db.query(SalaryRecord)
     if candidate_id is not None:
@@ -436,6 +499,13 @@ def create_employment_record(db: Session, payload):
     obj = EmploymentRecord(**payload.model_dump())
     db.add(obj)
     return obj
+
+
+def update_employment_record(db: Session, record: EmploymentRecord, payload):
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        if key != 'candidate_id':
+            setattr(record, key, value)
+    return record
 
 
 def list_employment_records(db: Session, candidate_id: int | None = None):

@@ -40,6 +40,20 @@ def seed() -> None:
             company.projects.append(project)
             db.add(company)
             db.add(candidate)
+            db.flush()
+        # 查询已生成的主键 ID，防范序列不为 1 导致的约束冲突
+        cand = db.query(Candidate).filter(Candidate.name == "张三").first()
+        if not cand:
+            cand = db.query(Candidate).first()
+        pos = db.query(Position).filter(Position.name == "Java高级开发工程师").first()
+        if not pos:
+            pos = db.query(Position).first()
+        recom = db.query(Recommendation).first()
+
+        cand_id = cand.id if cand else 1
+        pos_id = pos.id if pos else 1
+        recom_id = recom.id if recom else 1
+
         if not db.query(TagDictionary).count():
             db.add_all([
                 TagDictionary(category="求职者标签", name="Java", enabled=True),
@@ -58,7 +72,7 @@ def seed() -> None:
             if scope not in existing_scopes:
                 db.add(WarrantyRule(scope=scope, months=months, remind_days=remind_days, auto_expire=auto_expire))
         if not db.query(Evaluation).count():
-            db.add(Evaluation(candidate_id=1, position_id=1, evaluator="admin", round_name="第1轮", grade="优秀", score=5, content="种子评价"))
+            db.add(Evaluation(candidate_id=cand_id, position_id=pos_id, evaluator="admin", round_name="第1轮", grade="优秀", score=5, content="种子评价"))
         if not db.query(Notification).count():
             db.add(Notification(user="admin", title="系统已初始化", type="系统通知", read=False, target_path="/src/pages/dashboard.html"))
         if not db.query(SystemConfig).count():
@@ -76,15 +90,15 @@ def seed() -> None:
                 AiTask(task_type="jd_generate", input_text="Java高级开发工程师", output_text="RESULT<jd_generate>:Java高级开发工程师", status="完成"),
             ])
         if not db.query(CandidateTrackingEvent).count():
-            db.add(CandidateTrackingEvent(candidate_id=1, event_type="recommend", status="已推荐", summary="种子推荐事件", operator="system", position_id=1, recommendation_id=1))
+            db.add(CandidateTrackingEvent(candidate_id=cand_id, event_type="recommend", status="已推荐", summary="种子推荐事件", operator="system", position_id=pos_id, recommendation_id=recom_id))
         if not db.query(InterviewRecord).count():
-            db.add(InterviewRecord(candidate_id=1, round_name="第1轮", result="通过", interviewer="system", note="种子面试"))
+            db.add(InterviewRecord(candidate_id=cand_id, round_name="第1轮", result="通过", interviewer="system", note="种子面试"))
         if not db.query(SalaryRecord).count():
-            db.add(SalaryRecord(candidate_id=1, expected_salary="20k", offered_salary="22k", service_status="进行中", note="种子薪资"))
+            db.add(SalaryRecord(candidate_id=cand_id, expected_salary="20k", offered_salary="22k", service_status="进行中", note="种子薪资"))
         if not db.query(EmploymentRecord).count():
-            db.add(EmploymentRecord(candidate_id=1, status="未入职", company_name="科技有限公司A", position_name="Java高级开发工程师", note="种子入职"))
+            db.add(EmploymentRecord(candidate_id=cand_id, status="未入职", company_name="科技有限公司A", position_name="Java高级开发工程师", note="种子入职"))
         if not db.query(ExportRecord).count():
-            db.add(ExportRecord(candidate_id=1, candidate_name="张三", company_name="科技有限公司A", project_name="2026核心招聘", position_name="Java高级开发工程师", format="PDF", watermarked=True, exported_by="system", file_name="张三-Java高级开发工程师.pdf", file_path="/exports/zhangsan.pdf"))
+            db.add(ExportRecord(candidate_id=cand_id, candidate_name="张三", company_name="科技有限公司A", project_name="2026核心招聘", position_name="Java高级开发工程师", format="PDF", watermarked=True, exported_by="system", file_name="张三-Java高级开发工程师.pdf", file_path="/exports/zhangsan.pdf"))
         if not db.query(ImportRecord).count():
             db.add(ImportRecord(file_name="seed-resume.pdf", imported_by="system", imported_count=1, failed_count=0, status="成功", note="种子导入记录"))
         if not db.query(AuditLog).count():

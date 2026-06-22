@@ -16,7 +16,13 @@ def test_support_modules_smoke():
         headers = {"Authorization": f"Bearer {token}"}
         level = client.post("/api/evaluation-levels", json={"name": "超级优秀", "score": 95, "description": "高分等级", "color": "green", "sort_order": 1, "enabled": True}, headers=headers).json()
         levels = client.get("/api/evaluation-levels", headers=headers).json()
-        evaluation = client.post("/api/evaluations", json={"candidate_id": 1, "evaluator": "admin", "round_name": "第2轮", "grade": "良好", "score": 4, "content": "阶段性通过"}, headers=headers).json()
+        # 获取候选人的动态 ID
+        candidates = client.get("/api/candidates", headers=headers).json()
+        cand_id = candidates[0]["id"] if candidates else 1
+        # 获取职位的动态 ID
+        positions = client.get("/api/positions", headers=headers).json()
+        pos_id = positions[0]["id"] if positions else 1
+        evaluation = client.post("/api/evaluations", json={"candidate_id": cand_id, "position_id": pos_id, "evaluator": "admin", "round_name": "第2轮", "grade": "良好", "score": 4, "content": "阶段性通过"}, headers=headers).json()
         recommendation_stats = client.get("/api/recommendation-stats?operator=admin", headers=headers).json()
         tag = client.post("/api/tags", json={"category": "求职者标签", "name": "Python", "enabled": True}, headers=headers).json()
         tag2 = client.patch(f"/api/tags/{tag['id']}", json={"enabled": False}, headers=headers).json()
@@ -31,7 +37,7 @@ def test_support_modules_smoke():
 
         assert level["name"] == "超级优秀"
         assert any(item["name"] == "超级优秀" for item in levels)
-        assert evaluation["candidate_id"] == 1
+        assert evaluation["candidate_id"] == cand_id
         assert tag["name"] == "Python"
         assert tag2["enabled"] is False
         assert delete_resp["ok"] is True

@@ -213,6 +213,8 @@ class CandidateCreate(BaseModel):
 
 class CandidateOut(CandidateCreate):
     id: int | str
+    created_at: datetime | str | None = None
+    file_path: str | None = None
 
     @field_validator('phone', mode='after')
     @classmethod
@@ -256,7 +258,7 @@ class InterviewRecordOut(InterviewRecordCreate):
 
 
 class SalaryRecordCreate(BaseModel):
-    candidate_id: int
+    candidate_id: int | str
     expected_salary: str = ""
     offered_salary: str = ""
     service_status: str = "未进行"
@@ -269,7 +271,7 @@ class SalaryRecordOut(SalaryRecordCreate):
 
 
 class EmploymentRecordCreate(BaseModel):
-    candidate_id: int
+    candidate_id: int | str
     status: str = "未入职"
     company_name: str = ""
     position_name: str = ""
@@ -283,7 +285,7 @@ class EmploymentRecordOut(EmploymentRecordCreate):
 
 
 class CandidateFollowUpRecordCreate(BaseModel):
-    candidate_id: int
+    candidate_id: int | str
     status: str = "已录用"
     follow_up_time: datetime | None = None
     content: str = ""
@@ -296,7 +298,7 @@ class CandidateFollowUpRecordOut(CandidateFollowUpRecordCreate):
 
 
 class CandidateMailRecordCreate(BaseModel):
-    candidate_id: int
+    candidate_id: int | str
     recipient_email: str
     mail_subject: str
     mail_body: str = ""

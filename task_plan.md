@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-Phase 3 - Enhancement modules complete, preparing final closeout
+Completed search toolbar clean-up, province-city cascading dropdown implementation, and checkbox-based export logic.
 
 ## Phases
 
@@ -107,4 +107,28 @@ Phase 3 - Enhancement modules complete, preparing final closeout
 - [x] End-to-end business workflow verified
 - [x] Regression tests rerun and passing
 - [x] Findings and progress updated
+- **Status:** complete
+
+### Phase 11 - 持续维护与 Bug 修复（进行中）
+
+- [x] 候选人列表增加翻页功能，支持显示全部简历池数据
+- [x] 修复 Recruit 候选人（字符串 ID）在详情弹窗中所有操作失效（`Number(id)` → NaN）
+- [x] 修复薪资/入职/随访/邮件记录保存时 `candidate_id` 类型校验失败（`int | str` + `ensure_local_candidate`）
+- **Status:** in progress
+
+## Key Constraints (持续有效)
+
+- 新增任何候选人写入接口，后端 handler 必须先调用 `ensure_local_candidate` 做 ID 解析
+- 前端操作候选人 ID 时，保持字符串格式，不做 `Number()` 强转
+- 每次完成代码修改，必须同步更新 `progress.md`；有新约束时更新 `findings.md`；有阶段变化时更新 `task_plan.md`
+- 迁移 PostgreSQL 时，数据库操作必须严格采用标准 SQL 语法，不使用 PG 独有方言以保留可移植性
+
+### Phase 12 - 数据库迁移至 PostgreSQL 并配置 Schema 隔离（已完成）
+
+- [x] 启动本地 postgresql@14 服务，并创建 `hr_platform` 数据库、`recruit` schema
+- [x] 编写 pg schema 和权限脚本，创建 user_recruit 和 user_delivery，授予只读/读写最小权限
+- [x] 修改 `backend/app/config.py` 和 `database.py` 支持 PostgreSQL 连接，保留默认 SQLite 兼容回退
+- [x] 在 `models.py` 中为 `candidate_profiles`、`resume_downloads` 等表声明所属 `recruit` 命名空间
+- [x] 运行 Alembic / 数据库表自动生成，校验两套表在 PG 中的创建情况
+- [x] 运行 Pytest 烟测脚本，校验标准 SQL 兼容性，确保业务功能正常
 - **Status:** complete

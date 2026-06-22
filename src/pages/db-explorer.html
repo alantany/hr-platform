@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据库资源探针</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="panel">
+        <div class="section-head">
+          <div><h3>数据库物理表探针</h3><p class="panel-sub">直接读取并呈现系统底层的数据库实体物理表数据，适配 SQLite / PostgreSQL。</p></div>
+          <div class="hero-actions" style="margin-top:0; display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 13px; color: var(--muted); font-weight: 500;">限制条数:</label>
+            <select class="input" id="probe-limit" style="width: 100px; height: 36px; padding: 4px 8px; margin: 0;">
+              <option value="10">10条</option>
+              <option value="50" selected>50条</option>
+              <option value="100">100条</option>
+              <option value="200">200条</option>
+              <option value="500">500条</option>
+            </select>
+            <button class="btn primary" data-action="refresh-table-data">刷新数据</button>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; margin-top: 16px;">
+          <!-- Left side Table List -->
+          <div class="panel" style="box-shadow: none; border: 1px solid rgba(15,23,42,.08); padding: 12px; max-height: 70vh; overflow-y: auto;">
+            <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: var(--foreground);">实体表清单</h4>
+            <div class="list" id="table-list-container" style="gap: 4px;">
+              <!-- Javascript will inject list items here -->
+            </div>
+          </div>
+          
+          <!-- Right side Columns and Rows Table -->
+          <div class="panel" style="box-shadow: none; border: 1px solid rgba(15,23,42,.08); min-height: 400px; display: flex; flex-direction: column;">
+            <div id="table-title-header" style="padding-bottom: 12px; border-bottom: 1px solid rgba(15,23,42,.08); margin-bottom: 12px;">
+              <h4 style="margin: 0; font-size: 15px; font-weight: 600;" id="current-table-name-title">请选择左侧表以加载数据</h4>
+            </div>
+            
+            <div style="flex: 1; overflow: auto; max-width: 100%;">
+              <div class="table-card" style="box-shadow: none; margin: 0; border: none; overflow-x: auto; width: 100%;">
+                <table id="probe-data-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                  <thead id="probe-thead" style="background: rgba(15,23,42,.02); border-bottom: 1px solid rgba(15,23,42,.08);">
+                    <!-- Columns will go here -->
+                  </thead>
+                  <tbody id="probe-tbody">
+                    <tr><td style="padding: 24px; text-align: center; color: var(--muted);" colspan="100">请从左侧列表选择业务表。</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div id="probe-table-footer" style="padding-top: 12px; border-top: 1px solid rgba(15,23,42,.08); margin-top: 12px; font-size: 12px; color: var(--muted);">
+              共 0 条记录
+            </div>
+          </div>
+        </div>
+      </section>`;
+
+    let activeTable = "";
+
+    async function loadTableList() {
+      const container = document.getElementById("table-list-container");
+      if (!container) return;
+      try {
+        const tables = await window.hrApi.dbTables();
+        container.innerHTML = tables.map(name => {
+          const isRecruit = ["candidate_profiles", "resume_downloads", "employees", "job_postings", "daily_task_stats"].includes(name);
+          const labelHtml = isRecruit ? `<span>${name}</span> <span class="chip warning" style="font-size:10px; margin-left:auto; padding:2px 6px; transform: scale(0.9);">recruit</span>` : `<span>${name}</span>`;
+          return `
+            <button class="list-item" data-table="${name}" style="text-align: left; width: 100%; padding: 8px 12px; border: none; border-radius: 8px; background: transparent; cursor: pointer; transition: all 0.2s; font-size: 13px; font-family: inherit; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 10px; opacity: 0.6;">▤</span>
+              ${labelHtml}
+            </button>
+          `;
+        }).join("");
+      } catch (err) {
+        console.error("加载数据表清单失败", err);
+      }
+    }
+
+    async function loadTableData(tableName) {
+      if (!tableName) return;
+      activeTable = tableName;
+      
+      // Update UI selection state in list
+      document.querySelectorAll("[data-table]").forEach(btn => {
+        if (btn.dataset.table === tableName) {
+          btn.style.background = "var(--primary-soft, rgba(37, 99, 235, 0.1))";
+          btn.style.color = "var(--primary, #2563eb)";
+        } else {
+          btn.style.background = "transparent";
+          btn.style.color = "inherit";
+        }
+      });
+
+      const titleEl = document.getElementById("current-table-name-title");
+      if (titleEl) titleEl.textContent = `物理表: ${tableName}`;
+
+      const thead = document.getElementById("probe-thead");
+      const tbody = document.getElementById("probe-tbody");
+      const footer = document.getElementById("probe-table-footer");
+      const limitSelect = document.getElementById("probe-limit");
+      const limit = limitSelect ? parseInt(limitSelect.value) || 50 : 50;
+
+      if (tbody) {
+        tbody.innerHTML = `<tr><td style="padding: 24px; text-align: center; color: var(--muted);" colspan="100">正在加载数据，请稍候...</td></tr>`;
+      }
+
+      try {
+        const res = await window.hrApi.dbTableData(tableName, { limit });
+        const cols = res.columns || [];
+        const records = res.records || [];
+
+        // Render header
+        if (thead) {
+          if (cols.length === 0) {
+            thead.innerHTML = "";
+          } else {
+            thead.innerHTML = `
+              <tr>
+                ${cols.map(c => `<th style="padding: 10px 12px; text-align: left; font-weight: 600; color: var(--foreground); border-bottom: 1px solid rgba(15,23,42,.08); border-right: 1px solid rgba(15,23,42,.04);">${c}</th>`).join("")}
+              </tr>
+            `;
+          }
+        }
+
+        // Render body
+        if (tbody) {
+          if (records.length === 0) {
+            tbody.innerHTML = `<tr><td style="padding: 24px; text-align: center; color: var(--muted);" colspan="${cols.length || 1}">表中无数据行记录</td></tr>`;
+          } else {
+            tbody.innerHTML = records.map(row => `
+              <tr style="border-bottom: 1px solid rgba(15,23,42,.04); hover: background-color: rgba(15,23,42,.01);">
+                ${cols.map(c => {
+                  const val = row[c];
+                  const displayVal = val === null || val === undefined ? '<span style="color: #ccc; font-style: italic;">NULL</span>' : typeof val === 'object' ? JSON.stringify(val) : String(val);
+                  return `<td style="padding: 10px 12px; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-right: 1px solid rgba(15,23,42,.04);" title="${typeof val === 'string' ? val.replace(/"/g, '&quot;') : ''}">${displayVal}</td>`;
+                }).join("")}
+              </tr>
+            `).join("");
+          }
+        }
+
+        if (footer) {
+          footer.textContent = `共 ${records.length} 条记录 (限制最多 ${limit} 条)`;
+        }
+
+      } catch (err) {
+        console.error("加载表数据失败", err);
+        if (tbody) {
+          tbody.innerHTML = `<tr><td style="padding: 24px; text-align: center; color: var(--danger, #ef4444);" colspan="100">加载失败: ${err.message}</td></tr>`;
+        }
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await renderApp();
+      try {
+        await loadTableList();
+        
+        // 自动选择第一个表
+        const firstBtn = document.querySelector("[data-table]");
+        if (firstBtn) {
+          const firstTable = firstBtn.dataset.table;
+          await loadTableData(firstTable);
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    });
+
+    // Handle clicks
+    document.addEventListener("click", async (event) => {
+      const btn = event.target.closest("[data-table]");
+      if (btn) {
+        await loadTableData(btn.dataset.table);
+        return;
+      }
+
+      const actionBtn = event.target.closest("[data-action]");
+      if (actionBtn && actionBtn.dataset.action === "refresh-table-data") {
+        if (activeTable) {
+          await loadTableData(activeTable);
+          showToast("数据已刷新");
+        } else {
+          showToast("请先选择一张表");
+        }
+      }
+    });
+
+    // Handle limit change
+    document.addEventListener("change", async (event) => {
+      if (event.target.id === "probe-limit" && activeTable) {
+        await loadTableData(activeTable);
+      }
+    });
+  </script>
+</body>
+</html>

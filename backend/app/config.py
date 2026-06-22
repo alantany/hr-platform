@@ -20,5 +20,9 @@ class Settings:
     access_token: str = os.getenv("ACCESS_TOKEN", "dev-token")
     frontend_origin: str = os.getenv("FRONTEND_ORIGIN", "*")
 
+    def __post_init__(self):
+        if self.database_url.startswith("postgres://"):
+            object.__setattr__(self, "database_url", self.database_url.replace("postgres://", "postgresql://", 1))
+
 
 settings = Settings()

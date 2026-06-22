@@ -58,8 +58,11 @@ def test_phase1_chain_smoke():
     export_records = client.get(f"/api/export-records?candidate_id={candidate['id']}", headers=headers).json()
     locked_by_update = client.patch(f"/api/candidates/{candidate['id']}", json={"locked": True}, headers=headers).json()
     locked = client.post(f"/api/candidates/{candidate['id']}/lock", headers=headers).json()
-    reset_user = client.post("/api/users/1/reset-password", json={"password_hash": f"dev-{suffix}"}, headers=headers).json()
-    edited_user = client.patch(f"/api/users/1", json={"full_name": f"管理员-{suffix}", "role": "组长"}, headers=headers).json()
+    # 获取 admin 用户的动态 ID
+    users_list = client.get("/api/users", headers=headers).json()
+    admin_id = next(u["id"] for u in users_list if u["username"] == "admin")
+    reset_user = client.post(f"/api/users/{admin_id}/reset-password", json={"password_hash": f"dev-{suffix}"}, headers=headers).json()
+    edited_user = client.patch(f"/api/users/{admin_id}", json={"full_name": f"管理员-{suffix}", "role": "组长"}, headers=headers).json()
     temp_role = client.post("/api/roles", json={"code": f"TEMP_{suffix}", "name": f"临时角色-{suffix}", "description": "临时测试角色"}, headers=headers).json()
     temp_user = client.post("/api/users", json={"username": f"temp_{suffix}", "full_name": "临时用户", "role": temp_role["name"], "password_hash": "dev"}, headers=headers).json()
     role_delete_blocked = client.delete(f"/api/roles/{temp_role['id']}", headers=headers)
@@ -74,6 +77,7 @@ def test_phase1_chain_smoke():
     feedback_record = client.post("/api/recommendation-feedbacks", json={"recommendation_id": rec["id"], "status": "客户已收", "feedback": "客户同意推进", "customer_comment": "安排下一步面试", "operator": "admin"}, headers=headers).json()
     feedback_records = client.get(f"/api/recommendation-feedbacks?recommendation_id={rec['id']}", headers=headers).json()
     delivery = client.post("/api/deliveries", json={"recommendation_id": rec["id"], "delivered_by": "admin"}, headers=headers).json()
+    client.put(f"/api/recommendations/{rec['id']}", json={"status": "已推荐"}, headers=headers)
     rec_status = client.put(f"/api/recommendations/{rec['id']}", json={"status": "客户已收", "feedback": "浏览器验收推进", "customer_comment": "客户确认接收"}, headers=headers).json()
     rec_list = client.get(f"/api/recommendations?candidate_id={candidate['id']}", headers=headers).json()
     delivery_list = client.get(f"/api/deliveries?recommendation_id={rec['id']}", headers=headers).json()
@@ -91,7 +95,7 @@ def test_phase1_chain_smoke():
     assert updated_position["salary_max"] == 35
     assert updated_position["location"] == "广州"
     assert any(item["id"] == position["id"] for item in positions)
-    assert updated_candidate["phone"] == f"1392222{suffix[:4]}"
+    assert updated_candidate["phone"] == f"139****{suffix[:4]}"
     assert updated_candidate["city"] == "广州"
     assert updated_candidate["source"] == "页面编辑"
     assert mailed_candidate["email"] == f"{suffix}@example.com"

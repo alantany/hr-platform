@@ -326,7 +326,19 @@ window.hrApi = {
       return res.blob();
     });
   },
-  importRecruitCandidate(agentId) {
-    return this.request(`/recruit/candidates/${agentId}/import`, { method: "POST" });
+  dbTables() {
+    return Promise.resolve([
+      "users", "roles", "role_permissions", "data_permissions", "companies",
+      "projects", "positions", "candidates", "recommendations", "recommendation_feedbacks",
+      "candidate_tracking_events", "interview_records", "salary_records", "employment_records",
+      "candidate_follow_up_records", "candidate_mail_records", "search_presets", "export_records",
+      "import_records", "deliveries", "audit_logs", "warranty_rules", "system_configs",
+      "email_configs", "ai_tasks", "candidate_profiles", "resume_downloads",
+      "employees", "job_postings", "daily_task_stats"
+    ]);
+  },
+  dbTableData(tableName, params = {}) {
+    const limit = params.limit || 100;
+    return this.request(`/db-tables?table_name=${tableName}&limit=${limit}`);
   },
 };

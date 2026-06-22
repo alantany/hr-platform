@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from . import crud, models, schemas
 from .config import settings
 from .database import Base, engine, get_db
-from .models import AuditLog, AiTask, Candidate, CandidateFollowUpRecord, CandidateMailRecord, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload
+from .models import AuditLog, AiTask, Candidate, CandidateFollowUpRecord, CandidateMailRecord, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat
 from .security import get_current_user
 from backend.seed import seed as seed_data
 
@@ -28,84 +28,88 @@ app.add_middleware(
 )
 
 def ensure_schema() -> None:
+    if engine.url.get_backend_name() != "sqlite":
+        with engine.begin() as conn:
+            conn.execute(text("CREATE SCHEMA IF NOT EXISTS recruit"))
     Base.metadata.create_all(bind=engine)
-    with engine.begin() as conn:
-      cols = {row[1] for row in conn.execute(text("PRAGMA table_info(recommendations)")).fetchall()} if engine.url.get_backend_name() == "sqlite" else set()
-      if "customer_comment" not in cols:
-          conn.execute(text("ALTER TABLE recommendations ADD COLUMN customer_comment TEXT NOT NULL DEFAULT ''"))
-      eval_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(evaluations)")).fetchall()} if engine.url.get_backend_name() == "sqlite" else set()
-      if "position_id" not in eval_cols:
-          conn.execute(text("ALTER TABLE evaluations ADD COLUMN position_id INTEGER NOT NULL DEFAULT 1"))
-      company_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(companies)")).fetchall()} if engine.url.get_backend_name() == "sqlite" else set()
-      for column, ddl in {
-          "contact_email": "ALTER TABLE companies ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''",
-          "address": "ALTER TABLE companies ADD COLUMN address TEXT NOT NULL DEFAULT ''",
-          "cooperation_period": "ALTER TABLE companies ADD COLUMN cooperation_period TEXT NOT NULL DEFAULT ''",
-      }.items():
-          if column not in company_cols:
-              conn.execute(text(ddl))
-      project_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(projects)")).fetchall()} if engine.url.get_backend_name() == "sqlite" else set()
-      if "project_period" not in project_cols:
-          conn.execute(text("ALTER TABLE projects ADD COLUMN project_period TEXT NOT NULL DEFAULT ''"))
-      mail_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(candidate_mail_records)")).fetchall()} if engine.url.get_backend_name() == "sqlite" else set()
-      for column, ddl in {
-          "recipient_email": "ALTER TABLE candidate_mail_records ADD COLUMN recipient_email TEXT NOT NULL DEFAULT ''",
-          "mail_subject": "ALTER TABLE candidate_mail_records ADD COLUMN mail_subject TEXT NOT NULL DEFAULT ''",
-          "mail_body": "ALTER TABLE candidate_mail_records ADD COLUMN mail_body TEXT NOT NULL DEFAULT ''",
-          "attachment_name": "ALTER TABLE candidate_mail_records ADD COLUMN attachment_name TEXT NOT NULL DEFAULT ''",
-          "sent_by": "ALTER TABLE candidate_mail_records ADD COLUMN sent_by TEXT NOT NULL DEFAULT ''",
-          "status": "ALTER TABLE candidate_mail_records ADD COLUMN status TEXT NOT NULL DEFAULT '已发送'",
-      }.items():
-          if column not in mail_cols:
-              conn.execute(text(ddl))
-      follow_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(candidate_follow_up_records)")).fetchall()} if engine.url.get_backend_name() == "sqlite" else set()
-      for column, ddl in {
-          "status": "ALTER TABLE candidate_follow_up_records ADD COLUMN status TEXT NOT NULL DEFAULT '已录用'",
-          "follow_up_time": "ALTER TABLE candidate_follow_up_records ADD COLUMN follow_up_time DATETIME",
-          "content": "ALTER TABLE candidate_follow_up_records ADD COLUMN content TEXT NOT NULL DEFAULT ''",
-          "operator": "ALTER TABLE candidate_follow_up_records ADD COLUMN operator TEXT NOT NULL DEFAULT ''",
-      }.items():
-          if column not in follow_cols:
-              conn.execute(text(ddl))
-      level_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(evaluation_levels)")).fetchall()} if engine.url.get_backend_name() == "sqlite" else set()
-      for column, ddl in {
-          "name": "ALTER TABLE evaluation_levels ADD COLUMN name TEXT NOT NULL DEFAULT ''",
-          "score": "ALTER TABLE evaluation_levels ADD COLUMN score INTEGER NOT NULL DEFAULT 5",
-          "description": "ALTER TABLE evaluation_levels ADD COLUMN description TEXT NOT NULL DEFAULT ''",
-          "color": "ALTER TABLE evaluation_levels ADD COLUMN color TEXT NOT NULL DEFAULT ''",
-          "sort_order": "ALTER TABLE evaluation_levels ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
-          "enabled": "ALTER TABLE evaluation_levels ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT 1",
-      }.items():
-          if column not in level_cols:
-              conn.execute(text(ddl))
-      if engine.url.get_backend_name() == "sqlite" and not level_cols:
-          conn.execute(text("CREATE TABLE IF NOT EXISTS evaluation_levels (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL DEFAULT '', score INTEGER NOT NULL DEFAULT 5, description TEXT NOT NULL DEFAULT '', color TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0, enabled BOOLEAN NOT NULL DEFAULT 1, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
-      feedback_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(recommendation_feedbacks)")).fetchall()} if engine.url.get_backend_name() == "sqlite" else set()
-      if engine.url.get_backend_name() == "sqlite" and not feedback_cols:
-          conn.execute(text("CREATE TABLE IF NOT EXISTS recommendation_feedbacks (id INTEGER PRIMARY KEY AUTOINCREMENT, recommendation_id INTEGER NOT NULL, status TEXT NOT NULL, feedback TEXT NOT NULL DEFAULT '', customer_comment TEXT NOT NULL DEFAULT '', operator TEXT NOT NULL DEFAULT '', created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
-      candidate_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(candidates)")).fetchall()} if engine.url.get_backend_name() == "sqlite" else set()
-      for column, ddl in {
-          "gender": "ALTER TABLE candidates ADD COLUMN gender TEXT NOT NULL DEFAULT ''",
-          "age": "ALTER TABLE candidates ADD COLUMN age INTEGER",
-          "education": "ALTER TABLE candidates ADD COLUMN education TEXT NOT NULL DEFAULT ''",
-          "experience_years": "ALTER TABLE candidates ADD COLUMN experience_years INTEGER",
-          "expected_salary": "ALTER TABLE candidates ADD COLUMN expected_salary TEXT NOT NULL DEFAULT ''",
-          "id_number": "ALTER TABLE candidates ADD COLUMN id_number TEXT NOT NULL DEFAULT ''",
-          "tags": "ALTER TABLE candidates ADD COLUMN tags TEXT NOT NULL DEFAULT ''",
-          "candidate_agent_id": "ALTER TABLE candidates ADD COLUMN candidate_agent_id TEXT",
-      }.items():
-          if column not in candidate_cols:
-              conn.execute(text(ddl))
+    if engine.url.get_backend_name() == "sqlite":
+        with engine.begin() as conn:
+            cols = {row[1] for row in conn.execute(text("PRAGMA table_info(recommendations)")).fetchall()}
+            if "customer_comment" not in cols:
+                conn.execute(text("ALTER TABLE recommendations ADD COLUMN customer_comment TEXT NOT NULL DEFAULT ''"))
+            eval_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(evaluations)")).fetchall()}
+            if "position_id" not in eval_cols:
+                conn.execute(text("ALTER TABLE evaluations ADD COLUMN position_id INTEGER NOT NULL DEFAULT 1"))
+            company_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(companies)")).fetchall()}
+            for column, ddl in {
+                "contact_email": "ALTER TABLE companies ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''",
+                "address": "ALTER TABLE companies ADD COLUMN address TEXT NOT NULL DEFAULT ''",
+                "cooperation_period": "ALTER TABLE companies ADD COLUMN cooperation_period TEXT NOT NULL DEFAULT ''",
+            }.items():
+                if column not in company_cols:
+                    conn.execute(text(ddl))
+            project_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(projects)")).fetchall()}
+            if "project_period" not in project_cols:
+                conn.execute(text("ALTER TABLE projects ADD COLUMN project_period TEXT NOT NULL DEFAULT ''"))
+            mail_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(candidate_mail_records)")).fetchall()}
+            for column, ddl in {
+                "recipient_email": "ALTER TABLE candidate_mail_records ADD COLUMN recipient_email TEXT NOT NULL DEFAULT ''",
+                "mail_subject": "ALTER TABLE candidate_mail_records ADD COLUMN mail_subject TEXT NOT NULL DEFAULT ''",
+                "mail_body": "ALTER TABLE candidate_mail_records ADD COLUMN mail_body TEXT NOT NULL DEFAULT ''",
+                "attachment_name": "ALTER TABLE candidate_mail_records ADD COLUMN attachment_name TEXT NOT NULL DEFAULT ''",
+                "sent_by": "ALTER TABLE candidate_mail_records ADD COLUMN sent_by TEXT NOT NULL DEFAULT ''",
+                "status": "ALTER TABLE candidate_mail_records ADD COLUMN status TEXT NOT NULL DEFAULT '已发送'",
+            }.items():
+                if column not in mail_cols:
+                    conn.execute(text(ddl))
+            follow_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(candidate_follow_up_records)")).fetchall()}
+            for column, ddl in {
+                "status": "ALTER TABLE candidate_follow_up_records ADD COLUMN status TEXT NOT NULL DEFAULT '已录用'",
+                "follow_up_time": "ALTER TABLE candidate_follow_up_records ADD COLUMN follow_up_time DATETIME",
+                "content": "ALTER TABLE candidate_follow_up_records ADD COLUMN content TEXT NOT NULL DEFAULT ''",
+                "operator": "ALTER TABLE candidate_follow_up_records ADD COLUMN operator TEXT NOT NULL DEFAULT ''",
+            }.items():
+                if column not in follow_cols:
+                    conn.execute(text(ddl))
+            level_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(evaluation_levels)")).fetchall()}
+            for column, ddl in {
+                "name": "ALTER TABLE evaluation_levels ADD COLUMN name TEXT NOT NULL DEFAULT ''",
+                "score": "ALTER TABLE evaluation_levels ADD COLUMN score INTEGER NOT NULL DEFAULT 5",
+                "description": "ALTER TABLE evaluation_levels ADD COLUMN description TEXT NOT NULL DEFAULT ''",
+                "color": "ALTER TABLE evaluation_levels ADD COLUMN color TEXT NOT NULL DEFAULT ''",
+                "sort_order": "ALTER TABLE evaluation_levels ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
+                "enabled": "ALTER TABLE evaluation_levels ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT 1",
+            }.items():
+                if column not in level_cols:
+                    conn.execute(text(ddl))
+            if not level_cols:
+                conn.execute(text("CREATE TABLE IF NOT EXISTS evaluation_levels (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL DEFAULT '', score INTEGER NOT NULL DEFAULT 5, description TEXT NOT NULL DEFAULT '', color TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0, enabled BOOLEAN NOT NULL DEFAULT 1, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
+            feedback_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(recommendation_feedbacks)")).fetchall()}
+            if not feedback_cols:
+                conn.execute(text("CREATE TABLE IF NOT EXISTS recommendation_feedbacks (id INTEGER PRIMARY KEY AUTOINCREMENT, recommendation_id INTEGER NOT NULL, status TEXT NOT NULL, feedback TEXT NOT NULL DEFAULT '', customer_comment TEXT NOT NULL DEFAULT '', operator TEXT NOT NULL DEFAULT '', created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
+            candidate_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(candidates)")).fetchall()}
+            for column, ddl in {
+                "gender": "ALTER TABLE candidates ADD COLUMN gender TEXT NOT NULL DEFAULT ''",
+                "age": "ALTER TABLE candidates ADD COLUMN age INTEGER",
+                "education": "ALTER TABLE candidates ADD COLUMN education TEXT NOT NULL DEFAULT ''",
+                "experience_years": "ALTER TABLE candidates ADD COLUMN experience_years INTEGER",
+                "expected_salary": "ALTER TABLE candidates ADD COLUMN expected_salary TEXT NOT NULL DEFAULT ''",
+                "id_number": "ALTER TABLE candidates ADD COLUMN id_number TEXT NOT NULL DEFAULT ''",
+                "tags": "ALTER TABLE candidates ADD COLUMN tags TEXT NOT NULL DEFAULT ''",
+                "candidate_agent_id": "ALTER TABLE candidates ADD COLUMN candidate_agent_id TEXT",
+            }.items():
+                if column not in candidate_cols:
+                    conn.execute(text(ddl))
 
-      position_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(positions)")).fetchall()} if engine.url.get_backend_name() == "sqlite" else set()
-      for column, ddl in {
-          "age_requirement": "ALTER TABLE positions ADD COLUMN age_requirement TEXT NOT NULL DEFAULT ''",
-          "education_requirement": "ALTER TABLE positions ADD COLUMN education_requirement TEXT NOT NULL DEFAULT ''",
-          "experience_requirement": "ALTER TABLE positions ADD COLUMN experience_requirement TEXT NOT NULL DEFAULT ''",
-          "description": "ALTER TABLE positions ADD COLUMN description TEXT NOT NULL DEFAULT ''",
-      }.items():
-          if column not in position_cols:
-              conn.execute(text(ddl))
+            position_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(positions)")).fetchall()}
+            for column, ddl in {
+                "age_requirement": "ALTER TABLE positions ADD COLUMN age_requirement TEXT NOT NULL DEFAULT ''",
+                "education_requirement": "ALTER TABLE positions ADD COLUMN education_requirement TEXT NOT NULL DEFAULT ''",
+                "experience_requirement": "ALTER TABLE positions ADD COLUMN experience_requirement TEXT NOT NULL DEFAULT ''",
+                "description": "ALTER TABLE positions ADD COLUMN description TEXT NOT NULL DEFAULT ''",
+            }.items():
+                if column not in position_cols:
+                    conn.execute(text(ddl))
 
 
 ensure_schema()
@@ -541,8 +545,32 @@ def list_salary_records(candidate_id: int | None = None, db: Session = Depends(g
 
 @app.post("/api/salary-records", response_model=schemas.SalaryRecordOut)
 def add_salary_record(payload: schemas.SalaryRecordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    obj = crud.create_salary_record(db, payload)
-    crud.add_audit(db, user.username, "候选人跟踪", "新增薪资记录", "salary_record", str(payload.candidate_id), detail=payload.service_status)
+    candidate = crud.ensure_local_candidate(db, payload.candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="候选人不存在")
+    payload.candidate_id = candidate.id
+    # Upsert：同一候选人已有薪资记录则更新，否则新建
+    existing = crud.list_salary_records(db, candidate_id=candidate.id)
+    if existing:
+        obj = crud.update_salary_record(db, existing[0], payload)
+        action = "更新薪资记录"
+    else:
+        obj = crud.create_salary_record(db, payload)
+        action = "新增薪资记录"
+    crud.add_audit(db, user.username, "候选人跟踪", action, "salary_record", str(candidate.id), detail=payload.service_status)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
+@app.patch("/api/salary-records/{record_id}", response_model=schemas.SalaryRecordOut)
+def edit_salary_record(record_id: int, payload: schemas.SalaryRecordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    from .models import SalaryRecord
+    record = db.get(SalaryRecord, record_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="薪资记录不存在")
+    obj = crud.update_salary_record(db, record, payload)
+    crud.add_audit(db, user.username, "候选人跟踪", "更新薪资记录", "salary_record", str(record.candidate_id), detail=payload.service_status)
     db.commit()
     db.refresh(obj)
     return obj
@@ -555,8 +583,32 @@ def list_employment_records(candidate_id: int | None = None, db: Session = Depen
 
 @app.post("/api/employment-records", response_model=schemas.EmploymentRecordOut)
 def add_employment_record(payload: schemas.EmploymentRecordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    obj = crud.create_employment_record(db, payload)
-    crud.add_audit(db, user.username, "候选人跟踪", "新增入职记录", "employment_record", str(payload.candidate_id), detail=payload.status)
+    candidate = crud.ensure_local_candidate(db, payload.candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="候选人不存在")
+    payload.candidate_id = candidate.id
+    # Upsert：同一候选人已有入职记录则更新，否则新建
+    existing = crud.list_employment_records(db, candidate_id=candidate.id)
+    if existing:
+        obj = crud.update_employment_record(db, existing[0], payload)
+        action = "更新入职记录"
+    else:
+        obj = crud.create_employment_record(db, payload)
+        action = "新增入职记录"
+    crud.add_audit(db, user.username, "候选人跟踪", action, "employment_record", str(candidate.id), detail=payload.status)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
+@app.patch("/api/employment-records/{record_id}", response_model=schemas.EmploymentRecordOut)
+def edit_employment_record(record_id: int, payload: schemas.EmploymentRecordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    from .models import EmploymentRecord
+    record = db.get(EmploymentRecord, record_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="入职记录不存在")
+    obj = crud.update_employment_record(db, record, payload)
+    crud.add_audit(db, user.username, "候选人跟踪", "更新入职记录", "employment_record", str(record.candidate_id), detail=payload.status)
     db.commit()
     db.refresh(obj)
     return obj
@@ -569,8 +621,12 @@ def list_candidate_follow_up_records(candidate_id: int | None = None, db: Sessio
 
 @app.post("/api/candidate-follow-up-records", response_model=schemas.CandidateFollowUpRecordOut)
 def add_candidate_follow_up_record(payload: schemas.CandidateFollowUpRecordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    candidate = crud.ensure_local_candidate(db, payload.candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="候选人不存在")
+    payload.candidate_id = candidate.id
     obj = crud.create_candidate_follow_up_record(db, payload)
-    crud.add_audit(db, user.username, "候选人跟踪", "新增随访记录", "candidate_follow_up_record", str(payload.candidate_id), detail=payload.content[:32])
+    crud.add_audit(db, user.username, "候选人跟踪", "新增随访记录", "candidate_follow_up_record", str(candidate.id), detail=payload.content[:32])
     db.commit()
     db.refresh(obj)
     return obj
@@ -583,8 +639,12 @@ def list_candidate_mail_records(candidate_id: int | None = Query(default=None), 
 
 @app.post("/api/candidate-mail-records", response_model=schemas.CandidateMailRecordOut)
 def add_candidate_mail_record(payload: schemas.CandidateMailRecordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    candidate = crud.ensure_local_candidate(db, payload.candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="候选人不存在")
+    payload.candidate_id = candidate.id
     obj = crud.create_candidate_mail_record(db, payload)
-    crud.add_audit(db, user.username, "候选人跟踪", "发送邮件", "candidate_mail_record", str(payload.candidate_id), detail=payload.mail_subject)
+    crud.add_audit(db, user.username, "候选人跟踪", "发送邮件", "candidate_mail_record", str(candidate.id), detail=payload.mail_subject)
     db.commit()
     db.refresh(obj)
     return obj
@@ -1206,6 +1266,91 @@ def import_recruit_candidate(agent_id: str, db: Session = Depends(get_db), user:
         "success": True,
         "candidate": schemas.CandidateOut.model_validate(new_c, from_attributes=True).model_dump(),
         "message": "成功导入到候选人池"
+    }
+
+
+@app.get("/api/db-tables")
+def get_db_table_data(
+    table_name: str,
+    limit: int = Query(default=100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user)
+):
+    allowed_tables = {
+        "users", "roles", "role_permissions", "data_permissions", "companies",
+        "projects", "positions", "candidates", "recommendations", "recommendation_feedbacks",
+        "candidate_tracking_events", "interview_records", "salary_records", "employment_records",
+        "candidate_follow_up_records", "candidate_mail_records", "search_presets", "export_records",
+        "import_records", "deliveries", "audit_logs", "warranty_rules", "system_configs",
+        "email_configs", "ai_tasks", "candidate_profiles", "resume_downloads",
+        "employees", "job_postings", "daily_task_stats"
+    }
+    if (table_name not in allowed_tables):
+        raise HTTPException(status_code=400, detail="不支持查询该表")
+    
+    # We will map table_name to model classes
+    model_mapping = {
+        "users": User,
+        "roles": Role,
+        "role_permissions": RolePermission,
+        "data_permissions": DataPermission,
+        "companies": Company,
+        "projects": Project,
+        "positions": Position,
+        "candidates": Candidate,
+        "recommendations": Recommendation,
+        "recommendation_feedbacks": RecommendationFeedback,
+        "candidate_tracking_events": CandidateTrackingEvent,
+        "interview_records": InterviewRecord,
+        "salary_records": SalaryRecord,
+        "employment_records": EmploymentRecord,
+        "candidate_follow_up_records": CandidateFollowUpRecord,
+        "candidate_mail_records": CandidateMailRecord,
+        "search_presets": SearchPreset,
+        "export_records": ExportRecord,
+        "import_records": ImportRecord,
+        "deliveries": Delivery,
+        "audit_logs": AuditLog,
+        "warranty_rules": WarrantyRule,
+        "system_configs": SystemConfig,
+        "email_configs": EmailConfig,
+        "ai_tasks": AiTask,
+        "candidate_profiles": RecruitCandidateProfile,
+        "resume_downloads": RecruitResumeDownload,
+        "employees": RecruitEmployee,
+        "job_postings": RecruitJobPosting,
+        "daily_task_stats": RecruitDailyTaskStat
+    }
+    
+    model = model_mapping.get(table_name)
+    if not model:
+        raise HTTPException(status_code=400, detail="未找到对应的模型")
+    
+    # Execute query
+    try:
+        recruit_tables = {"candidate_profiles", "resume_downloads", "employees", "job_postings", "daily_task_stats"}
+        schema = "recruit" if table_name in recruit_tables and engine.url.get_backend_name() != "sqlite" else None
+        inspector = inspect(engine)
+        columns = [col["name"] for col in inspector.get_columns(table_name, schema=schema)]
+    except Exception:
+        columns = []
+        
+    records = db.query(model).limit(limit).all()
+    
+    data = []
+    for r in records:
+        row_dict = {}
+        for col in columns:
+            val = getattr(r, col, None)
+            if isinstance(val, datetime):
+                val = val.isoformat()
+            row_dict[col] = val
+        data.append(row_dict)
+        
+    return {
+        "table_name": table_name,
+        "columns": columns,
+        "records": data
     }
 
 

@@ -221,12 +221,96 @@
         const dList = document.querySelector('[data-delivery-list]');
         if (rList) {
           rList.innerHTML = recommendations.slice(0, 3).map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">候选人 ${r.candidate_id} → 岗位 ${r.position_id}</div><div class="item-meta">${r.recommender} · ${r.status} · ${r.feedback || ''}${r.customer_comment ? ` · ${r.customer_comment}` : ''}</div></div><div class="table-actions"><button class="btn-sm primary" data-action="recommendation-status" data-id="${r.id}" data-status="客户已收">客户已收</button><button class="btn-sm" data-action="recommendation-status" data-id="${r.id}" data-status="客户未收">客户未收</button><button class="btn-sm" data-action="recommendation-status" data-id="${r.id}" data-status="安排面试">安排面试</button><button class="btn-sm" data-action="recommendation-status" data-id="${r.id}" data-status="拒绝">拒绝</button></div></div></div>`).join('');
+          
+          rList.addEventListener('click', async (e) => {
+            const btn = e.target.closest('[data-action="recommendation-status"]');
+            if (!btn) return;
+            const recId = Number(btn.getAttribute('data-id'));
+            const targetStatus = btn.getAttribute('data-status');
+            
+            const modal = document.querySelector('[data-recommendation-modal]');
+            if (!modal) return;
+            
+            modal.setAttribute('data-current-id', recId);
+            const titleNode = modal.querySelector('[data-recommendation-modal-title]');
+            if (titleNode) titleNode.textContent = `确认将推荐 ID: ${recId} 的状态流转为: ${targetStatus}`;
+            
+            const selectNode = modal.querySelector('[data-recommendation-modal-status]');
+            if (selectNode) selectNode.value = targetStatus;
+            
+            const feedbackNode = modal.querySelector('[data-recommendation-modal-feedback]');
+            if (feedbackNode) feedbackNode.value = '';
+            const commentNode = modal.querySelector('[data-recommendation-modal-comment]');
+            if (commentNode) commentNode.value = '';
+            
+            const feedbackListContainer = modal.querySelector('[data-recommendation-feedback-list]');
+            if (feedbackListContainer) {
+              feedbackListContainer.innerHTML = '<div class="list-item"><div class="item-meta">加载历史反馈中...</div></div>';
+              try {
+                const feedbacks = await window.hrApi.recommendationFeedbacks({ recommendation_id: recId });
+                feedbackListContainer.innerHTML = feedbacks.map(f => `
+                  <div class="list-item">
+                    <div class="item-top">
+                      <div>
+                        <div class="item-title">${f.status}</div>
+                        <div class="item-meta">${f.feedback || '无内容'}</div>
+                      </div>
+                      <span class="tag gray">${f.created_at}</span>
+                    </div>
+                  </div>
+                `).join('') || '<div class="list-item"><div class="item-meta">暂无反馈记录。</div></div>';
+              } catch (err) {
+                feedbackListContainer.innerHTML = '<div class="list-item"><div class="item-meta">加载历史反馈失败</div></div>';
+              }
+            }
+            modal.style.display = 'block';
+          });
         }
         if (dList) {
           dList.innerHTML = deliveries.slice(0, 3).map(d => `<div class="list-item"><div class="item-top"><div><div class="item-title">推荐 ${d.recommendation_id}</div><div class="item-meta">${d.delivered_by} · ${d.channel} · ${d.delivered_at}</div></div><span class="tag green">交付</span></div></div>`).join('');
         }
       } catch (err) {
         console.warn('recommendation delivery load failed', err);
+      }
+
+      const modal = document.querySelector('[data-recommendation-modal]');
+      if (modal) {
+        const closeBtn = modal.querySelector('[data-action="close-recommendation-modal"]');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+          });
+        }
+        
+        const confirmBtn = modal.querySelector('[data-action="confirm-recommendation-status"]');
+        if (confirmBtn) {
+          confirmBtn.addEventListener('click', async () => {
+            const recId = Number(modal.getAttribute('data-current-id'));
+            const status = modal.querySelector('[data-recommendation-modal-status]').value;
+            const feedback = modal.querySelector('[data-recommendation-modal-feedback]').value;
+            const comment = modal.querySelector('[data-recommendation-modal-comment]').value;
+            
+            try {
+              const updatePayload = { status };
+              if (comment.trim()) {
+                updatePayload.customer_comment = comment.trim();
+              }
+              await window.hrApi.updateRecommendation(recId, updatePayload);
+              
+              await window.hrApi.createRecommendationFeedback({
+                recommendation_id: recId,
+                status,
+                feedback: feedback.trim() || `状态流转为: ${status}`
+              });
+              
+              modal.style.display = 'none';
+              alert('状态更新成功！');
+              window.location.reload();
+            } catch (err) {
+              alert('操作失败: ' + err.message);
+            }
+          });
+        }
       }
     });
   </script>

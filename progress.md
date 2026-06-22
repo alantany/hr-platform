@@ -1,6 +1,73 @@
 # Progress
 
+## 2026-06-22 (搜索工具栏精简与期望城市省市级联选择器实现)
+
+- **搜索工具栏大瘦身**：
+  * 删除了冗余的【导入简历】和原有的【职位】输入框。
+  * 将【导出选中】重命名为【导出简历】，并迁移到了候选人列表卡片标题右侧。
+- **期望城市二级联动选择器**：
+  * 构建了包含 10 个省份和下属城市的 `CITY_DATA`。
+  * 实现了点击输入框展开二级悬浮窗，支持点击省份切换城市、点击城市自动回填的功能。
+  * 支持在输入框直接拼音首字母/汉字搜索过滤，匹配城市并列表展示。
+- **多选导出数据流打通**：
+  * 改写了 `app.js` 中的 `export-selected` 控制逻辑，会自动检测列表复选框的勾选状态。
+  * 若无勾选则提示，有勾选则自动在导出弹框中将可选候选人过滤为仅勾选的成员，实现流程闭环。
+
+## 2026-06-22 (页面源码审计与仪表盘死交互修复)
+
+- **系统页面级源码及数据流审计启动**：
+  * 制定了以“展现内容、业务逻辑、数据库表关联、交互真实验证”为核心的 [code_review_report.md](file:///Users/huaiyuan/.gemini/antigravity/brain/5d42b80b-4a4a-4659-af74-b3121b738598/code_review_report.md) 方案。
+  * **首页工作台 (dashboard.html) 审计与原地修复**：
+    1. 审计其综合展现内容与底层数据读写流程，证实其读取了 `candidates`, `companies`, `projects`, `positions`, `recommendations`, `deliveries`, `audit_logs`, `warranty_rules`, `notifications` 共 9 张表的业务记录。
+    2. **死代码排查与修复**：定位并清除了“最近推荐”卡片中“客户已收/客户未收/安排面试/拒绝”按钮的无响应死交互问题。通过事件委托为这些按钮绑定了真实的 click 监听器，调起 `data-recommendation-modal` 弹窗。
+    3. **业务数据流打通**：打通了该 Modal 中与数据库的真实交互——保存时调用 `updateRecommendation` 更新推荐状态，同时调用 `createRecommendationFeedback` 插入最新的反馈记录，并在弹窗内展示历史反馈轨迹列表，实现彻底去 Mock 与状态机流转。
+
+## 2026-06-22 (PostgreSQL 迁移与隔离完成)
+
+- **PostgreSQL 数据库迁移与 Schema 隔离改造**：
+  * **Schema 隔离与多用户权限控制**：
+    1. 编写了 `backend/init_db.sql`，幂等创建了 `user_delivery` 和 `user_recruit` 数据库角色，并配置其 Schema 级读写/只读以及 Sequence 自增权限隔离。
+    2. 主站交付端 25 张表划分在默认的 `public` schema，抓取端 5 张表在非 SQLite 下动态映射到 `recruit` schema。
+  * **后端兼容性配置**：
+    1. 修改了 `backend/app/config.py`，支持 `DATABASE_URL` 环境变量解析并规范化 `postgres://` 前缀。
+    2. 修改了 `backend/app/database.py`，智能兼容 SQLite 和 PostgreSQL 连接参数。
+    3. 在 `backend/app/models.py` 对 5 个抓取端表通过 `__table_args__ = {"schema": "recruit"}` 进行动态 Schema 声明。
+    4. 修改了 `backend/app/main.py` 的 `ensure_schema`，在 PostgreSQL 环境下启动前自动创建 `recruit` schema，并隔离了 SQLite 特有的 PRAGMA 表结构修复逻辑。
+  * **数据探针接口 schema 反射修复**：
+    1. 修复了 `/api/db-tables` 数据探针接口在 PostgreSQL 模式下读取 `recruit` schema 下 5 张表数据呈空白（只有表头无内容）的问题。
+    2. 根因：`inspector.get_columns(table_name)` 默认在 `public` schema 查找，导致对非默认 schema 下的表反射列失败，进而装配出的行字典全部为空 `{}`。
+    3. 修复：对 `/api/db-tables` 引入了动态 schema 路由，在 PostgreSQL 环境下反射 `recruit` 分区表时显式指定 `schema="recruit"`。
+  * **测试兼容性与 Seeding 脚本优化**：
+    1. 优化了 `backend/seed.py`，加入了 `db.flush()` 保证父子表外键创建顺序，防范 PG 外键约束冲突。
+    2. 改造了 `seed.py` 及三套自动化测试代码（`test_phase1_smoke.py`、`test_phase2_smoke.py`、`test_phase3_smoke.py`），消除所有硬编码的自增主键 ID，改用动态关联检索机制。
+    3. 全量 `pytest tests/` 回归测试在 PostgreSQL 与 SQLite 环境下均 100% 通过。
+
+## 2026-06-22 (最新)
+
+- **修复入职状态"保存成功但再次打开仍显示旧值"的问题**：
+  * 根因 1：`open-candidate-employment-modal` 打开弹窗时硬编码 `status.value = '已入职'`，没有从数据库回填已有记录。
+  * 根因 2：每次保存都是 `createEmploymentRecord`（POST 新建），而不是更新，历史记录堆积且读取 `list[0]` 可能不是用户最后一次修改的记录。
+  * 修复方案：
+    1. **crud.py**：新增 `update_employment_record()`。
+    2. **main.py**：`POST /api/employment-records` 改为 upsert 逻辑——查询候选人是否已有入职记录，有则调用 `update`，无则 `create`；新增 `PATCH /api/employment-records/{id}` 接口。
+    3. **app.js**：`open-candidate-employment-modal` 打开前先调用 `employmentRecords({ candidate_id })` 查询已有记录，若有则回填所有字段（状态、公司、岗位、入职日期、备注），否则显示空默认值。
+  * 通过 `node --check` + Python AST 验证，后端已重启。
+
+- **修复薪资记录、入职状态保存时报 candidate_id 类型错误的问题**：
+  * 根因：后端 `SalaryRecordCreate`、`EmploymentRecordCreate`、`CandidateFollowUpRecordCreate`、`CandidateMailRecordCreate` 的 `candidate_id` 字段定义为 `int`，而前端传来的 ID 是字符串（来自 Recruit 的 `"C_xxx"` 形式 agent_id），Pydantic 校验报 `int_parsing` 错误。
+  * 修复方案（双层）：
+    1. **schemas.py**：四个 Create 类的 `candidate_id` 从 `int` 改为 `int | str`，允许前端传字符串。
+    2. **main.py** 四个 POST handler（`/api/salary-records`、`/api/employment-records`、`/api/candidate-follow-up-records`、`/api/candidate-mail-records`）：收到请求后先调用 `ensure_local_candidate` 做 ID 解析——若是整数直接查询，若是字符串 agent_id 则先惰性落库生成真实整数 ID，再写入目标记录表。
+  * 通过 Python AST 语法验证。
+
+- **修复 Recruit 来源候选人（字符串 ID）在详情弹窗中所有操作失效的问题**：
+  * 根因：来自 Recruit 抓取库的候选人 `id` 是 `"C_xxx"` 形式的字符串，而 `app.js` 中各处操作（`view-detail`、`edit-candidate`、`toggle-candidate-lock`、`open-candidate-mail-modal`、`confirm-candidate-mail`、`open-candidate-salary-modal`、`confirm-candidate-salary`、`open-candidate-employment-modal`、`confirm-candidate-employment`、`open-candidate-followup-modal`、`confirm-candidate-followup`）均使用 `Number(id)` 强制转型，导致结果为 `NaN`，判断 `!NaN === true` 触发"请先打开候选人详情"错误，同时 `list.find(i => i.id === NaN)` 永远返回 `undefined` 触发"未找到候选人"错误。
+  * 修复方法：将所有 `Number(candidateId)` 改为字符串直接使用，所有 `list.find(i => i.id === numId)` 改为 `list.find(i => String(i.id) === strId)`，空值判断从 `!candidateId` 改为 `!candidateId || candidateId === '0'`。
+  * 现在来自 Recruit 的候选人打开详情后，可正常执行锁定/释放、发邮件、薪资记录、入职状态、随访记录等所有操作；后端 `ensure_local_candidate` 的惰性落库机制也能正常触发，自动将该候选人写入本地数据库。
+  * 通过 `node --check app.js` 语法验证。
+
 ## 2026-06-21 (23:28 更新)
+
 
 - **求职者数据池翻页与检索功能深度融合**：
   * 修改了 [candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html)，将翻页状态（`list`, `currentPage`, `pageSize`）及渲染逻辑（`render()`）封装为全局变量 `window.candidatesPageState`，统一求职者列表字段的渲染展现形式，避免字段错位。

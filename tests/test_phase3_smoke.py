@@ -28,8 +28,11 @@ def test_enhancement_modules_smoke():
         role_permissions = client.get("/api/role-permissions?role_code=ADMIN", headers=headers).json()
         email = client.post("/api/email-config", json={"host": "smtp.example.com", "port": 2525, "sender": "noreply@example.com", "username": "", "password": "", "use_tls": False, "enabled": True}, headers=headers).json()
         email_test = client.post("/api/email-config/test", json={"host": "smtp.example.com", "port": 2525, "sender": "noreply@example.com", "username": "demo", "password": "demo", "use_tls": False, "enabled": True}, headers=headers).json()
-        data_permission = client.post("/api/data-permissions", json={"user_id": 2, "scope_type": "team", "scope_id": "team-smoke", "scope_name": "团队验收范围", "granted_by": "admin", "active": True}, headers=headers).json()
-        data_permissions = client.get("/api/data-permissions?user_id=2", headers=headers).json()
+        # 获取 admin 用户的动态 ID
+        users_list = client.get("/api/users", headers=headers).json()
+        admin_id = next(u["id"] for u in users_list if u["username"] == "admin")
+        data_permission = client.post("/api/data-permissions", json={"user_id": admin_id, "scope_type": "team", "scope_id": "team-smoke", "scope_name": "团队验收范围", "granted_by": "admin", "active": True}, headers=headers).json()
+        data_permissions = client.get(f"/api/data-permissions?user_id={admin_id}", headers=headers).json()
         summary = client.get("/api/dashboard/summary", headers=headers).json()
         ai_tasks = client.get("/api/ai/tasks", headers=headers).json()
         notifications = client.get("/api/notifications?type=AI通知", headers=headers).json()
