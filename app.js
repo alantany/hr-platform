@@ -745,11 +745,17 @@ async function handleGlobalButton(button) {
   }
   if (button.dataset.action === "toggle-details") {
     const id = button.dataset.id;
+    const wrapper = document.getElementById(`details-wrapper-${id}`);
     const details = document.getElementById(`details-${id}`);
-    if (!details) return;
+    if (!wrapper || !details) return;
     
-    if (details.style.display === 'none') {
-        details.style.display = 'block';
+    const isOpen = wrapper.style.gridTemplateRows === '1fr';
+    
+    if (!isOpen) {
+        wrapper.style.gridTemplateRows = '1fr';
+        details.style.padding = '24px';
+        details.style.opacity = '1';
+        details.style.borderTopColor = '#e2e8f0';
         const icon = button.querySelector('svg');
         if (icon) icon.style.transform = 'rotate(180deg)';
         if (!details.dataset.fetched) {
@@ -759,7 +765,10 @@ async function handleGlobalButton(button) {
             details.dataset.fetched = 'true';
         }
     } else {
-        details.style.display = 'none';
+        wrapper.style.gridTemplateRows = '0fr';
+        details.style.padding = '0 24px';
+        details.style.opacity = '0';
+        details.style.borderTopColor = 'transparent';
         const icon = button.querySelector('svg');
         if (icon) icon.style.transform = 'rotate(0deg)';
     }
