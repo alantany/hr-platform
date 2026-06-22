@@ -114,6 +114,8 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 候选人列表增加翻页功能，支持显示全部简历池数据
 - [x] 修复 Recruit 候选人（字符串 ID）在详情弹窗中所有操作失效（`Number(id)` → NaN）
 - [x] 修复薪资/入职/随访/邮件记录保存时 `candidate_id` 类型校验失败（`int | str` + `ensure_local_candidate`）
+- [x] 修复 `crud.py` 中 `list_candidates` 遗漏候选人扩展字段（户口、出生日期等）导致详情页显示空白的问题
+- [x] 前端增加入职、身份证、手机号等字段的实时失焦（focusout）合规校验交互
 - **Status:** in progress
 
 ## Key Constraints (持续有效)
