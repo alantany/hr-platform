@@ -315,7 +315,7 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "email": None,
                 "current_title": download.job_title if download else "",
                 "city": None,
-                "status": "新入库",
+                "status": "未锁定",
                 "source": "智联抓取",
                 "locked": False,
                 "gender": None,
@@ -407,7 +407,7 @@ def ensure_local_candidate(db: Session, candidate_id: int | str) -> Candidate | 
             email="",
             current_title=download.job_title,
             city="",
-            status="新入库",
+            status="未锁定",
             source="智联抓取",
             gender="",
             age=age_val,
@@ -451,7 +451,7 @@ def ensure_local_candidate(db: Session, candidate_id: int | str) -> Candidate | 
             email="",
             current_title=download.job_title,
             city="",
-            status="新入库",
+            status="未锁定",
             source="智联抓取",
             gender="",
             age=age_val,
@@ -484,7 +484,7 @@ def list_search_presets(db: Session):
 
 def lock_candidate(db: Session, candidate: Candidate, locked: bool):
     candidate.locked = locked
-    candidate.status = "锁定" if locked else "激活"
+    candidate.status = "锁定" if locked else "未锁定"
     return candidate
 
 

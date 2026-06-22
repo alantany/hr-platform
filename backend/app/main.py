@@ -1113,7 +1113,7 @@ def import_smoke(file: UploadFile = File(...), db: Session = Depends(get_db), us
         db.commit()
         db.refresh(import_record)
         return {"imported": 0, "duplicate": schemas.CandidateOut.model_validate(duplicate, from_attributes=True).model_dump(), "import_record": schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump()}
-    candidate = Candidate(name=name, source="文件导入", status="激活", locked=False)
+    candidate = Candidate(name=name, source="文件导入", status="未锁定", locked=False)
     db.add(candidate)
     import_record = crud.create_import_record(db, schemas.ImportRecordCreate(file_name=file.filename or name, imported_by=user.username, imported_count=1, failed_count=0, status="成功", note=f"导入候选人 {name}"))
     crud.add_audit(db, user.username, "简历导入", "导入简历", "candidate", "new", detail=file.filename or "")
@@ -1149,7 +1149,7 @@ def import_batch(files: list[UploadFile] = File(...), db: Session = Depends(get_
             db.flush()
             records.append(schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump())
             continue
-        candidate = Candidate(name=name, source="批量导入", status="激活", locked=False)
+        candidate = Candidate(name=name, source="批量导入", status="未锁定", locked=False)
         db.add(candidate)
         import_record = crud.create_import_record(
             db,
@@ -1273,7 +1273,7 @@ def import_recruit_candidate(agent_id: str, db: Session = Depends(get_db), user:
         email="",
         current_title=download.job_title if download else "",
         city="",
-        status="新入库",
+        status="未锁定",
         source="智联抓取",
         gender="",
         age=age_val,
