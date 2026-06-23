@@ -1,7 +1,73 @@
 # Progress
 
-## 2026-06-23 (最新)
+## 2026-06-24 (最新)
 
+- **定位并修复导出 0/N 失败问题（真实根因）**：
+  * **表象**：前端点击确认导出后提示"批量导出完成：0/2 份"，实际没有文件下载。
+  * **调试**：通过 `curl` 直接调用 `POST /api/export-records` 确认返回 500 Internal Server Error。
+  * **真正根因**：`models.py` 里的 `ExportRecord` ORM 模型**没有新增 `contract_no`/`project_no`/`headhunter_position` 三列**，只有 `schemas.py` 加了。FastAPI 在调用 `crud.create_export_record(db, payload)` 时，SQLAlchemy 尝试将 schema 传来的三个字段映射到 ORM 对象，但 ORM model 不认识这些属性，抛出异常（被全局 handler 截成 500）。
+  * **修复**：
+    1. `models.py`：`ExportRecord` 新增三列（`contract_no`、`project_no`、`headhunter_position`，带 `server_default=""`）。
+    2. `main.py` `ensure_schema()`：新增对 `export_records` 表的自动迁移 DDL，重启时自动 `ALTER TABLE ADD COLUMN`。
+  * **验证**：重启后端，分别用两个不同候选人各调一次 API，返回两个完全不同路径的 PDF 文件（如 `薪资测试候选人-49c75489-10111-407153.pdf` 和 `入职测试候选人-e202f392-10112-407580.pdf`），两份文件均实际生成并写入磁盘，批量导出不再冲突。
+
+
+
+- **修复批量导出只生成一份 PDF 的 Bug + 新增每人可填三字段的导出卡片 UI**：
+  * **Bug 根因**：后端 `POST /api/export-records` 用前端传来的 `file_path`（如 `/exports/张三.pdf`）作为物理文件名，批量两个人中如果文件名相同会互相覆盖，浏览器只能下到最后一次生成的那份。
+  * **修复**：后端强制生成唯一物理文件名，格式为 `候选人名-ID-毫秒时间戳后6位.pdf`，彻底消除文件冲突；同时显示名称（`file_name`）依然保持友好的「候选人名-简历报告.pdf」。
+  * **新增三字段**：
+    - `schemas.py`：在 `ExportRecordCreate` 中新增 `contract_no`、`project_no`、`headhunter_position` 三个可选字段。
+    - `pdf_generator.py`：`generate_resume_pdf` 函数签名新增三个参数，PDF 右上角手写信息表格不再留空，直接填入传入的值（无值时保持空白供打印后手写）。
+    - `main.py`：`POST /api/export-records` 将三字段透传给 `generate_resume_pdf`。
+    - `app.js`：新增 `renderExportCard(c)` 辅助函数，为每位候选人生成带头像首字母、姓名职位副标题以及合同编号/项目编号/猎头职位三个输入框的展开式卡片；`confirm-export-upload` 逐个从对应卡片的 `data-export-contract-no/project-no/headhunter-pos` 属性读取值并传给 API。前端批量调用间隔 500ms 错峰，防浏览器拦截。
+    - `candidates.html`：弹窗 `section-head` 改为 sticky 定位（导出人数多时标题和按钮始终可见），弹窗最大高度改为 90vh 并启用滚动。
+  * **语法验证**：`node --check app.js` ✅。
+
+
+
+- **完成简历导出弹窗「多选批量导出」重构**：
+  * **问题**：旧版弹窗用下拉菜单（`<select>`）只能一次选一个候选人，且有冗余的公司/项目/岗位/格式下拉，与 HTML 已更新的候选人列表展示容器脱节。
+  * **HTML 侧**（已在上一轮完成）：弹窗「导出参数」区改为 `data-export-candidates-list` 的卡片式列表容器，静态结构已去除所有旧 select 元素，格式固定为 PDF。
+  * **app.js 侧（本次完成）**：
+    - `open-export-modal`：加载全部候选人渲染为内嵌卡片列表，同时把候选人 ID 数组序列化写入 `modal.dataset.exportIds`，供后续导出读取。导出历史区去掉了水印标签，只显示 PDF chip。
+    - `export-selected`：按勾选 checkbox 过滤候选人，渲染为同款卡片列表，并把对应 ID 数组写入 `modal.dataset.exportIds`。ID 类型统一用字符串处理，兼容来自 Recruit 抓取池的字符串型 ID。
+    - `confirm-export-upload`：从 `modal.dataset.exportIds` 读取候选人列表，用 `for...of` 循环逐一调用 `createExportRecord` API 生成 PDF，每次 PDF 下载之间插入 400ms 错峰延迟防止浏览器批量下载拦截，每次成功导出后写入通知。弹窗关闭后 Toast 显示「批量导出完成：共 N/M 份 PDF 简历」。
+  * **语法验证**：`node --check app.js` 通过。
+
+
+
+- **完成“候选人入职状态”双模联动与质保期校验**：
+  * **质保种子数据与天数计算自愈**：在 `backend/seed.py` 中为 `WarrantyRule` 初始化了范围为 `"入职质保期"` 且包含 2 个月（60 天）期限的种子数据。前端读取该配置并与入职日期计算天数差，移除了 `Math.abs` 以防对未来入职时间（负差值）做出“已超期”的误判。若在此天数内则展示“质保在职”，否则显示“超过质保期”。
+  * **后端双状态机联动保存**：在 `POST /api/employment-records` 接口中添加了联动逻辑：保存时自动检索该候选人最新的一条面试记录（`CandidateTrackingEvent`）并同步更新其入职状态字段为 `已入职` 或 `未入职`；同时把候选人本身的 `status` 变更为 `已录用` 或 `未锁定`。
+  * **前端双模 Toggle 滑动即时生效与展示态切换**：
+    - **已入职模式**：滑到“已入职”时直接生效，无确认入职按钮，通过约定薪资防呆校验后自动向后端提交请求保存，渲染绿底记录卡片。
+    - **未入职模式**：滑到“未入职”时展现备注多行文本框和“确认未入职”按钮；录入并点击“确认”后，编辑控件全部隐退，直接在该面板展示已保存的备注文本原因。若一打开详情已有备注，也默认直接呈献保存展示态。
+  * **一站式详情页整合与编辑页联动跳转**：取消了独立的 `data-candidate-employment-modal` 模态框，将整个入职状态滑动 Toggle 开关、红框备注及绿底卡片面板**直接嵌入到候选人详情页底端的最下方**（薪资福利跟踪表下方），打开详情时即自动加载其所有状态；同时，在编辑表单/随访中点击“入职状态”会自动静默引导跳转、滚动并定位至详情页最下方的目标组件区，极大地规范了 UI 空间排版与交互体验。
+  * **生命周期智能局部重载**：保存成功后通过调用 `fetchCandidatePanels` 自动对该候选人的生命周期列表执行局部异步更新（已入职呈现绿色，未入职呈现灰色并展示未入职备注），解决了前台缓存更新不及时或 HTML 堆叠不匹配的 bug。
+  * **测试套件覆盖**：开发了独立的回归测试 `tests/test_employment_onboarding.py` 覆盖所有接口的变动及级联状态响应，通过 pytest 顺利通过。
+- **实现“薪资/福利/入职条件跟踪表”集成**：
+  * **数据库模型扩充与自愈式迁移**：在 [models.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/models.py) 中为 `SalaryRecord` 扩充了 `interview_round`, `position_name`, `company_name`, `agreed_salary`, `welfare_desc`, `onboard_cond`, `candidate_accepted` 和 `operator` 等 8 个字段，并在 [main.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 的 `ensure_schema()` 数据库自愈检查中新增这 8 个列的 `ALTER TABLE` DDL，支持零脚本的平滑表迁移。
+  * **后端路由补充与只读逻辑校验**：重构了 `POST /api/salary-records`，现在每次请求均添加一条新数据，实现多次备注，并注入 `operator` 操作人；完善了 `PATCH /api/salary-records/{record_id}`，对已存的面试轮次进行后端防篡改校验（已有轮次则只读只用）；新增了 `DELETE /api/salary-records/{record_id}` 物理删除接口。
+  * **前端 UI 高保真面板与弹窗重构**：在 [candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html) 详情中新增了“💰 薪资/福利/入职条件跟踪表”，列表支持蓝色编辑和红色删除圆圈图标按钮；在底部新增了带有黄色警告框说明、符合截图设计的全新 `data-salary-tracking-modal` 弹窗。
+  * **客户公司智能下拉与模糊搜索**：将“客户公司”输入框升级为支持 `<datalist>` 的智能联想选择框。当添加或编辑弹窗打开时，会自动从后端 `window.hrApi.companies()` 异步拉取全部客户公司并作为下拉选项，同时支持拼音或公司名模糊打字搜索过滤。
+  * **下拉联动与编辑只读控制**：在 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 中实现了点击添加时动态提取该候选人现有的面试轮次填充下拉菜单；点击“编辑”回填数值时，若已有面试轮次，则将下拉框置为 `disabled`，只读不可修改；操作删除时加入防呆 `confirm`，成功后局部重载详情面板。
+  * **测试验证**：编写了 `tests/test_salary_tracking.py` 覆盖所有 CRUD 操作及防篡改校验，测试全量通过。
+- **完成“面试跟踪记录”行内编辑与物理删除（图标按钮化）**：
+  * **后端修改与删除接口**：在 [crud.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/crud.py) 增加了 `update_tracking_event` 和 `delete_tracking_event`。在 [main.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 增加了对应的 `PUT /api/candidate-tracking-events/{event_id}` 和 `DELETE /api/candidate-tracking-events/{event_id}`，并自动记录审计日志。
+  * **前端 API 实现**：在 [frontend-api.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/frontend-api.js) 中新增 `updateCandidateTrackingEvent` 和 `deleteCandidateTrackingEvent` 的 API 异步连通。
+  * **操作按钮圆圈图标化与编辑/删除按钮并列**：优化了跟踪表操作列展示，去除原“发送邮件”按钮汉字，改为仅有信封 SVG 的 24px 青色圆圈按钮。右侧水平并列增加蓝色编辑（铅笔 SVG）和红色删除（垃圾桶 SVG）小圆圈按钮，大幅缩小了操作列排版宽度。
+  * **编辑弹窗高度复用与删除防呆**：在 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 中实现了点击编辑回填旧值并唤起 `data-add-tracking-modal`（复用了新增弹窗并设置 mode），保存时通过 `mode === "edit"` 自动判定并调用 `PUT` 接口；删除操作挂接了原生 `confirm` 校验，成功后执行详情局部刷新。
+- **集成“候选人跟踪表”与“添加面试记录”交互**：
+  * **后端数据字段与自愈式迁移**：在 [models.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/models.py) 中扩充了 `CandidateTrackingEvent` 包含面试轮次、初筛结果、日期、面试官、地点、要求、联系方式、面试结果、备注及入职状态等 10 个新字段。并在 [main.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 的 `ensure_schema()` 数据库自愈检查中新增这 10 个列的 `ALTER TABLE` DDL，以支持跨数据库的零手动指令平滑升级。
+  * **写入接口强化**：修改了 `POST /api/candidate-tracking-events` 接口，在写入前自动调用 `ensure_local_candidate`，确保抓取池懒加载候选人能秒级自动物化入库；如果没有传入 `operator`，默认绑定当前登录的真实姓名。
+  * **前端跟进表格与添加面试记录 Modal**：修改了 [candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html)，在详情备注下方新增高保真面试记录展现表格（支持轮次和初筛结果以圆形淡紫色/绿色/红色微标展现），并在底部添加了对齐截图的 `data-add-tracking-modal` 面试记录弹窗。
+  * **脚本交互联动**：在 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 的 `view-detail` 事件里并发拉取面试历史并拼接渲染至跟踪表行中；每行的 `📬 发送邮件` 按钮直接关联原生邮件弹窗；在 `handleGlobalButton` 分发器中实现了弹窗唤起、重置和确定保存，并完成了自动化烟测覆盖。
+- **数据库资源探针免过滤与动态化增强**：
+  * **后端接口动态化**：重构了 [backend/app/main.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 的 `/api/db-tables` 接口，解除了硬编码的白名单列表限制，增加了对无参调用的支持以动态发现并返回数据库中所有的物理业务表名（自动过滤掉 `alembic_version`）。
+  * **原生 SQL 查询 Fallback**：为没有定义 SQLAlchemy ORM 模型映射的底层物理表或系统表增加了 Native SQL 查询回退路径。当客户端请求此类非映射表的详细内容时，系统动态反射其列字段名并通过原生 SQL 语句加载数据记录，保证任意物理表数据 100% 可视和全量呈现。
+  * **前端接口打通**：重构了 [frontend-api.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/frontend-api.js) 中的 `dbTables` 方法，替换掉硬编码的静态字符数组，将其变更为向后端 `/api/db-tables` 接口发起网络异步请求获取全量物理表清单，使得整个“物理表探针”数据完全由数据库驱动。
+  * **测试驱动验证**：在 `tests/test_phase1_smoke.py` 中补充针对 `/api/db-tables` 动态接口和表数据预览端点的断言，执行 `pytest` 回归测试，确保整体后端与探针服务完美通过且无任何 regression。
 - **简历解析导入逻辑异步化（非阻塞）**：
   * 重构了 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 里的单选与多选简历导入点击确认事件处理函数（`confirm-import-upload` 和 `confirm-batch-import-upload`），将原先的同步阻塞 `await` 请求变更为异步的 Promise (`.then().catch()`) 逻辑。
   * 用户点击确认导入后，弹窗会**立刻关闭**，重置选择器，并且弹出“简历正在后台解析导入中，请稍候...”的提示，彻底解决了大模型调用耗时造成的前端“界面卡住、无反应”的交互痛点。在解析完成后，会自动静默刷新导入统计数、历史 timeline 并弹出成功/同名复核通知。
@@ -1320,3 +1386,33 @@
 - 将 `resume_parse_tasks` 添加至后端 `allowed_tables` 与前端探针数组，使其在“数据库资源探针”页面中透明可见。并解除了前后端的条数截断限制（100 -> 100000），确保全量表数据精准展示。
 - 修复候选人列表中的大量数据重复 Bug。将原代码中针对外部消息表 `recruit.candidate_profiles` 的查询基座纠正为 `recruit.resume_downloads`，并在拼装层（`crud.list_candidates`）加入了基于 Name 与 ID 的 Python 级内存 Deduplication 防重过滤，确保真实候选人和历史冗余原件均精准按唯一自然人渲染。
 - 新增撰写了 `outputs/AI简历解析流水线-数据关联机制.md` 文档，归档了核心 ID（`candidate_agent_id`、`resume_download_id`、`candidate_id`）从生成到串接流转的技术设计。
+
+# 2026-06-23
+
+- 增强了候选人详情页面（`src/pages/candidates.html`）的功能，在详情弹窗的右侧面板新增了“推荐项目情况”板块，利用 Promise.all 并发获取公司、项目和岗位接口，将关联的招聘推进历史以简洁的形式动态渲染呈现。
+- 在详情页头部新增了“推荐至岗位”一键操作按钮，并加入了级联弹窗 `data-recommend-modal`，实现了“选择客户公司 -> 级联拉取项目 -> 级联拉取岗位 -> 输入推荐语评语 -> 一键提交推荐”的极佳体验。
+- 修改了后端 `POST /api/recommendations` 接口，在入口处引入 `crud.ensure_local_candidate`，以无感兼容来自外部简历抓取库（懒加载模式下尚未物理解析入库）的候选人推荐，杜绝 404 错误。
+- 修复并优化了既有的 pytest smoke 回归测试（`tests/test_phase1_smoke.py` 中错位的手机掩码断言、`tests/test_phase2_smoke.py` 中批量导入的 DOCX 强校验 400 失败），编写了模拟解析器 mock 运行，使得回归测试全绿通过。
+- 在候选人详情 Modal 的最底部增加了通宽的“备注信息”板块，支持展示历史备注信息（内容、操作人、格式化创建时间），完美还原设计截图。
+- 新增了“添加备注”的弹窗 `data-add-note-modal`，加入了美观的卡片阴影，并使用与截图一致的紫色圆角药丸状“确定”按钮。
+- 后端创建了 `candidate_notes` 表、Pydantic 校验模型以及 CRUD 查询/创建操作，加入了 `allowed_tables` 白名单，并暴露了 `POST /api/candidate-notes` 和 `GET /api/candidate-notes` 接口。
+- 为兼容外部懒加载候选人，在 `POST /api/candidate-notes` 写入前，加入了 `ensure_local_candidate` 进行拦截解析以保证逻辑的一致性。
+- 在 `tests/test_phase1_smoke.py` 中补充了针对 Candidate Note 的写入与查询断言，并在本地重新执行测试跑通全绿。
+- 实现了候选人入职状态的双模联动机制与质保期逻辑。如果滑动开关至“入职”状态，系统会基于薪资/福利表动态反填岗位与公司，并读取质保期配置表（默认60天）计算质保状态并回显；如果滑动至“未入职”状态，支持输入未入职原因备注，并直接更新跟踪表中候选人的入职状态。
+- 彻底实现了候选人高保真简历 PDF 文档导出功能。新建了 `pdf_generator.py` 后端生成模块，使用 ReportLab 实现了带细灰线分割、双列基本信息网格及左侧蓝色装饰条小标题的高保真版面排版，采用 `NumberedCanvas` 动态渲染“第 X 页 / 共 Y 页”的专业页脚。
+- 整合了后端 `POST /api/export-records` 接口，拦截请求并自动生成物理 PDF 文件落盘在 `exports/` 下，更新数据库中文件的相对路径。
+- 在前端 `app.js` 的 `confirm-export-upload` 回调中，获取到 API 响应后，若导出为 PDF 格式，自动创建隐藏的 `<a>` 标签一键触发浏览器的原生下载保存。
+- 编写了 `tests/test_pdf_export.py` 集成测试，验证了 PDF 文件结构的合法性，并通过 `pytest` 全量测试回归。
+- 优化了 PDF 导出的顶部布局。通过 `pypdf` 从原 PDF 中成功提取出系统 Logo 图片并存为 `assets/logo.png`，在简历顶部利用嵌套 Table 实现了 Logo 与公司标题在同一行水平排列。
+- 在顶部右侧重构了 3 行 2 列的手写空白表格（含合同编号、项目编号、猎头职位），右侧格子全部留空不填值，直接输出供后续手写填入。
+- 修复了 `pdf_generator.py` 中的 `ROOT_DIR` 未定义异常，通过在模块顶部计算自愈的绝对根路径进行彻底纠正。
+
+## 2026-06-23
+
+- Task finalized by Codex hook (unknown) at 2026-06-23 23:48:48
+- Task finalized by Codex hook (unknown) at 2026-06-23 23:49:35
+- Task finalized by Codex hook (unknown) at 2026-06-23 23:54:55
+- Task finalized by Codex hook (unknown) at 2026-06-23 23:57:09
+- 完成候选人简历报告 PDF 模板复刻：`backend/app/pdf_generator.py` 改为 ReportLab 原生模板输出，页面尺寸固定为 `1470 x 1758`，补回主标题、右上角手写框、基本信息网格、分区标题、备注块与页脚页码，根目录 PDF 仅保留为视觉参考样张。
+- 更新 `tests/test_pdf_export.py`：补上页面尺寸断言并修正物理文件路径读取逻辑，`pytest tests/test_pdf_export.py -v` 已通过。
+- 将候选人简历报告 PDF 输出回迁为标准 A4 纸面，页面尺寸、页眉页脚、标题字号和正文密度已重新适配；当前导出样例在 A4 上显示正常，`pytest tests/test_pdf_export.py -v` 通过。
