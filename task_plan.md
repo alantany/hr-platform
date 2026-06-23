@@ -116,6 +116,13 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 修复薪资/入职/随访/邮件记录保存时 `candidate_id` 类型校验失败（`int | str` + `ensure_local_candidate`）
 - [x] 修复 `crud.py` 中 `list_candidates` 遗漏候选人扩展字段（户口、出生日期等）导致详情页显示空白的问题
 - [x] 前端增加入职、身份证、手机号等字段的实时失焦（focusout）合规校验交互
+- [x] 候选人详情页增加推荐项目情况面板和一键级联“推荐至岗位”交互及接口打通
+- [x] 修复 pytest 回归测试（手机掩码断言、批量导入坏文件 400 失败），解除测试对外部 LLM 接口依赖
+- [x] 候选人详情页增加备注信息展示面板与添加备注弹窗，支持多次备注并连通后端 `candidate_notes` 表
+- [x] 优化“数据库资源探针”，移除硬编码的 table_name 白名单限制，改为从数据库动态反射发现，并提供原生 SQL fallback 查询以支持未映射物理表的数据预览
+- [x] 候选人详情页增加“候选人跟踪表”与“添加面试记录”交互弹窗，支持面试记录添加和初筛微标圆圈展现
+- [x] 优化面试记录操作栏为并列 SVG 圆圈图标按钮（发送邮件/编辑/删除），并支持面试记录修改和二次确认物理删除
+- [x] 为所有回归测试增加全局数据库清理 fixture，测试结束后自动回收新增数据并回写 `admin` / 质保 / 系统配置 / 邮箱配置默认值
 - **Status:** in progress
 
 ## Key Constraints (持续有效)
@@ -124,6 +131,8 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - 前端操作候选人 ID 时，保持字符串格式，不做 `Number()` 强转
 - 每次完成代码修改，必须同步更新 `progress.md`；有新约束时更新 `findings.md`；有阶段变化时更新 `task_plan.md`
 - 迁移 PostgreSQL 时，数据库操作必须严格采用标准 SQL 语法，不使用 PG 独有方言以保留可移植性
+- 数据库物理表数据探针不应使用硬编码的白名单过滤表名，需保持全量且免过滤呈现
+- 候选人面试跟踪记录写入时，须执行 `ensure_local_candidate` 外部 ID 入库转换，并为“初筛”选项结果进行强制校验约束
 
 ### Phase 12 - 数据库迁移至 PostgreSQL 并配置 Schema 隔离（已完成）
 
@@ -146,5 +155,38 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 实现健壮的候选人 Upsert 逻辑（优先使用 `candidate_agent_id`，降级匹配手机、邮箱、姓名）。
 - [x] 升级 Worker 为守护进程（Daemon），利用 `NOT IN` 差集排查法实现 24 小时无遗漏新数据同步拉取。
 - [x] 修复 `crud.py` 候选人列表接口：更正外部关联表为 `resume_downloads`，并加入名字/ID 级业务防重墙，彻底解决 UI 大量冗余记录问题。
-- [x] 解除“数据库资源探针”前后端的 Pagination 限制，支持大表全量透视诊断。
+- [x] 升级数据库资源探针：解除了 Pagination 限制，支持大表全量透视诊断。
+- **Status:** complete
+
+### Phase 14 - 薪资福利入职跟踪表与相关优化（已完成）
+
+- [x] 在 `models.py` 的 `SalaryRecord` 类中补齐新增 8 个字段
+- [x] 修改 `main.py` 的 `ensure_schema()` 支持新增字段的 DDL 自愈式自动迁移
+- [x] 修改后端 API，支持多条薪资记录新增，支持操作员动态匹配与 PATCH 面试轮次只读校验，新增 DELETE 物理删除
+- [x] 重构前端 `candidates.html` 增加“💰 薪资/福利/入职条件跟踪表”独立面板，及高保真黄色说明说明弹窗
+- [x] 重构 `app.js` 中的逻辑，添加弹窗动态填充轮次、只读控制、接受/不接受选择及 confirm 防呆删除
+- [x] 优化“客户公司”输入框，采用 `<datalist>` 支持从 `companies` 表自动联想和按名字输入过滤搜索
+- [x] 编写 `tests/test_salary_tracking.py` 自动化测试全量覆盖并通过
+- **Status:** complete
+
+### Phase 15 - 候选人入职状态双模联动与质保校验（已完成）
+
+- [x] 配置 `WarrantyRule` 质保种子数据，新增默认“入职质保期”为 2 个月（60 天）。
+- [x] 后端在保存入职记录时，联动更新最新一条 `CandidateTrackingEvent` 的 `employment_status`（已入职/未入职），并联动更新候选人自身的 status 状态（“已录用”/“未锁定”）。
+- [x] 将独立的入职 Modal 弹窗删除，重构为直接常驻嵌入详情弹窗 `data-candidate-detail-modal` 底部的面板。
+- [x] 引入 Toggle 开关进行“已入职”与“未入职”模式的即时状态切换。
+- [x] 滑到“已入职”直接触发后台保存生效，显示绿底继承信息，无确认入职按钮；滑到“未入职”先显示编辑框，点击“确认未入职”保存后按钮隐退，直接显示已确认备注文本。
+- [x] 根据“入职时间”与当前日期差异，结合后端的“入职质保期”规则天数，动态计算并展示质保状态（“质保在职” / “超过质保期”），并已优化支持未来入职日期的防溢出判断。
+- [x] 每次状态保存和初始化时，自动通过 `window.fetchCandidatePanels` 对候选人生命周期进行局部动态重载，未入职显示灰色“入职”及原因，已入职显示绿色“入职”及岗位公司。
+- [x] 编写 `tests/test_employment_onboarding.py` 自动化测试并通过 pytest 回归验证。
+- **Status:** complete
+
+### Phase 16 - 候选人高保真 PDF 简历导出功能（已完成）
+
+- [x] 新建 `pdf_generator.py` 后端生成模块，利用 ReportLab + `'STHeiti'` 渲染高保真简历排版
+- [x] 实现顶栏合同/项目元数据，双列灰底信息网格与左侧蓝色装饰条小标题
+- [x] 使用 NumberedCanvas 处理多页流式排版并显示“第 X 页 / 共 Y 页”专业页脚
+- [x] 修改 `POST /api/export-records` 将物理 PDF 存储至 `exports/` 目录，回填相对路径并支持覆盖兼容
+- [x] 修改前端 `app.js` 的导出保存动作，API 返回成功后如果是 PDF 格式，自动触发浏览器下载
+- [x] 编写 `tests/test_pdf_export.py` 自动化测试并通过 pytest 全量回归验证
 - **Status:** complete

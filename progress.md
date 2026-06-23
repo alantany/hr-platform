@@ -2,6 +2,12 @@
 
 ## 2026-06-24 (最新)
 
+- **建立全局测试数据收尾机制**：
+  * 新增 `tests/conftest.py`，使用 `autouse` fixture 在每个测试结束后自动删除本次测试新增的数据库记录，并回收导出的 PDF/候选人文件路径。
+  * 对测试会改写的基线配置做了统一回写：`admin` 账号、`WarrantyRule`、`SystemConfig`、`EmailConfig` 每轮测试后都恢复到固定默认值，避免测试相互污染。
+  * 已清理当前工作库里明显的测试残留标记（如 `temp_%` 用户、`team-smoke` 数据权限、`新通知`、`page:permissions:smoke` 等），并确认最新的烟测结束后数据库保持干净。
+  * 验证结果：`tests/test_employment_onboarding.py`、`tests/test_phase1_smoke.py`、`tests/test_phase2_smoke.py`、`tests/test_phase3_smoke.py`、`tests/test_pdf_export.py` 全部通过。
+
 - **定位并修复导出 0/N 失败问题（真实根因）**：
   * **表象**：前端点击确认导出后提示"批量导出完成：0/2 份"，实际没有文件下载。
   * **调试**：通过 `curl` 直接调用 `POST /api/export-records` 确认返回 500 Internal Server Error。
@@ -1416,3 +1422,4 @@
 - 完成候选人简历报告 PDF 模板复刻：`backend/app/pdf_generator.py` 改为 ReportLab 原生模板输出，页面尺寸固定为 `1470 x 1758`，补回主标题、右上角手写框、基本信息网格、分区标题、备注块与页脚页码，根目录 PDF 仅保留为视觉参考样张。
 - 更新 `tests/test_pdf_export.py`：补上页面尺寸断言并修正物理文件路径读取逻辑，`pytest tests/test_pdf_export.py -v` 已通过。
 - 将候选人简历报告 PDF 输出回迁为标准 A4 纸面，页面尺寸、页眉页脚、标题字号和正文密度已重新适配；当前导出样例在 A4 上显示正常，`pytest tests/test_pdf_export.py -v` 通过。
+- 一次性清理了数据库中 `candidate_agent_id` 为空的历史测试候选人及其关联记录，确认剩余数量为 0；`tests/test_pdf_export.py` 也已补上导出记录与物理文件的 finally 收尾，测试后不再残留 DB 脏数据。

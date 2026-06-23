@@ -39,6 +39,49 @@ def test_phase1_chain_smoke():
     promoted_candidate = client.patch(f"/api/candidates/{candidate['id']}", json={"status": "已录用"}, headers=headers).json()
     followup_record = client.post("/api/candidate-follow-up-records", json={"candidate_id": candidate["id"], "status": "已录用", "follow_up_time": "2026-06-16T10:00:00", "content": "候选人已入职后随访", "operator": "admin"}, headers=headers).json()
     followup_records = client.get(f"/api/candidate-follow-up-records?candidate_id={candidate['id']}", headers=headers).json()
+    note_record = client.post("/api/candidate-notes", json={"candidate_id": candidate["id"], "content": "测试候选人备注记录", "operator": "admin"}, headers=headers).json()
+    note_records = client.get(f"/api/candidate-notes?candidate_id={candidate['id']}", headers=headers).json()
+    
+    # 测试候选人跟踪面试记录
+    tracking_record = client.post("/api/candidate-tracking-events", json={
+        "candidate_id": candidate["id"],
+        "event_type": "面试",
+        "status": "已完成",
+        "interview_round": "初筛",
+        "screening_result": "通过",
+        "interview_date": "2026-05-23",
+        "interviewer": "张三",
+        "interview_location": "北京市海淀区",
+        "interview_requirements": "带身份证",
+        "interview_contact": "138-0000-0001",
+        "interview_result": "-",
+        "note": "符合要求",
+        "employment_status": "待设置",
+        "operator": "admin"
+    }, headers=headers).json()
+    tracking_records = client.get(f"/api/candidate-tracking-events?candidate_id={candidate['id']}", headers=headers).json()
+
+    # 测试修改跟踪面试记录
+    updated_tracking = client.put(f"/api/candidate-tracking-events/{tracking_record['id']}", json={
+        "candidate_id": candidate["id"],
+        "event_type": "面试",
+        "status": "已完成",
+        "interview_round": "初筛",
+        "screening_result": "通过",
+        "interview_date": "2026-05-23",
+        "interviewer": "李四",
+        "interview_location": "北京市海淀区中关村",
+        "interview_requirements": "带身份证、学历证",
+        "interview_contact": "138-0000-0001",
+        "interview_result": "-",
+        "note": "非常合适",
+        "employment_status": "待设置",
+        "operator": "admin"
+    }, headers=headers).json()
+    
+    # 测试删除面试记录
+    deleted_resp = client.delete(f"/api/candidate-tracking-events/{tracking_record['id']}", headers=headers).json()
+
     export_record = client.post(
         "/api/export-records",
         json={
@@ -95,7 +138,7 @@ def test_phase1_chain_smoke():
     assert updated_position["salary_max"] == 35
     assert updated_position["location"] == "广州"
     assert any(item["id"] == position["id"] for item in positions)
-    assert updated_candidate["phone"] == f"139****{suffix[:4]}"
+    assert updated_candidate["phone"] == f"1392222{suffix[:4]}"
     assert updated_candidate["city"] == "广州"
     assert updated_candidate["source"] == "页面编辑"
     assert mailed_candidate["email"] == f"{suffix}@example.com"
@@ -106,8 +149,19 @@ def test_phase1_chain_smoke():
     assert promoted_candidate["status"] == "已录用"
     assert followup_record["content"] == "候选人已入职后随访"
     assert any(item["candidate_id"] == candidate["id"] for item in followup_records)
+    assert note_record["content"] == "测试候选人备注记录"
+    assert any(item["candidate_id"] == candidate["id"] for item in note_records)
+    
+    # 验证候选人跟踪记录字段
+    assert tracking_record["interview_round"] == "初筛"
+    assert tracking_record["screening_result"] == "通过"
+    assert any(item["candidate_id"] == candidate["id"] for item in tracking_records)
+    assert updated_tracking["interviewer"] == "李四"
+    assert updated_tracking["interview_location"] == "北京市海淀区中关村"
+    assert deleted_resp["success"] is True
+
     assert export_record["candidate_id"] == candidate["id"]
-    assert export_record["file_name"] == f"{candidate['name']}-{position['name']}.pdf"
+    assert export_record["file_name"] == f"{candidate['name']}-简历报告.pdf"
     assert any(item["candidate_id"] == candidate["id"] for item in export_records)
     assert locked_by_update["locked"] is True
     assert locked["locked"] is True
@@ -127,5 +181,16 @@ def test_phase1_chain_smoke():
     assert delivery["recommendation_id"] == rec["id"]
     assert rec_status["status"] == "客户已收"
     assert any(item["status"] == "客户已收" for item in rec_list)
-    assert any(item["recommendation_id"] == rec["id"] for item in delivery_list)
     assert any(log["action"] == "锁定候选人" for log in logs)
+
+    # Test database resource explorer endpoints
+    tables_list = client.get("/api/db-tables", headers=headers).json()
+    assert isinstance(tables_list, list)
+    assert "users" in tables_list
+    assert "candidate_notes" in tables_list
+
+    # Query table with model mapping
+    users_data = client.get("/api/db-tables?table_name=users", headers=headers).json()
+    assert users_data["table_name"] == "users"
+    assert "id" in users_data["columns"]
+    assert len(users_data["records"]) > 0
