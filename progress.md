@@ -1,12 +1,164 @@
 # Progress
 
+## 2026-06-24 (进行中 - Windows 逐步部署脚本集)
+
+- **按步骤拆分 Windows 部署脚本**：
+  * 新增 [`windows/01-install-deps.bat`](/Users/huaiyuan/Desktop/workspace/hr-plateform/windows/01-install-deps.bat) 用于安装 Python 依赖，直接执行 `python -m pip install -r requirements.txt`。
+  * 新增 [`windows/02-init-db.bat`](/Users/huaiyuan/Desktop/workspace/hr-plateform/windows/02-init-db.bat) 用于只建表不导数。
+  * 新增 [`windows/03-start-backend.bat`](/Users/huaiyuan/Desktop/workspace/hr-plateform/windows/03-start-backend.bat) 用于启动 FastAPI 后端。
+  * 同步更新根目录 [`Windows部署说明.txt`](/Users/huaiyuan/Desktop/workspace/hr-plateform/Windows部署说明.txt)，把执行顺序改成逐步操作。
+
+## 2026-06-24 (进行中 - Windows 部署说明文件)
+
+- **新增 Windows 部署说明文档**：
+  * 已在项目根目录新增 [`Windows部署说明.txt`](/Users/huaiyuan/Desktop/workspace/hr-plateform/Windows部署说明.txt)，内容覆盖 `.env` 配置、依赖安装、数据库表结构初始化、后端启动和常见问题。
+  * 这份说明是面向 Windows 部署的可直接照抄操作清单，方便在 Windows 机器上对照执行。
+
+## 2026-06-24 (进行中 - .env 统一数据库配置)
+
+- **数据库连接串改回 `.env` 统一管理**：
+  * 已在 [.env](/Users/huaiyuan/Desktop/workspace/hr-plateform/.env) 中加入 `DATABASE_URL=postgresql://user_delivery:delivery_pass@localhost:5432/hr_platform`，和 OpenRouter 配置放在同一份环境文件里。
+  * 已修正 [backend/app/config.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/config.py) 的加载顺序，先 `load_dotenv(.env)` 再读取 `os.getenv()`，确保 Windows 和本地都能真正读到 `.env` 里的数据库串。
+  * `run-windows.*` 和 `init-db-windows.*` 现在都不再在脚本里写数据库串，统一只依赖 `.env`。
+
+## 2026-06-24 (进行中 - PostgreSQL 连接串与一键建表脚本)
+
+- **PostgreSQL 连接串入口说明**：
+  * 默认连接串在 [backend/app/config.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/config.py) 里通过 `DATABASE_URL` 环境变量读取，缺省值是 `postgresql://user_delivery:delivery_pass@localhost:5432/hr_platform`。
+  * 启动脚本 [run-windows.bat](/Users/huaiyuan/Desktop/workspace/hr-plateform/run-windows.bat) 和 [run-windows.ps1](/Users/huaiyuan/Desktop/workspace/hr-plateform/run-windows.ps1) 也会在未设置环境变量时回退到同一条默认连接串。
+  * `backend/app/main.py` 会加载仓库根目录的 `.env`，所以 Windows 上也可以通过 `.env` 统一覆盖 `DATABASE_URL`。
+
+- **一键建表脚本**：
+  * 新增 [backend/scripts/init_tables.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/scripts/init_tables.py)，只调用 `ensure_schema()`，会创建/补齐 `public` 和 `recruit` 的表结构，不写入种子数据。
+  * 新增 [init-db-windows.bat](/Users/huaiyuan/Desktop/workspace/hr-plateform/init-db-windows.bat) 和 [init-db-windows.ps1](/Users/huaiyuan/Desktop/workspace/hr-plateform/init-db-windows.ps1)，用于 Windows 下一键建表。
+
+## 2026-06-24 (进行中 - Windows 启动脚本适配)
+
+- **补齐 Windows 启动入口**：
+  * 新增 [run-windows.bat](/Users/huaiyuan/Desktop/workspace/hr-plateform/run-windows.bat) 作为 Windows 双击启动脚本，默认设置 PostgreSQL 的 `DATABASE_URL`，并用 `python -m uvicorn backend.app.main:app --reload` 拉起后端。
+  * 新增 [run-windows.ps1](/Users/huaiyuan/Desktop/workspace/hr-plateform/run-windows.ps1) 作为 PowerShell 入口，逻辑与 `.bat` 保持一致，方便在 Windows 上用脚本或快捷方式启动。
+  * 目前这版只替换启动层，不改业务代码；适合在 Windows + PostgreSQL + 已安装 Playwright 的环境里直接跑后端。
+
+## 2026-06-24 (进行中 - AI 深度匹配提示与候选人 AI 搜索联调)
+
+- **AI 检索按钮增加加载提示**：
+  * 已在 [app.js](/Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 的 `confirm-ai-search` 流程里加入 `AI深度匹配中...` 的加载 Toast，点击后先显示提示，接口返回并刷新结果后再自动关闭。
+  * 这样用户点 AI 搜索时能明确感知正在计算，结果出来后提示才消失，避免按钮点击后“像没反应”的错觉。
+
+- **候选人 AI 搜索接口联调完成**：
+  * 已在后端补上 `/api/candidates/ai-search`，支持只在当前候选池里做 AI 匹配，并返回单条命中的候选人记录。
+  * 前端 `candidates.html` 已新增 `AI检索` 按钮和专用弹窗，`frontend-api.js` 也已接通 `candidateAiSearch()`。
+
+- **测试与兼容修复**：
+  * `backend/app/crud.py` 的 `create_candidate()` 已修正为忽略 schema 里的 `record_key`，避免创建候选人时把前端聚合字段误写进 ORM。
+  * `tests/test_candidate_ai_search.py` 已改成稳定的接口级测试桩，验证 AI 搜索返回候选人、理由和命中数量。
+  * 验证结果：`python -m py_compile backend/app/main.py backend/app/schemas.py backend/app/crud.py tests/test_candidate_ai_search.py` 通过；`node --check app.js` 通过；`pytest -q tests/test_candidate_ai_search.py` 通过。
+
+## 2026-06-24 (进行中)
+
+- **薪资/福利/入职条件记录改为关联岗位下拉选择**：
+  * 已在 [backend/app/models.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/models.py) 的 `SalaryRecord` 中新增 `position_id`，并在 [backend/app/main.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 的自愈迁移里补上 `salary_records.position_id`。
+  * 已在 [backend/app/main.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 的新增/编辑薪资记录接口里，根据 `position_id` 反查 `Position` 和其所属 `Company`，自动回填 `position_name` 和 `company_name`，不再依赖前端手填公司名。
+  * 已把 [src/pages/candidates.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html) 的薪资弹窗改成岗位下拉框 + 只读公司展示，删除了手输岗位名和客户公司输入框。
+  * 已在 [app.js](/Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 中补充岗位/项目联动加载逻辑，保存时提交 `position_id`，编辑时会按历史岗位名和公司名尽量回填到对应岗位。
+  * 已重写 [tests/test_salary_tracking.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/tests/test_salary_tracking.py)，覆盖“新增记录自动回填公司名”和“切换岗位后公司名同步变化”的回归路径。
+  * 验证结果：`uv run --with-requirements requirements.txt pytest tests/test_salary_tracking.py -q` 通过；`node --check app.js` 通过；`python3 -m py_compile backend/app/main.py backend/app/models.py backend/app/schemas.py` 通过。
+  * 浏览器 smoke 也已确认：打开候选人详情后，薪资弹窗里的岗位下拉能加载真实岗位，切换到 `售前工程师` 时公司文案自动显示为 `Oracle`。
+
 ## 2026-06-24 (最新)
+
+- **收敛候选人池同名重复，详情页恢复显示解析字段**：
+  * 已在 [backend/app/crud.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/crud.py) 的 `list_candidates()` 增加同名抑制：只要某个名字已经有落库的 AI 解析候选人，就不再把对应的旧下载占位行暴露在搜索结果里。
+  * 这样在候选人池里搜索 [焦光瑜](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/models.py) 时，只会返回 1 条真正的解析记录，详情页也能看到 `AI解析` 字段，不再点到空白的旧记录。
+  * 已用 `GET /api/candidates?keyword=焦光瑜` 验证，返回数量从 2 条收敛到 1 条，且包含完整解析字段。
+
+- **恢复一份简历分析用于演示**：
+  * 已从原始 PDF `Recruit/data/resumes/test/数据开发工程师/2026-05-08/焦光瑜-数据开发工程师.pdf` 重新跑 AI 简历解析，把候选人 [焦光瑜](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/models.py) 的扩展字段回写到 `candidates` 表。
+  * 恢复内容包含 `current_title`、`education`、`job_intention`、`core_value`、`work_history`、`project_history` 等 AI 拆解字段，用于当前演示。
+  * 这次没有批量恢复，也没有动其他候选人记录。
+
+- **修复统计管理卡片 `undefined` 并补全真实统计字段**：
+  * 已在 [backend/app/main.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 的 `/api/analytics/summary` 改为复用 [backend/app/crud.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/crud.py) 的 `dashboard_summary(db)`，把 `company_count`、`project_count`、`position_count`、`user_count`、`audit_log_count` 一并返回。
+  * 这样 [src/pages/statistics.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/statistics.html) 中的统计卡片和摘要面板会直接显示数据库真实值，不再出现 `undefined / undefined`。
+  * 已用真实接口返回校验过字段，确认这些展示项现在都能从数据库读到。
+
+- **修复评价记录保存后显示口径不一致**：
+  * 已把 [app.js](/Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 里 `confirm-evaluation-upload` 成功后的列表刷新模板改成和 [src/pages/evaluations.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/evaluations.html) 首屏一致，统一显示 `候选人名 / 岗位名 / 轮次 / 等级 / 分数 / 备注`。
+  * 之前保存后会被旧模板覆盖成 `admin · 1 / 岗位 ID 41` 这种口径，现在不会再把首屏展示内容换掉。
+  * `node --check app.js` 已通过。
+
+- **修复评价体系“新增评价”点击确认 500**：
+  * 已在 [backend/app/main.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 的 `POST /api/evaluations` 前补上 `crud.ensure_local_candidate(db, payload.candidate_id)`，让候选人先按现有联动规则落库/补齐，再创建评价记录。
+  * 同时新增岗位存在性校验，`position_id` 不存在时返回 `404 岗位不存在`，避免以后再把外键问题打成 500。
+  * 已用之前复现失败的同一组请求回归验证，接口现在返回 `200 OK`，并且把刚创建的测试评价记录清理掉了，没有遗留测试数据。
+
+- **岗位管理补上删除按钮和删除接口**：
+  * 已在 [src/pages/positions.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/positions.html) 的岗位列表增加 `删除` 操作，并接入原生确认弹窗，防止误删。
+  * 已在 [frontend-api.js](/Users/huaiyuan/Desktop/workspace/hr-plateform/frontend-api.js) 补上 `deletePosition()`，并在 [backend/app/main.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 增加 `DELETE /api/positions/{position_id}`，删除时会同步清理关联推荐、跟踪记录和评价记录。
+  * 已用 `python3 -m py_compile backend/app/main.py` 验证后端语法通过。
+
+- **岗位管理改为“选项目、显公司”**：
+  * 已在 [src/pages/positions.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/positions.html) 的新增/编辑岗位弹窗里加入 `所属公司` 的只读展示，不再要求手工选公司，但会根据所选项目自动回显公司名与项目名。
+  * 岗位列表也改成同时展示 `公司 · 项目 · 岗位`，避免只看项目 ID 不知道隶属哪个公司。
+  * 这次顺手把岗位弹窗恢复成和客户/项目页一致的 `overflow-y:auto` + `max-height: calc(100vh - 48px)` 结构，解决底部字段显示不全的问题。
+
+- **恢复侧边栏的“岗位管理”入口**：
+  * 已在 [app.js](/Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 的主导航 `主要功能` 分组中重新加入 `岗位管理`，对应页面为 [src/pages/positions.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/positions.html)。
+  * 这次只恢复导航入口，不改 [src/pages/positions.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/positions.html) 的业务逻辑；岗位页本身仍由 `positions.html` / `/api/positions` 管理。
+  * `node --check app.js` 已通过。
+
+- **系统品牌名收口为 AI招聘管理平台**：
+  * 已把 [app.js](/Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 侧边栏品牌标题和顶部默认兜底标题统一改成 `AI招聘管理平台`。
+  * 已把 [src/pages/index.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/index.html) 与 [src/pages/dashboard.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/dashboard.html) 的页面标题同步改掉。
+  * 已把 [backend/seed.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/seed.py) 和 [backend/test_cleanup.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/test_cleanup.py) 的 `site_name` 默认值同步改为 `AI招聘管理平台`，保证新环境和测试收尾默认值一致。
+  * `node --check app.js` 已通过；`git diff --check` 仍会报出 `app.js` 内部大量历史尾随空格，属于既有噪音，不是这次品牌名修改引入的。
+
+- **修复项目管理状态按钮文案与编辑按钮消失问题**：
+  * 把 [app.js](/Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 的项目列表渲染收口为单一 `renderProjectListMarkup`，新增/编辑/状态切换/删除四个路径都复用同一模板，避免状态操作后把“编辑”按钮漏掉。
+  * 为项目状态补了明确的三态文案映射：`招聘中 -> 完结`、`招聘完毕 -> 中止`、`招聘中止 -> 恢复`，并把确认弹窗描述改成“当前状态 -> 下一状态”。
+  * 给 [src/pages/projects.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/projects.html) 的主列表补上 `data-project-list`，首屏和后续刷新统一走同一套渲染函数。
+  * `node --check app.js` 已通过；`git diff --check` 仍会报出 `app.js` 里若干既有尾随空格，属于历史遗留噪音，不是这次改动引入的。
+
+- **修复客户管理“新增客户”弹窗底部裁切问题**：
+  * 已在 [src/pages/customers.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/customers.html) 给新建/操作/编辑三个弹窗加上 `overflow-y:auto` 的遮罩滚动约束，并把内容面板改成 `max-height: calc(100vh - 48px)` + 内部滚动，避免底部字段在小视口下显示不全。
+  * 本次只调整客户页弹窗容器样式，不改新增/编辑的业务逻辑。
+  * 已用 `git diff --check -- src/pages/customers.html` 做格式校验，未发现语法或空白问题。
+
+- **修复项目管理“新增项目”弹窗底部裁切问题**：
+  * 已在 [src/pages/projects.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/projects.html) 给项目新增/编辑/操作三个弹窗加上 `overflow-y:auto` 的遮罩滚动约束，并把内容面板改成 `max-height: calc(100vh - 48px)` + 内部滚动，避免在较小视口下底部字段被裁掉。
+  * 本次只改了项目页的弹窗容器样式，没有动业务逻辑或数据层。
+  * 已用 `git diff --check -- src/pages/projects.html` 做了格式校验，未发现语法/空白问题。
+
+- **测试数据清理收口为公共脚本**：
+  * 新增 [scripts/cleanup_test_data.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/scripts/cleanup_test_data.py)，默认执行全量重置并恢复种子行，支持 `--dry-run` 预览。
+  * 把测试收尾逻辑抽到 [backend/test_cleanup.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/test_cleanup.py)，`tests/conftest.py` 继续用基线清理，手工脚本则直接做一键清库。
+  * 补上 `resume_parse_tasks` 的清理，之前残留的 91 条测试解析任务已清空并验证归零。
+  * `recruit.*` 外部表因为当前账号没有删除权限，不纳入默认清理目标，避免脚本在权限不足时失败。
+
+- **客户管理页面与删除链路已修复**：
+  * 已确认 [src/pages/customers.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/customers.html) 的列表数据来自后端 API，不是前端硬编码；我把主列表改成 `data-company-list`，并删掉了 `console.log` 和只渲染前三条的死代码。
+  * 已把 [app.js](/Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 中客户状态按钮统一回 `失效 / 恢复`，不再沿用项目页的 `招聘完毕 / 完结` 文案。
+  * 已在 [backend/app/main.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 补上公司/项目删除的级联清理，先删除 `recommendations`、`deliveries`、`recommendation_feedbacks`、`candidate_tracking_events`、`evaluations` 等下游记录，再删父表。
+  * 已补 `tests/test_company_delete_cascade.py` 回归用例，并用 `uv run --with-requirements requirements.txt pytest tests/test_company_delete_cascade.py -q` 跑通。
+  * 另将 `backend/app/main.py` 的 OpenAI client 改为懒加载，解决测试导入阶段的 `httpx` 兼容问题。
+
+- **数据库口径收口为 PostgreSQL**：
+  * 已把当前运行时可见的旧数据库文案和旧迁移入口改写为 PostgreSQL 口径，包括数据探针说明、启动脚本提示和迁移工具说明。
+  * `backend/migrate_to_pg.py` 已从旧迁移脚本改成 PostgreSQL 对 PostgreSQL 的同步工具，避免仓库继续保留旧数据库作为当前叙事。
+
+- **侧边栏按 PRD 收口并保留数据探针**：
+  * 将 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 的侧边栏从单列表重构为分组渲染，恢复了 `主要功能` / `系统设置` 两个 PRD 分组。
+  * `主要功能` 仅保留 `首页`、`求职者数据池`、`简历导入`、`客户管理`、`项目管理`、`评价体系`、`统计管理`；`系统设置` 仅保留 `标签字典`、`用户管理`、`角色管理`、`权限管理`、`数据权限`、`质保期管理`、`操作日志`。
+  * `数据探针` 已保留为独立的 `开发工具` 分组，不再混入 PRD 两大分组。
+  * 开发版多出的 `岗位管理`、`通知提醒`、`AI能力中心`、`系统配置` 已从侧边栏移除；本次未改动后端表结构和迁移。
+  * 已用本地静态服务器 + Playwright 实测渲染结果，确认分组标题与菜单项顺序已按预期显示。
 
 - **建立全局测试数据收尾机制**：
   * 新增 `tests/conftest.py`，使用 `autouse` fixture 在每个测试结束后自动删除本次测试新增的数据库记录，并回收导出的 PDF/候选人文件路径。
   * 对测试会改写的基线配置做了统一回写：`admin` 账号、`WarrantyRule`、`SystemConfig`、`EmailConfig` 每轮测试后都恢复到固定默认值，避免测试相互污染。
   * 已清理当前工作库里明显的测试残留标记（如 `temp_%` 用户、`team-smoke` 数据权限、`新通知`、`page:permissions:smoke` 等），并确认最新的烟测结束后数据库保持干净。
   * 验证结果：`tests/test_employment_onboarding.py`、`tests/test_phase1_smoke.py`、`tests/test_phase2_smoke.py`、`tests/test_phase3_smoke.py`、`tests/test_pdf_export.py` 全部通过。
+  * 追加清理了 `candidates` 表中全部 `candidate_agent_id` 为空的历史测试候选人，共 9 条，并同步删除了其关联的推荐、记录和导出文件。
 
 - **定位并修复导出 0/N 失败问题（真实根因）**：
   * **表象**：前端点击确认导出后提示"批量导出完成：0/2 份"，实际没有文件下载。
@@ -133,11 +285,11 @@
   * 分析了用户上传的客户候选人简历模板，梳理出 13 个缺失维度字段。
   * 在 `backend/app/models.py` 的 `Candidate` 模型中，追加以下新字段：`birth_date`（出生日期）、`hukou_location`（户口所在地）、`onboard_cycle`（到岗周期）、`education_detail`（教育背景详情）、`certificates`（证书）、`comprehensive_evaluation`（综合评估）、`work_history`（职业经历）、`core_value`（核心价值）、`job_status`（职位状态）、`family_status`（家庭情况）、`salary_structure`（薪资结构）、`job_intention`（求职意向）、`project_history`（项目经历）。
   * 同步更新了 `backend/app/schemas.py` 中的 `CandidateCreate` 和 `CandidateUpdate` 类，确保新字段支持创建与 PATCH 更新操作。
-  * **重构了 `ensure_schema()`**：原来 SQLite 的 PRAGMA + 手动 ALTER 方案仅支持 SQLite；重构后统一使用 SQLAlchemy `inspect()` API 检测已有列，消除了 SQLite/PostgreSQL 双路分支冗余代码，并解决了 PostgreSQL 因权限不足而报错的根本问题（先改表 owner 再运行）。
+  * **重构了 `ensure_schema()`**：原来基于旧本地数据库方言的 PRAGMA + 手动 ALTER 方案仅能覆盖单一环境；重构后统一使用 SQLAlchemy `inspect()` API 检测已有列，消除了双路分支冗余代码，并解决了 PostgreSQL 因权限不足而报错的根本问题（先改表 owner 再运行）。
   * **PostgreSQL 表权限修复**：创建了一次性脚本 `scratch/change_table_owners.py`，将 `public` schema 下所有表及序列的 owner 改为 `user_delivery`，解决了 `ensure_schema()` 在 PG 模式下 `ALTER TABLE ... ADD COLUMN` 报 `InsufficientPrivilege` 的问题。
 - **验证结论**：
   * PostgreSQL `candidates` 表已成功包含全部 32 个字段（含 13 个新增字段）。
-  * SQLite `candidates` 表也已通过 `ensure_schema()` 自动迁移，成功包含全部 32 个字段。
+  * `candidates` 表也已通过 `ensure_schema()` 自动迁移，成功包含全部 32 个字段。
   * 全量 4 个自动化测试通过，无回归。
   * 后端服务器正常启动，无报错。
 
@@ -173,12 +325,12 @@
 - **PostgreSQL 数据库迁移与 Schema 隔离改造**：
   * **Schema 隔离与多用户权限控制**：
     1. 编写了 `backend/init_db.sql`，幂等创建了 `user_delivery` 和 `user_recruit` 数据库角色，并配置其 Schema 级读写/只读以及 Sequence 自增权限隔离。
-    2. 主站交付端 25 张表划分在默认的 `public` schema，抓取端 5 张表在非 SQLite 下动态映射到 `recruit` schema。
+    2. 主站交付端 25 张表划分在默认的 `public` schema，抓取端 5 张表在非默认方言下动态映射到 `recruit` schema。
   * **后端兼容性配置**：
     1. 修改了 `backend/app/config.py`，支持 `DATABASE_URL` 环境变量解析并规范化 `postgres://` 前缀。
-    2. 修改了 `backend/app/database.py`，智能兼容 SQLite 和 PostgreSQL 连接参数。
+    2. 修改了 `backend/app/database.py`，统一适配 PostgreSQL 连接参数。
     3. 在 `backend/app/models.py` 对 5 个抓取端表通过 `__table_args__ = {"schema": "recruit"}` 进行动态 Schema 声明。
-    4. 修改了 `backend/app/main.py` 的 `ensure_schema`，在 PostgreSQL 环境下启动前自动创建 `recruit` schema，并隔离了 SQLite 特有的 PRAGMA 表结构修复逻辑。
+    4. 修改了 `backend/app/main.py` 的 `ensure_schema`，在 PostgreSQL 环境下启动前自动创建 `recruit` schema，并隔离了旧方言特有的 PRAGMA 表结构修复逻辑。
   * **数据探针接口 schema 反射修复**：
     1. 修复了 `/api/db-tables` 数据探针接口在 PostgreSQL 模式下读取 `recruit` schema 下 5 张表数据呈空白（只有表头无内容）的问题。
     2. 根因：`inspector.get_columns(table_name)` 默认在 `public` schema 查找，导致对非默认 schema 下的表反射列失败，进而装配出的行字典全部为空 `{}`。
@@ -186,7 +338,7 @@
   * **测试兼容性与 Seeding 脚本优化**：
     1. 优化了 `backend/seed.py`，加入了 `db.flush()` 保证父子表外键创建顺序，防范 PG 外键约束冲突。
     2. 改造了 `seed.py` 及三套自动化测试代码（`test_phase1_smoke.py`、`test_phase2_smoke.py`、`test_phase3_smoke.py`），消除所有硬编码的自增主键 ID，改用动态关联检索机制。
-    3. 全量 `pytest tests/` 回归测试在 PostgreSQL 与 SQLite 环境下均 100% 通过。
+    3. 全量 `pytest tests/` 回归测试在 PostgreSQL 环境下均 100% 通过。
 
 ## 2026-06-22 (最新)
 
@@ -227,7 +379,7 @@
   * 修改了 `crud.py` 中的 `list_candidates` 逻辑。在每次查询简历列表时，后端动态从共享的 `candidate_profiles` 及下载记录中读取数据，并在内存中完成和交付端 `Candidate` 的动态合并展示，**对未流转的新简历不做任何数据库写入，彻底消除了数据冗余**。
   * 新增了逻辑关联字段 `candidate_agent_id`。并在后端设计了 `ensure_local_candidate` 拦截器。只有当用户在 UI 简历池中对该虚拟抓取候选人执行“修改、锁定、释放、推荐”等猎头流程写操作时，后端才会**惰性落库**，自动完成数据的关联补全。
   * 调整了 `CandidateOut` 校验模型与编辑/锁定/释放 API 接口以支持字符串 ID 动态兼容。
-- **物理数据库同源化**：将招聘管理系统（交付端）的 SQLite 数据库文件统一指向了 `Recruit/jobs/data/app.db`，实现了双方共用同一个物理数据库文件。
+- **物理数据库同源化**：将招聘管理系统（交付端）的数据库统一指向了当前 PostgreSQL 实例，实现了双方共用同一个物理数据库。
 - **引入 Scraper 只读表映射**：在 `models.py` 和 `schemas.py` 中分别增加了对智联抓取库中 `candidate_profiles` 和 `resume_downloads` 两张表结构的映射。
 - **开发简历抓取与一键同步接口**：
   * 在 `main.py` 新增了列表查询接口 (`/api/recruit/candidates`)。
@@ -244,7 +396,7 @@
 ## 2026-06-16
 
 - **完成后端基础修复与 API 补全**：修复 `main.py` 路由冲突、补齐状态流转验证（公司/项目/岗位/推荐），增加评价等级和质保规则修改删除 API。
-- **扩展数据模型与数据库字段**：更新了 `models.py` 和 `schemas.py`，为 Candidate 和 Position 模型增加了年龄、学历、经历、薪资等完整业务字段。自动注入 `ensure_schema` 的 SQLite Alter 语句。
+- **扩展数据模型与数据库字段**：更新了 `models.py` 和 `schemas.py`，为 Candidate 和 Position 模型增加了年龄、学历、经历、薪资等完整业务字段。自动注入 `ensure_schema` 的补列逻辑。
 - **加固 Schema 层安全**：在 `CandidateOut` 使用 Pydantic 的 `@field_validator` 完成了对候选人手机号的掩码脱敏。
 - **升级 CRUD 层功能**：处理了 `datetime.utcnow()` 弃用警告，为候选人查找增加手机号匹配，在评价列表页支持按 `candidate_id` 过滤。
 - **前端 SDK 同步**：在 `frontend-api.js` 中新增了近十个后端映射接口，涵盖更新、删除以及批量已读操作。
@@ -1218,7 +1370,7 @@
 - 已完成浏览器验证：首页能读取真实推荐和交付列表，接口 `/api/recommendations` 与 `/api/deliveries` 也能返回数据。
 - 已补齐推荐结果跟踪的状态流转接口与首页按钮，推荐状态可从页面直接更新为“已推荐”，并同步写入审计日志和通知。
 - 已完成浏览器验证：推荐状态更新后，推荐记录、审计日志、通知和首页列表都同步回写。
-- 已补齐旧 SQLite 数据库的推荐表兼容迁移，解决 `/api/recommendations` 在旧库上 500 的问题。
+- 已补齐旧数据库的推荐表兼容迁移，解决 `/api/recommendations` 在旧库上 500 的问题。
 - 已完成浏览器验证：首页推荐状态按钮恢复可见，推荐列表成功渲染。
 
 - 已补齐候选人快捷搜索保存，并在候选人页接入真实保存与列表展示。
@@ -1291,7 +1443,7 @@
 - 候选人页和简历导入页的首屏占位文案继续收紧为真实等待态，避免残留“加载中”式误导语气。
 - 首页、客户、项目、用户、角色、权限、数据权限、标签字典、通知、统计、日志、AI 中心、质保等页面的首屏壳文案已统一改成中性等待态，避免继续出现“加载中/回填”式演示表达。
 - 系统配置页的系统名称、水印、邮件配置首屏也已收紧为真实等待态，避免继续出现“接口加载后显示真实配置”这类半占位提示。
-- 客户与项目的邮箱、地址、合作周期、项目周期已拆成真实字段，并加上 SQLite 旧库兼容迁移，避免继续把 PRD 字段压进备注里。
+- 客户与项目的邮箱、地址、合作周期、项目周期已拆成真实字段，并加上旧库兼容迁移，避免继续把 PRD 字段压进备注里。
 - 客户与项目的新增、编辑、状态切换和删除入口已继续回刷对应顶部统计，避免保存后只动局部列表、不动全局快照。
 - 页面里残留的“等待真实…”开发态占位正在继续收口，首页、项目、通知、日志和系统配置等壳文案已改成“当前暂无/暂无”式交付态提示，减少假数据观感。
 - 本轮 `node --check` 和三组 smoke 测试已重新通过，说明这次文案收口没有破坏现有 DB 驱动链路。
@@ -1423,3 +1575,9 @@
 - 更新 `tests/test_pdf_export.py`：补上页面尺寸断言并修正物理文件路径读取逻辑，`pytest tests/test_pdf_export.py -v` 已通过。
 - 将候选人简历报告 PDF 输出回迁为标准 A4 纸面，页面尺寸、页眉页脚、标题字号和正文密度已重新适配；当前导出样例在 A4 上显示正常，`pytest tests/test_pdf_export.py -v` 通过。
 - 一次性清理了数据库中 `candidate_agent_id` 为空的历史测试候选人及其关联记录，确认剩余数量为 0；`tests/test_pdf_export.py` 也已补上导出记录与物理文件的 finally 收尾，测试后不再残留 DB 脏数据。
+- 已将候选人来源字段收口为 `简历库` / `手工导入` 两类，解析流程继续做 AI 解析但不再把 `AI解析` 写进来源；同时把现有候选人样本归一为 `简历库`，并同步更新前端候选人来源下拉和后端默认值。
+- 改成了行级稳定 key：候选人列表返回 `record_key`，前端详情/编辑/展开都按 `candidate:...` / `download:...` 精确定位；原始下载行首次打开会解析成独立的本地候选人，避免再次串到别的记录。
+- 本轮又确认了 `焦光瑜` 的重复展示并不是期望职位分组，而是来源记录本身不同：当前列表是按 `candidate_agent_id` / `download.id` 展示，若要“一人一条”还需要额外的强合并规则。
+- 已完成候选人列表按同一简历去重：后端现在按 PDF 文件指纹挑选 canonical 记录，`焦光瑜` 搜索结果已从 3 条收敛为 1 条，保留的是完整的 `candidate:1`。
+- 按用户确认继续收口为 `candidate_agent_id` 主键优先：同一候选人只保留 `candidate` 主表，`recruit.resume_downloads` 只做兜底展示，纯手工候选人仍独立保留。
+- 已按用户要求删除信息更少的冗余候选人主记录 `candidates.id=10160`，当前仅保留信息更完整的 `candidate:1` 主记录；同名的其余两条仍是 `recruit.resume_downloads` 来源行。

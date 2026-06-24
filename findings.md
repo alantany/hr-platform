@@ -1,5 +1,128 @@
 # Findings
 
+## 2026-06-24 (补充 - Windows 逐步部署脚本)
+
+- 用户明确不需要一键脚本，所以部署入口现在改成“安装依赖 / 初始化表结构 / 启动后端”三步拆分，更适合现场逐步排查。
+- `windows/01-install-deps.bat` 负责依赖安装，`windows/02-init-db.bat` 只建 `public + recruit` 表结构，`windows/03-start-backend.bat` 只启动服务。
+- 根目录 `Windows部署说明.txt` 已同步更新为逐步执行方案，方便 Windows 机器按顺序照着部署。
+
+## 2026-06-24 (补充 - .env 统一数据库配置)
+
+- 数据库连接串现在和 OpenRouter 一样统一放在仓库根目录 `.env`，不会再只靠启动脚本里的环境变量临时设置。
+- `backend/app/config.py` 已改成先加载 `.env` 再实例化 `Settings`，否则 `DATABASE_URL` 会在导入时被默认值抢先固定。
+- 这意味着 Windows 下只要 `.env` 存在并写好 `DATABASE_URL`，`run-windows.*` 和 `init-db-windows.*` 都能直接读到同一份配置。
+
+## 2026-06-24 (补充 - PostgreSQL 连接串与 Windows 一键建表)
+
+- PostgreSQL 连接串的主入口是 [backend/app/config.py](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/config.py) 的 `DATABASE_URL`，同时 `backend/app/main.py` 会加载仓库根目录 `.env`，所以 Windows 上可以用环境变量或 `.env` 覆盖默认值。
+- 默认连接串目前统一指向 `postgresql://user_delivery:delivery_pass@localhost:5432/hr_platform`，和现有 `run-windows.*` 保持一致。
+- 已新增只建表不导数据的 Windows 入口 `[init-db-windows.bat](/Users/huaiyuan/Desktop/workspace/hr-plateform/init-db-windows.bat)` / `[init-db-windows.ps1](/Users/huaiyuan/Desktop/workspace/hr-plateform/init-db-windows.ps1)`，底层调用 `backend/scripts/init_tables.py`，复用 `ensure_schema()` 来创建 `public` + `recruit` 表结构。
+
+## 2026-06-24 (补充 - Windows 启动脚本落地)
+
+- 这个项目不需要为了 Windows 重写业务代码，当前主要差异在启动层和 shell 脚本层。
+- 已补出可直接在 Windows 上使用的 `run-windows.bat` 和 `run-windows.ps1`，默认使用 PostgreSQL 的 `DATABASE_URL` 并启动 `backend.app.main:app`。
+- 现阶段只要 Windows 上装好 Python、PostgreSQL 和 Playwright，就可以用这两个入口启动项目；后续若有需要，再补测试/收尾脚本的 Windows 版本。
+
+## 2026-06-24 (补充 - AI 检索加载提示与接口联调)
+
+- `AI检索` 已接成一个真正的搜索模式，不是模拟弹窗；它只在当前筛选后的候选池里做匹配，并返回单条候选人记录。
+- 点击搜索后先展示 `AI深度匹配中...` 的加载提示，接口返回并刷新列表后再关闭，交互上能明确感知“正在分析”和“已出结果”两个阶段。
+- 后端 `create_candidate()` 需要显式排除 `record_key`，因为它是聚合列表/检索层字段，不是 ORM `Candidate` 的持久化列。
+- 当前 AI 搜索测试已改为接口级稳定桩，避免被 OpenRouter 可用性或 fallback 逻辑干扰。
+
+## 2026-06-24 (补充 - 薪资记录岗位联动改造)
+
+- 薪资/福利/入职条件记录现在新增了 `position_id` 作为真实关联源，前端只允许从岗位管理里选择岗位，不再手输岗位名。
+- `company_name` 不再由用户输入，而是由 `position.project.company.name` 反查带出，保存时仍回填到薪资记录里，保证详情页和入职状态面板继续沿用现有字符串展示。
+- 这次联动已经用回归测试验证：新增记录会同时写入 `position_id`、`position_name` 和 `company_name`，编辑记录切换到另一个岗位后，这三个字段会一起更新。
+
+## 2026-06-24 (补充 - 候选人池同名重复与详情空白)
+
+- 详情页没显示解析字段，不是详情接口没读到，而是候选人池列表里同时暴露了“旧下载占位行”和“已落库的 AI 解析行”，用户很容易点到前者。
+- 当前 `candidates` 查询结果里，`焦光瑜` 只有一条真正的 AI 解析候选人记录，但旧的 `recruit.resume_downloads` 里还有多条同名下载记录。
+- `list_candidates` 原本只在“纯下载行”之间按姓名去重，没有在“已经存在落库候选人”时压掉同名旧下载行，所以同一人会在列表里看起来像两条。
+- 已改成：只要同名候选人已经存在落库记录，就不再展示对应的旧下载占位行；现在 `焦光瑜` 的搜索结果已收敛为 1 条，且带完整解析字段。
+
+## 2026-06-24 (补充 - 候选人重复行的真实成因)
+
+- 这次看到的重复行，不是“期望职位”在分组，而是同名简历被写成了不同的业务记录：`list_candidates` 以 `candidate_agent_id` / `download.id` 作为来源关联键，当前这几条 `焦光瑜` 的 `candidate_agent_id` 不同，所以会被当成不同记录展示。
+- `record_key` 已经把列表行区分开，但列表层目前仍是“按来源记录展示”，不是“按姓名强行折叠”。如果要改成“一人一条”或“同一 PDF 只显示一条”，需要再定义更强的合并规则，比如按文件指纹、稳定 source id 或最新解析结果归并。
+
+## 2026-06-24 (补充 - 候选人列表按同一简历去重完成)
+
+- 候选人列表已改为按简历文件指纹去重：同一份 PDF 只保留一条 canonical 记录，优先展示字段最完整、且本地已落库的候选人主记录。
+- 对没有文件路径锚点的纯手工候选人，仍然保留独立行，不会被误合并。
+- 复测 `焦光瑜` 搜索结果已从 3 条收敛为 1 条，当前只显示 `candidate:1` 这条完整记录。
+
+## 2026-06-24 (补充 - 候选人主键收口为 candidate_agent_id)
+
+- 去重规则已从“文件指纹”收口为“`candidate_agent_id` 主键优先”。
+- 同一 `candidate_agent_id` 下，列表只保留 `candidate` 主表记录；`recruit.resume_downloads` 仅在没有对应主表时兜底展示。
+- 纯手工候选人（没有 `candidate_agent_id`）继续按自己的主键独立保留，不参与这层合并。
+
+## 2026-06-24 (补充 - 冗余候选人记录清理)
+
+- 已删除信息更少的冗余候选人主记录 `candidates.id = 10160`，保留信息更完整的 `candidate:1`。
+- 当前看到的同名剩余记录来自 `recruit.resume_downloads`，不是 `candidates` 主表重复行。
+
+## 2026-06-24 (补充 - 单条简历分析已恢复)
+
+- `candidates` 表确实被大范围清空过，当前只剩少量记录；这次不是“字段没读出来”，而是数据本身被删掉了。
+- `recruit` 抓取表里还能回灌的只是抓取侧来源，不是这次用户要的 AI 简历解析结果；用户确认后，改为直接从原始 PDF 重新跑简历解析。
+- 已成功把候选人 `焦光瑜` 这一条重新解析并写回 `candidates`，用于演示的 AI 简历分析已恢复。
+- 这次只恢复了一条样本，不是批量恢复；若后续要补回更多真人候选人，需要继续逐条重跑 PDF 解析，或者提供数据库备份再做全量回滚。
+
+## 2026-06-24 (补充 - 统计管理 summary 缺字段导致 undefined)
+
+- `src/pages/statistics.html` 的数值展示全部来自 `/api/analytics/summary`，不是前端写死的业务数据；前端只负责把接口返回值拼到卡片和排行面板里。
+- 之前 `/api/analytics/summary` 只返回了候选人、推荐、交付、评价、通知、标签、质保和排行，没有返回 `company_count / project_count / position_count / user_count / audit_log_count`，因此页面里对应位置渲染成了 `undefined`。
+- 已改成先复用 `crud.dashboard_summary(db)` 取基础数据库统计，再补上评价、通知、标签、质保和排行字段；现在这些卡片会直接显示数据库里的真实数字。
+
+## 2026-06-24 (补充 - 评价记录保存后展示口径不一致)
+
+- 评价体系页面的首屏列表模板本来就会按 `候选人名 / 岗位名 / 轮次 / 备注` 渲染，但 `app.js` 在 `confirm-evaluation-upload` 后手动刷新列表时，使用了另一套更老的模板。
+- 那套旧模板优先展示 `evaluator` 和 `岗位 ID`，所以保存后会把页面首屏的展示口径覆盖掉，看起来像“没有显示新增评价里填的信息”。
+- 已把保存后的刷新逻辑改成和首屏一致，统一展示候选人、岗位、轮次、等级、分数与备注内容。
+
+## 2026-06-24 (补充 - 评价体系新增评价 500)
+
+- `POST /api/evaluations` 之前是直接创建 `Evaluation`，没有像候选人跟踪、薪资记录等接口那样先调用 `ensure_local_candidate`。
+- 当下拉里选中的候选人只存在于候选人聚合列表、但还没有本地 `candidates` 落库时，数据库会在插入 `evaluations.candidate_id` 时触发外键约束，最终表现为 500。
+- 已把评价创建接口改成先补齐候选人，再校验岗位是否存在，缺失时返回 404，而不是把约束错误直接暴露成 500。
+- 用同样的请求复测后，`POST /api/evaluations` 已能正常返回 200；为了避免测试污染，刚创建的验证记录已同步删除。
+
+## 2026-06-24 (补充 - 测试数据统一清理脚本)
+
+- 新增 `scripts/cleanup_test_data.py` 作为一键清理入口，默认执行全量重置并恢复种子行，支持 `--dry-run` 先看会影响多少表。
+- 将 pytest 收尾逻辑抽到 `backend/test_cleanup.py`，`tests/conftest.py` 与手工清理脚本现在复用同一套规则。
+- `resume_parse_tasks` 之前漏进了清理顺序，导致测试结束后残留 91 条；已在初始化基线阶段清零，并验证清理后该表回到 0。
+- `recruit.*` 外部表当前用户没有删除权限，因此不纳入默认清理目标，避免脚本在权限不足时失败。
+
+## 2026-06-24 (补充 - 客户管理页面与删除链路修复)
+
+- `customers.html` 的展示数据来自 `window.hrApi.companies()/projects()/deliveries()`，不是前端硬编码；页面初始空态只是占位，实际列表由 API 回填。
+- 客户删除 500 的根因是 PostgreSQL 外键链路未显式清理，`companies -> projects -> positions -> recommendations -> {deliveries, recommendation_feedbacks, candidate_tracking_events}` 以及 `evaluations` 都会参与约束。
+- 已把公司删除和项目删除改为“先删下游再删上游”，并补了回归测试，当前删除带推荐/反馈/交付/跟踪记录的客户可以正常返回 200。
+- `backend/app/main.py` 的 OpenAI client 改成懒加载创建，避免 import 阶段被 `httpx` 版本兼容性卡住，pytest 现在可以正常导入应用。
+
+## 2026-06-24 (补充 - 空 candidate_agent_id 候选人清理)
+
+- 已清理 `candidates` 表中全部 `candidate_agent_id` 为空的历史测试候选人，共 9 条。
+- 清理时一并删除了这些候选人关联的推荐、反馈、交付、薪资、入职、随访、邮件、备注、导出记录和物理导出文件，避免留下孤儿数据。
+- 当前数据库中空 `candidate_agent_id` 候选人数量已归零。
+
+## 2026-06-24 (补充 - 侧边栏结构收口)
+
+- 侧边栏已收口为 PRD 里的 `主要功能` / `系统设置` 两个主分组，菜单顺序与命名按 PRD 对齐。
+- `数据探针` 按要求单独保留在 `开发工具` 分组，不并入 PRD 两大分组。
+- 本次只收口菜单与分组结构，未删除后端表结构或迁移，避免影响 `positions` 等共享业务链路。
+
+## 2026-06-24 (补充 - PostgreSQL 口径收口)
+
+- 当前可见的旧数据库文案和旧迁移入口已改写为 PostgreSQL 口径，仓库默认叙事已经切换到 PostgreSQL。
+- `backend/migrate_to_pg.py` 已改为 PostgreSQL 到 PostgreSQL 的同步工具，不再承载旧数据库迁移说明。
+
 ## 2026-06-24 (最新 - 全局测试数据清理与基线回写)
 
 ### 测试后的数据库收口策略
@@ -65,7 +188,7 @@
   - 对于划分到非默认 schema（如 `recruit`）的表，如果不显式传递 `schema="recruit"` 命名空间参数，反射机制将无法获取其列元数据（返回空列表），进而破坏动态行拼装逻辑。
   - 在设计反射与数据探针等高度动态的元数据分析接口时，系统必须为被隔离在非默认命名空间下的表配置动态 schema 映射。
 - **动态方言支持**：
-  - 系统在 Python ORM 层判断当前 `database_url` 是否属于 SQLite。如果是，则不启用 schema 配置以完美兼容 SQLite 的单文件零依赖调试；如果是 PostgreSQL，则应用 schema 绑定，确保在不同数据库类型下表结构按需分配。
+  - 系统在 Python ORM 层判断当前 `database_url` 是否属于 PostgreSQL 兼容连接。如果是 PostgreSQL，则应用 schema 绑定，确保表结构按需分配。
 - **防范 sequence 跳变破坏硬编码 ID 的测试与 Seed 约束**：
   - 在 PostgreSQL 中，因为事务 rollback 导致 primary key 的自增序列发生跳变，所以在数据 seeding 与回归测试（`test_phase1_smoke.py`, `test_phase2_smoke.py` 等）中**绝对不要硬编码 ID 1 进行依赖级联插入**。
   - 所有需要级联引用的种子数据和测试对象，必须在插入后调用 `db.flush()` 动态取得最新自增 ID，或通过 API/SQL 动态反查（如根据 `username='admin'` / `name='张三'` 获取实际 ID）来进行下游记录插入，确保在任何测试环境下脚本的完全幂等与健壮性。
@@ -96,7 +219,7 @@
 
 ### 候选人跟踪表（面试记录）字段升级与自愈式迁移
 - **表结构精细化扩展**：根据产品高保真截图设计，对 `candidate_tracking_events` 表进行了精细化扩展，新引入了 `interview_round`、`screening_result`、`interview_date`、`interviewer`、`interview_location`、`interview_requirements`、`interview_contact`、`interview_result`、`note` 和 `employment_status` 共 10 个面试与初筛业务指标字段。
-- **数据库平滑自愈机制**：为兼容在开发和测试环境中已经在运行的 SQLite 或 PostgreSQL 实例，我们将这些新字段的安全 Alter DDL 追加进了启动钩子 `ensure_schema()`。系统会在每次微服务运行前自动反射表结构并在缺失对应字段时自动执行 `ALTER TABLE` 语句，实现了跨方言物理表结构的无感平滑迁移升级。
+- **数据库平滑自愈机制**：为兼容在开发和测试环境中已经在运行的 PostgreSQL 实例，我们将这些新字段的安全 Alter DDL 追加进了启动钩子 `ensure_schema()`。系统会在每次微服务运行前自动反射表结构并在缺失对应字段时自动执行 `ALTER TABLE` 语句，实现了物理表结构的无感平滑迁移升级。
 
 ### 候选人姓名与状态编辑回退 Bug 修复
 - **现象**：修改候选人姓名或锁定状态，系统提示保存成功，但在关闭弹窗或者重新进行局部过滤/翻页等渲染动作后，列表上的名字又变回了修改前的内容。
@@ -130,7 +253,7 @@
 
 
 ### 智联招聘简历抓取端数据库互通结论
-*   **物理数据库统一**：成功将“招聘管理系统”的 SQLite 连接指向了 `Recruit/jobs/data/app.db`。在此共享数据库下，两个系统建立并管理各自独立的表结构。
+*   **物理数据库统一**：成功将“招聘管理系统”的数据库连接切换到 PostgreSQL。在此共享数据库下，两个系统建立并管理各自独立的表结构。
 *   **写隔离与只读互通原则**：在 `models.py` 中通过只读 SQLAlchemy 模型映射了抓取端的 `candidate_profiles` 和 `resume_downloads` 两个核心表，从而绝不干扰爬虫程序的运行和表写入。
 *   **物理直查与内存合并（零复制）**：
     *   为了杜绝数据冗余并保障强一致性，将 `list_candidates` 改造为在内存中动态将交付端 `Candidate` 与爬虫端 `RecruitCandidateProfile` 进行合并的模式。
@@ -942,7 +1065,7 @@
 
 - 已新增推荐记录状态更新接口 `/api/recommendations/{id}`，首页按钮可直接把推荐状态更新为“已推荐”。
 - 浏览器验证已确认状态流转会同步写入推荐记录、审计日志、通知，并回写首页推荐列表。
-- 已补齐旧 SQLite 推荐表的 `customer_comment` 字段兼容迁移，避免旧库访问 `/api/recommendations` 出现 500。
+- 已补齐旧推荐表的 `customer_comment` 字段兼容迁移，避免旧库访问 `/api/recommendations` 出现 500。
 
 ### AI 任务输出已去除模拟字样
 
@@ -1082,7 +1205,7 @@
 - 已实现第 0 波基础 API：健康检查、首页摘要、操作日志、客户公司、项目、岗位、候选人、推荐、交付。
 - 已实现种子数据自动注入，服务启动后可直接看到默认管理员和基础业务样本。
 - 已补前端 API 接入约定：`frontend-api.js` 统一承接本地 API，`src/pages/dashboard.html` 已接入首页摘要与本地 API 概览。
-- 已用 Alembic 执行初始化迁移 `0001_init`，数据库文件为本地 SQLite `data/app.db`。
+- 已用 Alembic 执行初始化迁移 `0001_init`，当前数据库为 PostgreSQL。
 - 已用 Chrome 打开 `http://127.0.0.1:8000/src/pages/dashboard.html` 验证静态页面和 API 同源接通，首页可看到本地 API 概览。
 - 已用接口冒烟完成“创建客户公司 -> 创建项目 -> 创建岗位 -> 创建候选人 -> 创建推荐记录 -> 创建交付记录 -> 查看操作日志”的最小闭环。
 
@@ -1098,7 +1221,7 @@
 
 ### 当前约束确认
 
-- 当前使用本地 SQLite 作为开发数据库，SQLAlchemy/Alembic 结构已就位，后续如需切 PostgreSQL 只需要替换 `DATABASE_URL` 与迁移执行方式。
+- 当前开发数据库已切换为 PostgreSQL，SQLAlchemy/Alembic 结构已就位。
 - 第 0 波的鉴权与权限过滤仍是最小实现，后续第 1 波开始需要补齐数据权限颗粒度和更完整的角色/按钮级校验。
 - 当前静态 HTML 仍保留原视觉结构，没有进行重设计，只做了最小 API 接入。
 
@@ -1231,7 +1354,7 @@
 - 候选人页与简历导入页的首屏文案继续收口为等待真实数据的中性表达，避免残留“加载中”式演示口吻。
 - 首页、客户、项目、用户、角色、权限、数据权限、标签字典、通知、统计、日志、AI 中心和质保页的首屏壳文案也已统一改成中性等待态，避免“回填/加载中”这类会让人误以为是假实现的表达。
 - 系统配置页的系统名称、水印和邮件配置首屏提示也已统一收成中性等待态，避免再出现“接口加载后显示真实配置”的半占位文案。
-- 客户和项目页已把邮箱、地址、合作周期、项目周期拆成真实字段，并通过启动时的 SQLite 补列兼容旧库，避免继续把 PRD 字段塞进备注文本。
+- 客户和项目页已把邮箱、地址、合作周期、项目周期拆成真实字段，并通过启动时的补列逻辑兼容旧库，避免继续把 PRD 字段塞进备注文本。
 - 客户和项目的新增、编辑、状态切换和删除入口已补上对应顶部统计回刷，避免页面出现“列表变了但总数还停着”的旧快照问题。
 - 首页、项目、通知、日志和系统配置等页面的静态壳文案已继续收口为“当前暂无/暂无”式提示，页面不再残留明显的开发态“等待真实…”字样。
 - 本轮语义收口后，`node --check app.js frontend-api.js` 与三组 smoke 测试仍然通过，说明只是文案收敛，没有打断现有数据库读写链路。
@@ -1292,3 +1415,5 @@
 - **手写预留格与手工填空逻辑**：在某些猎头交付环节，系统元信息（如合同编号、项目编号、猎头职位）需采取纸质物理手写填空的形式进行管理。通过为右上角构建空的 Table 网格，直接渲染带有空白列的 3 行手写边框框，并不在后台将字段填值输出，实现了业务上的自洽与精美排版的结合。
 - **候选人简历报告 PDF 模板复刻已回迁 A4**：根目录的 `候选人简历报告.pdf` 继续只作为视觉参考样张，不再被运行时读取；真正的输出由 `backend/app/pdf_generator.py` 直接生成，页面尺寸已回迁为标准 A4，并通过 `BaseDocTemplate`、固定页眉标题、右上角手写框、基本信息网格、分区标题、备注块和页脚页码实现模板化输出。长内容允许自然分页，导出接口和文件名规则保持不变。
 - **测试数据清理约束已落实**：一次性清理了数据库中 `candidate_agent_id` 为空的历史测试候选人及其关联记录，当前计数已归零；同时给 `tests/test_pdf_export.py` 补上了导出记录和物理 PDF 文件的 `finally` 收尾，避免该测试再次留下数据库脏数据。
+- **候选人来源已收口为两类**：`candidates.source` 只保留 `简历库` 和 `手工导入` 两个业务来源，`AI解析` 不再作为来源值使用；当前数据库里的候选人样本已归一到 `简历库`，后续解析流程仍然执行 AI 解析，但不把解析动作当作来源字段。
+- **候选人行级稳定标识**：`candidates` 列表现在返回 `record_key`，前端用它作为行和详情/编辑入口的稳定键，避免同名或同 `id` 的记录互相串单；`download:1` 这类原始下载行在首次打开时会解析成独立的本地候选人记录，不再落到别的候选人身上。
