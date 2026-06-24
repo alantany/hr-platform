@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-06-25 (进行中 - Windows scripts localized to English)
+
+- **Windows script output switched to English**:
+  * Updated [`windows/01-install-deps.bat`](/Users/huaiyuan/Desktop/workspace/hr-plateform/windows/01-install-deps.bat), [`windows/02-init-db.bat`](/Users/huaiyuan/Desktop/workspace/hr-plateform/windows/02-init-db.bat), [`windows/03-start-backend.bat`](/Users/huaiyuan/Desktop/workspace/hr-plateform/windows/03-start-backend.bat), [`init-db-windows.bat`](/Users/huaiyuan/Desktop/workspace/hr-plateform/init-db-windows.bat), [`run-windows.bat`](/Users/huaiyuan/Desktop/workspace/hr-plateform/run-windows.bat), and [`backend/scripts/init_tables.py`](/Users/huaiyuan/Desktop/workspace/hr-plateform/backend/scripts/init_tables.py) to use English prompts only.
+  * Rewrote [`Windows部署说明.txt`](/Users/huaiyuan/Desktop/workspace/hr-plateform/Windows部署说明.txt) as an English deployment guide to avoid encoding issues on Windows consoles/editors.
+
 ## 2026-06-25 (进行中 - Windows 后端远程监听)
 
 - **后端监听地址改为 0.0.0.0**：
@@ -1595,3 +1601,6 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:15:40
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:23:54
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:25:18
+- Task finalized by Codex hook (unknown) at 2026-06-25 00:25:47
+- Task finalized by Codex hook (unknown) at 2026-06-25 00:28:18
+- Task completed at 2026-06-25 00:29:00. Update the summary with the latest finished work.

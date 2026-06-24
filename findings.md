@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-06-25 (补充 - Windows scripts localized to English)
+
+- The Windows deployment scripts were causing console encoding noise because they mixed Chinese prompts with Windows terminals.
+- All Windows-facing batch scripts and the deployment text guide now use English-only prompts and instructions.
+- The backend table initializer also prints English output now, so both command prompts and log windows stay readable on Windows.
+
 ## 2026-06-24 (补充 - Windows 逐步部署脚本)
 
 - 用户明确不需要一键脚本，所以部署入口现在改成“安装依赖 / 初始化表结构 / 启动后端”三步拆分，更适合现场逐步排查。
