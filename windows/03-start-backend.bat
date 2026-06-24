@@ -11,7 +11,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 set "EXIT_CODE=%ERRORLEVEL%"
 if not "%EXIT_CODE%"=="0" (
   echo [ERROR] 后端启动失败，退出码 %EXIT_CODE%

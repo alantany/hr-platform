@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-06-25 (进行中 - Windows 后端远程监听)
+
+- **后端监听地址改为 0.0.0.0**：
+  * 已将 [windows/03-start-backend.bat](/Users/huaiyuan/Desktop/workspace/hr-plateform/windows/03-start-backend.bat) 的 uvicorn 监听地址改为 `0.0.0.0:8000`，支持局域网/远程访问。
+  * 同步更新 [`Windows部署说明.txt`](/Users/huaiyuan/Desktop/workspace/hr-plateform/Windows部署说明.txt)，把默认访问地址改成 Windows 机器 IP，并提示需要放行防火墙。
+
 ## 2026-06-24 (进行中 - Windows 逐步部署脚本集)
 
 - **按步骤拆分 Windows 部署脚本**：
@@ -1581,3 +1587,11 @@
 - 已完成候选人列表按同一简历去重：后端现在按 PDF 文件指纹挑选 canonical 记录，`焦光瑜` 搜索结果已从 3 条收敛为 1 条，保留的是完整的 `candidate:1`。
 - 按用户确认继续收口为 `candidate_agent_id` 主键优先：同一候选人只保留 `candidate` 主表，`recruit.resume_downloads` 只做兜底展示，纯手工候选人仍独立保留。
 - 已按用户要求删除信息更少的冗余候选人主记录 `candidates.id=10160`，当前仅保留信息更完整的 `candidate:1` 主记录；同名的其余两条仍是 `recruit.resume_downloads` 来源行。
+
+## 2026-06-25
+
+- Task finalized by Codex hook (unknown) at 2026-06-25 00:06:47
+- Task finalized by Codex hook (unknown) at 2026-06-25 00:09:28
+- Task finalized by Codex hook (unknown) at 2026-06-25 00:15:40
+- Task finalized by Codex hook (unknown) at 2026-06-25 00:23:54
+- Task finalized by Codex hook (unknown) at 2026-06-25 00:25:18
