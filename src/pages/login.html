@@ -6,34 +6,300 @@
   <title>登录</title>
   <link rel="stylesheet" href="../../styles.css" />
   <script defer src="../../frontend-api.js"></script>
+  <style>
+    :root {
+      --login-ink: #142033;
+      --login-muted: #6d7788;
+      --login-line: rgba(20, 32, 51, .12);
+      --login-gold: #c99742;
+      --login-green: #147d72;
+      --login-mist: #eaf4f7;
+      --login-card: rgba(255, 255, 255, .88);
+    }
+
+    body {
+      margin: 0;
+      color: var(--login-ink);
+      background:
+        radial-gradient(circle at 18% 22%, rgba(201, 151, 66, .18), transparent 30%),
+        radial-gradient(circle at 80% 18%, rgba(20, 125, 114, .16), transparent 32%),
+        linear-gradient(135deg, #f7fbfd 0%, #e8f4f8 48%, #fdfaf2 100%);
+    }
+
+    .login-stage {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 40px 18px;
+      overflow: hidden;
+    }
+
+    .login-stage::before {
+      content: "";
+      position: absolute;
+      inset: 28px;
+      border: 1px solid rgba(20, 32, 51, .07);
+      border-radius: 28px;
+      pointer-events: none;
+    }
+
+    .login-shell {
+      position: relative;
+      width: min(980px, 100%);
+      display: grid;
+      grid-template-columns: .92fr 1.08fr;
+      background: var(--login-card);
+      border: 1px solid rgba(255, 255, 255, .8);
+      border-radius: 30px;
+      box-shadow: 0 24px 80px rgba(28, 48, 72, .16), inset 0 1px 0 rgba(255, 255, 255, .8);
+      overflow: hidden;
+      backdrop-filter: blur(22px);
+    }
+
+    .login-brief {
+      position: relative;
+      min-height: 560px;
+      padding: 46px 42px;
+      background:
+        linear-gradient(145deg, rgba(20, 125, 114, .94), rgba(20, 32, 51, .96)),
+        var(--login-green);
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .login-brief::before {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      right: -140px;
+      top: -110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201, 151, 66, .52), transparent 68%);
+    }
+
+    .login-brief::after {
+      content: "";
+      position: absolute;
+      inset: auto -20px 34px 42px;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,.72), transparent);
+    }
+
+    .login-mark {
+      width: 74px;
+      height: 74px;
+      display: grid;
+      place-items: center;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #e5b85d, #147d72);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, .22);
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: .04em;
+    }
+
+    .login-kicker {
+      margin-top: 78px;
+      color: rgba(255,255,255,.66);
+      font-size: 12px;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+    }
+
+    .login-brief h1 {
+      margin: 14px 0 0;
+      max-width: 320px;
+      font-size: clamp(34px, 5vw, 56px);
+      line-height: .95;
+      letter-spacing: -.06em;
+    }
+
+    .login-brief p {
+      max-width: 320px;
+      margin: 22px 0 0;
+      color: rgba(255,255,255,.76);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .login-rule {
+      position: absolute;
+      left: 42px;
+      right: 42px;
+      bottom: 42px;
+      display: grid;
+      gap: 10px;
+      color: rgba(255,255,255,.7);
+      font-size: 12px;
+    }
+
+    .login-rule strong {
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .login-form {
+      padding: 56px 58px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .login-title {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: -.04em;
+    }
+
+    .login-subtitle {
+      margin: 10px 0 34px;
+      color: var(--login-muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .login-field {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .login-field label {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      color: #344055;
+    }
+
+    .login-field input {
+      width: 100%;
+      height: 58px;
+      border: 1px solid var(--login-line);
+      border-radius: 18px;
+      padding: 0 18px;
+      background: rgba(255, 255, 255, .72);
+      color: var(--login-ink);
+      font-size: 17px;
+      outline: none;
+      transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+    .login-field input:focus {
+      border-color: rgba(20, 125, 114, .7);
+      background: #fff;
+      box-shadow: 0 0 0 5px rgba(20, 125, 114, .11);
+    }
+
+    .login-submit {
+      width: 100%;
+      height: 60px;
+      margin-top: 10px;
+      border: 0;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #147d72, #0f5f58);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      cursor: pointer;
+      box-shadow: 0 18px 34px rgba(20, 125, 114, .24);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .login-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 22px 40px rgba(20, 125, 114, .3);
+    }
+
+    .login-message {
+      min-height: 22px;
+      margin-top: 14px;
+      color: #b04435;
+      font-size: 13px;
+    }
+
+    .login-footnote {
+      margin-top: 34px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--login-muted);
+      font-size: 12px;
+    }
+
+    .login-footnote::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--login-gold);
+      box-shadow: 0 0 0 6px rgba(201, 151, 66, .13);
+    }
+
+    @media (max-width: 760px) {
+      .login-stage {
+        padding: 18px;
+      }
+
+      .login-stage::before {
+        display: none;
+      }
+
+      .login-shell {
+        grid-template-columns: 1fr;
+        border-radius: 24px;
+      }
+
+      .login-brief {
+        min-height: 260px;
+        padding: 30px;
+      }
+
+      .login-kicker {
+        margin-top: 38px;
+      }
+
+      .login-rule {
+        position: static;
+        margin-top: 28px;
+      }
+
+      .login-form {
+        padding: 34px 26px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <main class="content" style="min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#f8fafc,#e0f2fe);">
-    <section class="panel" style="width:min(460px,calc(100vw - 32px));">
-      <div class="brand" style="margin-bottom:24px;">
-        <div class="brand-mark">招</div>
-        <div>
-          <h1>AI招聘管理平台</h1>
-          <p>权限系统登录入口</p>
+  <main class="login-stage">
+    <section class="login-shell" aria-label="登录到 AI 招聘管理平台">
+      <aside class="login-brief">
+        <div class="login-mark">招</div>
+        <div class="login-kicker">Access control</div>
+        <h1>招聘交付的权限入口</h1>
+        <p>按角色、团队和数据范围进入系统，确保客户、项目、岗位与候选人只流向正确的人。</p>
+        <div class="login-rule">
+          <strong>RBAC + 数据权限</strong>
+          <span>登录后系统会按身份自动收口菜单和业务数据。</span>
         </div>
-      </div>
-      <div class="list">
-        <div class="list-item">
-          <div class="item-title">账号</div>
-          <input class="input" data-login-username value="admin" autocomplete="username" />
+      </aside>
+      <form class="login-form" data-login-form>
+        <h2 class="login-title">登录系统</h2>
+        <p class="login-subtitle">使用管理员分配的账号进入招聘管理后台。</p>
+        <div class="login-field">
+          <label for="login-username">账号</label>
+          <input id="login-username" data-login-username value="admin" autocomplete="username" />
         </div>
-        <div class="list-item">
-          <div class="item-title">密码</div>
-          <input class="input" type="password" data-login-password value="admin123" autocomplete="current-password" />
+        <div class="login-field">
+          <label for="login-password">密码</label>
+          <input id="login-password" type="password" data-login-password value="admin123" autocomplete="current-password" />
         </div>
-        <div class="list-item">
-          <div class="item-meta">默认账号：admin / admin123，leader / leader123，operator / operator123。</div>
-        </div>
-      </div>
-      <div class="hero-actions">
-        <button class="btn primary" data-login-submit>登录</button>
-      </div>
-      <div class="section-sub" data-login-message style="margin-top:12px;"></div>
+        <button class="login-submit" type="submit" data-login-submit>登录</button>
+        <div class="login-message" data-login-message></div>
+        <div class="login-footnote">权限变更会在下次登录后自动生效。</div>
+      </form>
     </section>
   </main>
   <script>
@@ -51,9 +317,13 @@
         message.textContent = '登录失败：账号、密码或账号状态不正确。';
       }
     };
-    document.querySelector('[data-login-submit]').addEventListener('click', submit);
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') submit();
+    document.querySelector('[data-login-form]').addEventListener('submit', (event) => {
+      event.preventDefault();
+      submit();
+    });
+    document.querySelector('[data-login-submit]').addEventListener('click', (event) => {
+      event.preventDefault();
+      submit();
     });
   </script>
 </body>

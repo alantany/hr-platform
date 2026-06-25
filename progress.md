@@ -1621,6 +1621,7 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 14:49:14
 - Task finalized by Codex hook (unknown) at 2026-06-25 15:10:35
 - Task finalized by Codex hook (unknown) at 2026-06-25 15:19:48
+- Task finalized by Codex hook (unknown) at 2026-06-25 15:25:14
   * 后端新增 `security.py` 权限辅助，用户/角色/权限/数据权限/操作日志接口改为超级管理员强校验。
   * 客户、项目、岗位、候选人列表与详情已按角色数据范围过滤，非管理员只能看到授权范围内的数据。
   * 数据权限范围收口为 `company / project / position`，接口会拒绝旧的 `team / personal` 值，前端数据权限页文案和下拉项也已同步。
@@ -1644,6 +1645,11 @@
   * 用户管理页新增“直属组长ID”创建和编辑入口，用于配置“张三 -> 李四/王五”这类团队关系。
   * 新增测试覆盖张三、孙二、李四、王五场景，验证李四/王五互相不可见，张三可见下属项目，孙二看不到张三组项目。
   * 验证结果：`python3 -m py_compile backend/app/main.py backend/app/models.py backend/app/schemas.py backend/app/security.py backend/app/crud.py backend/seed.py backend/test_cleanup.py` 通过；`node --check app.js && node --check frontend-api.js` 通过；`uv run --with-requirements requirements.txt pytest tests/test_permissions_rbac.py tests/test_phase1_smoke.py tests/test_phase2_smoke.py tests/test_phase3_smoke.py -q` 通过（11 passed）；权限页面 smoke 静态检查通过。
+
+- 完成登录页视觉优化：
+  * 将 `src/pages/login.html` 从通用白卡片改为左右分栏的权限入口页，左侧强调 RBAC + 数据权限，右侧保留账号密码登录表单。
+  * 删除页面上的默认账号提示文案，不再暴露 `admin / admin123`、`leader / leader123`、`operator / operator123`。
+  * 验证结果：`node --check frontend-api.js && node --check app.js` 通过；登录页 smoke 静态检查通过。
 
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:06:47
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:09:28
