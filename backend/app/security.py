@@ -43,6 +43,27 @@ def is_admin(user: User) -> bool:
     return get_role_code(user.role) == "ADMIN"
 
 
+def is_leader(user: User) -> bool:
+    return get_role_code(user.role) == "LEADER"
+
+
+def subordinate_user_ids(db: Session, user: User) -> set[int]:
+    if not user.id:
+        return set()
+    return {row[0] for row in db.query(User.id).filter(User.manager_user_id == user.id, User.is_active.is_(True)).all()}
+
+
+def visible_owner_user_ids(db: Session, user: User) -> set[int]:
+    ids = {user.id}
+    if is_leader(user):
+        ids.update(subordinate_user_ids(db, user))
+    return ids
+
+
+def _owner_visible(db: Session, user: User, owner_user_id: int | None) -> bool:
+    return owner_user_id is not None and owner_user_id in visible_owner_user_ids(db, user)
+
+
 def require_admin(user: User) -> User:
     if not is_admin(user):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅超级管理员可执行该操作")
@@ -74,28 +95,35 @@ def can_access_scope(db: Session, user: User, scope_type: str, scope_id: int | s
     allowed_positions = {p.scope_id for p in permissions if p.scope_type == "position"}
 
     if scope_type == "company":
+        company = db.get(Company, int(scope_id))
+        if company and _owner_visible(db, user, company.owner_user_id):
+            return True
         return scope_id in allowed_companies
     if scope_type == "project":
         if scope_id in allowed_projects:
             return True
         project = db.get(Project, int(scope_id))
-        return bool(project and str(project.company_id) in allowed_companies)
+        if project and _owner_visible(db, user, project.owner_user_id):
+            return True
+        return bool(project and (str(project.company_id) in allowed_companies or can_access_scope(db, user, "company", project.company_id)))
     if scope_type == "position":
         if scope_id in allowed_positions:
             return True
         position = db.get(Position, int(scope_id))
         if not position:
             return False
+        if _owner_visible(db, user, position.owner_user_id):
+            return True
         project = position.project
         return bool(
             str(position.project_id) in allowed_projects
-            or (project and str(project.company_id) in allowed_companies)
+            or (project and (str(project.company_id) in allowed_companies or can_access_scope(db, user, "project", project.id)))
         )
     if scope_type == "candidate":
         candidate = db.get(Candidate, int(scope_id))
         if not candidate:
             return False
-        if candidate.owner_user_id == user.id:
+        if _owner_visible(db, user, candidate.owner_user_id):
             return True
         candidate_positions = [
             row[0]
@@ -114,8 +142,9 @@ def accessible_candidate_ids(db: Session, user: User) -> list[int]:
     if is_admin(user):
         return [row[0] for row in db.query(Candidate.id).all()]
     ids: set[int] = set()
+    visible_owner_ids = visible_owner_user_ids(db, user)
     for candidate_id, owner_user_id in db.query(Candidate.id, Candidate.owner_user_id).all():
-        if owner_user_id == user.id:
+        if owner_user_id in visible_owner_ids:
             ids.add(candidate_id)
     recommendation_rows = (
         db.query(Recommendation.candidate_id, Recommendation.position_id)

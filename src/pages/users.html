@@ -40,6 +40,7 @@
                 <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">登录账号</div></div></div><input class="input" data-user-username /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">真实姓名</div></div></div><input class="input" data-user-fullname /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">角色</div><div class="item-meta">默认操作员</div></div></div><input class="input" data-user-role value="操作员" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">直属组长ID</div><div class="item-meta">操作员填写所属组长用户ID</div></div></div><input class="input" data-user-manager-id placeholder="例如 2" /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">密码</div><div class="item-meta">默认 dev</div></div></div><input class="input" type="password" data-user-password value="dev" /></div>
               </div>
             </div>
@@ -63,6 +64,7 @@
                 <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">登录账号，不支持修改</div></div></div><input class="input" data-user-edit-username readonly /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">展示在系统右上角和列表中</div></div></div><input class="input" data-user-edit-fullname /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">角色</div><div class="item-meta">修改后会影响菜单和权限范围</div></div></div><input class="input" data-user-edit-role /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">直属组长ID</div><div class="item-meta">为空表示不属于任何组长</div></div></div><input class="input" data-user-edit-manager-id /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">启用后允许登录</div></div></div><input class="input" data-user-edit-active /></div>
               </div>
             </div>
@@ -96,7 +98,7 @@
         document.querySelector('[data-user-active]').textContent = String(items.filter(u => u.is_active).length);
         document.querySelector('[data-user-pending]').textContent = String(items.filter(u => !u.is_active).length);
         document.querySelector('[data-user-leader]').textContent = String(items.filter(u => String(u.role).includes('组长') || String(u.role).includes('主管')).length);
-        if (list) list.innerHTML = items.map(u => `<div class="list-item"><div class="item-top"><div><div class="item-title">${u.username}</div><div class="item-meta">${u.full_name} · ${u.role}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-user" data-id="${u.id}">编辑</button><button class="btn-sm" data-action="toggle-user" data-id="${u.id}">${u.is_active ? '停用' : '启用'}</button><button class="btn-sm" data-action="reset-user-password" data-id="${u.id}">重置密码</button></div><span class="chip ${u.is_active ? 'success' : 'neutral'}">${u.is_active ? '启用' : '停用'}</span></div></div>`).join('');
+        if (list) list.innerHTML = items.map(u => `<div class="list-item"><div class="item-top"><div><div class="item-title">${u.username}</div><div class="item-meta">${u.full_name} · ${u.role}${u.manager_user_id ? ' · 直属组长ID ' + u.manager_user_id : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-user" data-id="${u.id}">编辑</button><button class="btn-sm" data-action="toggle-user" data-id="${u.id}">${u.is_active ? '停用' : '启用'}</button><button class="btn-sm" data-action="reset-user-password" data-id="${u.id}">重置密码</button></div><span class="chip ${u.is_active ? 'success' : 'neutral'}">${u.is_active ? '启用' : '停用'}</span></div></div>`).join('');
       } catch (err) {
         console.warn(err);
       }

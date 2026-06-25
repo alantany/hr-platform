@@ -69,14 +69,24 @@ def ensure_schema() -> None:
             "contact_email": "ALTER TABLE companies ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''",
             "address": "ALTER TABLE companies ADD COLUMN address TEXT NOT NULL DEFAULT ''",
             "cooperation_period": "ALTER TABLE companies ADD COLUMN cooperation_period TEXT NOT NULL DEFAULT ''",
+            "owner_user_id": "ALTER TABLE companies ADD COLUMN owner_user_id INTEGER",
         }.items():
             if column not in comp_cols:
                 conn.execute(text(ddl))
 
         # projects
         proj_cols = {col['name'] for col in inspector.get_columns("projects")}
-        if "project_period" not in proj_cols:
-            conn.execute(text("ALTER TABLE projects ADD COLUMN project_period TEXT NOT NULL DEFAULT ''"))
+        for column, ddl in {
+            "project_period": "ALTER TABLE projects ADD COLUMN project_period TEXT NOT NULL DEFAULT ''",
+            "owner_user_id": "ALTER TABLE projects ADD COLUMN owner_user_id INTEGER",
+        }.items():
+            if column not in proj_cols:
+                conn.execute(text(ddl))
+
+        # users
+        user_cols = {col['name'] for col in inspector.get_columns("users")}
+        if "manager_user_id" not in user_cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN manager_user_id INTEGER"))
 
         # candidate_mail_records
         mail_cols = {col['name'] for col in inspector.get_columns("candidate_mail_records")}
@@ -148,6 +158,7 @@ def ensure_schema() -> None:
         # positions
         pos_cols = {col['name'] for col in inspector.get_columns("positions")}
         for column, ddl in {
+            "owner_user_id": "ALTER TABLE positions ADD COLUMN owner_user_id INTEGER",
             "age_requirement": "ALTER TABLE positions ADD COLUMN age_requirement TEXT NOT NULL DEFAULT ''",
             "education_requirement": "ALTER TABLE positions ADD COLUMN education_requirement TEXT NOT NULL DEFAULT ''",
             "experience_requirement": "ALTER TABLE positions ADD COLUMN experience_requirement TEXT NOT NULL DEFAULT ''",
@@ -317,6 +328,10 @@ def get_users(db: Session = Depends(get_db), user: User = Depends(require_admin_
 
 @app.post("/api/users", response_model=schemas.UserOut)
 def add_user(payload: schemas.UserCreate, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
+    if payload.manager_user_id:
+        manager = db.get(User, payload.manager_user_id)
+        if not manager or not security.is_leader(manager):
+            raise HTTPException(status_code=400, detail="直属上级必须是组长")
     obj = crud.create_user(db, payload)
     crud.add_audit(db, user.username, "用户管理", "新增用户", "user", payload.username, detail=payload.full_name)
     db.commit()
@@ -331,6 +346,10 @@ def edit_user(user_id: int, payload: schemas.UserUpdate, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="用户不存在")
     if obj.id == user.id and payload.role is not None and payload.role != "超级管理员":
         raise HTTPException(status_code=400, detail="不能将当前管理员降权")
+    if payload.manager_user_id:
+        manager = db.get(User, payload.manager_user_id)
+        if not manager or not security.is_leader(manager):
+            raise HTTPException(status_code=400, detail="直属上级必须是组长")
     crud.update_user(db, obj, payload)
     crud.add_audit(db, user.username, "用户管理", "编辑用户", "user", str(user_id), detail=obj.username)
     db.commit()
@@ -453,6 +472,7 @@ def me(user: User = Depends(require_user), db: Session = Depends(get_db)):
         role=user.role,
         is_active=user.is_active,
         permissions=permissions,
+        manager_user_id=user.manager_user_id,
     )
 
 
@@ -504,7 +524,10 @@ def list_companies(db: Session = Depends(get_db), user: User = Depends(require_u
 
 @app.post("/api/companies", response_model=schemas.CompanyOut)
 def add_company(payload: schemas.CompanyCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    if not payload.owner_user_id:
+        payload.owner_user_id = user.id
+    elif not security.is_admin(user):
+        payload.owner_user_id = user.id
     obj = crud.create_company(db, payload)
     crud.add_audit(db, user.username, "客户公司管理", "创建客户公司", "company", "new", detail=payload.name)
     db.commit()
@@ -577,6 +600,10 @@ def list_projects(company_id: int | None = Query(default=None), db: Session = De
 def add_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
     if not security.is_admin(user):
         enforce_company_access(db, user, payload.company_id)
+    if not payload.owner_user_id:
+        payload.owner_user_id = user.id
+    elif not security.is_admin(user):
+        payload.owner_user_id = user.id
     obj = crud.create_project(db, payload)
     crud.add_audit(db, user.username, "项目管理", "创建项目", "project", "new", detail=payload.name)
     db.commit()
@@ -643,6 +670,10 @@ def list_positions(project_id: int | None = Query(default=None), db: Session = D
 @app.post("/api/positions", response_model=schemas.PositionOut)
 def add_position(payload: schemas.PositionCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
     enforce_project_access(db, user, payload.project_id)
+    if not payload.owner_user_id:
+        payload.owner_user_id = user.id
+    elif not security.is_admin(user):
+        payload.owner_user_id = user.id
     obj = crud.create_position(db, payload)
     crud.add_audit(db, user.username, "岗位管理", "创建岗位", "position", "new", detail=payload.name)
     db.commit()

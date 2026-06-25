@@ -229,3 +229,12 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 新增权限回归测试覆盖未登录 401、leader/operator 登录身份、退出审计、横切数据权限过滤。
 - [x] 验证通过：Python 编译检查、前端 JS 检查、权限/Phase1/Phase2/Phase3 回归测试、权限页面 smoke 静态检查。
 - **Status:** complete
+
+### Phase 19 - 团队归属权限模型（已完成）
+
+- [x] 新增 `users.manager_user_id`，支持配置“组长 -> 组员”的直属关系。
+- [x] 客户、项目、岗位新增 `owner_user_id`，创建时默认归属当前操作用户。
+- [x] 数据权限判断升级为：操作员看自己归属数据；组长看自己和直属组员归属数据；其他组长互相隔离；超级管理员看全部。
+- [x] 用户管理页新增“直属组长ID”创建/编辑字段，便于配置李四、王五归属张三这类团队关系。
+- [x] 新增回归测试覆盖张三/孙二/李四/王五场景：李四王五互相不可见，张三可见下属项目，孙二不可见张三组项目。
+- **Status:** complete

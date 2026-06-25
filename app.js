@@ -3322,15 +3322,16 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const username = document.querySelector('[data-user-username]')?.value?.trim() || '';
     const fullName = document.querySelector('[data-user-fullname]')?.value?.trim() || '';
     const role = document.querySelector('[data-user-role]')?.value?.trim() || '操作员';
+    const managerId = Number(document.querySelector('[data-user-manager-id]')?.value || 0) || null;
     const password = document.querySelector('[data-user-password]')?.value || 'dev';
     if (!username || !fullName) throw new Error('请先填写用户名和姓名');
-    const user = await window.hrApi.createUser({ username, full_name: fullName, role, password_hash: password });
+    const user = await window.hrApi.createUser({ username, full_name: fullName, role, password_hash: password, manager_user_id: managerId });
     const modal = document.querySelector('[data-user-modal]');
     if (modal) modal.style.display = 'none';
     const list = document.querySelector('[data-user-list]');
     if (list) {
       const items = await window.hrApi.users();
-      list.innerHTML = items.map(u => `<div class="list-item"><div class="item-top"><div><div class="item-title">${u.username}</div><div class="item-meta">${u.full_name} · ${u.role}</div></div><div class="table-actions"><button class="btn-sm" data-action="toggle-user" data-id="${u.id}">${u.is_active ? '停用' : '启用'}</button></div><span class="chip ${u.is_active ? 'success' : 'neutral'}">${u.is_active ? '启用' : '停用'}</span></div></div>`).join('');
+      list.innerHTML = items.map(u => `<div class="list-item"><div class="item-top"><div><div class="item-title">${u.username}</div><div class="item-meta">${u.full_name} · ${u.role}${u.manager_user_id ? ' · 直属组长ID ' + u.manager_user_id : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-user" data-id="${u.id}">编辑</button><button class="btn-sm" data-action="toggle-user" data-id="${u.id}">${u.is_active ? '停用' : '启用'}</button><button class="btn-sm" data-action="reset-user-password" data-id="${u.id}">重置密码</button></div><span class="chip ${u.is_active ? 'success' : 'neutral'}">${u.is_active ? '启用' : '停用'}</span></div></div>`).join('');
     }
     await refreshUserStats();
     await window.hrApi.createNotification({
@@ -3352,10 +3353,12 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const username = document.querySelector('[data-user-edit-username]');
     const fullName = document.querySelector('[data-user-edit-fullname]');
     const role = document.querySelector('[data-user-edit-role]');
+    const managerId = document.querySelector('[data-user-edit-manager-id]');
     const active = document.querySelector('[data-user-edit-active]');
     if (username) username.value = user.username;
     if (fullName) fullName.value = user.full_name || '';
     if (role) role.value = user.role || '';
+    if (managerId) managerId.value = user.manager_user_id || '';
     if (active) active.value = user.is_active ? '启用' : '停用';
     if (modal) {
       modal.style.display = 'block';
@@ -3374,17 +3377,19 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     if (!target) throw new Error('没有待编辑的用户');
     const fullName = document.querySelector('[data-user-edit-fullname]')?.value?.trim() || '';
     const role = document.querySelector('[data-user-edit-role]')?.value?.trim() || '';
+    const managerId = Number(document.querySelector('[data-user-edit-manager-id]')?.value || 0) || null;
     const isActiveText = document.querySelector('[data-user-edit-active]')?.value?.trim() || '';
     if (!fullName || !role) throw new Error('请先填写姓名和角色');
     const user = await window.hrApi.updateUser(target.id, {
       full_name: fullName,
       role,
+      manager_user_id: managerId,
       is_active: isActiveText !== '停用',
     });
     const list = document.querySelector('[data-user-list]');
     if (list) {
       const items = await window.hrApi.users();
-      list.innerHTML = items.map(u => `<div class="list-item"><div class="item-top"><div><div class="item-title">${u.username}</div><div class="item-meta">${u.full_name} · ${u.role}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-user" data-id="${u.id}">编辑</button><button class="btn-sm" data-action="toggle-user" data-id="${u.id}">${u.is_active ? '停用' : '启用'}</button><button class="btn-sm" data-action="reset-user-password" data-id="${u.id}">重置密码</button></div><span class="chip ${u.is_active ? 'success' : 'neutral'}">${u.is_active ? '启用' : '停用'}</span></div></div>`).join('');
+      list.innerHTML = items.map(u => `<div class="list-item"><div class="item-top"><div><div class="item-title">${u.username}</div><div class="item-meta">${u.full_name} · ${u.role}${u.manager_user_id ? ' · 直属组长ID ' + u.manager_user_id : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-user" data-id="${u.id}">编辑</button><button class="btn-sm" data-action="toggle-user" data-id="${u.id}">${u.is_active ? '停用' : '启用'}</button><button class="btn-sm" data-action="reset-user-password" data-id="${u.id}">重置密码</button></div><span class="chip ${u.is_active ? 'success' : 'neutral'}">${u.is_active ? '启用' : '停用'}</span></div></div>`).join('');
     }
     await refreshUserStats();
     if (modal) modal.style.display = 'none';
@@ -3437,7 +3442,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const list = document.querySelector('[data-user-list]');
     if (list) {
       const items = await window.hrApi.users();
-      list.innerHTML = items.map(u => `<div class="list-item"><div class="item-top"><div><div class="item-title">${u.username}</div><div class="item-meta">${u.full_name} · ${u.role}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-user" data-id="${u.id}">编辑</button><button class="btn-sm" data-action="toggle-user" data-id="${u.id}">${u.is_active ? '停用' : '启用'}</button><button class="btn-sm" data-action="reset-user-password" data-id="${u.id}">重置密码</button></div><span class="chip ${u.is_active ? 'success' : 'neutral'}">${u.is_active ? '启用' : '停用'}</span></div></div>`).join('');
+      list.innerHTML = items.map(u => `<div class="list-item"><div class="item-top"><div><div class="item-title">${u.username}</div><div class="item-meta">${u.full_name} · ${u.role}${u.manager_user_id ? ' · 直属组长ID ' + u.manager_user_id : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-user" data-id="${u.id}">编辑</button><button class="btn-sm" data-action="toggle-user" data-id="${u.id}">${u.is_active ? '停用' : '启用'}</button><button class="btn-sm" data-action="reset-user-password" data-id="${u.id}">重置密码</button></div><span class="chip ${u.is_active ? 'success' : 'neutral'}">${u.is_active ? '启用' : '停用'}</span></div></div>`).join('');
     }
     await refreshUserStats();
     if (modal) modal.style.display = 'none';

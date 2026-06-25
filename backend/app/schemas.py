@@ -21,6 +21,7 @@ class CurrentUser(BaseModel):
     role: str
     is_active: bool
     permissions: list[str] = Field(default_factory=list)
+    manager_user_id: int | None = None
 
 
 class UserCreate(BaseModel):
@@ -29,6 +30,7 @@ class UserCreate(BaseModel):
     password_hash: str = "admin123"
     role: str = "操作员"
     is_active: bool = True
+    manager_user_id: int | None = None
 
 
 class UserOut(UserCreate):
@@ -40,6 +42,7 @@ class UserUpdate(BaseModel):
     password_hash: str | None = None
     role: str | None = None
     is_active: bool | None = None
+    manager_user_id: int | None = None
 
 
 class UserResetPassword(BaseModel):
@@ -115,6 +118,7 @@ class CompanyCreate(BaseModel):
     cooperation_period: str = ""
     status: str = "招聘中"
     remark: str = ""
+    owner_user_id: int | None = None
 
 
 class CompanyOut(CompanyCreate):
@@ -141,6 +145,7 @@ class ProjectCreate(BaseModel):
     work_location: str = ""
     project_period: str = ""
     description: str = ""
+    owner_user_id: int | None = None
 
 
 class ProjectOut(ProjectCreate):
@@ -172,6 +177,7 @@ class PositionCreate(BaseModel):
     education_requirement: str = ""
     experience_requirement: str = ""
     description: str = ""
+    owner_user_id: int | None = None
 
 
 class PositionOut(PositionCreate):

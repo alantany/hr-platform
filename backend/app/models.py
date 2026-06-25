@@ -22,6 +22,7 @@ class User(Base, TimestampMixin):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(32), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    manager_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
 
 class Role(Base, TimestampMixin):
@@ -70,6 +71,7 @@ class Company(Base, TimestampMixin):
     cooperation_period: Mapped[str] = mapped_column(String(128), default="", nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="招聘中", nullable=False)
     remark: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    owner_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
     projects = relationship("Project", back_populates="company", cascade="all, delete-orphan")
 
@@ -87,6 +89,7 @@ class Project(Base, TimestampMixin):
     work_location: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     project_period: Mapped[str] = mapped_column(String(128), default="", nullable=False)
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    owner_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
     company = relationship("Company", back_populates="projects")
     positions = relationship("Position", back_populates="project", cascade="all, delete-orphan")
@@ -109,6 +112,7 @@ class Position(Base, TimestampMixin):
     education_requirement: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     experience_requirement: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    owner_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
     project = relationship("Project", back_populates="positions")
     recommendations = relationship("Recommendation", back_populates="position")

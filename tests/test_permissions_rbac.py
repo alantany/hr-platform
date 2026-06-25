@@ -181,6 +181,62 @@ def test_data_scope_applies_to_recommendation_export_notification_analytics_and_
     assert admin_ai["input_text"] not in ai_inputs
 
 
+def test_leader_sees_subordinate_owned_projects_but_other_leader_cannot():
+    suffix = uuid4().hex[:8]
+    headers = admin_headers()
+
+    zhang = client.post(
+        "/api/users",
+        json={"username": f"temp_zhang_{suffix}", "full_name": "张三", "role": "组长", "password_hash": "leader123"},
+        headers=headers,
+    ).json()
+    sun = client.post(
+        "/api/users",
+        json={"username": f"temp_sun_{suffix}", "full_name": "孙二", "role": "组长", "password_hash": "leader123"},
+        headers=headers,
+    ).json()
+    li = client.post(
+        "/api/users",
+        json={"username": f"temp_li_{suffix}", "full_name": "李四", "role": "操作员", "password_hash": "operator123", "manager_user_id": zhang["id"]},
+        headers=headers,
+    ).json()
+    wang = client.post(
+        "/api/users",
+        json={"username": f"temp_wang_{suffix}", "full_name": "王五", "role": "操作员", "password_hash": "operator123", "manager_user_id": zhang["id"]},
+        headers=headers,
+    ).json()
+
+    li_headers = user_headers(li["username"])
+    wang_headers = user_headers(wang["username"])
+    zhang_headers = user_headers(zhang["username"])
+    sun_headers = user_headers(sun["username"])
+
+    li_company = client.post("/api/companies", json={"name": f"李四客户-{suffix}"}, headers=li_headers).json()
+    li_project = client.post("/api/projects", json={"company_id": li_company["id"], "name": f"李四项目-{suffix}"}, headers=li_headers).json()
+    wang_company = client.post("/api/companies", json={"name": f"王五客户-{suffix}"}, headers=wang_headers).json()
+    wang_project = client.post("/api/projects", json={"company_id": wang_company["id"], "name": f"王五项目-{suffix}"}, headers=wang_headers).json()
+    sun_company = client.post("/api/companies", json={"name": f"孙二客户-{suffix}"}, headers=sun_headers).json()
+    sun_project = client.post("/api/projects", json={"company_id": sun_company["id"], "name": f"孙二项目-{suffix}"}, headers=sun_headers).json()
+
+    li_projects = {item["name"] for item in client.get("/api/projects", headers=li_headers).json()}
+    wang_projects = {item["name"] for item in client.get("/api/projects", headers=wang_headers).json()}
+    zhang_projects = {item["name"] for item in client.get("/api/projects", headers=zhang_headers).json()}
+    sun_projects = {item["name"] for item in client.get("/api/projects", headers=sun_headers).json()}
+
+    assert li_project["name"] in li_projects
+    assert wang_project["name"] not in li_projects
+    assert li_project["name"] not in wang_projects
+    assert wang_project["name"] in wang_projects
+
+    assert li_project["name"] in zhang_projects
+    assert wang_project["name"] in zhang_projects
+    assert sun_project["name"] not in zhang_projects
+
+    assert sun_project["name"] in sun_projects
+    assert li_project["name"] not in sun_projects
+    assert wang_project["name"] not in sun_projects
+
+
 def test_candidate_ownership_transfer_requires_admin_approval():
     suffix = uuid4().hex[:8]
     headers = admin_headers()

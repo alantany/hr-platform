@@ -1618,6 +1618,9 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 14:23:21
 - Task finalized by Codex hook (unknown) at 2026-06-25 14:32:49
 - Task finalized by Codex hook (unknown) at 2026-06-25 14:35:30
+- Task finalized by Codex hook (unknown) at 2026-06-25 14:49:14
+- Task finalized by Codex hook (unknown) at 2026-06-25 15:10:35
+- Task finalized by Codex hook (unknown) at 2026-06-25 15:19:48
   * 后端新增 `security.py` 权限辅助，用户/角色/权限/数据权限/操作日志接口改为超级管理员强校验。
   * 客户、项目、岗位、候选人列表与详情已按角色数据范围过滤，非管理员只能看到授权范围内的数据。
   * 数据权限范围收口为 `company / project / position`，接口会拒绝旧的 `team / personal` 值，前端数据权限页文案和下拉项也已同步。
@@ -1634,6 +1637,13 @@
   * 推荐、反馈、交付、导出、统计、通知和 AI 任务接口已补同源数据权限过滤，列表、统计、导出、通知和 AI 不再绕过候选人/岗位授权范围。
   * AI 任务新增 `created_by` 字段，并在 `ensure_schema()` 中补旧库自愈迁移；普通用户只能看到自己创建的 AI 任务。
   * 验证结果：`python3 -m py_compile backend/app/main.py backend/app/models.py backend/app/schemas.py backend/app/security.py backend/app/crud.py backend/seed.py backend/test_cleanup.py` 通过；`node --check app.js && node --check frontend-api.js` 通过；`uv run --with-requirements requirements.txt pytest tests/test_permissions_rbac.py tests/test_phase1_smoke.py tests/test_phase2_smoke.py tests/test_phase3_smoke.py -q` 通过（10 passed）；权限页面 smoke 静态检查通过。
+
+- 完成团队归属权限模型：
+  * 新增用户直属组长字段 `manager_user_id`，客户/项目/岗位新增归属字段 `owner_user_id`，创建客户、项目、岗位时默认归属当前登录用户。
+  * `security.can_access_scope()` 已支持“组员看自己、组长看自己和直属下属、其他组长隔离、管理员全量”的业务规则，并保留原 company/project/position 显式数据权限作为额外授权。
+  * 用户管理页新增“直属组长ID”创建和编辑入口，用于配置“张三 -> 李四/王五”这类团队关系。
+  * 新增测试覆盖张三、孙二、李四、王五场景，验证李四/王五互相不可见，张三可见下属项目，孙二看不到张三组项目。
+  * 验证结果：`python3 -m py_compile backend/app/main.py backend/app/models.py backend/app/schemas.py backend/app/security.py backend/app/crud.py backend/seed.py backend/test_cleanup.py` 通过；`node --check app.js && node --check frontend-api.js` 通过；`uv run --with-requirements requirements.txt pytest tests/test_permissions_rbac.py tests/test_phase1_smoke.py tests/test_phase2_smoke.py tests/test_phase3_smoke.py -q` 通过（11 passed）；权限页面 smoke 静态检查通过。
 
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:06:47
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:09:28
