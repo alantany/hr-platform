@@ -7,6 +7,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from reportlab.platypus import (
@@ -32,24 +33,44 @@ BODY_WIDTH = TEMPLATE_PAGE_SIZE[0] - TEMPLATE_MARGIN_LEFT - TEMPLATE_MARGIN_RIGH
 BODY_HEIGHT = TEMPLATE_PAGE_SIZE[1] - TEMPLATE_MARGIN_TOP - TEMPLATE_MARGIN_BOTTOM
 
 
-FONT_NAME = "STHeiti"
-font_path = "/System/Library/Fonts/STHeiti Light.ttc"
-if not os.path.exists(font_path):
-    font_path = "/System/Library/Fonts/STHeiti Medium.ttc"
-if not os.path.exists(font_path):
-    font_path = "/System/Library/Fonts/Hiragino Sans GB.ttc"
-if not os.path.exists(font_path):
-    font_path = "/System/Library/Fonts/PingFang.ttc"
+FONT_NAME = "HRPlatformCN"
 
-if os.path.exists(font_path):
-    try:
-        pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
-    except Exception as exc:
-        print(f"Warning: failed to register font {font_path}: {exc}")
-        FONT_NAME = "Helvetica"
-else:
-    print("Warning: No suitable Chinese fonts found. Falling back to Helvetica.")
-    FONT_NAME = "Helvetica"
+
+def _register_pdf_font() -> str:
+    font_candidates = [
+        os.environ.get("HR_PLATFORM_PDF_FONT", ""),
+        # Windows
+        r"C:\Windows\Fonts\msyh.ttc",
+        r"C:\Windows\Fonts\msyh.ttf",
+        r"C:\Windows\Fonts\simsun.ttc",
+        r"C:\Windows\Fonts\simhei.ttf",
+        # macOS
+        "/System/Library/Fonts/STHeiti Light.ttc",
+        "/System/Library/Fonts/STHeiti Medium.ttc",
+        "/System/Library/Fonts/Hiragino Sans GB.ttc",
+        "/System/Library/Fonts/PingFang.ttc",
+        # Linux
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+    ]
+    for font_path in font_candidates:
+        if not font_path or not os.path.exists(font_path):
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
+            pdfmetrics.registerFontFamily(FONT_NAME, normal=FONT_NAME, bold=FONT_NAME, italic=FONT_NAME, boldItalic=FONT_NAME)
+            return FONT_NAME
+        except Exception as exc:
+            print(f"Warning: failed to register font {font_path}: {exc}")
+
+    fallback_name = "STSong-Light"
+    pdfmetrics.registerFont(UnicodeCIDFont(fallback_name))
+    pdfmetrics.registerFontFamily(fallback_name, normal=fallback_name, bold=fallback_name, italic=fallback_name, boldItalic=fallback_name)
+    return fallback_name
+
+
+FONT_NAME = _register_pdf_font()
 
 
 class NumberedCanvas(canvas.Canvas):

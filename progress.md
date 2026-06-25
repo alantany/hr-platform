@@ -1627,6 +1627,7 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 16:24:43
 - 2026-06-25 17:15:06 CST: 修复权限收口后非管理员自建/导入候选人简历导出被拒的问题。
 - Task finalized by Codex hook (unknown) at 2026-06-25 17:16:15
+- Task finalized by Codex hook (unknown) at 2026-06-25 17:24:04
   * 复现原因：导出接口新增候选人访问校验后，普通用户创建的候选人没有写入 `owner_user_id`，会被判定为无候选人访问权。
   * 修复范围：候选人手工创建、PDF 简历导入、抓取简历导入都会写入当前用户归属；管理员仍可显式指定候选人归属。
   * 回归覆盖：新增 operator 自建候选人后导出的权限测试，并补齐 PDF 导出测试依赖 `pypdf`。
@@ -1700,3 +1701,7 @@
   * 本地 `run.sh` 改为优先使用 `uv run --with-requirements requirements.txt uvicorn ...`，避免系统 Python 环境未安装 `uvicorn` 导致启动失败。
   * 后端启动流程新增历史候选人归属回填：将 `owner_user_id` 为空的旧候选人默认回填为 `admin`，解决远程库旧数据在权限收口后仍无法导出的问题。
   * 已验证 `uvicorn` 可在 requirements 环境中导入，`bash -n run.sh` 和 `python3 -m py_compile backend/app/main.py` 通过，权限和 PDF 导出测试 9 个用例通过。
+- 2026-06-25 17:37:50 CST: 修复 Windows 远程环境下简历 PDF 导出可能失败的问题。
+  * 根因判断：本地 macOS 可导出但 Windows 失败，PDF 生成器此前只查找 macOS 中文字体，Windows 上会退回 Helvetica，中文 PDF 生成存在失败风险。
+  * 修复范围：PDF 生成器新增跨平台中文字体查找，支持 Windows 微软雅黑/宋体/黑体、macOS 字体、Linux Noto/WenQuanYi，并以内置 `STSong-Light` 作为兜底。
+  * 验证：`tests/test_pdf_export.py` 通过，权限和 PDF 导出组合测试 9 个用例通过，并用 requirements 环境生成中文 PDF 成功。
