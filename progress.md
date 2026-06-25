@@ -1623,6 +1623,7 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 15:19:48
 - Task finalized by Codex hook (unknown) at 2026-06-25 15:25:14
 - Task finalized by Codex hook (unknown) at 2026-06-25 15:40:02
+- Task finalized by Codex hook (unknown) at 2026-06-25 15:43:51
   * 后端新增 `security.py` 权限辅助，用户/角色/权限/数据权限/操作日志接口改为超级管理员强校验。
   * 客户、项目、岗位、候选人列表与详情已按角色数据范围过滤，非管理员只能看到授权范围内的数据。
   * 数据权限范围收口为 `company / project / position`，接口会拒绝旧的 `team / personal` 值，前端数据权限页文案和下拉项也已同步。
@@ -1656,6 +1657,11 @@
   * 左侧主文案改为“AI招聘管理平台 / 人力资源招聘管理系统 v3.0”。
   * 增加小字说明“基于 AI 驱动的人力资源全生命周期管理平台”，并概括客户、项目、岗位、候选人、推荐交付、评价与权限协同。
   * 验证结果：登录页文案 smoke 检查通过；`node --check frontend-api.js && node --check app.js` 通过。
+
+- 统一右上角工具区样式：
+  * 将原硬编码通知数字 `3` 改为读取当前用户未读通知数量。
+  * 通知、用户信息、退出按钮统一为 48px 高度、圆角胶囊、统一边框和阴影风格。
+  * 验证结果：`node --check app.js && node --check frontend-api.js` 通过；topbar smoke 静态检查通过。
 
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:06:47
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:09:28

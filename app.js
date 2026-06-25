@@ -203,7 +203,7 @@ function getNavVisibility(role, permissions = null) {
   ]);
 }
 
-function shell(pageKey, body, currentUser = null) {
+function shell(pageKey, body, currentUser = null, unreadCount = 0) {
   const active = (p) => p === `${pageKey}.html` || (pageKey === "index" && p === "dashboard.html");
   const visible = getNavVisibility(currentUser?.role || currentUser?.role_name || "超级管理员", currentUser?.permissions);
   const navHtml = navGroups.map((group) => {
@@ -240,10 +240,16 @@ function shell(pageKey, body, currentUser = null) {
           ${pages[pageKey]?.desc ? `<p class="page-lede">${pages[pageKey].desc}</p>` : ""}
         </div>
         <div class="top-actions">
-        <div class="pill" aria-label="通知"><span class="nav-icon" style="background:var(--primary)"></span><strong>3</strong></div>
-        <div class="user-chip"><div class="avatar"></div><div><div style="font-weight:700">${currentUser?.full_name || "管理员"}</div><div class="small-muted">${currentUser?.role || "超级管理员"}</div></div></div>
-        <button class="btn" data-action="logout">退出</button>
-      </div>
+          <a class="top-action top-notice" aria-label="未读通知" href="./notifications.html">
+            <span class="notice-dot"></span>
+            <strong>${unreadCount}</strong>
+          </a>
+          <div class="top-action user-chip">
+            <div class="avatar"></div>
+            <div><div style="font-weight:700">${currentUser?.full_name || "管理员"}</div><div class="small-muted">${currentUser?.role || "超级管理员"}</div></div>
+          </div>
+          <button class="top-action top-logout" data-action="logout">退出</button>
+        </div>
       </div>
       ${body}
     </main>
@@ -256,11 +262,14 @@ async function render() {
   const el = document.getElementById("app");
   if (!el) return;
   let currentUser = null;
+  let unreadCount = 0;
   try {
     currentUser = await window.hrApi.me();
     if (currentUser) {
       window.currentUser = currentUser;
     }
+    const notices = await window.hrApi.notifications({ read: false });
+    unreadCount = notices.length;
   } catch (err) {
     console.warn(err);
     if (!page.endsWith("login.html")) {
@@ -276,11 +285,11 @@ async function render() {
         <p class="panel-sub">当前登录角色暂未开放 ${page} 对应页面，请联系管理员开通权限。</p>
         <div class="list"><div class="list-item"><div class="item-meta">权限矩阵已在页面菜单上收口，直接访问该页面也会被拦截。</div></div></div>
       </section>
-    `, currentUser);
+    `, currentUser, unreadCount);
     bindActionButtons();
     return;
   }
-  el.innerHTML = shell(key, window.__PAGE_BODY__ || "", currentUser);
+  el.innerHTML = shell(key, window.__PAGE_BODY__ || "", currentUser, unreadCount);
   bindActionButtons();
 }
 
