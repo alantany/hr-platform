@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-06-25 (补充 - root 8000 now lands on homepage)
+
+- The server is already exposing the static site through port 8000; the missing piece was a root `index.html` at the repository root.
+- Adding a root `index.html` with a redirect to `/src/pages/dashboard.html` makes `http://<host>:8000/` open the app directly.
+- This is the simplest fix because it works with the existing `StaticFiles(directory=ROOT_DIR, html=True)` mount without changing backend routing behavior.
+
 ## 2026-06-25 (补充 - Windows scripts localized to English)
 
 - The Windows deployment scripts were causing console encoding noise because they mixed Chinese prompts with Windows terminals.

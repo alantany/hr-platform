@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-06-25 (进行中 - 8000 root homepage)
+
+- **让 `http://<host>:8000/` 直接进入首页**：
+  * 新增仓库根目录 [`index.html`](/Users/huaiyuan/Desktop/workspace/hr-plateform/index.html)，将根路径自动重定向到 [`src/pages/dashboard.html`](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/dashboard.html)。
+  * 这样通过 8000 端口访问时不再需要手工打开 HTML 文件，根地址就会直接进系统首页。
+
 ## 2026-06-25 (进行中 - Windows scripts localized to English)
 
 - **Windows script output switched to English**:
@@ -1612,3 +1618,6 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 10:35:46
 - Task finalized by Codex hook (unknown) at 2026-06-25 10:38:08
 - Task completed at 2026-06-25 10:40:32. Update the summary with the latest finished work.
+- Task finalized by Codex hook (unknown) at 2026-06-25 10:40:53
+- Task finalized by Codex hook (unknown) at 2026-06-25 10:48:36
+- Task completed at 2026-06-25 10:52:52. Update the summary with the latest finished work.
