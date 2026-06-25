@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from functools import wraps
 from typing import Callable
 
@@ -18,6 +19,20 @@ ROLE_CODE_MAP = {
     "操作员": "OPERATOR",
     "OPERATOR": "OPERATOR",
 }
+
+
+def hash_password(password: str) -> str:
+    return "sha256:" + hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+
+def verify_password(password: str, stored_password: str) -> bool:
+    if stored_password.startswith("sha256:"):
+        return hash_password(password) == stored_password
+    return password == stored_password
+
+
+def issue_user_token(user: User) -> str:
+    return f"user:{user.username}"
 
 
 def get_role_code(role: str | None) -> str:
@@ -115,6 +130,8 @@ def accessible_candidate_ids(db: Session, user: User) -> list[int]:
 
 def get_current_user(db: Session, authorization: str | None) -> User:
     token = (authorization or "").removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="请先登录")
     if token == settings.access_token:
         user = db.query(User).filter(User.username == "admin").first()
     elif token.startswith("user:"):

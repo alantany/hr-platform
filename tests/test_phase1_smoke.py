@@ -165,7 +165,8 @@ def test_phase1_chain_smoke():
     assert any(item["candidate_id"] == candidate["id"] for item in export_records)
     assert locked_by_update["locked"] is True
     assert locked["locked"] is True
-    assert reset_user["password_hash"] == f"dev-{suffix}"
+    assert reset_user["password_hash"] != f"dev-{suffix}"
+    assert client.post("/api/auth/login", json={"username": "admin", "password": f"dev-{suffix}"}).status_code == 200
     assert edited_user["full_name"] == f"临时用户-{suffix}"
     assert edited_user["role"] == "组长"
     assert role_delete_blocked.status_code == 400

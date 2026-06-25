@@ -160,7 +160,19 @@ const renderProjectListMarkup = (projects = []) => {
 window.hrRenderCompanyList = renderCompanyListMarkup;
 window.hrRenderProjectList = renderProjectListMarkup;
 
-function getNavVisibility(role) {
+function getNavVisibility(role, permissions = null) {
+  const permissionSet = permissions ? new Set(permissions) : null;
+  if (permissionSet?.has("all")) {
+    return new Set(navItems.map(({ href }) => href));
+  }
+  if (permissionSet?.size) {
+    const allowed = new Set(["dashboard.html"]);
+    navItems.forEach(({ href }) => {
+      const key = href.replace(".html", "");
+      if (permissionSet.has(`page:${key}`)) allowed.add(href);
+    });
+    return allowed;
+  }
   const normalized = String(role || "").toLowerCase();
   if (String(role || "").includes("超级") || normalized.includes("admin")) {
     return new Set(navItems.map(({ href }) => href));
@@ -193,7 +205,7 @@ function getNavVisibility(role) {
 
 function shell(pageKey, body, currentUser = null) {
   const active = (p) => p === `${pageKey}.html` || (pageKey === "index" && p === "dashboard.html");
-  const visible = getNavVisibility(currentUser?.role || currentUser?.role_name || "超级管理员");
+  const visible = getNavVisibility(currentUser?.role || currentUser?.role_name || "超级管理员", currentUser?.permissions);
   const navHtml = navGroups.map((group) => {
     const items = group.items.filter(({ href }) => visible.has(href));
     if (!items.length) return "";
@@ -228,9 +240,10 @@ function shell(pageKey, body, currentUser = null) {
           ${pages[pageKey]?.desc ? `<p class="page-lede">${pages[pageKey].desc}</p>` : ""}
         </div>
         <div class="top-actions">
-          <div class="pill" aria-label="通知"><span class="nav-icon" style="background:var(--primary)"></span><strong>3</strong></div>
-          <div class="user-chip"><div class="avatar"></div><div><div style="font-weight:700">${currentUser?.full_name || "管理员"}</div><div class="small-muted">${currentUser?.role || "超级管理员"}</div></div></div>
-        </div>
+        <div class="pill" aria-label="通知"><span class="nav-icon" style="background:var(--primary)"></span><strong>3</strong></div>
+        <div class="user-chip"><div class="avatar"></div><div><div style="font-weight:700">${currentUser?.full_name || "管理员"}</div><div class="small-muted">${currentUser?.role || "超级管理员"}</div></div></div>
+        <button class="btn" data-action="logout">退出</button>
+      </div>
       </div>
       ${body}
     </main>
@@ -250,8 +263,12 @@ async function render() {
     }
   } catch (err) {
     console.warn(err);
+    if (!page.endsWith("login.html")) {
+      location.href = `./login.html?next=${encodeURIComponent(page)}`;
+      return;
+    }
   }
-  const visible = getNavVisibility(currentUser?.role || currentUser?.role_name || "超级管理员");
+  const visible = getNavVisibility(currentUser?.role || currentUser?.role_name || "超级管理员", currentUser?.permissions);
   if (!visible.has(page) && page !== "dashboard.html") {
     el.innerHTML = shell("dashboard", `
       <section class="panel">
@@ -397,6 +414,17 @@ function renderExportCard(c) {
 async function handleGlobalButton(button) {
   const text = (button.textContent || "").trim();
   const page = location.pathname.split("/").pop() || "";
+  if (button.dataset.action === "logout") {
+    try {
+      await window.hrApi.logout();
+    } catch (err) {
+      console.warn(err);
+    }
+    localStorage.removeItem("hr_token");
+    window.hrApi.token = "";
+    location.href = "./login.html";
+    return;
+  }
   const uniq = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
   const refreshUserStats = async () => {
     const users = await window.hrApi.users();

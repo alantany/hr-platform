@@ -6,38 +6,78 @@ from sqlalchemy.orm import Session
 
 from backend.app.database import Base, SessionLocal, engine
 from backend.app.models import AuditLog, AiTask, Candidate, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, Project, Recommendation, Role, RolePermission, SalaryRecord, SystemConfig, TagDictionary, WarrantyRule, User
+from backend.app.security import hash_password
+
+
+DEFAULT_ROLE_PERMISSIONS = [
+    ("ADMIN", "all", "menu", "系统"),
+    ("ADMIN", "page:users", "menu", "用户管理"),
+    ("ADMIN", "page:roles", "menu", "角色管理"),
+    ("ADMIN", "page:permissions", "menu", "权限管理"),
+    ("ADMIN", "page:data-permissions", "menu", "数据权限"),
+    ("ADMIN", "page:logs", "menu", "操作日志"),
+    ("ADMIN", "page:dictionary", "menu", "标签字典"),
+    ("ADMIN", "page:warranty", "menu", "质保期管理"),
+    ("ADMIN", "page:statistics", "menu", "统计管理"),
+    ("ADMIN", "page:ai-center", "menu", "AI能力中心"),
+    ("LEADER", "page:dashboard", "menu", "首页"),
+    ("LEADER", "page:candidates", "menu", "求职者数据池"),
+    ("LEADER", "page:import", "menu", "简历导入"),
+    ("LEADER", "page:customers", "menu", "客户公司管理"),
+    ("LEADER", "page:projects", "menu", "项目管理"),
+    ("LEADER", "page:positions", "menu", "岗位管理"),
+    ("LEADER", "page:evaluations", "menu", "评价体系"),
+    ("LEADER", "page:statistics", "menu", "统计管理"),
+    ("LEADER", "page:notifications", "menu", "通知提醒"),
+    ("LEADER", "page:dictionary", "menu", "标签字典"),
+    ("LEADER", "page:warranty", "menu", "质保期管理"),
+    ("LEADER", "page:ai-center", "menu", "AI能力中心"),
+    ("OPERATOR", "page:dashboard", "menu", "首页"),
+    ("OPERATOR", "page:candidates", "menu", "求职者数据池"),
+    ("OPERATOR", "page:import", "menu", "简历导入"),
+    ("OPERATOR", "page:projects", "menu", "项目管理"),
+    ("OPERATOR", "page:positions", "menu", "岗位管理"),
+    ("OPERATOR", "page:evaluations", "menu", "评价体系"),
+    ("OPERATOR", "page:notifications", "menu", "通知提醒"),
+    ("OPERATOR", "page:ai-center", "menu", "AI能力中心"),
+]
 
 
 def seed() -> None:
     db: Session = SessionLocal()
     try:
         if not db.query(User).filter(User.username == "admin").first():
-            db.add(User(username="admin", full_name="系统管理员", password_hash="dev", role="超级管理员", is_active=True))
+            db.add(User(username="admin", full_name="系统管理员", password_hash=hash_password("admin123"), role="超级管理员", is_active=True))
+        else:
+            admin = db.query(User).filter(User.username == "admin").first()
+            if admin.password_hash == "dev":
+                admin.password_hash = hash_password("admin123")
         if not db.query(User).filter(User.username == "leader").first():
-            db.add(User(username="leader", full_name="团队组长", password_hash="dev", role="组长", is_active=True))
+            db.add(User(username="leader", full_name="团队组长", password_hash=hash_password("leader123"), role="组长", is_active=True))
+        else:
+            leader = db.query(User).filter(User.username == "leader").first()
+            if leader.password_hash == "dev":
+                leader.password_hash = hash_password("leader123")
         if not db.query(User).filter(User.username == "operator").first():
-            db.add(User(username="operator", full_name="一线操作员", password_hash="dev", role="操作员", is_active=True))
+            db.add(User(username="operator", full_name="一线操作员", password_hash=hash_password("operator123"), role="操作员", is_active=True))
+        else:
+            operator = db.query(User).filter(User.username == "operator").first()
+            if operator.password_hash == "dev":
+                operator.password_hash = hash_password("operator123")
         if not db.query(Role).count():
             db.add_all([
                 Role(code="ADMIN", name="超级管理员", description="全局管理"),
                 Role(code="LEADER", name="组长", description="团队管理"),
                 Role(code="OPERATOR", name="操作员", description="一线执行"),
             ])
-        if not db.query(RolePermission).count():
-            db.add_all([
-                RolePermission(role_code="ADMIN", permission_key="all", permission_type="menu", module="系统", enabled=True),
-                RolePermission(role_code="ADMIN", permission_key="page:users", permission_type="menu", module="用户管理", enabled=True),
-                RolePermission(role_code="ADMIN", permission_key="page:roles", permission_type="menu", module="角色管理", enabled=True),
-                RolePermission(role_code="ADMIN", permission_key="page:permissions", permission_type="menu", module="权限管理", enabled=True),
-                RolePermission(role_code="ADMIN", permission_key="page:data-permissions", permission_type="menu", module="数据权限", enabled=True),
-                RolePermission(role_code="ADMIN", permission_key="page:logs", permission_type="menu", module="操作日志", enabled=True),
-                RolePermission(role_code="LEADER", permission_key="page:dashboard", permission_type="menu", module="首页", enabled=True),
-                RolePermission(role_code="LEADER", permission_key="page:candidates", permission_type="menu", module="求职者数据池", enabled=True),
-                RolePermission(role_code="LEADER", permission_key="page:customers", permission_type="menu", module="客户公司管理", enabled=True),
-                RolePermission(role_code="LEADER", permission_key="page:projects", permission_type="menu", module="项目管理", enabled=True),
-                RolePermission(role_code="LEADER", permission_key="page:statistics", permission_type="menu", module="统计管理", enabled=True),
-                RolePermission(role_code="OPERATOR", permission_key="page:candidates", permission_type="menu", module="求职者数据池", enabled=True),
-            ])
+        for role_code, permission_key, permission_type, module in DEFAULT_ROLE_PERMISSIONS:
+            existing = db.query(RolePermission).filter(RolePermission.role_code == role_code, RolePermission.permission_key == permission_key).first()
+            if existing:
+                existing.permission_type = permission_type
+                existing.module = module
+                existing.enabled = True
+            else:
+                db.add(RolePermission(role_code=role_code, permission_key=permission_key, permission_type=permission_type, module=module, enabled=True))
         if not db.query(DataPermission).count():
             db.add(DataPermission(user_id=1, scope_type="company", scope_id="1", scope_name="科技有限公司A", granted_by="system", active=True))
 

@@ -58,6 +58,11 @@ def ensure_schema() -> None:
         if "position_id" not in eval_cols:
             conn.execute(text("ALTER TABLE evaluations ADD COLUMN position_id INTEGER NOT NULL DEFAULT 1"))
 
+        # ai_tasks
+        ai_task_cols = {col['name'] for col in inspector.get_columns("ai_tasks")}
+        if "created_by" not in ai_task_cols:
+            conn.execute(text("ALTER TABLE ai_tasks ADD COLUMN created_by TEXT NOT NULL DEFAULT ''"))
+
         # companies
         comp_cols = {col['name'] for col in inspector.get_columns("companies")}
         for column, ddl in {
@@ -291,6 +296,15 @@ def enforce_company_access(db: Session, user: User, company_id: int) -> None:
         raise HTTPException(status_code=403, detail="无权访问该客户公司")
 
 
+def can_access_recommendation(db: Session, user: User, recommendation: Recommendation) -> bool:
+    return security.can_access_scope(db, user, "candidate", recommendation.candidate_id) or security.can_access_scope(db, user, "position", recommendation.position_id)
+
+
+def enforce_recommendation_access(db: Session, user: User, recommendation: Recommendation) -> None:
+    if not can_access_recommendation(db, user, recommendation):
+        raise HTTPException(status_code=403, detail="无权访问该推荐记录")
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "hr-platform"}
@@ -407,14 +421,39 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == payload.username).first()
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="用户名或密码错误")
-    if payload.password != "admin123":
+    if not security.verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
-    return schemas.TokenResponse(access_token=settings.access_token)
+    crud.add_audit(db, user.username, "认证登录", "用户登录", "user", str(user.id), detail=user.username)
+    db.commit()
+    return schemas.TokenResponse(access_token=security.issue_user_token(user))
+
+
+@app.post("/api/auth/logout")
+def logout(user: User = Depends(require_user), db: Session = Depends(get_db)):
+    crud.add_audit(db, user.username, "认证登录", "用户退出", "user", str(user.id), detail=user.username)
+    db.commit()
+    return {"ok": True}
 
 
 @app.get("/api/me", response_model=schemas.CurrentUser)
-def me(user: User = Depends(require_user)):
-    return schemas.CurrentUser(id=user.id, username=user.username, full_name=user.full_name, role=user.role, is_active=user.is_active)
+def me(user: User = Depends(require_user), db: Session = Depends(get_db)):
+    role_code = security.get_role_code(user.role)
+    permissions = [
+        item.permission_key
+        for item in db.query(RolePermission)
+        .filter(RolePermission.role_code == role_code, RolePermission.enabled.is_(True))
+        .all()
+    ]
+    if security.is_admin(user) and "all" not in permissions:
+        permissions.append("all")
+    return schemas.CurrentUser(
+        id=user.id,
+        username=user.username,
+        full_name=user.full_name,
+        role=user.role,
+        is_active=user.is_active,
+        permissions=permissions,
+    )
 
 
 @app.get("/api/dashboard/summary", response_model=schemas.DashboardSummary)
@@ -1092,6 +1131,8 @@ def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depe
     candidate = crud.ensure_local_candidate(db, payload.candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
+    enforce_candidate_access(db, user, candidate)
+    enforce_position_access(db, user, payload.position_id)
     if candidate.locked:
         raise HTTPException(status_code=400, detail="候选人已锁定，无法重复推荐")
     obj = crud.create_recommendation(db, payload)
@@ -1103,7 +1144,10 @@ def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depe
 
 @app.get("/api/recommendations", response_model=list[schemas.RecommendationOut])
 def get_recommendations(candidate_id: int | None = Query(default=None), position_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return crud.list_recommendations(db, candidate_id=candidate_id, position_id=position_id)
+    items = crud.list_recommendations(db, candidate_id=candidate_id, position_id=position_id)
+    if security.is_admin(user):
+        return items
+    return [item for item in items if can_access_recommendation(db, user, item)]
 
 
 @app.put("/api/recommendations/{recommendation_id}", response_model=schemas.RecommendationOut)
@@ -1111,6 +1155,7 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
     obj = db.get(Recommendation, recommendation_id)
     if not obj:
         raise HTTPException(status_code=404, detail="推荐记录不存在")
+    enforce_recommendation_access(db, user, obj)
     for key, value in payload.model_dump(exclude_unset=True).items():
         if key == "status":
             valid_transitions = {
@@ -1135,11 +1180,23 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
 
 @app.get("/api/recommendation-feedbacks", response_model=list[schemas.RecommendationFeedbackOut])
 def get_recommendation_feedbacks(recommendation_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return crud.list_recommendation_feedbacks(db, recommendation_id=recommendation_id)
+    items = crud.list_recommendation_feedbacks(db, recommendation_id=recommendation_id)
+    if security.is_admin(user):
+        return items
+    result = []
+    for item in items:
+        recommendation = db.get(Recommendation, item.recommendation_id)
+        if recommendation and can_access_recommendation(db, user, recommendation):
+            result.append(item)
+    return result
 
 
 @app.post("/api/recommendation-feedbacks", response_model=schemas.RecommendationFeedbackOut)
 def add_recommendation_feedback(payload: schemas.RecommendationFeedbackCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    recommendation = db.get(Recommendation, payload.recommendation_id)
+    if not recommendation:
+        raise HTTPException(status_code=404, detail="推荐记录不存在")
+    enforce_recommendation_access(db, user, recommendation)
     obj = crud.create_recommendation_feedback(db, payload)
     crud.add_audit(db, user.username, "推荐交付", "记录客户反馈", "recommendation_feedback", str(payload.recommendation_id), detail=payload.status)
     db.commit()
@@ -1152,6 +1209,10 @@ def add_recommendation_feedback(payload: schemas.RecommendationFeedbackCreate, d
 
 @app.post("/api/deliveries", response_model=schemas.DeliveryOut)
 def add_delivery(payload: schemas.DeliveryCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    recommendation = db.get(Recommendation, payload.recommendation_id)
+    if not recommendation:
+        raise HTTPException(status_code=404, detail="推荐记录不存在")
+    enforce_recommendation_access(db, user, recommendation)
     obj = crud.create_delivery(db, payload)
     crud.add_audit(db, user.username, "推荐交付", "创建交付记录", "delivery", "new", detail=str(payload.recommendation_id))
     db.commit()
@@ -1161,7 +1222,15 @@ def add_delivery(payload: schemas.DeliveryCreate, db: Session = Depends(get_db),
 
 @app.get("/api/deliveries", response_model=list[schemas.DeliveryOut])
 def get_deliveries(recommendation_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return crud.list_deliveries(db, recommendation_id=recommendation_id)
+    items = crud.list_deliveries(db, recommendation_id=recommendation_id)
+    if security.is_admin(user):
+        return items
+    result = []
+    for item in items:
+        recommendation = db.get(Recommendation, item.recommendation_id)
+        if recommendation and can_access_recommendation(db, user, recommendation):
+            result.append(item)
+    return result
 
 
 @app.get("/api/evaluations", response_model=list[schemas.EvaluationOut])
@@ -1274,7 +1343,10 @@ def get_notifications(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
-    return crud.list_notifications(db, type=type, read=read, keyword=keyword, date_from=date_from, date_to=date_to)
+    items = crud.list_notifications(db, type=type, read=read, keyword=keyword, date_from=date_from, date_to=date_to)
+    if security.is_admin(user):
+        return items
+    return [item for item in items if item.user in {user.username, user.full_name}]
 
 
 @app.post("/api/notifications", response_model=schemas.NotificationOut)
@@ -1291,6 +1363,8 @@ def read_notification(notification_id: int, db: Session = Depends(get_db), user:
     obj = db.get(Notification, notification_id)
     if not obj:
         raise HTTPException(status_code=404, detail="通知不存在")
+    if not security.is_admin(user) and obj.user not in {user.username, user.full_name}:
+        raise HTTPException(status_code=403, detail="无权访问该通知")
     crud.mark_notification_read(db, obj)
     crud.add_audit(db, user.username, "通知提醒", "已读通知", "notification", str(notification_id), detail=obj.title)
     db.commit()
@@ -1302,6 +1376,8 @@ def read_notification(notification_id: int, db: Session = Depends(get_db), user:
 def batch_read_notifications(payload: list[int], db: Session = Depends(get_db), user: User = Depends(require_user)):
     for notification_id in payload:
         obj = db.get(Notification, notification_id)
+        if obj and not security.is_admin(user) and obj.user not in {user.username, user.full_name}:
+            continue
         if obj and not obj.read:
             crud.mark_notification_read(db, obj)
     crud.add_audit(db, user.username, "通知提醒", "批量已读通知", "notification", "batch", detail=f"Count: {len(payload)}")
@@ -1355,21 +1431,37 @@ def delete_warranty_rule(rule_id: int, db: Session = Depends(get_db), user: User
 @app.get("/api/analytics/summary")
 def analytics_summary(db: Session = Depends(get_db), user: User = Depends(require_user)):
     summary = crud.dashboard_summary(db)
-    recommendation_rows = db.query(Recommendation.recommender, Recommendation.status).all()
-    project_rows = db.query(Project.company_id, Project.status, Company.name).join(Company, Company.id == Project.company_id).all()
+    recommendations = db.query(Recommendation).all()
+    projects = db.query(Project, Company.name.label("company_name")).join(Company, Company.id == Project.company_id).all()
+    if not security.is_admin(user):
+        allowed_candidate_ids = set(security.accessible_candidate_ids(db, user))
+        allowed_position_ids = {row[0] for row in db.query(Position.id).all() if security.can_access_scope(db, user, "position", row[0])}
+        allowed_project_ids = {row[0] for row in db.query(Project.id).all() if security.can_access_scope(db, user, "project", row[0])}
+        allowed_company_ids = {row[0] for row in db.query(Company.id).all() if security.can_access_scope(db, user, "company", row[0])}
+        recommendations = [item for item in recommendations if item.candidate_id in allowed_candidate_ids or item.position_id in allowed_position_ids]
+        projects = [(project, company_name) for project, company_name in projects if project.id in allowed_project_ids or project.company_id in allowed_company_ids]
+        summary = {
+            **summary,
+            "candidate_count": len(allowed_candidate_ids),
+            "company_count": len(allowed_company_ids),
+            "project_count": len(allowed_project_ids),
+            "position_count": len(allowed_position_ids),
+            "recommendation_count": len(recommendations),
+            "delivery_count": db.query(Delivery).filter(Delivery.recommendation_id.in_([r.id for r in recommendations] or [0])).count(),
+        }
     recommender_stats: dict[str, dict[str, int]] = {}
-    for recommender, status in recommendation_rows:
-        key = recommender or "未命名"
+    for recommendation in recommendations:
+        key = recommendation.recommender or "未命名"
         bucket = recommender_stats.setdefault(key, {"total": 0, "active": 0})
         bucket["total"] += 1
-        if status in {"客户已收", "安排面试", "已录用"}:
+        if recommendation.status in {"客户已收", "安排面试", "已录用"}:
             bucket["active"] += 1
     customer_stats: dict[str, dict[str, int]] = {}
-    for company_id, status, company_name in project_rows:
-        key = company_name or f"客户 {company_id}"
+    for project, company_name in projects:
+        key = company_name or f"客户 {project.company_id}"
         bucket = customer_stats.setdefault(key, {"total": 0, "active": 0})
         bucket["total"] += 1
-        if status != "招聘完毕":
+        if project.status != "招聘完毕":
             bucket["active"] += 1
     team_rankings = sorted(
         [{"name": name, **values} for name, values in recommender_stats.items()],
@@ -1411,6 +1503,8 @@ def recommendation_stats(
     if date_to is not None:
         query = query.filter(Recommendation.created_at <= date_to)
     rows = query.all()
+    if not security.is_admin(user):
+        rows = [row for row in rows if can_access_recommendation(db, user, row)]
     by_position: dict[int, dict[str, int]] = {}
     by_operator: dict[str, dict[str, int]] = {}
     for row in rows:
@@ -1472,12 +1566,16 @@ def test_email_config(payload: schemas.EmailConfigCreate, db: Session = Depends(
 
 @app.get("/api/ai/tasks", response_model=list[schemas.AiTaskOut])
 def list_ai_tasks(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return crud.list_ai_tasks(db)
+    items = crud.list_ai_tasks(db)
+    if security.is_admin(user):
+        return items
+    return [item for item in items if item.created_by in {user.username, user.full_name}]
 
 
 @app.post("/api/ai/tasks", response_model=schemas.AiTaskOut)
 def create_ai_task(payload: schemas.AiTaskCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
     obj = crud.create_ai_task(db, payload)
+    obj.created_by = user.username
     crud.add_audit(db, user.username, "AI能力中心", f"创建AI任务:{payload.task_type}", "ai_task", "new", detail=payload.input_text)
     notification_title = {
         "resume_parse": "AI简历解析完成",
@@ -1995,7 +2093,11 @@ def get_import_records(db: Session = Depends(get_db), user: User = Depends(requi
 
 @app.get("/api/export-records", response_model=list[schemas.ExportRecordOut])
 def get_export_records(candidate_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return crud.list_export_records(db, candidate_id=candidate_id)
+    items = crud.list_export_records(db, candidate_id=candidate_id)
+    if security.is_admin(user):
+        return items
+    allowed_candidate_ids = set(security.accessible_candidate_ids(db, user))
+    return [item for item in items if item.candidate_id in allowed_candidate_ids]
 
 
 @app.post("/api/export-records", response_model=schemas.ExportRecordOut)
@@ -2003,6 +2105,7 @@ def add_export_record(payload: schemas.ExportRecordCreate, db: Session = Depends
     candidate = db.query(Candidate).filter(Candidate.id == payload.candidate_id).first()
     if not candidate:
         raise HTTPException(status_code=404, detail="未找到对应的候选人")
+    enforce_candidate_access(db, user, candidate)
         
     project = None
     if payload.project_name:

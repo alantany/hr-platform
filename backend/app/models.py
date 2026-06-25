@@ -482,6 +482,7 @@ class AiTask(Base, TimestampMixin):
     input_text: Mapped[str] = mapped_column(Text, default="", nullable=False)
     output_text: Mapped[str] = mapped_column(Text, default="", nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="完成", nullable=False)
+    created_by: Mapped[str] = mapped_column(String(64), default="", nullable=False)
 
 
 class RecruitCandidateProfile(Base):

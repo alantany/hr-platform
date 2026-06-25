@@ -217,3 +217,15 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 新增 `tests/test_permissions_rbac.py` 覆盖非管理员 403、岗位授权候选人可见性、候选人转派审批。
 - [x] 更新权限相关页面和公共测试清理脚本，确保新表测试结束后不残留脏数据。
 - **Status:** complete
+
+### Phase 18 - 权限系统登录认证与横切权限闭环（已完成）
+
+- [x] 新增真实登录页和前端登录/退出/token 持久化流程，未登录访问受保护页面会跳转登录页。
+- [x] 后端登录改为按用户密码校验并签发用户身份 token，不再把所有登录都当作管理员。
+- [x] `/api/me` 返回角色启用的功能权限，前端菜单优先按 `role_permissions` 渲染。
+- [x] 用户创建、编辑、重置密码改为写入哈希密码，测试收尾和 seed 会恢复 admin/leader/operator 默认登录密码。
+- [x] 推荐、反馈、交付、导出、统计、通知和 AI 任务接口补齐同一套数据权限过滤。
+- [x] AI 任务新增 `created_by` 字段和启动自愈迁移，普通用户只能看到自己创建的 AI 任务。
+- [x] 新增权限回归测试覆盖未登录 401、leader/operator 登录身份、退出审计、横切数据权限过滤。
+- [x] 验证通过：Python 编译检查、前端 JS 检查、权限/Phase1/Phase2/Phase3 回归测试、权限页面 smoke 静态检查。
+- **Status:** complete

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+</head>
+<body>
+  <main class="content" style="min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#f8fafc,#e0f2fe);">
+    <section class="panel" style="width:min(460px,calc(100vw - 32px));">
+      <div class="brand" style="margin-bottom:24px;">
+        <div class="brand-mark">招</div>
+        <div>
+          <h1>AI招聘管理平台</h1>
+          <p>权限系统登录入口</p>
+        </div>
+      </div>
+      <div class="list">
+        <div class="list-item">
+          <div class="item-title">账号</div>
+          <input class="input" data-login-username value="admin" autocomplete="username" />
+        </div>
+        <div class="list-item">
+          <div class="item-title">密码</div>
+          <input class="input" type="password" data-login-password value="admin123" autocomplete="current-password" />
+        </div>
+        <div class="list-item">
+          <div class="item-meta">默认账号：admin / admin123，leader / leader123，operator / operator123。</div>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <button class="btn primary" data-login-submit>登录</button>
+      </div>
+      <div class="section-sub" data-login-message style="margin-top:12px;"></div>
+    </section>
+  </main>
+  <script>
+    const message = document.querySelector('[data-login-message]');
+    const submit = async () => {
+      const username = document.querySelector('[data-login-username]').value.trim();
+      const password = document.querySelector('[data-login-password]').value;
+      try {
+        const result = await window.hrApi.login(username, password);
+        localStorage.setItem('hr_token', result.access_token);
+        window.hrApi.token = result.access_token;
+        const next = new URLSearchParams(location.search).get('next') || 'dashboard.html';
+        location.href = `./${next}`;
+      } catch (err) {
+        message.textContent = '登录失败：账号、密码或账号状态不正确。';
+      }
+    };
+    document.querySelector('[data-login-submit]').addEventListener('click', submit);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') submit();
+    });
+  </script>
+</body>
+</html>

@@ -20,12 +20,13 @@ class CurrentUser(BaseModel):
     full_name: str
     role: str
     is_active: bool
+    permissions: list[str] = Field(default_factory=list)
 
 
 class UserCreate(BaseModel):
     username: str
     full_name: str
-    password_hash: str = "dev"
+    password_hash: str = "admin123"
     role: str = "操作员"
     is_active: bool = True
 
@@ -618,6 +619,7 @@ class AiTaskOut(AiTaskCreate):
     id: int
     output_text: str
     status: str
+    created_by: str = ""
 
 
 class RecruitCandidateProfileOut(BaseModel):

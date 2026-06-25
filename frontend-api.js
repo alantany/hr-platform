@@ -1,10 +1,15 @@
 window.hrApi = {
   baseUrl: "/api",
-  token: localStorage.getItem("hr_token") || "dev-token",
+  token: localStorage.getItem("hr_token") || "",
   async request(path, options = {}) {
     const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-    headers.Authorization = `Bearer ${this.token}`;
+    if (this.token) headers.Authorization = `Bearer ${this.token}`;
     const res = await fetch(`${this.baseUrl}${path}`, { ...options, headers });
+    if (res.status === 401 && !location.pathname.endsWith("/login.html")) {
+      localStorage.removeItem("hr_token");
+      location.href = `./login.html?next=${encodeURIComponent(location.pathname.split("/").pop() || "dashboard.html")}`;
+      throw new Error("请先登录");
+    }
     if (!res.ok) {
       const text = await res.text();
       throw new Error(text || `HTTP ${res.status}`);
@@ -13,6 +18,9 @@ window.hrApi = {
   },
   login(username, password) {
     return this.request("/auth/login", { method: "POST", body: JSON.stringify({ username, password }) });
+  },
+  logout() {
+    return this.request("/auth/logout", { method: "POST" });
   },
   me() {
     return this.request("/me");

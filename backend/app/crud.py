@@ -6,6 +6,7 @@ import socket
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from . import security
 from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, User, WarrantyRule
 
 
@@ -196,19 +197,23 @@ def list_users(db: Session):
 
 
 def create_user(db: Session, payload):
-    obj = User(**payload.model_dump())
+    data = payload.model_dump()
+    data["password_hash"] = security.hash_password(data["password_hash"])
+    obj = User(**data)
     db.add(obj)
     return obj
 
 
 def update_user(db: Session, user: User, payload):
     for key, value in payload.model_dump(exclude_unset=True).items():
+        if key == "password_hash":
+            value = security.hash_password(value)
         setattr(user, key, value)
     return user
 
 
 def reset_user_password(db: Session, user: User, payload):
-    user.password_hash = payload.password_hash
+    user.password_hash = security.hash_password(payload.password_hash)
     return user
 
 

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.database import SessionLocal
 from backend.app.main import ROOT_DIR
+from backend.app.security import hash_password
 from backend.app.models import (
     AiTask,
     AuditLog,
@@ -142,12 +143,28 @@ def delete_generated_files(paths: set[str]) -> None:
 def reset_seed_rows(db: Session) -> None:
     admin = db.query(User).filter(User.username == "admin").first()
     if admin is None:
-        db.add(User(username="admin", full_name="系统管理员", password_hash="dev", role="超级管理员", is_active=True))
+        db.add(User(username="admin", full_name="系统管理员", password_hash=hash_password("admin123"), role="超级管理员", is_active=True))
     else:
         admin.full_name = "系统管理员"
-        admin.password_hash = "dev"
+        admin.password_hash = hash_password("admin123")
         admin.role = "超级管理员"
         admin.is_active = True
+    leader = db.query(User).filter(User.username == "leader").first()
+    if leader is None:
+        db.add(User(username="leader", full_name="团队组长", password_hash=hash_password("leader123"), role="组长", is_active=True))
+    else:
+        leader.full_name = "团队组长"
+        leader.password_hash = hash_password("leader123")
+        leader.role = "组长"
+        leader.is_active = True
+    operator = db.query(User).filter(User.username == "operator").first()
+    if operator is None:
+        db.add(User(username="operator", full_name="一线操作员", password_hash=hash_password("operator123"), role="操作员", is_active=True))
+    else:
+        operator.full_name = "一线操作员"
+        operator.password_hash = hash_password("operator123")
+        operator.role = "操作员"
+        operator.is_active = True
 
     db.query(WarrantyRule).delete(synchronize_session=False)
     db.add_all([
