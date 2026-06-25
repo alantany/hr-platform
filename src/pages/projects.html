@@ -8,13 +8,13 @@ window.__PAGE_BODY__ = `
   </section>
   <section class="panel">
     <div class="section-head"><div><h3>项目列表</h3><div class="section-sub">以招聘包为单位管理多个岗位。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-project-modal">新建项目</button><button class="btn" data-action="refresh-page">刷新列表</button></div></div>
-    <div class="list">
+    <div class="list" data-project-list>
       <div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无项目列表</div><div class="item-meta">项目表中的真实项目来自数据库。</div></div><span class="chip success">项目</span></div></div>
     </div>
   </section>
 
-  <div class="modal" data-project-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-    <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+  <div class="modal" data-project-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
+    <div class="panel" style="max-width:760px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
       <div class="section-head">
         <div><h3>新建项目</h3><div class="section-sub">先选择客户，再填写项目基本信息。</div></div>
         <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-project-modal">取消</button><button class="btn primary" data-action="confirm-project-upload">确认保存</button></div>
@@ -40,8 +40,8 @@ window.__PAGE_BODY__ = `
     </div>
   </div>
 
-  <div class="modal" data-project-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-    <div class="panel" style="max-width:620px; margin:12vh auto 0; background:#fff;">
+  <div class="modal" data-project-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
+    <div class="panel" style="max-width:620px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
       <div class="section-head">
         <div><h3>项目操作确认</h3><div class="section-sub">确认后才会执行状态变更或删除。</div></div>
         <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-project-action-modal">取消</button><button class="btn primary" data-action="confirm-project-action">确认执行</button></div>
@@ -52,8 +52,8 @@ window.__PAGE_BODY__ = `
     </div>
   </div>
 
-  <div class="modal" data-project-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-    <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+  <div class="modal" data-project-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
+    <div class="panel" style="max-width:760px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
       <div class="section-head">
         <div><h3>维护项目信息</h3><div class="section-sub">修改项目基础信息后保存。</div></div>
         <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-project-edit-modal">取消</button><button class="btn primary" data-action="confirm-project-edit">确认保存</button></div>
@@ -93,9 +93,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     const editCompany = document.querySelector('[data-project-edit-company]');
     if (createCompany) createCompany.innerHTML = `<option value="">请选择客户</option>${companyOptions}`;
     if (editCompany) editCompany.innerHTML = `<option value="">请选择客户</option>${companyOptions}`;
-    const list = document.querySelector('.content .panel .list');
+    const list = document.querySelector('[data-project-list]');
     if (list) {
-      list.innerHTML = projects.slice(0, 3).map(p => `<div class="list-item"><div class="item-top"><div><div class="item-title">${p.name}</div><div class="item-meta">${p.company_name || ''} · ${p.work_location || ''} · 招聘人数 ${p.hiring_count}${p.description ? ` · ${p.description}` : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-project" data-id="${p.id}">编辑</button><button class="btn-sm" data-action="toggle-project" data-id="${p.id}">${p.status === '招聘完毕' ? '恢复' : '完结'}</button><button class="btn-sm" data-action="delete-project" data-id="${p.id}">删除</button></div><span class="chip ${p.status==='招聘完毕'?'neutral':'success'}">${p.status}</span></div></div>`).join('');
+      list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : '';
     }
   } catch (err) { console.warn(err); }
 });

@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-06-25 (补充 - AI 检索只存在于本地未提交改动)
+
+- 当前仓库 `main` 分支与 `origin/main` 处于同一个提交 `7e87577`，没有本地领先或落后的已提交 commit。
+- 但工作区是脏的，`src/pages/candidates.html` 和 `app.js` 都有未提交修改，其中就包含 `AI检索` 按钮、`data-ai-search-modal` 弹窗和 `open-ai-search-modal` / `confirm-ai-search` 事件处理。
+- `origin/main` 上的对应文件不包含这些 AI 搜索代码，所以远程即使已经 `git pull` 到最新提交，也不会看到这部分功能。
+- 这次差异的根因不是“远程没 pull 成功”，而是“功能停留在本地工作区，尚未 commit/push”。
+
 ## 2026-06-25 (补充 - root 8000 now lands on homepage)
 
 - The server is already exposing the static site through port 8000; the missing piece was a root `index.html` at the repository root.

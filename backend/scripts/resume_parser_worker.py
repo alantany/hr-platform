@@ -80,14 +80,17 @@ def call_llm_for_json(resume_text: str) -> dict:
     return json.loads(raw_response.strip())
 
 def process_pending_tasks():
-    db = SessionLocal()
-    try:
-        tasks = db.query(ResumeParseTask).filter(ResumeParseTask.status == "PENDING").order_by(ResumeParseTask.id.asc()).all()
-        if not tasks:
-            print("No pending tasks.")
-            return
-
-        for task in tasks:
+    processed_any = False
+    while True:
+        db = SessionLocal()
+        try:
+            task = db.query(ResumeParseTask).filter(ResumeParseTask.status == "PENDING").order_by(ResumeParseTask.id.asc()).first()
+            if not task:
+                if not processed_any:
+                    print("No pending tasks.")
+                break
+            
+            processed_any = True
             print(f"Processing task {task.id} for download_id {task.resume_download_id}...")
             task.status = "PROCESSING"
             db.commit()
@@ -203,7 +206,7 @@ def process_pending_tasks():
                         education_detail=parsed_data.get("education_detail") or "",
                         work_history=parsed_data.get("work_history") or "",
                         project_history=parsed_data.get("project_history") or "",
-                        source="AI解析",
+                        source="简历库",
                         status="未锁定"
                     )
                     db.add(candidate)
@@ -221,9 +224,8 @@ def process_pending_tasks():
                 print(f"Task {task.id} failed: {e}")
             
             db.commit()
-
-    finally:
-        db.close()
+        finally:
+            db.close()
 
 def sync_new_downloads(db):
     sql = text("""

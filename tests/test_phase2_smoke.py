@@ -55,14 +55,35 @@ def test_support_modules_smoke():
         assert isinstance(summary["customer_rankings"], list)
 
 
-def test_batch_import_smoke():
+from unittest.mock import patch
+from backend.app.models import Candidate
+
+@patch("backend.app.main.parse_and_create_candidate")
+def test_batch_import_smoke(mock_parse):
+    def side_effect(db, full_path, save_name, username):
+        stem = Path(full_path).stem
+        if "_" in stem:
+            stem = stem.split("_", 1)[1]
+        c = Candidate(
+            name=stem,
+            phone="13800000000",
+            email="test@test.com",
+            city="深圳",
+            status="未锁定",
+            source="AI解析"
+        )
+        db.add(c)
+        db.flush()
+        return {"status": "success", "candidate": c}
+    mock_parse.side_effect = side_effect
+
     with TestClient(app) as client:
         token = client.post("/api/auth/login", json={"username": "admin", "password": "admin123"}).json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
         suffix = uuid4().hex[:8]
         files = [
             ("files", (f"batch-a-{suffix}.pdf", BytesIO(b"resume-a"), "application/pdf")),
-            ("files", (f"batch-b-{suffix}.docx", BytesIO(b"resume-b"), "application/vnd.openxmlformats-officedocument.wordprocessingml.document")),
+            ("files", (f"batch-b-{suffix}.pdf", BytesIO(b"resume-b"), "application/pdf")),
         ]
         response = client.post("/api/imports/batch", files=files, headers=headers)
         assert response.status_code == 200

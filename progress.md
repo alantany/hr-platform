@@ -1612,6 +1612,7 @@
 - 完成权限系统 RBAC 与数据权限收口：
 - Task finalized by Codex hook (unknown) at 2026-06-25 12:38:11
 - Task finalized by Codex hook (unknown) at 2026-06-25 12:38:25
+- Task finalized by Codex hook (unknown) at 2026-06-25 12:41:36
   * 后端新增 `security.py` 权限辅助，用户/角色/权限/数据权限/操作日志接口改为超级管理员强校验。
   * 客户、项目、岗位、候选人列表与详情已按角色数据范围过滤，非管理员只能看到授权范围内的数据。
   * 数据权限范围收口为 `company / project / position`，接口会拒绝旧的 `team / personal` 值，前端数据权限页文案和下拉项也已同步。

@@ -1,12 +1,12 @@
 @echo off
 setlocal EnableExtensions
-REM 第 3 步：启动后端服务
+REM Step 3: start backend service
 
 cd /d "%~dp0\.."
 
 where python >nul 2>nul
 if errorlevel 1 (
-  echo [ERROR] 未找到 python，请先安装 Python 3 并加入 PATH
+  echo [ERROR] Python not found. Please install Python 3 and add it to PATH.
   pause
   exit /b 1
 )
@@ -14,7 +14,7 @@ if errorlevel 1 (
 python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 set "EXIT_CODE=%ERRORLEVEL%"
 if not "%EXIT_CODE%"=="0" (
-  echo [ERROR] 后端启动失败，退出码 %EXIT_CODE%
+  echo [ERROR] Backend start failed with exit code %EXIT_CODE%
   pause
 )
 exit /b %EXIT_CODE%
