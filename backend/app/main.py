@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from fastapi.responses import FileResponse
 from . import crud, models, schemas
 from .config import settings
-from .database import Base, engine, get_db
+from .database import Base, SessionLocal, engine, get_db
 from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
 from . import security
 from .security import get_current_user
@@ -277,6 +277,32 @@ def _delete_project_graph(db: Session, project_ids: list[int]) -> None:
 def startup() -> None:
     ensure_schema()
     seed_data()
+    backfill_legacy_ownership()
+
+
+def backfill_legacy_ownership() -> None:
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.username == "admin").first()
+        if not admin:
+            return
+        updated = db.query(Candidate).filter(Candidate.owner_user_id.is_(None)).update(
+            {Candidate.owner_user_id: admin.id},
+            synchronize_session=False,
+        )
+        if updated:
+            db.add(AuditLog(
+                actor="system",
+                module="权限系统",
+                action="回填历史候选人归属",
+                target_type="candidate",
+                target_id="legacy",
+                result="成功",
+                detail=f"已将 {updated} 条历史候选人归属回填为 admin",
+            ))
+        db.commit()
+    finally:
+        db.close()
 
 
 def require_user(db: Session = Depends(get_db), authorization: str | None = Header(default=None)):

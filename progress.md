@@ -1626,6 +1626,7 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 15:43:51
 - Task finalized by Codex hook (unknown) at 2026-06-25 16:24:43
 - 2026-06-25 17:15:06 CST: 修复权限收口后非管理员自建/导入候选人简历导出被拒的问题。
+- Task finalized by Codex hook (unknown) at 2026-06-25 17:16:15
   * 复现原因：导出接口新增候选人访问校验后，普通用户创建的候选人没有写入 `owner_user_id`，会被判定为无候选人访问权。
   * 修复范围：候选人手工创建、PDF 简历导入、抓取简历导入都会写入当前用户归属；管理员仍可显式指定候选人归属。
   * 回归覆盖：新增 operator 自建候选人后导出的权限测试，并补齐 PDF 导出测试依赖 `pypdf`。
@@ -1695,3 +1696,7 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 12:32:37
 - Task finalized by Codex hook (unknown) at 2026-06-25 12:34:20
 - Task finalized by Codex hook (unknown) at 2026-06-25 12:35:35
+- 2026-06-25 17:23:19 CST: 继续修复远程简历导出失败和本地启动缺 `uvicorn`。
+  * 本地 `run.sh` 改为优先使用 `uv run --with-requirements requirements.txt uvicorn ...`，避免系统 Python 环境未安装 `uvicorn` 导致启动失败。
+  * 后端启动流程新增历史候选人归属回填：将 `owner_user_id` 为空的旧候选人默认回填为 `admin`，解决远程库旧数据在权限收口后仍无法导出的问题。
+  * 已验证 `uvicorn` 可在 requirements 环境中导入，`bash -n run.sh` 和 `python3 -m py_compile backend/app/main.py` 通过，权限和 PDF 导出测试 9 个用例通过。
