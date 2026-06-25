@@ -242,6 +242,29 @@ button, input, select { font: inherit; }
   box-shadow: var(--shadow-sm);
   font-size: 12px;
 }
+.btn.is-busy, .btn-sm.is-busy, .top-action.is-busy, .login-submit.is-busy {
+  cursor: wait;
+  opacity: 0.78;
+  pointer-events: none;
+}
+.btn.is-busy, .btn-sm.is-busy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.btn-busy-spinner {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: button-busy-spin .7s linear infinite;
+}
+@keyframes button-busy-spin {
+  to { transform: rotate(360deg); }
+}
 .btn.primary {
   background: var(--primary);
   color: var(--primary-foreground);

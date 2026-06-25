@@ -340,6 +340,124 @@ function showLoadingToast(message) {
   return () => toast.remove();
 }
 
+const busyLabelByAction = {
+  "open-export-modal": "加载导出数据...",
+  "export-selected": "加载导出数据...",
+  "confirm-export-upload": "导出中...",
+  "confirm-ai-search": "匹配中...",
+  "search-candidates": "筛选中...",
+  "view-detail": "加载详情...",
+  "toggle-details": "加载详情...",
+  "confirm-search-preset-upload": "保存中...",
+  "confirm-recommendation-status": "保存中...",
+  "confirm-candidate-edit": "保存中...",
+  "confirm-candidate-create": "创建中...",
+  "confirm-recommend": "推荐中...",
+  "confirm-add-note": "保存中...",
+  "confirm-add-tracking": "保存中...",
+  "confirm-candidate-mail": "发送中...",
+  "confirm-salary-tracking": "保存中...",
+  "confirm-candidate-action": "处理中...",
+  "confirm-import-upload": "导入中...",
+  "confirm-batch-import-upload": "导入中...",
+  "confirm-not-onboard": "保存中...",
+  "confirm-onboard": "保存中...",
+};
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function shouldShowButtonBusy(button) {
+  const action = button?.dataset?.action || "";
+  if (!action || button?.dataset?.busy === "true") return false;
+  if (["logout", "refresh-page"].includes(action)) return false;
+  if (action.startsWith("close-") || action.startsWith("nav-")) return false;
+  return Boolean(
+    busyLabelByAction[action] ||
+    /^(confirm|refresh|read|delete|toggle|search|export|import)-/.test(action) ||
+    ["view-detail", "toggle-details", "edit-candidate", "edit-company", "edit-project", "edit-salary-record", "open-recommend-modal", "open-candidate-mail-modal", "open-add-salary-modal"].includes(action)
+  );
+}
+
+function getButtonBusyLabel(button, label) {
+  if (label) return label;
+  const action = button?.dataset?.action || "";
+  if (button?.dataset?.busyLabel) return button.dataset.busyLabel;
+  if (busyLabelByAction[action]) return busyLabelByAction[action];
+  if (action.startsWith("refresh-")) return "刷新中...";
+  if (action.startsWith("delete-")) return "删除中...";
+  if (action.startsWith("toggle-")) return "处理中...";
+  if (action.startsWith("read-")) return "处理中...";
+  if (action.startsWith("confirm-")) return "保存中...";
+  return "处理中...";
+}
+
+function setButtonBusyLabel(button, label) {
+  if (!button || button.dataset?.busy !== "true") return;
+  button.innerHTML = `<span class="btn-busy-spinner" aria-hidden="true"></span><span>${escapeHtml(label)}</span>`;
+}
+
+function setButtonBusy(button, busy, label) {
+  if (!button || typeof button !== "object" || !("dataset" in button) || !("classList" in button)) {
+    return () => {};
+  }
+  if (!busy) {
+    if (button.dataset.busyOriginalHtml !== undefined) {
+      button.innerHTML = button.dataset.busyOriginalHtml;
+    }
+    if (button.dataset.busyOriginalDisabled !== undefined) {
+      button.disabled = button.dataset.busyOriginalDisabled === "true";
+    }
+    delete button.dataset.busy;
+    delete button.dataset.busyOriginalHtml;
+    delete button.dataset.busyOriginalDisabled;
+    button.classList.remove("is-busy");
+    button.removeAttribute("aria-busy");
+    return () => {};
+  }
+  if (button.dataset.busy === "true") return () => setButtonBusy(button, false);
+  button.dataset.busy = "true";
+  button.dataset.busyOriginalHtml = button.innerHTML;
+  button.dataset.busyOriginalDisabled = String(Boolean(button.disabled));
+  button.disabled = true;
+  button.classList.add("is-busy");
+  button.setAttribute("aria-busy", "true");
+  setButtonBusyLabel(button, getButtonBusyLabel(button, label));
+  return () => setButtonBusy(button, false);
+}
+
+async function waitForBusyPaint() {
+  await new Promise((resolve) => {
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => resolve());
+    } else {
+      setTimeout(resolve, 0);
+    }
+  });
+}
+
+async function withButtonBusy(button, task, label) {
+  if (!button || !shouldShowButtonBusy(button)) {
+    return task();
+  }
+  const restore = setButtonBusy(button, true, label);
+  try {
+    await waitForBusyPaint();
+    return await task();
+  } finally {
+    restore();
+  }
+}
+
+window.withButtonBusy = withButtonBusy;
+window.setButtonBusyLabel = setButtonBusyLabel;
+
 function getCandidateFilterSummary() {
   const keyword = document.querySelector('[data-field="candidate-keyword"]')?.value?.trim() || "";
   const city = document.querySelector('[data-field="candidate-city"]')?.value?.trim() || "";
@@ -771,12 +889,19 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "open-export-modal") {
     const modal = document.querySelector('[data-export-modal]');
     if (modal) modal.style.display = 'block';
+    const candidateList = document.querySelector('[data-export-candidates-list]');
+    const history = document.querySelector('[data-export-history-modal]');
+    if (candidateList) {
+      candidateList.innerHTML = '<div class="list-item"><div class="item-meta">正在加载可导出的候选人...</div></div>';
+    }
+    if (history) {
+      history.innerHTML = '<div class="list-item"><div class="item-meta">正在加载导出历史...</div></div>';
+    }
     const [candidates, records] = await Promise.all([
       window.hrApi.candidates(),
       window.hrApi.exportRecords(),
     ]);
     // 渲染候选人卡片列表（全部）
-    const candidateList = document.querySelector('[data-export-candidates-list]');
     if (candidateList) {
       modal.dataset.exportIds = JSON.stringify(candidates.map(c => String(c.id)));
       candidateList.innerHTML = candidates.length
@@ -784,7 +909,6 @@ async function handleGlobalButton(button) {
         : '<div style="color:#94a3b8;font-size:13px;padding:12px;text-align:center;">暂无候选人数据</div>';
     }
     // 渲染导出历史
-    const history = document.querySelector('[data-export-history-modal]');
     if (history) history.innerHTML = records.slice(0, 5).map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">${r.file_name}</div><div class="item-meta">${r.company_name || ''} · ${r.project_name || ''}</div><div class="item-meta mono">${r.format} · ${r.created_at}</div></div><span class="chip success">PDF</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">暂无导出记录</div></div>';
     return;
   }
@@ -805,7 +929,8 @@ async function handleGlobalButton(button) {
 
     // 批量逐一导出，每个候选人生成一份 PDF
     let successCount = 0;
-    for (const candidate of exportList) {
+    for (const [index, candidate] of exportList.entries()) {
+      setButtonBusyLabel(button, `导出中 ${index + 1}/${exportList.length}...`);
       // 从对应卡片的输入框读取三个元数据字段
       const cid = String(candidate.id);
       const contractNo = document.querySelector(`[data-export-contract-no="${cid}"]`)?.value?.trim() || '';
@@ -867,6 +992,14 @@ async function handleGlobalButton(button) {
 
     const modal = document.querySelector('[data-export-modal]');
     if (modal) modal.style.display = 'block';
+    const candidateList = document.querySelector('[data-export-candidates-list]');
+    const history = document.querySelector('[data-export-history-modal]');
+    if (candidateList) {
+      candidateList.innerHTML = '<div class="list-item"><div class="item-meta">正在加载选中候选人...</div></div>';
+    }
+    if (history) {
+      history.innerHTML = '<div class="list-item"><div class="item-meta">正在加载导出历史...</div></div>';
+    }
     
     const [candidates, records] = await Promise.all([
       window.hrApi.candidates(),
@@ -876,7 +1009,6 @@ async function handleGlobalButton(button) {
     const filteredCandidates = candidates.filter(c => checkedIds.includes(String(c.id)));
     
     // 渲染勾选的候选人卡片
-    const candidateList = document.querySelector('[data-export-candidates-list]');
     if (candidateList) {
       modal.dataset.exportIds = JSON.stringify(filteredCandidates.map(c => String(c.id)));
       candidateList.innerHTML = filteredCandidates.length
@@ -884,7 +1016,6 @@ async function handleGlobalButton(button) {
         : '<div style="color:#94a3b8;font-size:13px;padding:12px;text-align:center;">未匹配到候选人数据</div>';
     }
     // 渲染导出历史
-    const history = document.querySelector('[data-export-history-modal]');
     if (history) history.innerHTML = records.slice(0, 5).map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">${r.file_name}</div><div class="item-meta">${r.company_name || ''} · ${r.project_name || ''}</div><div class="item-meta mono">${r.format} · ${r.created_at}</div></div><span class="chip success">PDF</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">暂无导出记录</div></div>';
     return;
   }
@@ -3819,7 +3950,7 @@ function bindActionButtons() {
     btn.dataset.bound = "true";
     btn.addEventListener("click", (event) => {
       event.preventDefault();
-      handleGlobalButton(btn).catch((err) => showToast(`操作失败：${err.message || err}`));
+      withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));
     });
   });
 }
@@ -3831,7 +3962,7 @@ document.addEventListener("click", (event) => {
   if (!explicitAction && !/^(详情|搜索|导入简历|导出选中|选择文件|查看项目进度|进入求职者数据池|查看待办)/.test((btn.textContent || "").trim())) return;
   if (btn.dataset.bound === "true") return;
   event.preventDefault();
-  handleGlobalButton(btn).catch((err) => showToast(`操作失败：${err.message || err}`));
+  withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));
 });
 
 document.addEventListener("focusout", (event) => {

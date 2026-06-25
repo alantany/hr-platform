@@ -1609,6 +1609,14 @@
 
 ## 2026-06-25
 
+- 2026-06-25 19:37:43 CST: 完成异步按钮即时反馈收口。
+  * 在 `app.js` 新增共享 `withButtonBusy()` / `setButtonBusyLabel()`，全局按钮委托会在异步操作开始前立即显示 spinner、忙碌文案、禁用态和 `aria-busy=true`，完成后恢复原按钮内容。
+  * 简历导出链路补强：勾选导出时弹窗候选人区和导出历史区先显示“正在加载...”，确认导出按钮会立刻显示 `导出中...`，批量导出循环中更新为 `导出中 N/M...`。
+  * 补充 `styles.css` 的 `.is-busy` 和 `.btn-busy-spinner` 样式，沿用当前后台的紧凑按钮风格，没有引入新依赖或改变业务接口。
+  * Playwright 验证结果：`export-selected` 点击后 80ms 内显示 `加载导出数据...`、禁用且 `aria-busy=true`；`confirm-export-upload` 显示 `导出中...`；`confirm-ai-search` 显示 `匹配中...` 并保留 `AI深度匹配中...` Toast；`refresh-audit-logs` 显示 `刷新中...`。
+  * 验证时产生的导出记录 `export_records.id=115` 和 PDF `exports/转派候选人-753ede78-10169-358698.pdf` 已精确删除，复查数据库计数为 0 且文件不存在。
+  * 验证命令：`node --check app.js` 通过；`git diff --check -- app.js styles.css` 通过；`uv run --with-requirements requirements.txt pytest tests/test_pdf_export.py -q` 通过（1 passed，只有既有 deprecation warnings）。
+
 - 完成权限系统 RBAC 与数据权限收口：
 - Task finalized by Codex hook (unknown) at 2026-06-25 12:38:11
 - Task finalized by Codex hook (unknown) at 2026-06-25 12:38:25
@@ -1629,6 +1637,8 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 17:16:15
 - Task finalized by Codex hook (unknown) at 2026-06-25 17:24:04
 - Task finalized by Codex hook (unknown) at 2026-06-25 17:38:37
+- Task finalized by Codex hook (unknown) at 2026-06-25 17:41:52
+- Task finalized by Codex hook (unknown) at 2026-06-25 19:24:18
   * 复现原因：导出接口新增候选人访问校验后，普通用户创建的候选人没有写入 `owner_user_id`，会被判定为无候选人访问权。
   * 修复范围：候选人手工创建、PDF 简历导入、抓取简历导入都会写入当前用户归属；管理员仍可显式指定候选人归属。
   * 回归覆盖：新增 operator 自建候选人后导出的权限测试，并补齐 PDF 导出测试依赖 `pypdf`。

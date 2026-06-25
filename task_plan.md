@@ -238,3 +238,12 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 用户管理页新增“直属组长ID”创建/编辑字段，便于配置李四、王五归属张三这类团队关系。
 - [x] 新增回归测试覆盖张三/孙二/李四/王五场景：李四王五互相不可见，张三可见下属项目，孙二不可见张三组项目。
 - **Status:** complete
+
+### Phase 20 - 异步按钮即时反馈（已完成）
+
+- [x] 盘点按钮异步入口，确认高频操作主要集中在 `app.js` 的全局 `button[data-action]` 委托。
+- [x] 新增共享按钮忙碌态，异步开始前立即显示 loading、禁用和 `aria-busy`，完成后恢复。
+- [x] 简历导出补上弹窗加载空态和批量导出 `N/M` 进度反馈。
+- [x] 用 Playwright 延迟接口验证导出、AI 检索和日志刷新三个代表性异步按钮的即时反馈。
+- [x] 跑通 `node --check app.js`、`git diff --check -- app.js styles.css` 和 `tests/test_pdf_export.py`。
+- **Status:** complete

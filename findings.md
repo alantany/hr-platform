@@ -1,5 +1,13 @@
 # Findings
 
+## 2026-06-25 (补充 - 异步按钮即时反馈)
+
+- 当前异步按钮主要集中在 `app.js` 的全局 `button[data-action]` 委托，简历导出、AI 检索、日志/通知/AI 任务刷新、候选人保存、推荐保存等高频动作都从这里进入。
+- 此前很多按钮只在异步操作完成后通过 Toast 或页面刷新反馈，用户点击后到接口返回前缺少可见状态，容易误判为“没点上”。
+- 已新增共享 `withButtonBusy()` 机制：按钮进入异步流程后会立即显示 spinner + 忙碌文案、设置 `aria-busy=true` 并禁用，异步结束后恢复原始 HTML 和禁用状态。
+- 简历导出弹窗打开和勾选导出会先写入“正在加载...”空态；确认导出时按钮会显示 `导出中...`，批量循环中会更新为 `导出中 N/M...`。
+- Playwright 延迟接口验证已确认 `export-selected`、`confirm-export-upload`、`confirm-ai-search`、`refresh-audit-logs` 点击后 80ms 内进入忙碌态。
+
 ## 2026-06-25 (补充 - 权限系统登录与横切数据权限闭环)
 
 - 权限系统此前已有 RBAC 和部分数据范围过滤，但登录仍是开发态：前端默认 `dev-token`，后端登录固定校验 `admin123` 并返回同一个管理员 token，leader/operator 无法形成真实登录身份。
