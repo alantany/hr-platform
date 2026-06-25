@@ -101,6 +101,37 @@ def test_operator_only_sees_candidates_for_authorized_position():
     assert client.get(f"/api/candidates/{blocked['id']}", headers=user_headers("operator")).status_code == 403
 
 
+def test_operator_can_export_candidate_created_by_self():
+    suffix = uuid4().hex[:8]
+    operator_headers = user_headers("operator")
+    operator_id = client.get("/api/me", headers=operator_headers).json()["id"]
+    candidate = client.post(
+        "/api/candidates",
+        json={"name": f"操作员自建导出候选人-{suffix}"},
+        headers=operator_headers,
+    ).json()
+
+    assert candidate["owner_user_id"] == operator_id
+
+    response = client.post(
+        "/api/export-records",
+        json={
+            "candidate_id": candidate["id"],
+            "candidate_name": candidate["name"],
+            "company_name": "自有客户",
+            "project_name": "自有项目",
+            "position_name": "自有岗位",
+            "format": "PDF",
+            "watermarked": True,
+            "exported_by": "operator",
+        },
+        headers=operator_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["candidate_id"] == candidate["id"]
+
+
 def test_data_scope_applies_to_recommendation_export_notification_analytics_and_ai():
     suffix = uuid4().hex[:8]
     headers = admin_headers()

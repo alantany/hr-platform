@@ -754,7 +754,8 @@ def list_candidates(
 
 @app.post("/api/candidates", response_model=schemas.CandidateOut)
 def add_candidate(payload: schemas.CandidateCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    obj = crud.create_candidate(db, payload)
+    owner_user_id = payload.owner_user_id if security.is_admin(user) and payload.owner_user_id else user.id
+    obj = crud.create_candidate(db, payload.model_copy(update={"owner_user_id": owner_user_id}))
     crud.add_audit(db, user.username, "候选人池", "创建候选人", "candidate", "new", detail=payload.name)
     db.commit()
     db.refresh(obj)
@@ -1894,7 +1895,7 @@ def ai_match_candidate(job_description: str, candidates: list[Candidate]) -> dic
     except Exception:
         return _fallback_ai_match(job_description, candidates)
 
-def parse_and_create_candidate(db: Session, full_path: str, save_name: str, username: str) -> dict:
+def parse_and_create_candidate(db: Session, full_path: str, save_name: str, username: str, owner_user_id: int | None = None) -> dict:
     text_content = ""
     with pdfplumber.open(full_path) as pdf:
         for page in pdf.pages:
@@ -1939,7 +1940,8 @@ def parse_and_create_candidate(db: Session, full_path: str, save_name: str, user
         project_history=parsed_data.get("project_history") or "",
         file_path=relative_file_path,
         source="手工导入",
-        status="未锁定"
+        status="未锁定",
+        owner_user_id=owner_user_id,
     )
     db.add(candidate)
     db.flush()
@@ -1962,7 +1964,7 @@ def import_smoke(file: UploadFile = File(...), db: Session = Depends(get_db), us
         f.write(file.file.read())
         
     try:
-        result = parse_and_create_candidate(db, full_path, save_name, user.username)
+        result = parse_and_create_candidate(db, full_path, save_name, user.username, user.id)
         if result["status"] == "duplicate":
             duplicate = result["duplicate"]
             candidate_name = result["candidate_name"]
@@ -2052,7 +2054,7 @@ def import_batch(files: list[UploadFile] = File(...), db: Session = Depends(get_
             f.write(file.file.read())
             
         try:
-            result = parse_and_create_candidate(db, full_path, save_name, user.username)
+            result = parse_and_create_candidate(db, full_path, save_name, user.username, user.id)
             if result["status"] == "duplicate":
                 duplicates += 1
                 duplicate = result["duplicate"]
@@ -2273,7 +2275,8 @@ def import_recruit_candidate(agent_id: str, db: Session = Depends(get_db), user:
         age=age_val,
         education=profile.candidate_education or "",
         expected_salary="",
-        tags=""
+        tags="",
+        owner_user_id=user.id,
     )
     db.add(new_c)
     db.flush()

@@ -1624,6 +1624,11 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 15:25:14
 - Task finalized by Codex hook (unknown) at 2026-06-25 15:40:02
 - Task finalized by Codex hook (unknown) at 2026-06-25 15:43:51
+- Task finalized by Codex hook (unknown) at 2026-06-25 16:24:43
+- 2026-06-25 17:15:06 CST: 修复权限收口后非管理员自建/导入候选人简历导出被拒的问题。
+  * 复现原因：导出接口新增候选人访问校验后，普通用户创建的候选人没有写入 `owner_user_id`，会被判定为无候选人访问权。
+  * 修复范围：候选人手工创建、PDF 简历导入、抓取简历导入都会写入当前用户归属；管理员仍可显式指定候选人归属。
+  * 回归覆盖：新增 operator 自建候选人后导出的权限测试，并补齐 PDF 导出测试依赖 `pypdf`。
   * 后端新增 `security.py` 权限辅助，用户/角色/权限/数据权限/操作日志接口改为超级管理员强校验。
   * 客户、项目、岗位、候选人列表与详情已按角色数据范围过滤，非管理员只能看到授权范围内的数据。
   * 数据权限范围收口为 `company / project / position`，接口会拒绝旧的 `team / personal` 值，前端数据权限页文案和下拉项也已同步。
