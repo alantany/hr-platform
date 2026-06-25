@@ -98,9 +98,18 @@ window.hrApi = {
   togglePosition(id) {
     return this.request(`/positions/${id}/toggle`, { method: "POST" });
   },
+  deletePosition(id) {
+    return this.request(`/positions/${id}`, { method: "DELETE" });
+  },
   candidates(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/candidates${qs ? `?${qs}` : ""}`);
+  },
+  candidate(id) {
+    return this.request(`/candidates/${encodeURIComponent(id)}`);
+  },
+  candidateAiSearch(payload) {
+    return this.request("/candidates/ai-search", { method: "POST", body: JSON.stringify(payload) });
   },
   searchPresets() {
     return this.request("/search-presets");
@@ -127,6 +136,12 @@ window.hrApi = {
   createCandidateTrackingEvent(payload) {
     return this.request("/candidate-tracking-events", { method: "POST", body: JSON.stringify(payload) });
   },
+  updateCandidateTrackingEvent(eventId, payload) {
+    return this.request(`/candidate-tracking-events/${eventId}`, { method: "PUT", body: JSON.stringify(payload) });
+  },
+  deleteCandidateTrackingEvent(eventId) {
+    return this.request(`/candidate-tracking-events/${eventId}`, { method: "DELETE" });
+  },
   interviewRecords(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/interview-records${qs ? `?${qs}` : ""}`);
@@ -140,6 +155,12 @@ window.hrApi = {
   },
   createSalaryRecord(payload) {
     return this.request("/salary-records", { method: "POST", body: JSON.stringify(payload) });
+  },
+  updateSalaryRecord(recordId, payload) {
+    return this.request(`/salary-records/${recordId}`, { method: "PATCH", body: JSON.stringify(payload) });
+  },
+  deleteSalaryRecord(recordId) {
+    return this.request(`/salary-records/${recordId}`, { method: "DELETE" });
   },
   employmentRecords(params = {}) {
     const qs = new URLSearchParams(params).toString();
@@ -183,6 +204,13 @@ window.hrApi = {
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     });
+  },
+  createCandidateNote(payload) {
+    return this.request("/candidate-notes", { method: "POST", body: JSON.stringify(payload) });
+  },
+  candidateNotes(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/candidate-notes${qs ? `?${qs}` : ""}`);
   },
   createRecommendation(payload) {
     return this.request("/recommendations", { method: "POST", body: JSON.stringify(payload) });
@@ -302,6 +330,16 @@ window.hrApi = {
   saveDataPermission(payload) {
     return this.request("/data-permissions", { method: "POST", body: JSON.stringify(payload) });
   },
+  candidateOwnershipTransfers(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/candidate-ownership-transfers${qs ? `?${qs}` : ""}`);
+  },
+  createCandidateOwnershipTransfer(payload) {
+    return this.request("/candidate-ownership-transfers", { method: "POST", body: JSON.stringify(payload) });
+  },
+  approveCandidateOwnershipTransfer(id, payload = {}) {
+    return this.request(`/candidate-ownership-transfers/${id}/approve`, { method: "POST", body: JSON.stringify(payload) });
+  },
   importSmoke(file) {
     const form = new FormData();
     form.append("file", file);
@@ -327,15 +365,7 @@ window.hrApi = {
     });
   },
   dbTables() {
-    return Promise.resolve([
-      "users", "roles", "role_permissions", "data_permissions", "companies",
-      "projects", "positions", "candidates", "recommendations", "recommendation_feedbacks",
-      "candidate_tracking_events", "interview_records", "salary_records", "employment_records",
-      "candidate_follow_up_records", "candidate_mail_records", "search_presets", "export_records",
-      "import_records", "deliveries", "audit_logs", "warranty_rules", "system_configs",
-      "email_configs", "ai_tasks", "candidate_profiles", "resume_downloads",
-      "employees", "job_postings", "daily_task_stats", "resume_parse_tasks"
-    ]);
+    return this.request("/db-tables");
   },
   dbTableData(tableName, params = {}) {
     const limit = params.limit || 100;

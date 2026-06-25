@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, UploadFile, File
@@ -13,11 +14,13 @@ from fastapi.responses import FileResponse
 from . import crud, models, schemas
 from .config import settings
 from .database import Base, engine, get_db
-from .models import AuditLog, AiTask, Candidate, CandidateFollowUpRecord, CandidateMailRecord, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
+from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
+from . import security
 from .security import get_current_user
 from backend.seed import seed as seed_data
 import os
 import json
+import re
 import time
 import pdfplumber
 from openai import OpenAI
@@ -132,6 +135,7 @@ def ensure_schema() -> None:
             "job_intention": "ALTER TABLE candidates ADD COLUMN job_intention TEXT NOT NULL DEFAULT ''",
             "project_history": "ALTER TABLE candidates ADD COLUMN project_history TEXT NOT NULL DEFAULT ''",
             "file_path": "ALTER TABLE candidates ADD COLUMN file_path TEXT NOT NULL DEFAULT ''",
+            "owner_user_id": "ALTER TABLE candidates ADD COLUMN owner_user_id INTEGER",
         }.items():
             if column not in cand_cols:
                 conn.execute(text(ddl))
@@ -147,8 +151,110 @@ def ensure_schema() -> None:
             if column not in pos_cols:
                 conn.execute(text(ddl))
 
+        # candidate_tracking_events
+        evt_cols = {col['name'] for col in inspector.get_columns("candidate_tracking_events")}
+        for column, ddl in {
+            "interview_round": "ALTER TABLE candidate_tracking_events ADD COLUMN interview_round TEXT NOT NULL DEFAULT ''",
+            "screening_result": "ALTER TABLE candidate_tracking_events ADD COLUMN screening_result TEXT NOT NULL DEFAULT ''",
+            "interview_date": "ALTER TABLE candidate_tracking_events ADD COLUMN interview_date TEXT NOT NULL DEFAULT ''",
+            "interviewer": "ALTER TABLE candidate_tracking_events ADD COLUMN interviewer TEXT NOT NULL DEFAULT ''",
+            "interview_location": "ALTER TABLE candidate_tracking_events ADD COLUMN interview_location TEXT NOT NULL DEFAULT ''",
+            "interview_requirements": "ALTER TABLE candidate_tracking_events ADD COLUMN interview_requirements TEXT NOT NULL DEFAULT ''",
+            "interview_contact": "ALTER TABLE candidate_tracking_events ADD COLUMN interview_contact TEXT NOT NULL DEFAULT ''",
+            "interview_result": "ALTER TABLE candidate_tracking_events ADD COLUMN interview_result TEXT NOT NULL DEFAULT '-'",
+            "note": "ALTER TABLE candidate_tracking_events ADD COLUMN note TEXT NOT NULL DEFAULT ''",
+            "employment_status": "ALTER TABLE candidate_tracking_events ADD COLUMN employment_status TEXT NOT NULL DEFAULT '待设置'",
+        }.items():
+            if column not in evt_cols:
+                conn.execute(text(ddl))
+
+        # salary_records
+        sal_cols = {col['name'] for col in inspector.get_columns("salary_records")}
+        for column, ddl in {
+            "position_id": "ALTER TABLE salary_records ADD COLUMN position_id INTEGER",
+            "interview_round": "ALTER TABLE salary_records ADD COLUMN interview_round TEXT NOT NULL DEFAULT ''",
+            "position_name": "ALTER TABLE salary_records ADD COLUMN position_name TEXT NOT NULL DEFAULT ''",
+            "company_name": "ALTER TABLE salary_records ADD COLUMN company_name TEXT NOT NULL DEFAULT ''",
+            "agreed_salary": "ALTER TABLE salary_records ADD COLUMN agreed_salary TEXT NOT NULL DEFAULT ''",
+            "welfare_desc": "ALTER TABLE salary_records ADD COLUMN welfare_desc TEXT NOT NULL DEFAULT ''",
+            "onboard_cond": "ALTER TABLE salary_records ADD COLUMN onboard_cond TEXT NOT NULL DEFAULT ''",
+            "candidate_accepted": "ALTER TABLE salary_records ADD COLUMN candidate_accepted TEXT NOT NULL DEFAULT ''",
+            "operator": "ALTER TABLE salary_records ADD COLUMN operator TEXT NOT NULL DEFAULT ''",
+        }.items():
+            if column not in sal_cols:
+                conn.execute(text(ddl))
+
+        # export_records — 三个手写信息字段
+        exp_cols = {col['name'] for col in inspector.get_columns("export_records")}
+        for column, ddl in {
+            "contract_no": "ALTER TABLE export_records ADD COLUMN contract_no TEXT NOT NULL DEFAULT ''",
+            "project_no": "ALTER TABLE export_records ADD COLUMN project_no TEXT NOT NULL DEFAULT ''",
+            "headhunter_position": "ALTER TABLE export_records ADD COLUMN headhunter_position TEXT NOT NULL DEFAULT ''",
+        }.items():
+            if column not in exp_cols:
+                conn.execute(text(ddl))
+
+        # candidate ownership transfers
+        if "candidate_ownership_transfers" not in inspector.get_table_names():
+            conn.execute(text(
+                """
+                CREATE TABLE candidate_ownership_transfers (
+                    id SERIAL PRIMARY KEY,
+                    candidate_id INTEGER NOT NULL,
+                    from_user_id INTEGER,
+                    to_user_id INTEGER NOT NULL,
+                    reason TEXT NOT NULL DEFAULT '',
+                    approved_by_id INTEGER,
+                    status TEXT NOT NULL DEFAULT '待审批',
+                    approved_at TIMESTAMP,
+                    created_at TIMESTAMP NOT NULL,
+                    updated_at TIMESTAMP NOT NULL
+                )
+                """
+            ))
+
 
 ensure_schema()
+
+
+def _delete_recommendation_graph(db: Session, recommendation_ids: list[int]) -> None:
+    if not recommendation_ids:
+        return
+    db.query(CandidateTrackingEvent).filter(CandidateTrackingEvent.recommendation_id.in_(recommendation_ids)).delete(synchronize_session=False)
+    db.query(RecommendationFeedback).filter(RecommendationFeedback.recommendation_id.in_(recommendation_ids)).delete(synchronize_session=False)
+    db.query(Delivery).filter(Delivery.recommendation_id.in_(recommendation_ids)).delete(synchronize_session=False)
+    db.query(Recommendation).filter(Recommendation.id.in_(recommendation_ids)).delete(synchronize_session=False)
+
+
+def _delete_position_graph(db: Session, position_ids: list[int]) -> None:
+    if not position_ids:
+        return
+    recommendation_ids = [row[0] for row in db.query(Recommendation.id).filter(Recommendation.position_id.in_(position_ids)).all()]
+    db.query(CandidateTrackingEvent).filter(CandidateTrackingEvent.position_id.in_(position_ids)).delete(synchronize_session=False)
+    db.query(Evaluation).filter(Evaluation.position_id.in_(position_ids)).delete(synchronize_session=False)
+    _delete_recommendation_graph(db, recommendation_ids)
+    db.query(Position).filter(Position.id.in_(position_ids)).delete(synchronize_session=False)
+
+
+def _resolve_salary_position_snapshot(db: Session, payload: schemas.SalaryRecordCreate) -> None:
+    position_id = payload.position_id
+    if position_id in (None, 0):
+        return
+    position = db.get(Position, int(position_id))
+    if not position:
+        raise HTTPException(status_code=404, detail="岗位不存在")
+    project = position.project
+    payload.position_id = position.id
+    payload.position_name = position.name or ""
+    payload.company_name = project.company.name if project and project.company else ""
+
+
+def _delete_project_graph(db: Session, project_ids: list[int]) -> None:
+    if not project_ids:
+        return
+    position_ids = [row[0] for row in db.query(Position.id).filter(Position.project_id.in_(project_ids)).all()]
+    _delete_position_graph(db, position_ids)
+    db.query(Project).filter(Project.id.in_(project_ids)).delete(synchronize_session=False)
 
 
 @app.on_event("startup")
@@ -161,18 +267,42 @@ def require_user(db: Session = Depends(get_db), authorization: str | None = Head
     return get_current_user(db, authorization)
 
 
+def require_admin_user(user: User = Depends(require_user)):
+    return security.require_admin(user)
+
+
+def enforce_candidate_access(db: Session, user: User, candidate: Candidate) -> None:
+    if not security.can_access_scope(db, user, "candidate", candidate.id):
+        raise HTTPException(status_code=403, detail="无权访问该候选人")
+
+
+def enforce_position_access(db: Session, user: User, position_id: int) -> None:
+    if not security.can_access_scope(db, user, "position", position_id):
+        raise HTTPException(status_code=403, detail="无权访问该岗位")
+
+
+def enforce_project_access(db: Session, user: User, project_id: int) -> None:
+    if not security.can_access_scope(db, user, "project", project_id):
+        raise HTTPException(status_code=403, detail="无权访问该项目")
+
+
+def enforce_company_access(db: Session, user: User, company_id: int) -> None:
+    if not security.can_access_scope(db, user, "company", company_id):
+        raise HTTPException(status_code=403, detail="无权访问该客户公司")
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "hr-platform"}
 
 
 @app.get("/api/users", response_model=list[schemas.UserOut])
-def get_users(db: Session = Depends(get_db), user: User = Depends(require_user)):
+def get_users(db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     return crud.list_users(db)
 
 
 @app.post("/api/users", response_model=schemas.UserOut)
-def add_user(payload: schemas.UserCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def add_user(payload: schemas.UserCreate, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     obj = crud.create_user(db, payload)
     crud.add_audit(db, user.username, "用户管理", "新增用户", "user", payload.username, detail=payload.full_name)
     db.commit()
@@ -181,10 +311,12 @@ def add_user(payload: schemas.UserCreate, db: Session = Depends(get_db), user: U
 
 
 @app.patch("/api/users/{user_id}", response_model=schemas.UserOut)
-def edit_user(user_id: int, payload: schemas.UserUpdate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def edit_user(user_id: int, payload: schemas.UserUpdate, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     obj = db.get(User, user_id)
     if not obj:
         raise HTTPException(status_code=404, detail="用户不存在")
+    if obj.id == user.id and payload.role is not None and payload.role != "超级管理员":
+        raise HTTPException(status_code=400, detail="不能将当前管理员降权")
     crud.update_user(db, obj, payload)
     crud.add_audit(db, user.username, "用户管理", "编辑用户", "user", str(user_id), detail=obj.username)
     db.commit()
@@ -193,7 +325,7 @@ def edit_user(user_id: int, payload: schemas.UserUpdate, db: Session = Depends(g
 
 
 @app.post("/api/users/{user_id}/toggle", response_model=schemas.UserOut)
-def toggle_user(user_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def toggle_user(user_id: int, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     obj = db.get(User, user_id)
     if not obj:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -205,7 +337,7 @@ def toggle_user(user_id: int, db: Session = Depends(get_db), user: User = Depend
 
 
 @app.post("/api/users/{user_id}/reset-password", response_model=schemas.UserOut)
-def reset_user_password(user_id: int, payload: schemas.UserResetPassword, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def reset_user_password(user_id: int, payload: schemas.UserResetPassword, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     obj = db.get(User, user_id)
     if not obj:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -217,12 +349,12 @@ def reset_user_password(user_id: int, payload: schemas.UserResetPassword, db: Se
 
 
 @app.get("/api/roles", response_model=list[schemas.RoleOut])
-def get_roles(db: Session = Depends(get_db), user: User = Depends(require_user)):
+def get_roles(db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     return crud.list_roles(db)
 
 
 @app.post("/api/roles", response_model=schemas.RoleOut)
-def add_role(payload: schemas.RoleCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def add_role(payload: schemas.RoleCreate, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     obj = crud.create_role(db, payload)
     crud.add_audit(db, user.username, "角色管理", "新增角色", "role", payload.code, detail=payload.name)
     db.commit()
@@ -231,7 +363,7 @@ def add_role(payload: schemas.RoleCreate, db: Session = Depends(get_db), user: U
 
 
 @app.patch("/api/roles/{role_id}", response_model=schemas.RoleOut)
-def edit_role(role_id: int, payload: schemas.RoleUpdate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def edit_role(role_id: int, payload: schemas.RoleUpdate, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     obj = db.get(Role, role_id)
     if not obj:
         raise HTTPException(status_code=404, detail="角色不存在")
@@ -243,7 +375,7 @@ def edit_role(role_id: int, payload: schemas.RoleUpdate, db: Session = Depends(g
 
 
 @app.delete("/api/roles/{role_id}")
-def remove_role(role_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def remove_role(role_id: int, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     obj = db.get(Role, role_id)
     if not obj:
         raise HTTPException(status_code=404, detail="角色不存在")
@@ -259,7 +391,7 @@ def remove_role(role_id: int, db: Session = Depends(get_db), user: User = Depend
 
 
 @app.post("/api/roles/{role_id}/toggle", response_model=schemas.RoleOut)
-def toggle_role(role_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def toggle_role(role_id: int, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     obj = db.get(Role, role_id)
     if not obj:
         raise HTTPException(status_code=404, detail="角色不存在")
@@ -307,7 +439,7 @@ def audit_logs(
     date_from: datetime | None = Query(default=None),
     date_to: datetime | None = Query(default=None),
     db: Session = Depends(get_db),
-    user: User = Depends(require_user),
+    user: User = Depends(require_admin_user),
 ):
     return crud.list_recent_audit_logs(
         db,
@@ -325,11 +457,15 @@ def audit_logs(
 
 @app.get("/api/companies", response_model=list[schemas.CompanyOut])
 def list_companies(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return db.query(Company).order_by(Company.created_at.desc()).all()
+    items = db.query(Company).order_by(Company.created_at.desc()).all()
+    if security.is_admin(user):
+        return items
+    return [item for item in items if security.can_access_scope(db, user, "company", item.id)]
 
 
 @app.post("/api/companies", response_model=schemas.CompanyOut)
 def add_company(payload: schemas.CompanyCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
     obj = crud.create_company(db, payload)
     crud.add_audit(db, user.username, "客户公司管理", "创建客户公司", "company", "new", detail=payload.name)
     db.commit()
@@ -342,6 +478,8 @@ def edit_company(company_id: int, payload: schemas.CompanyUpdate, db: Session = 
     obj = db.get(Company, company_id)
     if not obj:
         raise HTTPException(status_code=404, detail="客户公司不存在")
+    if not security.is_admin(user):
+        enforce_company_access(db, user, company_id)
     crud.update_company(db, obj, payload)
     crud.add_audit(db, user.username, "客户公司管理", "更新客户公司", "company", str(company_id), detail=obj.name)
     db.commit()
@@ -354,6 +492,8 @@ def toggle_company(company_id: int, db: Session = Depends(get_db), user: User = 
     obj = db.get(Company, company_id)
     if not obj:
         raise HTTPException(status_code=404, detail="客户公司不存在")
+    if not security.is_admin(user):
+        enforce_company_access(db, user, company_id)
     status_cycle = {"招聘中": "空闲", "空闲": "失效", "失效": "招聘中"}
     obj.status = status_cycle.get(obj.status, "招聘中")
     crud.add_audit(db, user.username, "客户公司管理", "切换客户状态", "company", str(company_id), detail=obj.name)
@@ -367,7 +507,11 @@ def delete_company(company_id: int, db: Session = Depends(get_db), user: User = 
     obj = db.get(Company, company_id)
     if not obj:
         raise HTTPException(status_code=404, detail="客户公司不存在")
+    if not security.is_admin(user):
+        enforce_company_access(db, user, company_id)
     name = obj.name
+    project_ids = [row[0] for row in db.query(Project.id).filter(Project.company_id == company_id).all()]
+    _delete_project_graph(db, project_ids)
     db.delete(obj)
     crud.add_audit(db, user.username, "客户公司管理", "删除客户公司", "company", str(company_id), detail=name)
     db.commit()
@@ -382,6 +526,8 @@ def list_projects(company_id: int | None = Query(default=None), db: Session = De
     rows = query.order_by(Project.created_at.desc()).all()
     result = []
     for project, company_name in rows:
+        if not security.is_admin(user) and not security.can_access_scope(db, user, "project", project.id):
+            continue
         item = schemas.ProjectOut.model_validate(project, from_attributes=True).model_dump()
         item["company_name"] = company_name or ""
         result.append(item)
@@ -390,6 +536,8 @@ def list_projects(company_id: int | None = Query(default=None), db: Session = De
 
 @app.post("/api/projects", response_model=schemas.ProjectOut)
 def add_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if not security.is_admin(user):
+        enforce_company_access(db, user, payload.company_id)
     obj = crud.create_project(db, payload)
     crud.add_audit(db, user.username, "项目管理", "创建项目", "project", "new", detail=payload.name)
     db.commit()
@@ -402,6 +550,8 @@ def edit_project(project_id: int, payload: schemas.ProjectUpdate, db: Session = 
     obj = db.get(Project, project_id)
     if not obj:
         raise HTTPException(status_code=404, detail="项目不存在")
+    if not security.is_admin(user):
+        enforce_project_access(db, user, project_id)
     crud.update_project(db, obj, payload)
     crud.add_audit(db, user.username, "项目管理", "更新项目", "project", str(project_id), detail=obj.name)
     db.commit()
@@ -414,6 +564,8 @@ def toggle_project(project_id: int, db: Session = Depends(get_db), user: User = 
     obj = db.get(Project, project_id)
     if not obj:
         raise HTTPException(status_code=404, detail="项目不存在")
+    if not security.is_admin(user):
+        enforce_project_access(db, user, project_id)
     status_cycle = {"招聘中": "招聘完毕", "招聘完毕": "招聘中止", "招聘中止": "招聘中"}
     obj.status = status_cycle.get(obj.status, "招聘中")
     crud.add_audit(db, user.username, "项目管理", "切换项目状态", "project", str(project_id), detail=obj.name)
@@ -427,7 +579,11 @@ def delete_project(project_id: int, db: Session = Depends(get_db), user: User = 
     obj = db.get(Project, project_id)
     if not obj:
         raise HTTPException(status_code=404, detail="项目不存在")
+    if not security.is_admin(user):
+        enforce_project_access(db, user, project_id)
     name = obj.name
+    position_ids = [row[0] for row in db.query(Position.id).filter(Position.project_id == project_id).all()]
+    _delete_position_graph(db, position_ids)
     db.delete(obj)
     crud.add_audit(db, user.username, "项目管理", "删除项目", "project", str(project_id), detail=name)
     db.commit()
@@ -439,11 +595,15 @@ def list_positions(project_id: int | None = Query(default=None), db: Session = D
     query = db.query(Position)
     if project_id is not None:
         query = query.filter(Position.project_id == project_id)
-    return query.order_by(Position.created_at.desc()).all()
+    items = query.order_by(Position.created_at.desc()).all()
+    if security.is_admin(user):
+        return items
+    return [item for item in items if security.can_access_scope(db, user, "position", item.id)]
 
 
 @app.post("/api/positions", response_model=schemas.PositionOut)
 def add_position(payload: schemas.PositionCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    enforce_project_access(db, user, payload.project_id)
     obj = crud.create_position(db, payload)
     crud.add_audit(db, user.username, "岗位管理", "创建岗位", "position", "new", detail=payload.name)
     db.commit()
@@ -456,6 +616,8 @@ def edit_position(position_id: int, payload: schemas.PositionUpdate, db: Session
     obj = db.get(Position, position_id)
     if not obj:
         raise HTTPException(status_code=404, detail="岗位不存在")
+    if not security.is_admin(user):
+        enforce_position_access(db, user, position_id)
     crud.update_position(db, obj, payload)
     crud.add_audit(db, user.username, "岗位管理", "更新岗位", "position", str(position_id), detail=obj.name)
     db.commit()
@@ -468,12 +630,28 @@ def toggle_position(position_id: int, db: Session = Depends(get_db), user: User 
     obj = db.get(Position, position_id)
     if not obj:
         raise HTTPException(status_code=404, detail="岗位不存在")
+    if not security.is_admin(user):
+        enforce_position_access(db, user, position_id)
     status_cycle = {"待招": "招聘中", "招聘中": "已关闭", "已关闭": "待招"}
     obj.status = status_cycle.get(obj.status, "待招")
     crud.add_audit(db, user.username, "岗位管理", "切换岗位状态", "position", str(position_id), detail=obj.name)
     db.commit()
     db.refresh(obj)
     return obj
+
+
+@app.delete("/api/positions/{position_id}")
+def delete_position(position_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    obj = db.get(Position, position_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="岗位不存在")
+    if not security.is_admin(user):
+        enforce_position_access(db, user, position_id)
+    name = obj.name
+    _delete_position_graph(db, [position_id])
+    crud.add_audit(db, user.username, "岗位管理", "删除岗位", "position", str(position_id), detail=name)
+    db.commit()
+    return {"ok": True}
 
 
 @app.get("/api/candidates", response_model=list[schemas.CandidateOut])
@@ -484,7 +662,24 @@ def list_candidates(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
-    return crud.list_candidates(db, keyword=keyword, city=city, status=status)
+    items = crud.list_candidates(db, keyword=keyword, city=city, status=status)
+    if security.is_admin(user):
+        return items
+    allowed_candidate_ids = set(security.accessible_candidate_ids(db, user))
+    filtered = []
+    for item in items:
+        item_id = int(item.get("id") or 0)
+        record_key = str(item.get("record_key") or "")
+        if record_key.startswith("candidate:") and item_id in allowed_candidate_ids:
+            filtered.append(item)
+            continue
+        if record_key.startswith("download:"):
+            candidate_agent_id = item.get("candidate_agent_id")
+            if candidate_agent_id:
+                candidate = db.query(Candidate).filter(Candidate.candidate_agent_id == candidate_agent_id).first()
+                if candidate and candidate.id in allowed_candidate_ids:
+                    filtered.append(item)
+    return filtered
 
 
 @app.post("/api/candidates", response_model=schemas.CandidateOut)
@@ -494,6 +689,58 @@ def add_candidate(payload: schemas.CandidateCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(obj)
     return obj
+
+
+@app.get("/api/candidates/{candidate_id}", response_model=schemas.CandidateOut)
+def get_candidate(candidate_id: str, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    candidate = crud.ensure_local_candidate(db, candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="候选人不存在")
+    enforce_candidate_access(db, user, candidate)
+    return candidate
+
+
+@app.post("/api/candidates/ai-search", response_model=schemas.CandidateAiSearchOut)
+def ai_search_candidates(payload: schemas.CandidateAiSearchRequest, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    record_keys = [str(key).strip() for key in payload.record_keys if str(key).strip()]
+    if not payload.job_description.strip():
+        raise HTTPException(status_code=400, detail="请输入岗位描述")
+    if not record_keys:
+        raise HTTPException(status_code=400, detail="没有可检索的候选人")
+
+    candidates: list[Candidate] = []
+    seen_ids: set[int] = set()
+    for key in record_keys:
+        candidate = crud.ensure_local_candidate(db, key)
+        if not candidate or candidate.id in seen_ids:
+            continue
+        seen_ids.add(candidate.id)
+        candidates.append(candidate)
+
+    if not candidates:
+        raise HTTPException(status_code=404, detail="没有找到可参与 AI 检索的候选人")
+
+    matched = ai_match_candidate(payload.job_description, candidates)
+    candidate = matched.get("candidate")
+    if not candidate:
+        raise HTTPException(status_code=404, detail="未能匹配到候选人")
+
+    crud.add_audit(
+        db,
+        user.username,
+        "求职者数据池",
+        f"AI检索({matched.get('match_method', 'ai')})",
+        "candidate",
+        str(candidate.id),
+        detail=candidate.name,
+    )
+    db.commit()
+    return {
+        "candidate": schemas.CandidateOut.model_validate(candidate, from_attributes=True).model_dump(),
+        "reason": matched.get("reason", ""),
+        "match_method": matched.get("match_method", "ai"),
+        "examined_count": matched.get("examined_count", len(candidates)),
+    }
 
 
 @app.get("/api/search-presets", response_model=list[schemas.SearchPresetOut])
@@ -515,6 +762,7 @@ def edit_candidate(candidate_id: str, payload: schemas.CandidateUpdate, db: Sess
     candidate = crud.ensure_local_candidate(db, candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
+    enforce_candidate_access(db, user, candidate)
     crud.update_candidate(db, candidate, payload)
     crud.add_audit(db, user.username, "候选人池", "更新候选人", "candidate", str(candidate.id), detail=candidate.name)
     db.commit()
@@ -527,6 +775,8 @@ def lock_candidate(candidate_id: str, db: Session = Depends(get_db), user: User 
     candidate = crud.ensure_local_candidate(db, candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
+    enforce_candidate_access(db, user, candidate)
+    candidate.owner_user_id = user.id
     crud.lock_candidate(db, candidate, True)
     crud.add_audit(db, user.username, "候选人跟踪", "锁定候选人", "candidate", str(candidate.id), detail=candidate.name)
     db.commit()
@@ -539,11 +789,48 @@ def release_candidate(candidate_id: str, db: Session = Depends(get_db), user: Us
     candidate = crud.ensure_local_candidate(db, candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
+    if not security.is_admin(user) and candidate.owner_user_id not in (None, user.id):
+        raise HTTPException(status_code=403, detail="仅归属人可释放该候选人")
     crud.lock_candidate(db, candidate, False)
+    candidate.owner_user_id = None
     crud.add_audit(db, user.username, "候选人跟踪", "释放候选人", "candidate", str(candidate.id), detail=candidate.name)
     db.commit()
     db.refresh(candidate)
     return candidate
+
+
+@app.get("/api/candidate-ownership-transfers", response_model=list[schemas.CandidateOwnershipTransferOut])
+def list_candidate_ownership_transfers(candidate_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
+    return crud.list_candidate_ownership_transfers(db, candidate_id=candidate_id)
+
+
+@app.post("/api/candidate-ownership-transfers", response_model=schemas.CandidateOwnershipTransferOut)
+def add_candidate_ownership_transfer(payload: schemas.CandidateOwnershipTransferCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    candidate = crud.ensure_local_candidate(db, payload.candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="候选人不存在")
+    enforce_candidate_access(db, user, candidate)
+    obj = crud.create_candidate_ownership_transfer(
+        db,
+        schemas.CandidateOwnershipTransferCreate(candidate_id=candidate.id, to_user_id=payload.to_user_id, reason=payload.reason),
+    )
+    obj.from_user_id = candidate.owner_user_id
+    crud.add_audit(db, user.username, "候选人权限", "创建候选人转派", "candidate_transfer", str(candidate.id), detail=payload.reason)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
+@app.post("/api/candidate-ownership-transfers/{transfer_id}/approve", response_model=schemas.CandidateOwnershipTransferOut)
+def approve_candidate_ownership_transfer(transfer_id: int, payload: schemas.CandidateOwnershipTransferApprove, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
+    record = db.get(CandidateOwnershipTransfer, transfer_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="转派记录不存在")
+    obj = crud.approve_candidate_ownership_transfer(db, record, approved_by_id=payload.approved_by_id or user.id)
+    crud.add_audit(db, user.username, "候选人权限", "审批候选人转派", "candidate_transfer", str(record.candidate_id), detail=record.reason)
+    db.commit()
+    db.refresh(obj)
+    return obj
 
 
 @app.get("/api/candidate-tracking-events", response_model=list[schemas.CandidateTrackingEventOut])
@@ -553,11 +840,59 @@ def list_candidate_tracking_events(candidate_id: int | None = None, db: Session 
 
 @app.post("/api/candidate-tracking-events", response_model=schemas.CandidateTrackingEventOut)
 def add_candidate_tracking_event(payload: schemas.CandidateTrackingEventCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    from .crud import ensure_local_candidate
+    candidate = ensure_local_candidate(db, payload.candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="候选人不存在")
+    payload.candidate_id = candidate.id
+    enforce_candidate_access(db, user, candidate)
+    
+    if not payload.operator:
+        payload.operator = user.full_name or user.username
+        
     obj = crud.create_tracking_event(db, payload)
-    crud.add_audit(db, user.username, "候选人跟踪", payload.event_type, "candidate_tracking_event", str(payload.candidate_id), detail=payload.summary)
+    crud.add_audit(db, user.username, "候选人跟踪", payload.event_type, "candidate_tracking_event", str(candidate.id), detail=payload.interview_round)
     db.commit()
     db.refresh(obj)
     return obj
+
+
+@app.put("/api/candidate-tracking-events/{event_id}", response_model=schemas.CandidateTrackingEventOut)
+def update_candidate_tracking_event(event_id: int, payload: schemas.CandidateTrackingEventCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    obj = crud.get_tracking_event(db, event_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="面试记录不存在")
+    
+    from .crud import ensure_local_candidate
+    candidate = ensure_local_candidate(db, payload.candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="候选人不存在")
+    payload.candidate_id = candidate.id
+    enforce_candidate_access(db, user, candidate)
+    
+    if not payload.operator:
+        payload.operator = user.full_name or user.username
+        
+    updated_obj = crud.update_tracking_event(db, obj, payload)
+    crud.add_audit(db, user.username, "候选人跟踪", payload.event_type, "candidate_tracking_event", str(candidate.id), detail=f"编辑: {payload.interview_round}")
+    db.commit()
+    db.refresh(updated_obj)
+    return updated_obj
+
+
+@app.delete("/api/candidate-tracking-events/{event_id}")
+def delete_candidate_tracking_event(event_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    obj = crud.get_tracking_event(db, event_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="面试记录不存在")
+    enforce_candidate_access(db, user, obj.candidate)
+        
+    candidate_id = obj.candidate_id
+    interview_round = obj.interview_round
+    crud.delete_tracking_event(db, obj)
+    crud.add_audit(db, user.username, "候选人跟踪", "删除记录", "candidate_tracking_event", str(candidate_id), detail=f"删除: {interview_round}")
+    db.commit()
+    return {"success": True, "message": "面试记录删除成功"}
 
 
 @app.get("/api/interview-records", response_model=list[schemas.InterviewRecordOut])
@@ -585,15 +920,15 @@ def add_salary_record(payload: schemas.SalaryRecordCreate, db: Session = Depends
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
     payload.candidate_id = candidate.id
-    # Upsert：同一候选人已有薪资记录则更新，否则新建
-    existing = crud.list_salary_records(db, candidate_id=candidate.id)
-    if existing:
-        obj = crud.update_salary_record(db, existing[0], payload)
-        action = "更新薪资记录"
-    else:
-        obj = crud.create_salary_record(db, payload)
-        action = "新增薪资记录"
-    crud.add_audit(db, user.username, "候选人跟踪", action, "salary_record", str(candidate.id), detail=payload.service_status)
+    _resolve_salary_position_snapshot(db, payload)
+    if not payload.operator:
+        payload.operator = user.username
+    
+    # 支持添加多条薪资/福利/入职条件跟踪记录
+    obj = crud.create_salary_record(db, payload)
+    action = "新增薪资记录"
+    
+    crud.add_audit(db, user.username, "候选人跟踪", action, "salary_record", str(candidate.id), detail=payload.interview_round or "薪资记录")
     db.commit()
     db.refresh(obj)
     return obj
@@ -605,11 +940,35 @@ def edit_salary_record(record_id: int, payload: schemas.SalaryRecordCreate, db: 
     record = db.get(SalaryRecord, record_id)
     if not record:
         raise HTTPException(status_code=404, detail="薪资记录不存在")
+    
+    # 校验：如果数据库表中已经记录了轮次，则直接使用，不允许修改
+    if record.interview_round and payload.interview_round and record.interview_round != payload.interview_round:
+        payload.interview_round = record.interview_round
+
+    if payload.position_id in (None, 0):
+        payload.position_id = record.position_id
+    _resolve_salary_position_snapshot(db, payload)
+        
+    if not payload.operator:
+        payload.operator = user.username
+        
     obj = crud.update_salary_record(db, record, payload)
-    crud.add_audit(db, user.username, "候选人跟踪", "更新薪资记录", "salary_record", str(record.candidate_id), detail=payload.service_status)
+    crud.add_audit(db, user.username, "候选人跟踪", "更新薪资记录", "salary_record", str(record.candidate_id), detail=payload.interview_round or "薪资记录")
     db.commit()
     db.refresh(obj)
     return obj
+
+
+@app.delete("/api/salary-records/{record_id}")
+def delete_salary_record(record_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    from .models import SalaryRecord
+    record = db.get(SalaryRecord, record_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="薪资记录不存在")
+    db.delete(record)
+    crud.add_audit(db, user.username, "候选人跟踪", "删除薪资记录", "salary_record", str(record.candidate_id), detail=record.interview_round or "薪资记录")
+    db.commit()
+    return {"success": True}
 
 
 @app.get("/api/employment-records", response_model=list[schemas.EmploymentRecordOut])
@@ -631,6 +990,20 @@ def add_employment_record(payload: schemas.EmploymentRecordCreate, db: Session =
     else:
         obj = crud.create_employment_record(db, payload)
         action = "新增入职记录"
+        
+    # 联动更新候选人跟踪表（面试记录）的最新一条记录的入职状态
+    from .models import CandidateTrackingEvent
+    latest_event = db.query(CandidateTrackingEvent).filter(
+        CandidateTrackingEvent.candidate_id == candidate.id
+    ).order_by(CandidateTrackingEvent.created_at.desc()).first()
+    if latest_event:
+        latest_event.employment_status = payload.status
+        db.add(latest_event)
+        
+    # 联动更新候选人自身状态
+    candidate.status = "已录用" if payload.status == "已入职" else "未锁定"
+    db.add(candidate)
+    
     crud.add_audit(db, user.username, "候选人跟踪", action, "employment_record", str(candidate.id), detail=payload.status)
     db.commit()
     db.refresh(obj)
@@ -668,8 +1041,35 @@ def add_candidate_follow_up_record(payload: schemas.CandidateFollowUpRecordCreat
     return obj
 
 
+@app.get("/api/candidate-notes", response_model=list[schemas.CandidateNoteOut])
+def list_candidate_notes(candidate_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if candidate_id is not None:
+        candidate = crud.ensure_local_candidate(db, candidate_id)
+        if candidate:
+            enforce_candidate_access(db, user, candidate)
+    return crud.list_candidate_notes(db, candidate_id=candidate_id)
+
+
+@app.post("/api/candidate-notes", response_model=schemas.CandidateNoteOut)
+def add_candidate_note(payload: schemas.CandidateNoteCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    candidate = crud.ensure_local_candidate(db, payload.candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="候选人不存在")
+    payload.candidate_id = candidate.id
+    enforce_candidate_access(db, user, candidate)
+    obj = crud.create_candidate_note(db, payload)
+    crud.add_audit(db, user.username, "候选人跟踪", "新增备注记录", "candidate_note", str(candidate.id), detail=payload.content[:32])
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
 @app.get("/api/candidate-mail-records", response_model=list[schemas.CandidateMailRecordOut])
 def list_candidate_mail_records(candidate_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if candidate_id is not None:
+        candidate = crud.ensure_local_candidate(db, candidate_id)
+        if candidate:
+            enforce_candidate_access(db, user, candidate)
     return crud.list_candidate_mail_records(db, candidate_id=candidate_id)
 
 
@@ -679,6 +1079,7 @@ def add_candidate_mail_record(payload: schemas.CandidateMailRecordCreate, db: Se
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
     payload.candidate_id = candidate.id
+    enforce_candidate_access(db, user, candidate)
     obj = crud.create_candidate_mail_record(db, payload)
     crud.add_audit(db, user.username, "候选人跟踪", "发送邮件", "candidate_mail_record", str(candidate.id), detail=payload.mail_subject)
     db.commit()
@@ -688,7 +1089,7 @@ def add_candidate_mail_record(payload: schemas.CandidateMailRecordCreate, db: Se
 
 @app.post("/api/recommendations", response_model=schemas.RecommendationOut)
 def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    candidate = db.get(Candidate, payload.candidate_id)
+    candidate = crud.ensure_local_candidate(db, payload.candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
     if candidate.locked:
@@ -770,6 +1171,12 @@ def get_evaluations(candidate_id: int | None = Query(default=None), db: Session 
 
 @app.post("/api/evaluations", response_model=schemas.EvaluationOut)
 def add_evaluation(payload: schemas.EvaluationCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    candidate = crud.ensure_local_candidate(db, payload.candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="候选人不存在")
+    if not db.get(Position, payload.position_id):
+        raise HTTPException(status_code=404, detail="岗位不存在")
+    payload.candidate_id = candidate.id
     obj = crud.create_evaluation(db, payload)
     crud.add_audit(db, user.username, "评价体系", "新增评价", "evaluation", "new", detail=payload.grade)
     db.commit()
@@ -818,11 +1225,13 @@ def delete_evaluation_level(level_id: int, db: Session = Depends(get_db), user: 
 
 @app.get("/api/tags", response_model=list[schemas.TagOut])
 def get_tags(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
     return crud.list_tags(db)
 
 
 @app.post("/api/tags", response_model=schemas.TagOut)
 def add_tag(payload: schemas.TagCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
     obj = crud.create_tag(db, payload)
     crud.add_audit(db, user.username, "标签字典", "新增标签", "tag", "new", detail=payload.name)
     db.commit()
@@ -832,6 +1241,7 @@ def add_tag(payload: schemas.TagCreate, db: Session = Depends(get_db), user: Use
 
 @app.patch("/api/tags/{tag_id}", response_model=schemas.TagOut)
 def edit_tag(tag_id: int, payload: schemas.TagUpdate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
     obj = db.get(TagDictionary, tag_id)
     if not obj:
         raise HTTPException(status_code=404, detail="标签不存在")
@@ -844,6 +1254,7 @@ def edit_tag(tag_id: int, payload: schemas.TagUpdate, db: Session = Depends(get_
 
 @app.delete("/api/tags/{tag_id}")
 def remove_tag(tag_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
     obj = db.get(TagDictionary, tag_id)
     if not obj:
         raise HTTPException(status_code=404, detail="标签不存在")
@@ -900,11 +1311,13 @@ def batch_read_notifications(payload: list[int], db: Session = Depends(get_db), 
 
 @app.get("/api/warranty-rules", response_model=list[schemas.WarrantyRuleOut])
 def get_warranty_rules(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
     return crud.list_warranty_rules(db)
 
 
 @app.post("/api/warranty-rules", response_model=schemas.WarrantyRuleOut)
 def add_warranty_rule(payload: schemas.WarrantyRuleCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
     obj = crud.create_warranty_rule(db, payload)
     crud.add_audit(db, user.username, "质保期管理", "新增质保规则", "warranty_rule", "new", detail=payload.scope)
     db.commit()
@@ -914,6 +1327,7 @@ def add_warranty_rule(payload: schemas.WarrantyRuleCreate, db: Session = Depends
 
 @app.put("/api/warranty-rules/{rule_id}", response_model=schemas.WarrantyRuleOut)
 def update_warranty_rule(rule_id: int, payload: schemas.WarrantyRuleCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
     obj = db.get(WarrantyRule, rule_id)
     if not obj:
         raise HTTPException(status_code=404, detail="质保规则不存在")
@@ -927,6 +1341,7 @@ def update_warranty_rule(rule_id: int, payload: schemas.WarrantyRuleCreate, db: 
 
 @app.delete("/api/warranty-rules/{rule_id}")
 def delete_warranty_rule(rule_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
     obj = db.get(WarrantyRule, rule_id)
     if not obj:
         raise HTTPException(status_code=404, detail="质保规则不存在")
@@ -939,6 +1354,7 @@ def delete_warranty_rule(rule_id: int, db: Session = Depends(get_db), user: User
 
 @app.get("/api/analytics/summary")
 def analytics_summary(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    summary = crud.dashboard_summary(db)
     recommendation_rows = db.query(Recommendation.recommender, Recommendation.status).all()
     project_rows = db.query(Project.company_id, Project.status, Company.name).join(Company, Company.id == Project.company_id).all()
     recommender_stats: dict[str, dict[str, int]] = {}
@@ -966,9 +1382,7 @@ def analytics_summary(db: Session = Depends(get_db), user: User = Depends(requir
         reverse=True,
     )[:3]
     return {
-        "candidate_count": db.query(Candidate).count(),
-        "recommendation_count": db.query(Recommendation).count(),
-        "delivery_count": db.query(Delivery).count(),
+        **summary,
         "evaluation_count": db.query(Evaluation).count(),
         "notification_count": db.query(Notification).count(),
         "tag_count": db.query(TagDictionary).count(),
@@ -1078,12 +1492,12 @@ def create_ai_task(payload: schemas.AiTaskCreate, db: Session = Depends(get_db),
 
 
 @app.get("/api/role-permissions", response_model=list[schemas.RolePermissionOut])
-def get_role_permissions(role_code: str | None = None, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def get_role_permissions(role_code: str | None = None, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     return crud.list_role_permissions(db, role_code=role_code)
 
 
 @app.post("/api/role-permissions", response_model=schemas.RolePermissionOut)
-def upsert_role_permission(payload: schemas.RolePermissionCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def upsert_role_permission(payload: schemas.RolePermissionCreate, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     obj = crud.save_role_permission(db, payload)
     crud.add_audit(db, user.username, "权限管理", "保存功能权限", "role_permission", payload.role_code, detail=payload.permission_key)
     db.commit()
@@ -1092,26 +1506,30 @@ def upsert_role_permission(payload: schemas.RolePermissionCreate, db: Session = 
 
 
 @app.get("/api/data-permissions", response_model=list[schemas.DataPermissionOut])
-def get_data_permissions(user_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def get_data_permissions(user_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     return crud.list_data_permissions(db, user_id=user_id)
 
 
 @app.post("/api/data-permissions", response_model=schemas.DataPermissionOut)
-def upsert_data_permission(payload: schemas.DataPermissionCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def upsert_data_permission(payload: schemas.DataPermissionCreate, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
+    if payload.scope_type not in {"company", "project", "position"}:
+        raise HTTPException(status_code=400, detail="数据权限范围仅支持 company/project/position")
     obj = crud.save_data_permission(db, payload)
     crud.add_audit(db, user.username, "权限管理", "保存数据权限", "data_permission", str(payload.user_id), detail=f"{payload.scope_type}:{payload.scope_id}")
     db.commit()
     db.refresh(obj)
     return obj
-# 初始化 OpenAI 客户端（OpenRouter 适配）
 OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o")
 
-openai_client = OpenAI(
-    base_url=OPENROUTER_BASE_URL,
-    api_key=OPENROUTER_API_KEY,
-)
+
+@lru_cache(maxsize=1)
+def get_openai_client() -> OpenAI:
+    return OpenAI(
+        base_url=OPENROUTER_BASE_URL,
+        api_key=OPENROUTER_API_KEY,
+    )
 
 PROMPT_FILE_PATH = os.path.join(ROOT_DIR, "outputs", "resume_parsing_prompt.md")
 
@@ -1126,8 +1544,9 @@ def call_llm_for_json(resume_text: str) -> dict:
          raise ValueError("OpenRouter API Key is not configured. Please check your .env file.")
          
     system_prompt = get_system_prompt()
+    client = get_openai_client()
     
-    response = openai_client.chat.completions.create(
+    response = client.chat.completions.create(
         model=OPENROUTER_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
@@ -1146,6 +1565,205 @@ def call_llm_for_json(resume_text: str) -> dict:
          raw_response = raw_response[:-3]
          
     return json.loads(raw_response.strip())
+
+
+def _strip_json_fence(raw_response: str) -> str:
+    text = raw_response.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
+
+
+def _truncate_text(value: str | None, limit: int = 240) -> str:
+    text = (value or "").strip()
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "…"
+
+
+def _candidate_ai_summary(candidate: Candidate) -> str:
+    parts = [
+        f"姓名：{candidate.name or ''}",
+        f"当前职位：{candidate.current_title or ''}",
+        f"城市：{candidate.city or ''}",
+        f"年龄：{candidate.age or ''}",
+        f"学历：{candidate.education or ''}",
+        f"工作年限：{candidate.experience_years or ''}",
+        f"期望薪资：{candidate.expected_salary or ''}",
+        f"职位状态：{candidate.job_status or ''}",
+        f"来源：{candidate.source or ''}",
+        f"标签：{candidate.tags or ''}",
+        f"核心价值：{_truncate_text(candidate.core_value, 180)}",
+        f"综合评估：{_truncate_text(candidate.comprehensive_evaluation, 180)}",
+        f"工作经历：{_truncate_text(candidate.work_history, 320)}",
+        f"项目经历：{_truncate_text(candidate.project_history, 320)}",
+        f"证书：{_truncate_text(candidate.certificates, 120)}",
+        f"教育背景：{_truncate_text(candidate.education_detail, 160)}",
+        f"求职意向：{_truncate_text(candidate.job_intention, 160)}",
+    ]
+    return "\n".join(parts)
+
+
+def _tokenize_job_description(text: str) -> list[str]:
+    tokens = []
+    for token in re.findall(r"[\u4e00-\u9fffA-Za-z0-9#+.]+", text.lower()):
+        token = token.strip(".,;:，。；：/\\()[]{}<>\"'“”‘’")
+        if len(token) >= 2:
+            tokens.append(token)
+    return tokens
+
+
+def _candidate_keyword_score(job_description: str, candidate: Candidate) -> int:
+    candidate_text = " ".join([
+        candidate.name or "",
+        candidate.current_title or "",
+        candidate.city or "",
+        candidate.education or "",
+        str(candidate.experience_years or ""),
+        candidate.expected_salary or "",
+        candidate.tags or "",
+        candidate.core_value or "",
+        candidate.comprehensive_evaluation or "",
+        candidate.work_history or "",
+        candidate.project_history or "",
+        candidate.certificates or "",
+        candidate.education_detail or "",
+        candidate.job_intention or "",
+    ]).lower()
+    tokens = _tokenize_job_description(job_description)
+    if not tokens:
+        return 0
+    score = 0
+    for token in tokens:
+        if token and token in candidate_text:
+            score += 1
+    return score
+
+
+def _fallback_ai_match(job_description: str, candidates: list[Candidate]) -> dict:
+    ranked = sorted(
+        candidates,
+        key=lambda item: (
+            _candidate_keyword_score(job_description, item),
+            int(item.experience_years or 0),
+            item.age or 0,
+            item.created_at.timestamp() if getattr(item, "created_at", None) else 0,
+            item.id,
+        ),
+        reverse=True,
+    )
+    if not ranked:
+        return {"candidate": None, "reason": "", "match_method": "fallback", "examined_count": 0}
+    best = ranked[0]
+    keywords = _tokenize_job_description(job_description)[:5]
+    reason_bits = [f"命中关键词：{ '、'.join(keywords) }"] if keywords else []
+    if best.current_title:
+        reason_bits.append(f"当前职位为{best.current_title}")
+    if best.work_history:
+        reason_bits.append("工作经历与岗位要求有较强重合")
+    return {
+        "candidate": best,
+        "reason": "；".join(reason_bits) or "基于基础筛选后的候选池规则匹配",
+        "match_method": "fallback",
+        "examined_count": len(candidates),
+    }
+
+
+def _call_llm_for_candidate_match(job_description: str, candidate_payloads: list[dict]) -> dict:
+    if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "your_api_key_here":
+        raise ValueError("OpenRouter API Key is not configured. Please check your .env file.")
+
+    system_prompt = (
+        "你是资深猎头匹配专家。"
+        "你只允许在给定候选人列表中选出最匹配岗位描述的一位。"
+        "请综合岗位描述、工作经历、项目经历、证书、综合评价和求职意向进行判断。"
+        "必须返回严格 JSON，对象结构为："
+        '{"candidate_id": 1, "reason": "简短说明", "matched_points": ["..."], "risk_points": ["..."], "confidence": 0.0}'
+        "其中 candidate_id 必须是候选人列表中的 id。"
+    )
+    client = get_openai_client()
+    response = client.chat.completions.create(
+        model=OPENROUTER_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {
+                "role": "user",
+                "content": json.dumps(
+                    {
+                        "job_description": job_description,
+                        "candidates": candidate_payloads,
+                    },
+                    ensure_ascii=False,
+                ),
+            },
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.1,
+    )
+    raw_response = response.choices[0].message.content or "{}"
+    parsed = json.loads(_strip_json_fence(raw_response))
+    if not isinstance(parsed, dict):
+        raise ValueError("AI 返回格式无效")
+    return parsed
+
+
+def ai_match_candidate(job_description: str, candidates: list[Candidate]) -> dict:
+    if not candidates:
+        return {"candidate": None, "reason": "", "match_method": "empty", "examined_count": 0}
+
+    ranked = sorted(
+        candidates,
+        key=lambda item: (
+            _candidate_keyword_score(job_description, item),
+            int(item.experience_years or 0),
+            item.created_at.timestamp() if getattr(item, "created_at", None) else 0,
+            item.id,
+        ),
+        reverse=True,
+    )
+    shortlist = ranked[: min(20, len(ranked))]
+    candidate_map = {item.id: item for item in shortlist}
+    payloads = [
+        {
+            "id": item.id,
+            "name": item.name,
+            "current_title": item.current_title,
+            "city": item.city,
+            "age": item.age,
+            "education": item.education,
+            "experience_years": item.experience_years,
+            "source": item.source,
+            "job_status": item.job_status,
+            "summary": _candidate_ai_summary(item),
+        }
+        for item in shortlist
+    ]
+
+    try:
+        result = _call_llm_for_candidate_match(job_description, payloads)
+        candidate_id = result.get("candidate_id")
+        try:
+            candidate_id = int(candidate_id)
+        except (TypeError, ValueError):
+            candidate_id = None
+        candidate = candidate_map.get(candidate_id)
+        if not candidate:
+            raise ValueError("AI 返回的候选人不在当前候选池中")
+        reason = str(result.get("reason") or "").strip()
+        if not reason:
+            reason = "AI 已在当前基础筛选后的候选池中选出最匹配记录"
+        return {
+            "candidate": candidate,
+            "reason": reason,
+            "match_method": "ai",
+            "examined_count": len(candidates),
+        }
+    except Exception:
+        return _fallback_ai_match(job_description, candidates)
 
 def parse_and_create_candidate(db: Session, full_path: str, save_name: str, username: str) -> dict:
     text_content = ""
@@ -1191,7 +1809,7 @@ def parse_and_create_candidate(db: Session, full_path: str, save_name: str, user
         work_history=parsed_data.get("work_history") or "",
         project_history=parsed_data.get("project_history") or "",
         file_path=relative_file_path,
-        source="AI解析",
+        source="手工导入",
         status="未锁定"
     )
     db.add(candidate)
@@ -1257,7 +1875,7 @@ def import_smoke(file: UploadFile = File(...), db: Session = Depends(get_db), us
             db.refresh(import_record)
             return {
                 "imported": 1,
-                "candidate": schemas.CandidateOut.model_validate(candidate, from_attributes=True).model_dump(),
+        "candidate": schemas.CandidateOut.model_validate(candidate, from_attributes=True).model_dump(),
                 "import_record": schemas.ImportRecordOut.model_validate(import_record, from_attributes=True).model_dump()
             }
     except Exception as e:
@@ -1382,8 +2000,51 @@ def get_export_records(candidate_id: int | None = Query(default=None), db: Sessi
 
 @app.post("/api/export-records", response_model=schemas.ExportRecordOut)
 def add_export_record(payload: schemas.ExportRecordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    candidate = db.query(Candidate).filter(Candidate.id == payload.candidate_id).first()
+    if not candidate:
+        raise HTTPException(status_code=404, detail="未找到对应的候选人")
+        
+    project = None
+    if payload.project_name:
+        project = db.query(Project).filter(Project.name == payload.project_name).first()
+        
+    # 确定物理文件名：候选人名 + 时间戳 + ID，确保多人批量导出时文件名不冲突
+    import time
+    safe_candidate_name = "".join([c for c in (payload.candidate_name or "candidate") if c.isalnum() or c in ("-", "_")]).strip()
+    if not safe_candidate_name:
+        safe_candidate_name = "candidate"
+    timestamp_suffix = str(int(time.time() * 1000))[-6:]  # 取毫秒级后 6 位，提高唯一性
+    physical_filename = f"{safe_candidate_name}-{payload.candidate_id}-{timestamp_suffix}.pdf"
+    
+    # 创建 exports 目录
+    exports_dir = os.path.join(ROOT_DIR, "exports")
+    os.makedirs(exports_dir, exist_ok=True)
+    file_path = os.path.join(exports_dir, physical_filename)
+    
+    # 运行 PDF 生成器
+    from backend.app.pdf_generator import generate_resume_pdf
+    try:
+        generate_resume_pdf(
+            candidate=candidate,
+            company_name=payload.company_name,
+            project_name=payload.project_name,
+            position_name=payload.position_name,
+            exported_by=user.username,
+            output_path=file_path,
+            project_id=project.id if project else None,
+            contract_no=payload.contract_no,
+            project_no=payload.project_no,
+            headhunter_position=payload.headhunter_position,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF 生成失败: {str(e)}")
+        
+    display_name = f"{payload.candidate_name or '候选人'}-简历报告.pdf"
+    payload.file_name = display_name
+    payload.file_path = f"/exports/{physical_filename}"
+    
     obj = crud.create_export_record(db, payload)
-    crud.add_audit(db, user.username, "求职者数据池", "导出简历", "export_record", str(payload.candidate_id), detail=payload.file_name)
+    crud.add_audit(db, user.username, "求职者数据池", "导出简历", "export_record", str(payload.candidate_id), detail=display_name)
     db.commit()
     db.refresh(obj)
     return obj
@@ -1496,23 +2157,50 @@ def import_recruit_candidate(agent_id: str, db: Session = Depends(get_db), user:
 
 @app.get("/api/db-tables")
 def get_db_table_data(
-    table_name: str,
+    table_name: str | None = None,
     limit: int = Query(default=10000, ge=1, le=100000),
     db: Session = Depends(get_db),
     user: User = Depends(require_user)
 ):
-    allowed_tables = {
-        "users", "roles", "role_permissions", "data_permissions", "companies",
-        "projects", "positions", "candidates", "recommendations", "recommendation_feedbacks",
-        "candidate_tracking_events", "interview_records", "salary_records", "employment_records",
-        "candidate_follow_up_records", "candidate_mail_records", "search_presets", "export_records",
-        "import_records", "deliveries", "audit_logs", "warranty_rules", "system_configs",
-        "email_configs", "ai_tasks", "candidate_profiles", "resume_downloads",
-        "employees", "job_postings", "daily_task_stats", "resume_parse_tasks"
-    }
-    if (table_name not in allowed_tables):
-        raise HTTPException(status_code=400, detail="不支持查询该表")
+    inspector = inspect(db.bind)
     
+    # If no table_name is specified, dynamically inspect all database schemas and return a list of all tables
+    if table_name is None:
+        all_tables = []
+        try:
+            schemas = inspector.get_schema_names()
+        except Exception:
+            schemas = []
+            
+        # Inspect default schema tables
+        try:
+            for t in inspector.get_table_names():
+                if t != "alembic_version" and t not in all_tables:
+                    all_tables.append(t)
+        except Exception:
+            pass
+            
+        # Inspect recruit schema tables
+        if "recruit" in schemas:
+            try:
+                for t in inspector.get_table_names(schema="recruit"):
+                    if t != "alembic_version" and t not in all_tables:
+                        all_tables.append(t)
+            except Exception:
+                pass
+                
+        # Inspect public schema tables
+        if "public" in schemas:
+            try:
+                for t in inspector.get_table_names(schema="public"):
+                    if t != "alembic_version" and t not in all_tables:
+                        all_tables.append(t)
+            except Exception:
+                pass
+                
+        all_tables.sort()
+        return all_tables
+
     # We will map table_name to model classes
     model_mapping = {
         "users": User,
@@ -1545,33 +2233,67 @@ def get_db_table_data(
         "resume_downloads": RecruitResumeDownload,
         "employees": RecruitEmployee,
         "job_postings": RecruitJobPosting,
-        "daily_task_stats": RecruitDailyTaskStat
+        "daily_task_stats": RecruitDailyTaskStat,
+        "candidate_notes": CandidateNote
     }
     
-    model = model_mapping.get(table_name)
-    if not model:
-        raise HTTPException(status_code=400, detail="未找到对应的模型")
-    
-    # Execute query
+    # Dynamically determine the schema of the requested table
+    recruit_tables = {"candidate_profiles", "resume_downloads", "employees", "job_postings", "daily_task_stats"}
+    schema = None
+    if table_name in recruit_tables:
+        schema = "recruit"
+    else:
+        try:
+            if "recruit" in inspector.get_schema_names():
+                r_tables = inspector.get_table_names(schema="recruit")
+                if table_name in r_tables:
+                    schema = "recruit"
+        except Exception:
+            pass
+
+    # Retrieve columns for the table
     try:
-        recruit_tables = {"candidate_profiles", "resume_downloads", "employees", "job_postings", "daily_task_stats"}
-        schema = "recruit" if table_name in recruit_tables else None
-        inspector = inspect(engine)
         columns = [col["name"] for col in inspector.get_columns(table_name, schema=schema)]
     except Exception:
         columns = []
         
-    records = db.query(model).limit(limit).all()
-    
+    if not columns:
+        raise HTTPException(status_code=400, detail=f"物理表 {table_name} 不存在或无列结构")
+        
+    # Execute query
+    model = model_mapping.get(table_name)
     data = []
-    for r in records:
-        row_dict = {}
-        for col in columns:
-            val = getattr(r, col, None)
-            if isinstance(val, datetime):
-                val = val.isoformat()
-            row_dict[col] = val
-        data.append(row_dict)
+    
+    if model:
+        # Query using SQLAlchemy ORM
+        records = db.query(model).limit(limit).all()
+        for r in records:
+            row_dict = {}
+            for col in columns:
+                val = getattr(r, col, None)
+                if isinstance(val, datetime):
+                    val = val.isoformat()
+                row_dict[col] = val
+            data.append(row_dict)
+    else:
+        # Fallback to raw SQL for tables without ORM mapping
+        full_table = f'"{schema}"."{table_name}"' if schema else f'"{table_name}"'
+        try:
+            result = db.execute(text(f"SELECT * FROM {full_table} LIMIT :limit"), {"limit": limit})
+            records = result.fetchall()
+            for r in records:
+                row_dict = {}
+                for col in columns:
+                    if hasattr(r, "_mapping"):
+                        val = r._mapping.get(col)
+                    else:
+                        val = getattr(r, col, None)
+                    if isinstance(val, datetime):
+                        val = val.isoformat()
+                    row_dict[col] = val
+                data.append(row_dict)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"查询表数据失败: {str(e)}")
         
     return {
         "table_name": table_name,
@@ -1582,4 +2304,3 @@ def get_db_table_data(
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 app.mount("/", StaticFiles(directory=ROOT_DIR, html=True), name="static")
-

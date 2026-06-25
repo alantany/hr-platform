@@ -124,8 +124,9 @@ class Candidate(Base, TimestampMixin):
     current_title: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     city: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="未锁定", nullable=False)
-    source: Mapped[str] = mapped_column(String(64), default="导入", nullable=False)
+    source: Mapped[str] = mapped_column(String(64), default="手工导入", nullable=False)
     locked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    owner_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     gender: Mapped[str] = mapped_column(String(16), default="", nullable=False)
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
     education: Mapped[str] = mapped_column(String(64), default="", nullable=False)
@@ -157,6 +158,22 @@ class Candidate(Base, TimestampMixin):
     salary_records = relationship("SalaryRecord", back_populates="candidate", cascade="all, delete-orphan")
     employment_records = relationship("EmploymentRecord", back_populates="candidate", cascade="all, delete-orphan")
     search_presets = relationship("SearchPreset", back_populates="candidate", cascade="all, delete-orphan")
+    notes = relationship("CandidateNote", back_populates="candidate", cascade="all, delete-orphan")
+
+
+class CandidateOwnershipTransfer(Base, TimestampMixin):
+    __tablename__ = "candidate_ownership_transfers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id"), nullable=False)
+    from_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    to_user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    approved_by_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="待审批", nullable=False)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    candidate = relationship("Candidate")
 
 
 class Recommendation(Base, TimestampMixin):
@@ -200,6 +217,18 @@ class CandidateTrackingEvent(Base, TimestampMixin):
     position_id: Mapped[int | None] = mapped_column(ForeignKey("positions.id"), nullable=True)
     recommendation_id: Mapped[int | None] = mapped_column(ForeignKey("recommendations.id"), nullable=True)
 
+    # 面试跟踪相关新增字段
+    interview_round: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    screening_result: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    interview_date: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    interviewer: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    interview_location: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    interview_requirements: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    interview_contact: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    interview_result: Mapped[str] = mapped_column(String(32), default="-", nullable=False)
+    note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    employment_status: Mapped[str] = mapped_column(String(32), default="待设置", nullable=False)
+
     candidate = relationship("Candidate", back_populates="tracking_events")
 
 
@@ -222,12 +251,24 @@ class SalaryRecord(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id"), nullable=False)
+    position_id: Mapped[int | None] = mapped_column(ForeignKey("positions.id"), nullable=True)
     expected_salary: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     offered_salary: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     service_status: Mapped[str] = mapped_column(String(32), default="未进行", nullable=False)
     note: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
+    # New tracking fields
+    interview_round: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    position_name: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    company_name: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    agreed_salary: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    welfare_desc: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    onboard_cond: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    candidate_accepted: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    operator: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+
     candidate = relationship("Candidate", back_populates="salary_records")
+    position = relationship("Position")
 
 
 class EmploymentRecord(Base, TimestampMixin):
@@ -300,6 +341,10 @@ class ExportRecord(Base, TimestampMixin):
     exported_by: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     file_name: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     file_path: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    # 右侧手写信息栏三个字段（前端可填入后写入 PDF）
+    contract_no: Mapped[str] = mapped_column(String(128), default="", nullable=False, server_default="")
+    project_no: Mapped[str] = mapped_column(String(128), default="", nullable=False, server_default="")
+    headhunter_position: Mapped[str] = mapped_column(String(128), default="", nullable=False, server_default="")
 
 
 class ImportRecord(Base, TimestampMixin):
@@ -512,3 +557,13 @@ class RecruitDailyTaskStat(Base):
     resume_ack_count: Mapped[int] = mapped_column(Integer, nullable=False)
     updated_at: Mapped[str] = mapped_column(String(64), nullable=False)
 
+
+class CandidateNote(Base, TimestampMixin):
+    __tablename__ = "candidate_notes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id"), nullable=False)
+    content: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    operator: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+
+    candidate = relationship("Candidate", back_populates="notes")

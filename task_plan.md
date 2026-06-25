@@ -55,7 +55,7 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 
 - [x] Create backend project skeleton and local configuration
 - [x] Implement core models, seed data, login, audit log, and base APIs
-- [x] Add Alembic migration and local SQLite dev database
+- [x] Add Alembic migration and PostgreSQL dev database
 - [x] Wire static dashboard to local API
 - [x] Verify service startup, migration, browser rendering, and CRUD smoke
 - **Status:** complete
@@ -138,7 +138,7 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 
 - [x] 启动本地 postgresql@14 服务，并创建 `hr_platform` 数据库、`recruit` schema
 - [x] 编写 pg schema 和权限脚本，创建 user_recruit 和 user_delivery，授予只读/读写最小权限
-- [x] 修改 `backend/app/config.py` 和 `database.py` 支持 PostgreSQL 连接，保留默认 SQLite 兼容回退
+- [x] 修改 `backend/app/config.py` 和 `database.py` 统一使用 PostgreSQL 连接
 - [x] 在 `models.py` 中为 `candidate_profiles`、`resume_downloads` 等表声明所属 `recruit` 命名空间
 - [x] 运行 Alembic / 数据库表自动生成，校验两套表在 PG 中的创建情况
 - [x] 运行 Pytest 烟测脚本，校验标准 SQL 兼容性，确保业务功能正常
@@ -189,4 +189,31 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 修改 `POST /api/export-records` 将物理 PDF 存储至 `exports/` 目录，回填相对路径并支持覆盖兼容
 - [x] 修改前端 `app.js` 的导出保存动作，API 返回成功后如果是 PDF 格式，自动触发浏览器下载
 - [x] 编写 `tests/test_pdf_export.py` 自动化测试并通过 pytest 全量回归验证
+- **Status:** complete
+
+### Customer Management - 删除链路与页面收口（已完成）
+
+- [x] 确认客户页数据来源为数据库 API，而不是前端硬编码或测试假数据。
+- [x] 将客户列表主区域改为 `data-company-list`，去掉 `console.log` 和只渲染前三条的死代码。
+- [x] 修正客户状态文案为 `失效 / 恢复`，不再混入项目页的 `招聘完毕 / 完结` 状态。
+- [x] 在后端补齐公司/项目删除的依赖清理顺序，覆盖推荐、反馈、交付、跟踪和评价等下游表。
+- [x] 新增回归测试 `tests/test_company_delete_cascade.py` 并通过。
+- **Status:** complete
+
+### Test Cleanup - 公共收尾脚本（已完成）
+
+- [x] 抽出 `backend/test_cleanup.py` 复用 pytest 收尾逻辑。
+- [x] 新增 `scripts/cleanup_test_data.py`，支持一键全量清理与 `--dry-run` 预览。
+- [x] 补上 `resume_parse_tasks` 的清理，避免测试结束后残留解析任务。
+- [x] 避免触碰当前账号无权限的 `recruit.*` 外部表，保证脚本可稳定执行。
+- **Status:** complete
+
+### Phase 17 - 权限系统 RBAC 与数据权限收口（已完成）
+
+- [x] 将用户、角色、功能权限、数据权限、操作日志接口收口为超级管理员后端强校验。
+- [x] 将数据权限范围收口为 PRD 要求的 `company / project / position`，后端拒绝旧的 `team / personal` 范围。
+- [x] 为客户、项目、岗位、候选人列表和详情补上角色数据范围过滤。
+- [x] 新增候选人归属字段与候选人转派审批记录表，锁定候选人时记录归属，释放时清空归属。
+- [x] 新增 `tests/test_permissions_rbac.py` 覆盖非管理员 403、岗位授权候选人可见性、候选人转派审批。
+- [x] 更新权限相关页面和公共测试清理脚本，确保新表测试结束后不残留脏数据。
 - **Status:** complete

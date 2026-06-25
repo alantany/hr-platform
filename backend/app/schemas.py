@@ -199,8 +199,9 @@ class CandidateCreate(BaseModel):
     current_title: str | None = ""
     city: str | None = ""
     status: str | None = "未锁定"
-    source: str | None = "导入"
+    source: str | None = "手工导入"
     locked: bool | None = False
+    owner_user_id: int | None = None
     gender: str | None = ""
     age: int | None = None
     education: str | None = ""
@@ -210,6 +211,7 @@ class CandidateCreate(BaseModel):
     tags: str | None = ""
     candidate_agent_id: str | None = None
     file_path: str | None = ""
+    record_key: str | None = None
     
     # Resume template fields
     birth_date: str | None = ""
@@ -233,6 +235,16 @@ class CandidateOut(CandidateCreate):
     file_path: str | None = None
 
 
+class CandidateAiSearchRequest(BaseModel):
+    job_description: str
+    record_keys: list[str] = Field(default_factory=list)
+
+
+class CandidateAiSearchOut(BaseModel):
+    candidate: CandidateOut
+    reason: str = ""
+    match_method: str = "ai"
+    examined_count: int = 0
 
 
 class CandidateTrackingEventCreate(BaseModel):
@@ -243,6 +255,18 @@ class CandidateTrackingEventCreate(BaseModel):
     operator: str = ""
     position_id: int | None = None
     recommendation_id: int | None = None
+    
+    # 新增字段
+    interview_round: str = ""
+    screening_result: str = ""
+    interview_date: str = ""
+    interviewer: str = ""
+    interview_location: str = ""
+    interview_requirements: str = ""
+    interview_contact: str = ""
+    interview_result: str = "-"
+    note: str = ""
+    employment_status: str = "待设置"
 
 
 class CandidateTrackingEventOut(CandidateTrackingEventCreate):
@@ -266,10 +290,20 @@ class InterviewRecordOut(InterviewRecordCreate):
 
 class SalaryRecordCreate(BaseModel):
     candidate_id: int | str
+    position_id: int | None = None
     expected_salary: str = ""
     offered_salary: str = ""
     service_status: str = "未进行"
     note: str = ""
+
+    interview_round: str = ""
+    position_name: str = ""
+    company_name: str = ""
+    agreed_salary: str = ""
+    welfare_desc: str = ""
+    onboard_cond: str = ""
+    candidate_accepted: str = ""
+    operator: str = ""
 
 
 class SalaryRecordOut(SalaryRecordCreate):
@@ -330,6 +364,10 @@ class ExportRecordCreate(BaseModel):
     exported_by: str = ""
     file_name: str = ""
     file_path: str = ""
+    # 右侧手写信息栏三个字段
+    contract_no: str = ""     # 合同编号
+    project_no: str = ""      # 项目编号
+    headhunter_position: str = ""  # 猎头职位
 
 
 class ExportRecordOut(ExportRecordCreate):
@@ -360,6 +398,7 @@ class CandidateUpdate(BaseModel):
     status: str | None = None
     source: str | None = None
     locked: bool | None = None
+    owner_user_id: int | None = None
     gender: str | None = None
     age: int | None = None
     education: str | None = None
@@ -449,6 +488,25 @@ class AuditLogOut(BaseModel):
     target_id: str
     result: str
     detail: str
+    created_at: datetime
+
+
+class CandidateOwnershipTransferCreate(BaseModel):
+    candidate_id: int | str
+    to_user_id: int
+    reason: str = ""
+
+
+class CandidateOwnershipTransferApprove(BaseModel):
+    approved_by_id: int | None = None
+
+
+class CandidateOwnershipTransferOut(CandidateOwnershipTransferCreate):
+    id: int
+    from_user_id: int | None = None
+    approved_by_id: int | None = None
+    status: str
+    approved_at: datetime | None = None
     created_at: datetime
 
 
@@ -585,3 +643,15 @@ class RecruitResumeDownloadOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class CandidateNoteCreate(BaseModel):
+    candidate_id: int
+    content: str
+    operator: str = "admin"
+
+
+class CandidateNoteOut(CandidateNoteCreate):
+    id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

@@ -31,7 +31,7 @@ def test_enhancement_modules_smoke():
         # 获取 admin 用户的动态 ID
         users_list = client.get("/api/users", headers=headers).json()
         admin_id = next(u["id"] for u in users_list if u["username"] == "admin")
-        data_permission = client.post("/api/data-permissions", json={"user_id": admin_id, "scope_type": "team", "scope_id": "team-smoke", "scope_name": "团队验收范围", "granted_by": "admin", "active": True}, headers=headers).json()
+        data_permission = client.post("/api/data-permissions", json={"user_id": admin_id, "scope_type": "position", "scope_id": "position-smoke", "scope_name": "岗位验收范围", "granted_by": "admin", "active": True}, headers=headers).json()
         data_permissions = client.get(f"/api/data-permissions?user_id={admin_id}", headers=headers).json()
         summary = client.get("/api/dashboard/summary", headers=headers).json()
         ai_tasks = client.get("/api/ai/tasks", headers=headers).json()
@@ -44,8 +44,8 @@ def test_enhancement_modules_smoke():
         assert any(item["permission_key"] == "page:permissions:smoke" for item in role_permissions)
         assert email["host"] == "smtp.example.com"
         assert "ok" in email_test
-        assert data_permission["scope_id"] == "team-smoke"
-        assert any(item["scope_id"] == "team-smoke" for item in data_permissions)
+        assert data_permission["scope_id"] == "position-smoke"
+        assert any(item["scope_id"] == "position-smoke" for item in data_permissions)
         assert summary["candidate_count"] >= 1
         assert len(ai_tasks) >= 1
         assert notifications and notifications[0]["title"] == "AI JD 生成完成"
@@ -66,4 +66,3 @@ def test_enhancement_modules_smoke():
             if target["file_path"]:
                 download_res = client.get(f"/api/recruit/resumes/{agent_id}/download", headers=headers)
                 assert download_res.status_code == 200 or download_res.status_code == 404
-

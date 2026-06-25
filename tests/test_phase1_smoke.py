@@ -105,10 +105,10 @@ def test_phase1_chain_smoke():
     users_list = client.get("/api/users", headers=headers).json()
     admin_id = next(u["id"] for u in users_list if u["username"] == "admin")
     reset_user = client.post(f"/api/users/{admin_id}/reset-password", json={"password_hash": f"dev-{suffix}"}, headers=headers).json()
-    edited_user = client.patch(f"/api/users/{admin_id}", json={"full_name": f"管理员-{suffix}", "role": "组长"}, headers=headers).json()
     temp_role = client.post("/api/roles", json={"code": f"TEMP_{suffix}", "name": f"临时角色-{suffix}", "description": "临时测试角色"}, headers=headers).json()
     temp_user = client.post("/api/users", json={"username": f"temp_{suffix}", "full_name": "临时用户", "role": temp_role["name"], "password_hash": "dev"}, headers=headers).json()
     role_delete_blocked = client.delete(f"/api/roles/{temp_role['id']}", headers=headers)
+    edited_user = client.patch(f"/api/users/{temp_user['id']}", json={"full_name": f"临时用户-{suffix}", "role": "组长"}, headers=headers).json()
     removable_role = client.post("/api/roles", json={"code": f"DEL_{suffix}", "name": f"可删角色-{suffix}", "description": "临时删除角色"}, headers=headers).json()
     role_delete_ok = client.delete(f"/api/roles/{removable_role['id']}", headers=headers).json()
     preset = client.post("/api/search-presets", json={"name": f"快捷-{suffix}", "keyword": "Java", "city": "深圳", "status": "激活", "created_by": "admin"}, headers=headers).json()
@@ -166,7 +166,7 @@ def test_phase1_chain_smoke():
     assert locked_by_update["locked"] is True
     assert locked["locked"] is True
     assert reset_user["password_hash"] == f"dev-{suffix}"
-    assert edited_user["full_name"] == f"管理员-{suffix}"
+    assert edited_user["full_name"] == f"临时用户-{suffix}"
     assert edited_user["role"] == "组长"
     assert role_delete_blocked.status_code == 400
     assert role_delete_ok["ok"] is True

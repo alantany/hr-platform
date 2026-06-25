@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-06-25 (进行中 - AI 检索本地/远程差异排查)
+
+- **已确认差异来源**：
+  * 本地 `main` 与 `origin/main` 处在同一个 commit `7e87577`，没有已提交但未推送的 commit。
+  * 但工作区存在未提交改动，`src/pages/candidates.html` 和 `app.js` 的 AI 检索 UI/事件处理都在这些改动里。
+  * 也就是说，本地能看到 AI 搜索，是因为当前编辑器/本地运行直接读到了未提交文件；远程 `git pull` 只能拿到 `origin/main` 的已提交内容，所以看不到这块功能。
+
 ## 2026-06-25 (进行中 - 8000 root homepage)
 
 - **让 `http://<host>:8000/` 直接进入首页**：
@@ -1602,6 +1609,17 @@
 
 ## 2026-06-25
 
+- 完成权限系统 RBAC 与数据权限收口：
+- Task finalized by Codex hook (unknown) at 2026-06-25 12:38:11
+- Task finalized by Codex hook (unknown) at 2026-06-25 12:38:25
+  * 后端新增 `security.py` 权限辅助，用户/角色/权限/数据权限/操作日志接口改为超级管理员强校验。
+  * 客户、项目、岗位、候选人列表与详情已按角色数据范围过滤，非管理员只能看到授权范围内的数据。
+  * 数据权限范围收口为 `company / project / position`，接口会拒绝旧的 `team / personal` 值，前端数据权限页文案和下拉项也已同步。
+  * 候选人新增 `owner_user_id`，并新增 `candidate_ownership_transfers` 转派审批记录，审批通过后自动更新候选人归属并锁定。
+  * 前端 API 补充候选人转派查询、创建、审批方法；导航中组长/操作员不再显示权限管理、数据权限、操作日志等管理员入口。
+  * 测试清理脚本已纳入 `CandidateOwnershipTransfer`，避免新增归属记录后阻塞候选人清理。
+  * 验证结果：`python3 -m py_compile backend/app/main.py backend/app/models.py backend/app/schemas.py backend/app/security.py backend/app/crud.py backend/seed.py backend/test_cleanup.py` 通过；`node --check app.js && node --check frontend-api.js` 通过；`uv run --with-requirements requirements.txt pytest tests/test_permissions_rbac.py tests/test_phase1_smoke.py tests/test_phase3_smoke.py -q` 通过（6 passed）。
+
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:06:47
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:09:28
 - Task finalized by Codex hook (unknown) at 2026-06-25 00:15:40
@@ -1621,3 +1639,11 @@
 - Task finalized by Codex hook (unknown) at 2026-06-25 10:40:53
 - Task finalized by Codex hook (unknown) at 2026-06-25 10:48:36
 - Task completed at 2026-06-25 10:52:52. Update the summary with the latest finished work.
+- Task finalized by Codex hook (unknown) at 2026-06-25 10:53:03
+- Task finalized by Codex hook (unknown) at 2026-06-25 11:03:38
+- Task finalized by Codex hook (unknown) at 2026-06-25 11:03:56
+- Task finalized by Codex hook (unknown) at 2026-06-25 11:04:34
+- Task finalized by Codex hook (unknown) at 2026-06-25 11:05:46
+- Task finalized by Codex hook (unknown) at 2026-06-25 12:32:37
+- Task finalized by Codex hook (unknown) at 2026-06-25 12:34:20
+- Task finalized by Codex hook (unknown) at 2026-06-25 12:35:35
