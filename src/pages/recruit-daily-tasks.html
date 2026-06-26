@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>每日任务</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const dailyTaskState = { rows: [] };
+
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">打招呼</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-task-greet>0</div><div class="metric-label">greet_count</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">索要简历</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-task-request>0</div><div class="metric-label">resume_request_count</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">简历下载</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-task-download>0</div><div class="metric-label">resume_download_count</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">简历收到</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-task-ack>0</div><div class="metric-label">resume_ack_count</div></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div><h3>每日任务统计</h3><div class="section-sub">按日期读取 recruit.daily_task_stats。</div></div>
+          <div class="hero-actions" style="margin-top:0"><a class="btn secondary" href="./recruit-job-list.html">岗位列表</a></div>
+        </div>
+        <div class="toolbar">
+          <input class="input" type="date" data-task-date />
+          <button class="btn primary" data-action="load-recruit-task-stats">查询</button>
+          <button class="btn" data-action="reset-recruit-task-date">今天</button>
+        </div>
+        <div class="table-card">
+          <div class="table-head" style="grid-template-columns: .85fr 1fr 1.3fr .75fr .75fr .75fr .75fr 1fr;">
+            <div>日期</div><div>发布人</div><div>岗位</div><div>打招呼</div><div>索要</div><div>下载</div><div>回执</div><div>更新时间</div>
+          </div>
+          <div data-task-rows>
+            <div class="table-row" style="grid-template-columns: 1fr;"><div class="item-meta">任务统计加载中。</div></div>
+          </div>
+          <div class="table-foot"><span data-task-foot>共 0 条统计</span><span>Recruit schema</span></div>
+        </div>
+      </section>
+    `;
+
+    function todayValue() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    function formatTime(value) {
+      const text = String(value || "").trim();
+      if (!text) return "-";
+      const d = new Date(text.includes("T") ? text : text.replace(" ", "T"));
+      if (Number.isNaN(d.getTime())) return text;
+      return d.toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+    }
+
+    function sum(field) {
+      return dailyTaskState.rows.reduce((total, row) => total + Number(row[field] || 0), 0);
+    }
+
+    function renderTasks() {
+      document.querySelector("[data-task-greet]").textContent = String(sum("greet_count"));
+      document.querySelector("[data-task-request]").textContent = String(sum("resume_request_count"));
+      document.querySelector("[data-task-download]").textContent = String(sum("resume_download_count"));
+      document.querySelector("[data-task-ack]").textContent = String(sum("resume_ack_count"));
+      const rows = document.querySelector("[data-task-rows]");
+      rows.innerHTML = dailyTaskState.rows.map((row) => `
+        <div class="table-row" style="grid-template-columns: .85fr 1fr 1.3fr .75fr .75fr .75fr .75fr 1fr;">
+          <div class="mono">${escapeHtml(row.stat_date || "-")}</div>
+          <div>${escapeHtml(row.issuer_login_name || "-")}</div>
+          <div><strong>${escapeHtml(row.job_title || "-")}</strong><div class="row-sub">posting #${row.job_posting_id || 0}</div></div>
+          <div>${Number(row.greet_count || 0)}</div>
+          <div>${Number(row.resume_request_count || 0)}</div>
+          <div>${Number(row.resume_download_count || 0)}</div>
+          <div>${Number(row.resume_ack_count || 0)}</div>
+          <div>${formatTime(row.updated_at)}</div>
+        </div>
+      `).join("") || '<div class="table-row" style="grid-template-columns: 1fr;"><div class="item-meta">该日期暂无任务统计。</div></div>';
+      document.querySelector("[data-task-foot]").textContent = `共 ${dailyTaskState.rows.length} 条统计`;
+    }
+
+    async function loadStats() {
+      const date = document.querySelector("[data-task-date]")?.value || todayValue();
+      const result = await window.hrApi.recruitDailyTaskStats({ date });
+      dailyTaskState.rows = result.items || [];
+      renderTasks();
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await renderApp();
+      const dateInput = document.querySelector("[data-task-date]");
+      if (dateInput) dateInput.value = todayValue();
+      await loadStats().catch((err) => showToast(err.message || String(err)));
+      document.addEventListener("click", async (event) => {
+        const btn = event.target.closest("[data-action]");
+        if (!btn) return;
+        if (btn.dataset.action === "load-recruit-task-stats") {
+          await window.withButtonBusy(btn, loadStats, "查询中...");
+        }
+        if (btn.dataset.action === "reset-recruit-task-date") {
+          document.querySelector("[data-task-date]").value = todayValue();
+          await window.withButtonBusy(btn, loadStats, "查询中...");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

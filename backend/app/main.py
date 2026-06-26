@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
@@ -2237,6 +2237,216 @@ def list_recruit_candidates(keyword: str | None = Query(default=None), db: Sessi
             "created_at": download.created_at if download else ""
         })
     return results
+
+
+RECRUIT_ACTIVITY_CODES = {"1w", "1m", "2m", "3m", "6m"}
+RECRUIT_EDUCATION_CODES = {"high_school", "college", "bachelor", "master", "unlimited"}
+RECRUIT_DAILY_GREET_LIMITS = {10, 20, 30, 40, 50}
+
+
+def _format_recruit_time(value) -> str:
+    if value is None:
+        return ""
+    return str(value)
+
+
+def _recruit_employee_label(employee: RecruitEmployee | None) -> str:
+    if not employee:
+        return ""
+    return employee.display_name or employee.login_name or ""
+
+
+def _recruit_job_out(job: RecruitJobPosting, employee: RecruitEmployee | None = None) -> dict:
+    return {
+        "id": job.id,
+        "employee_id": job.employee_id,
+        "publisher_login": employee.login_name if employee else "",
+        "publisher_name": _recruit_employee_label(employee),
+        "job_title": job.job_title,
+        "work_location": job.work_location,
+        "age_min": job.age_min,
+        "age_max": job.age_max,
+        "education": job.education,
+        "candidate_activity": job.candidate_activity or "1m",
+        "daily_greet_limit": job.daily_greet_limit or 20,
+        "search_keyword": job.search_keyword,
+        "is_valid": "N" if str(job.is_valid or "Y").upper() == "N" else "Y",
+        "created_at": _format_recruit_time(job.created_at),
+    }
+
+
+def _normalize_recruit_job_payload(payload, *, partial: bool = False) -> dict:
+    raw = payload.model_dump(exclude_unset=partial)
+    data = {}
+
+    if "job_title" in raw or not partial:
+        job_title = str(raw.get("job_title") or "").strip()
+        if not job_title:
+            raise HTTPException(status_code=400, detail="请填写岗位名称")
+        if len(job_title) < 2 or len(job_title) > 80:
+            raise HTTPException(status_code=400, detail="岗位名称长度需为 2-80 个字符")
+        data["job_title"] = job_title
+
+    if "work_location" in raw or not partial:
+        data["work_location"] = str(raw.get("work_location") or "长春").strip() or "长春"
+
+    has_age_min = "age_min" in raw
+    has_age_max = "age_max" in raw
+    if has_age_min or has_age_max or not partial:
+        age_min = raw.get("age_min")
+        age_max = raw.get("age_max")
+        if age_min in ("", None):
+            age_min = None
+        if age_max in ("", None):
+            age_max = None
+        if (age_min is None) != (age_max is None):
+            raise HTTPException(status_code=400, detail="年龄下限与上限需同时填写，或同时留空")
+        if age_min is not None and age_max is not None:
+            age_min = int(age_min)
+            age_max = int(age_max)
+            if age_min < 16 or age_max > 99 or age_min > age_max:
+                raise HTTPException(status_code=400, detail="年龄须在 16-99 岁之间，且下限不能大于上限")
+        data["age_min"] = age_min
+        data["age_max"] = age_max
+
+    if "education" in raw or not partial:
+        education = raw.get("education")
+        education = None if education in ("", None) else str(education).strip()
+        if education and education not in RECRUIT_EDUCATION_CODES:
+            raise HTTPException(status_code=400, detail="学历选项无效")
+        data["education"] = education
+
+    if "candidate_activity" in raw or not partial:
+        activity = str(raw.get("candidate_activity") or "1m").strip()
+        if activity not in RECRUIT_ACTIVITY_CODES:
+            raise HTTPException(status_code=400, detail="候选人活跃时间选项无效")
+        data["candidate_activity"] = activity
+
+    if "daily_greet_limit" in raw or not partial:
+        daily_greet_limit = int(raw.get("daily_greet_limit") or 20)
+        if daily_greet_limit not in RECRUIT_DAILY_GREET_LIMITS:
+            raise HTTPException(status_code=400, detail="每日打招呼次数须为 10、20、30、40 或 50")
+        data["daily_greet_limit"] = daily_greet_limit
+
+    if "search_keyword" in raw or not partial:
+        search_keyword = raw.get("search_keyword")
+        search_keyword = None if search_keyword in ("", None) else str(search_keyword).strip()[:30]
+        data["search_keyword"] = search_keyword
+
+    if "is_valid" in raw or not partial:
+        data["is_valid"] = "N" if str(raw.get("is_valid") or "Y").strip().upper() == "N" else "Y"
+
+    if "employee_id" in raw and raw.get("employee_id") not in ("", None):
+        data["employee_id"] = int(raw["employee_id"])
+
+    return data
+
+
+def _resolve_recruit_employee(db: Session, user: User, requested_employee_id: int | None = None) -> RecruitEmployee:
+    if requested_employee_id:
+        employee = db.get(RecruitEmployee, requested_employee_id)
+        if not employee:
+            raise HTTPException(status_code=400, detail="指定的 Recruit 发布人不存在")
+        return employee
+
+    employee = db.query(RecruitEmployee).filter(RecruitEmployee.login_name == user.username).first()
+    if employee:
+        return employee
+
+    employee = RecruitEmployee(
+        login_name=user.username,
+        password_hash="managed-by-hr-platform",
+        display_name=user.full_name,
+        is_admin=1 if security.is_admin(user) else 0,
+        created_at=datetime.now(timezone.utc).isoformat(),
+    )
+    db.add(employee)
+    db.flush()
+    return employee
+
+
+@app.get("/api/recruit/employees")
+def list_recruit_employees(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    rows = db.query(RecruitEmployee).order_by(RecruitEmployee.id.asc()).all()
+    return [
+        {
+            "id": item.id,
+            "login_name": item.login_name,
+            "display_name": item.display_name or "",
+            "is_admin": item.is_admin,
+            "created_at": _format_recruit_time(item.created_at),
+            "updated_at": _format_recruit_time(item.updated_at),
+        }
+        for item in rows
+    ]
+
+
+@app.get("/api/recruit/job-postings")
+def list_recruit_job_postings(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    rows = (
+        db.query(RecruitJobPosting, RecruitEmployee)
+        .outerjoin(RecruitEmployee, RecruitEmployee.id == RecruitJobPosting.employee_id)
+        .order_by(RecruitJobPosting.id.desc())
+        .all()
+    )
+    return {"jobs": [_recruit_job_out(job, employee) for job, employee in rows]}
+
+
+@app.post("/api/recruit/job-postings")
+def create_recruit_job_posting(payload: schemas.RecruitJobPostingCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    data = _normalize_recruit_job_payload(payload)
+    employee = _resolve_recruit_employee(db, user, data.pop("employee_id", None))
+    obj = RecruitJobPosting(employee_id=employee.id, created_at=datetime.now(timezone.utc).isoformat(), **data)
+    db.add(obj)
+    crud.add_audit(db, user.username, "Recruit岗位管理", "发布岗位", "recruit_job_posting", "new", detail=obj.job_title)
+    db.commit()
+    db.refresh(obj)
+    return {"job": _recruit_job_out(obj, employee)}
+
+
+@app.patch("/api/recruit/job-postings/{job_id}")
+def update_recruit_job_posting(job_id: int, payload: schemas.RecruitJobPostingUpdate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    obj = db.get(RecruitJobPosting, job_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Recruit 岗位不存在")
+    data = _normalize_recruit_job_payload(payload, partial=True)
+    employee = None
+    if "employee_id" in data:
+        employee = _resolve_recruit_employee(db, user, data.pop("employee_id"))
+        obj.employee_id = employee.id
+    for key, value in data.items():
+        setattr(obj, key, value)
+    crud.add_audit(db, user.username, "Recruit岗位管理", "更新岗位", "recruit_job_posting", str(job_id), detail=obj.job_title)
+    db.commit()
+    db.refresh(obj)
+    if employee is None:
+        employee = db.get(RecruitEmployee, obj.employee_id)
+    return {"job": _recruit_job_out(obj, employee)}
+
+
+@app.get("/api/recruit/daily-task-stats")
+def list_recruit_daily_task_stats(date: str | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(require_user)):
+    query = db.query(RecruitDailyTaskStat)
+    if date:
+        query = query.filter(RecruitDailyTaskStat.stat_date == date)
+    rows = query.order_by(RecruitDailyTaskStat.stat_date.desc(), RecruitDailyTaskStat.issuer_login_name.asc(), RecruitDailyTaskStat.job_title.asc()).all()
+    return {
+        "items": [
+            {
+                "id": item.id,
+                "stat_date": item.stat_date,
+                "job_posting_id": item.job_posting_id,
+                "issuer_login_name": item.issuer_login_name,
+                "job_title": item.job_title,
+                "greet_count": item.greet_count,
+                "resume_request_count": item.resume_request_count,
+                "resume_download_count": item.resume_download_count,
+                "resume_ack_count": item.resume_ack_count,
+                "updated_at": _format_recruit_time(item.updated_at),
+            }
+            for item in rows
+        ]
+    }
 
 
 @app.get("/api/recruit/resumes/{agent_id}/download")

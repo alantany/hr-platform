@@ -652,6 +652,32 @@ class RecruitResumeDownloadOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RecruitJobPostingCreate(BaseModel):
+    job_title: str
+    work_location: str = "长春"
+    age_min: int | None = None
+    age_max: int | None = None
+    education: str | None = None
+    candidate_activity: str = "1m"
+    daily_greet_limit: int = 20
+    search_keyword: str | None = None
+    is_valid: str = "Y"
+    employee_id: int | None = None
+
+
+class RecruitJobPostingUpdate(BaseModel):
+    job_title: str | None = None
+    work_location: str | None = None
+    age_min: int | None = None
+    age_max: int | None = None
+    education: str | None = None
+    candidate_activity: str | None = None
+    daily_greet_limit: int | None = None
+    search_keyword: str | None = None
+    is_valid: str | None = None
+    employee_id: int | None = None
+
+
 class CandidateNoteCreate(BaseModel):
     candidate_id: int
     content: str

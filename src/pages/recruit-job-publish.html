@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>岗位发布</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const EDUCATION_OPTIONS = [
+      ["", "不限"],
+      ["high_school", "高中"],
+      ["college", "大专"],
+      ["bachelor", "本科"],
+      ["master", "硕士"],
+      ["unlimited", "不限"],
+    ];
+    const ACTIVITY_OPTIONS = [
+      ["1w", "1 周"],
+      ["1m", "1 个月"],
+      ["2m", "2 个月"],
+      ["3m", "3 个月"],
+      ["6m", "半年"],
+    ];
+    const GREET_OPTIONS = [10, 20, 30, 40, 50];
+
+    window.__PAGE_BODY__ = `
+      <section class="metrics" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">Recruit 岗位</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-recruit-job-total>0</div><div class="metric-label">当前岗位库总量</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">有效岗位</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-recruit-job-valid>0</div><div class="metric-label">抓取后台可读取</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">今日任务</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-recruit-task-today>0</div><div class="metric-label">今日统计行数</div></div>
+      </section>
+
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section-head">
+            <div><h3>岗位发布</h3><div class="section-sub">保存后写入 recruit.job_postings。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="submit-recruit-job">发布岗位</button></div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-title">岗位名称</div><div class="item-meta">用于智联岗位下拉选择</div><input class="input wide" data-recruit-field="job_title" placeholder="例如：Java 后端工程师" /></div>
+            <div class="list-item"><div class="item-title">工作地点</div><div class="item-meta">默认长春</div><input class="input wide" data-recruit-field="work_location" value="长春" /></div>
+            <div class="list-item"><div class="item-title">年龄范围</div><div class="item-meta">下限和上限需同时填写，可留空</div><div class="toolbar" style="margin:8px 0 0; padding:0; border:0; box-shadow:none; background:transparent;"><input class="input" type="number" min="16" max="99" data-recruit-field="age_min" placeholder="最小年龄" /><input class="input" type="number" min="16" max="99" data-recruit-field="age_max" placeholder="最大年龄" /></div></div>
+            <div class="list-item"><div class="item-title">学历要求</div><div class="item-meta">与 Recruit 原岗位库枚举保持一致</div><select class="input wide" data-recruit-field="education">${EDUCATION_OPTIONS.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></div>
+            <div class="list-item"><div class="item-title">候选人活跃时间</div><div class="item-meta">抓取时使用的活跃范围</div><select class="input wide" data-recruit-field="candidate_activity">${ACTIVITY_OPTIONS.map(([value, label]) => `<option value="${value}" ${value === "1m" ? "selected" : ""}>${label}</option>`).join("")}</select></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section-head">
+            <div><h3>抓取配置</h3><div class="section-sub">控制单岗额度、关键词和是否参与抓取。</div></div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-title">每日打招呼上限</div><div class="item-meta">单岗位配额</div><select class="input wide" data-recruit-field="daily_greet_limit">${GREET_OPTIONS.map((value) => `<option value="${value}" ${value === 20 ? "selected" : ""}>${value} 次/天</option>`).join("")}</select></div>
+            <div class="list-item"><div class="item-title">搜索关键词</div><div class="item-meta">可为空；最多 30 字</div><input class="input wide" maxlength="30" data-recruit-field="search_keyword" placeholder="例如：后端、Java、销售" /></div>
+            <div class="list-item"><div class="item-title">岗位状态</div><div class="item-meta">Y=参与抓取，N=抓取后台跳过</div><select class="input wide" data-recruit-field="is_valid"><option value="Y">Y 有效</option><option value="N">N 跳过</option></select></div>
+            <div class="list-item soft"><div class="item-top"><div><div class="item-title">数据源</div><div class="item-meta">本页只调用 HR FastAPI，并写入 PostgreSQL recruit schema。</div></div><span class="chip primary">PG</span></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div><h3>最近发布</h3><div class="section-sub">展示最新 5 条 Recruit 岗位。</div></div>
+          <div class="hero-actions" style="margin-top:0"><a class="btn secondary" href="./recruit-job-list.html">查看列表</a></div>
+        </div>
+        <div class="list" data-recruit-recent-jobs><div class="list-item"><div class="item-meta">岗位数据加载中。</div></div></div>
+      </section>
+    `;
+
+    function todayValue() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    function readPayload() {
+      const get = (name) => document.querySelector(`[data-recruit-field="${name}"]`)?.value?.trim() || "";
+      return {
+        job_title: get("job_title"),
+        work_location: get("work_location") || "长春",
+        age_min: get("age_min") ? Number(get("age_min")) : null,
+        age_max: get("age_max") ? Number(get("age_max")) : null,
+        education: get("education") || null,
+        candidate_activity: get("candidate_activity") || "1m",
+        daily_greet_limit: Number(get("daily_greet_limit") || 20),
+        search_keyword: get("search_keyword") || null,
+        is_valid: get("is_valid") || "Y",
+      };
+    }
+
+    function renderRecent(jobs) {
+      const box = document.querySelector("[data-recruit-recent-jobs]");
+      if (!box) return;
+      box.innerHTML = jobs.slice(0, 5).map((job) => `
+        <div class="list-item">
+          <div class="item-top">
+            <div><div class="item-title">${escapeHtml(job.job_title)}</div><div class="item-meta">${escapeHtml(job.work_location)} · ${job.daily_greet_limit} 次/天 · ${escapeHtml(job.publisher_login || "-")}</div></div>
+            <span class="chip ${job.is_valid === "Y" ? "success" : "neutral"}">${job.is_valid === "Y" ? "有效" : "跳过"}</span>
+          </div>
+        </div>
+      `).join("") || '<div class="list-item"><div class="item-meta">暂无岗位。</div></div>';
+    }
+
+    async function loadPageData() {
+      const [jobsResult, statsResult] = await Promise.all([
+        window.hrApi.recruitJobPostings(),
+        window.hrApi.recruitDailyTaskStats({ date: todayValue() }),
+      ]);
+      const jobs = jobsResult.jobs || [];
+      document.querySelector("[data-recruit-job-total]").textContent = String(jobs.length);
+      document.querySelector("[data-recruit-job-valid]").textContent = String(jobs.filter((job) => job.is_valid === "Y").length);
+      document.querySelector("[data-recruit-task-today]").textContent = String((statsResult.items || []).length);
+      renderRecent(jobs);
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await renderApp();
+      await loadPageData().catch((err) => showToast(err.message || String(err)));
+      document.addEventListener("click", async (event) => {
+        const btn = event.target.closest('[data-action="submit-recruit-job"]');
+        if (!btn) return;
+        await window.withButtonBusy(btn, async () => {
+          const result = await window.hrApi.createRecruitJobPosting(readPayload());
+          showToast(`已发布岗位：${result.job.job_title}`);
+          document.querySelectorAll("[data-recruit-field]").forEach((node) => {
+            if (node.dataset.recruitField === "work_location") node.value = "长春";
+            else if (node.dataset.recruitField === "candidate_activity") node.value = "1m";
+            else if (node.dataset.recruitField === "daily_greet_limit") node.value = "20";
+            else if (node.dataset.recruitField === "is_valid") node.value = "Y";
+            else node.value = "";
+          });
+          await loadPageData();
+        }, "发布中...");
+      });
+    });
+  </script>
+</body>
+</html>

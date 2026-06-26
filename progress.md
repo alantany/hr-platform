@@ -1610,6 +1610,7 @@
 ## 2026-06-25
 
 - 2026-06-25 19:37:43 CST: 完成异步按钮即时反馈收口。
+- Task finalized by Codex hook (unknown) at 2026-06-25 19:39:09
   * 在 `app.js` 新增共享 `withButtonBusy()` / `setButtonBusyLabel()`，全局按钮委托会在异步操作开始前立即显示 spinner、忙碌文案、禁用态和 `aria-busy=true`，完成后恢复原按钮内容。
   * 简历导出链路补强：勾选导出时弹窗候选人区和导出历史区先显示“正在加载...”，确认导出按钮会立刻显示 `导出中...`，批量导出循环中更新为 `导出中 N/M...`。
   * 补充 `styles.css` 的 `.is-busy` 和 `.btn-busy-spinner` 样式，沿用当前后台的紧凑按钮风格，没有引入新依赖或改变业务接口。
@@ -1720,3 +1721,9 @@
   * 远程真实错误为 `ModuleNotFoundError: No module named 'reportlab'`，发生在导出接口导入 PDF 生成器时。
   * 已将 `reportlab==4.2.5` 补入 `requirements.txt`，确保 Windows 重新安装依赖后可生成 PDF。
   * 已验证 `import reportlab`、`tests/test_pdf_export.py`、权限和 PDF 导出组合测试 9 个用例通过。
+- 2026-06-26 CST: 完成 Recruit 岗位管理三页面集成到 HR-plateform。
+  * 左侧导航新增独立分组“岗位管理”，包含 `岗位发布`、`岗位列表`、`每日任务` 三个入口；原 HR 业务 `positions.html` 岗位管理保留不动。
+  * 新增 `src/pages/recruit-job-publish.html`、`src/pages/recruit-job-list.html`、`src/pages/recruit-daily-tasks.html`，页面使用现有 `panel`、`table-card`、`list-item`、`btn`、`input`、`chip` 风格，不引入 Recruit 的 Next.js/React/Tailwind 运行时。
+  * 后端新增 `/api/recruit/employees`、`/api/recruit/job-postings`、`/api/recruit/job-postings/{id}`、`/api/recruit/daily-task-stats`，统一读取/写入 PostgreSQL `recruit` schema，不使用 SQLite `Recruit/jobs/data/app.db`。
+  * 岗位发布时优先按 HR 当前用户名匹配 `recruit.employees.login_name`，缺失时创建轻量发布人记录，再写入 `recruit.job_postings`；岗位列表支持编辑和 `is_valid` 有效/跳过切换；每日任务按日期读取统计。
+  * 验证结果：`python -m py_compile backend/app/main.py backend/app/schemas.py` 通过；`uv run --with-requirements requirements.txt pytest tests/test_phase1_smoke.py -q` 通过；测试客户端登录后访问 `/api/recruit/job-postings` 与 `/api/recruit/daily-task-stats` 均返回 200；`node --check app.js && node --check frontend-api.js` 通过；Playwright 已验证三个新页面登录态渲染、标题和新导航分组可见。

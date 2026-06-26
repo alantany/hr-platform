@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>岗位列表</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const recruitJobState = { jobs: [], filtered: [], editingId: null };
+    const educationLabels = { high_school: "高中", college: "大专", bachelor: "本科", master: "硕士", unlimited: "不限" };
+    const activityLabels = { "1w": "1 周", "1m": "1 个月", "2m": "2 个月", "3m": "3 个月", "6m": "半年" };
+
+    window.__PAGE_BODY__ = `
+      <section class="metrics">
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">岗位总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-recruit-total>0</div><div class="metric-label">Recruit 岗位库</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">有效岗位</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-recruit-valid>0</div><div class="metric-label">后台会处理</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">跳过岗位</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-recruit-invalid>0</div><div class="metric-label">is_valid=N</div></div>
+        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">发布人</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-recruit-publishers>0</div><div class="metric-label">关联员工数</div></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div><h3>岗位列表</h3><div class="section-sub">数据来自 PostgreSQL recruit.job_postings。</div></div>
+          <div class="hero-actions" style="margin-top:0"><a class="btn primary" href="./recruit-job-publish.html">发布岗位</a><button class="btn" data-action="refresh-recruit-jobs">刷新</button></div>
+        </div>
+        <div class="toolbar">
+          <input class="input wide" data-recruit-filter-keyword placeholder="搜索岗位、地点、关键词、发布人" />
+          <select class="input" data-recruit-filter-valid><option value="">全部状态</option><option value="Y">有效</option><option value="N">跳过</option></select>
+        </div>
+        <div class="table-card">
+          <div class="table-head" style="grid-template-columns: 1.4fr .8fr .85fr .8fr .9fr .8fr .85fr 1.1fr;">
+            <div>岗位</div><div>地点</div><div>年龄</div><div>学历</div><div>活跃</div><div>额度</div><div>状态</div><div>操作</div>
+          </div>
+          <div data-recruit-job-rows>
+            <div class="table-row" style="grid-template-columns: 1fr;"><div class="item-meta">岗位数据加载中。</div></div>
+          </div>
+          <div class="table-foot"><span data-recruit-foot>共 0 条记录</span><span>Recruit schema</span></div>
+        </div>
+      </section>
+
+      <div class="modal" data-recruit-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
+        <div class="panel" style="max-width:780px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
+          <div class="section-head">
+            <div><h3>编辑 Recruit 岗位</h3><div class="section-sub">更新后直接写回 recruit.job_postings。</div></div>
+            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-recruit-edit">取消</button><button class="btn primary" data-action="save-recruit-edit">保存</button></div>
+          </div>
+          <div class="grid-2">
+            <div class="list">
+              <div class="list-item"><div class="item-title">岗位名称</div><input class="input wide" data-edit-field="job_title" /></div>
+              <div class="list-item"><div class="item-title">工作地点</div><input class="input wide" data-edit-field="work_location" /></div>
+              <div class="list-item"><div class="item-title">年龄范围</div><div class="toolbar" style="margin:8px 0 0; padding:0; border:0; box-shadow:none; background:transparent;"><input class="input" type="number" min="16" max="99" data-edit-field="age_min" placeholder="最小年龄" /><input class="input" type="number" min="16" max="99" data-edit-field="age_max" placeholder="最大年龄" /></div></div>
+              <div class="list-item"><div class="item-title">学历要求</div><select class="input wide" data-edit-field="education"><option value="">不限</option><option value="high_school">高中</option><option value="college">大专</option><option value="bachelor">本科</option><option value="master">硕士</option><option value="unlimited">不限</option></select></div>
+            </div>
+            <div class="list">
+              <div class="list-item"><div class="item-title">活跃时间</div><select class="input wide" data-edit-field="candidate_activity"><option value="1w">1 周</option><option value="1m">1 个月</option><option value="2m">2 个月</option><option value="3m">3 个月</option><option value="6m">半年</option></select></div>
+              <div class="list-item"><div class="item-title">每日打招呼上限</div><select class="input wide" data-edit-field="daily_greet_limit"><option value="10">10 次/天</option><option value="20">20 次/天</option><option value="30">30 次/天</option><option value="40">40 次/天</option><option value="50">50 次/天</option></select></div>
+              <div class="list-item"><div class="item-title">搜索关键词</div><input class="input wide" maxlength="30" data-edit-field="search_keyword" /></div>
+              <div class="list-item"><div class="item-title">岗位状态</div><select class="input wide" data-edit-field="is_valid"><option value="Y">Y 有效</option><option value="N">N 跳过</option></select></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    function ageLabel(job) {
+      if (job.age_min == null && job.age_max == null) return "-";
+      if (job.age_min != null && job.age_max != null) return `${job.age_min}-${job.age_max}`;
+      if (job.age_min != null) return `${job.age_min}+`;
+      return `≤${job.age_max}`;
+    }
+
+    function renderRows() {
+      const keyword = document.querySelector("[data-recruit-filter-keyword]")?.value?.trim().toLowerCase() || "";
+      const valid = document.querySelector("[data-recruit-filter-valid]")?.value || "";
+      recruitJobState.filtered = recruitJobState.jobs.filter((job) => {
+        const hay = [job.job_title, job.work_location, job.search_keyword, job.publisher_login, job.publisher_name].join(" ").toLowerCase();
+        return (!keyword || hay.includes(keyword)) && (!valid || job.is_valid === valid);
+      });
+      const rows = document.querySelector("[data-recruit-job-rows]");
+      if (!rows) return;
+      rows.innerHTML = recruitJobState.filtered.map((job) => `
+        <div class="table-row" style="grid-template-columns: 1.4fr .8fr .85fr .8fr .9fr .8fr .85fr 1.1fr;">
+          <div><div class="row-title"><div class="avatar-sm"></div><div><strong>${escapeHtml(job.job_title)}</strong><div class="row-sub">${escapeHtml(job.search_keyword || "未配置关键词")} · ${escapeHtml(job.publisher_login || "-")}</div></div></div></div>
+          <div>${escapeHtml(job.work_location || "-")}</div>
+          <div>${ageLabel(job)}</div>
+          <div>${educationLabels[job.education] || "-"}</div>
+          <div>${activityLabels[job.candidate_activity] || job.candidate_activity || "-"}</div>
+          <div>${job.daily_greet_limit || 20} 次</div>
+          <div><span class="chip ${job.is_valid === "Y" ? "success" : "neutral"}">${job.is_valid === "Y" ? "有效" : "跳过"}</span></div>
+          <div class="table-actions"><button class="btn-sm" data-action="edit-recruit-job" data-id="${job.id}">编辑</button><button class="btn-sm ${job.is_valid === "Y" ? "" : "primary"}" data-action="toggle-recruit-job" data-id="${job.id}">${job.is_valid === "Y" ? "设为跳过" : "设为有效"}</button></div>
+        </div>
+      `).join("") || '<div class="table-row" style="grid-template-columns: 1fr;"><div class="item-meta">暂无符合条件的 Recruit 岗位。</div></div>';
+      document.querySelector("[data-recruit-foot]").textContent = `共 ${recruitJobState.filtered.length} 条记录`;
+    }
+
+    function updateMetrics() {
+      const jobs = recruitJobState.jobs;
+      document.querySelector("[data-recruit-total]").textContent = String(jobs.length);
+      document.querySelector("[data-recruit-valid]").textContent = String(jobs.filter((job) => job.is_valid === "Y").length);
+      document.querySelector("[data-recruit-invalid]").textContent = String(jobs.filter((job) => job.is_valid === "N").length);
+      document.querySelector("[data-recruit-publishers]").textContent = String(new Set(jobs.map((job) => job.employee_id).filter(Boolean)).size);
+    }
+
+    async function loadJobs() {
+      const result = await window.hrApi.recruitJobPostings();
+      recruitJobState.jobs = result.jobs || [];
+      updateMetrics();
+      renderRows();
+    }
+
+    function fillEdit(job) {
+      recruitJobState.editingId = job.id;
+      for (const key of ["job_title", "work_location", "education", "candidate_activity", "daily_greet_limit", "search_keyword", "is_valid"]) {
+        const el = document.querySelector(`[data-edit-field="${key}"]`);
+        if (el) el.value = job[key] ?? "";
+      }
+      document.querySelector('[data-edit-field="age_min"]').value = job.age_min ?? "";
+      document.querySelector('[data-edit-field="age_max"]').value = job.age_max ?? "";
+      document.querySelector("[data-recruit-edit-modal]").style.display = "block";
+    }
+
+    function readEditPayload() {
+      const get = (key) => document.querySelector(`[data-edit-field="${key}"]`)?.value?.trim() || "";
+      return {
+        job_title: get("job_title"),
+        work_location: get("work_location") || "长春",
+        age_min: get("age_min") ? Number(get("age_min")) : null,
+        age_max: get("age_max") ? Number(get("age_max")) : null,
+        education: get("education") || null,
+        candidate_activity: get("candidate_activity") || "1m",
+        daily_greet_limit: Number(get("daily_greet_limit") || 20),
+        search_keyword: get("search_keyword") || null,
+        is_valid: get("is_valid") || "Y",
+      };
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await renderApp();
+      await loadJobs().catch((err) => showToast(err.message || String(err)));
+      document.addEventListener("input", (event) => {
+        if (event.target.matches("[data-recruit-filter-keyword]")) renderRows();
+      });
+      document.addEventListener("change", (event) => {
+        if (event.target.matches("[data-recruit-filter-valid]")) renderRows();
+      });
+      document.addEventListener("click", async (event) => {
+        const btn = event.target.closest("[data-action]");
+        if (!btn) return;
+        if (btn.dataset.action === "refresh-recruit-jobs") {
+          await window.withButtonBusy(btn, loadJobs, "刷新中...");
+          return;
+        }
+        if (btn.dataset.action === "close-recruit-edit") {
+          document.querySelector("[data-recruit-edit-modal]").style.display = "none";
+          return;
+        }
+        if (btn.dataset.action === "edit-recruit-job") {
+          const job = recruitJobState.jobs.find((item) => String(item.id) === String(btn.dataset.id));
+          if (job) fillEdit(job);
+          return;
+        }
+        if (btn.dataset.action === "toggle-recruit-job") {
+          const job = recruitJobState.jobs.find((item) => String(item.id) === String(btn.dataset.id));
+          if (!job) return;
+          await window.withButtonBusy(btn, async () => {
+            await window.hrApi.updateRecruitJobPosting(job.id, { is_valid: job.is_valid === "Y" ? "N" : "Y" });
+            showToast(job.is_valid === "Y" ? "已设为跳过" : "已设为有效");
+            await loadJobs();
+          });
+          return;
+        }
+        if (btn.dataset.action === "save-recruit-edit") {
+          if (!recruitJobState.editingId) return;
+          await window.withButtonBusy(btn, async () => {
+            const result = await window.hrApi.updateRecruitJobPosting(recruitJobState.editingId, readEditPayload());
+            showToast(`已保存：${result.job.job_title}`);
+            document.querySelector("[data-recruit-edit-modal]").style.display = "none";
+            await loadJobs();
+          }, "保存中...");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

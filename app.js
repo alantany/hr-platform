@@ -25,6 +25,14 @@ const navGroups = [
     ],
   },
   {
+    title: "岗位管理",
+    items: [
+      { href: "recruit-job-publish.html", label: "岗位发布", badge: "发布", icon: "file" },
+      { href: "recruit-job-list.html", label: "岗位列表", badge: "列表", icon: "inbox" },
+      { href: "recruit-daily-tasks.html", label: "每日任务", badge: "任务", icon: "chart" },
+    ],
+  },
+  {
     title: "开发工具",
     items: [
       { href: "db-explorer.html", label: "数据探针", badge: "探针", icon: "settings" },
@@ -68,6 +76,21 @@ const pages = {
     crumbs: "项目管理 / 岗位管理",
     title: "岗位管理",
     desc: "统一管理项目下的岗位、紧急程度、薪资范围与状态流转。",
+  },
+  "recruit-job-publish": {
+    crumbs: "岗位管理 / 岗位发布",
+    title: "岗位发布",
+    desc: "发布供 Recruit 抓取后台读取的岗位条件，数据写入 PostgreSQL 的 recruit.job_postings。",
+  },
+  "recruit-job-list": {
+    crumbs: "岗位管理 / 岗位列表",
+    title: "岗位列表",
+    desc: "查看和维护 Recruit 岗位库，控制岗位是否参与抓取任务。",
+  },
+  "recruit-daily-tasks": {
+    crumbs: "岗位管理 / 每日任务",
+    title: "每日任务",
+    desc: "按日期查看 Recruit 抓取任务的打招呼、索要简历、下载和回执统计。",
   },
   evaluations: {
     crumbs: "评价 / 评价管理",
@@ -184,6 +207,9 @@ function getNavVisibility(role, permissions = null) {
       "import.html",
       "customers.html",
       "positions.html",
+      "recruit-job-publish.html",
+      "recruit-job-list.html",
+      "recruit-daily-tasks.html",
       "projects.html",
       "evaluations.html",
       "notifications.html",
@@ -196,6 +222,9 @@ function getNavVisibility(role, permissions = null) {
       "candidates.html",
       "import.html",
       "positions.html",
+      "recruit-job-publish.html",
+      "recruit-job-list.html",
+      "recruit-daily-tasks.html",
       "projects.html",
       "evaluations.html",
       "notifications.html",

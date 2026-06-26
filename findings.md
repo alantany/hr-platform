@@ -1460,3 +1460,4 @@
 - **测试数据清理约束已落实**：一次性清理了数据库中 `candidate_agent_id` 为空的历史测试候选人及其关联记录，当前计数已归零；同时给 `tests/test_pdf_export.py` 补上了导出记录和物理 PDF 文件的 `finally` 收尾，避免该测试再次留下数据库脏数据。
 - **候选人来源已收口为两类**：`candidates.source` 只保留 `简历库` 和 `手工导入` 两个业务来源，`AI解析` 不再作为来源值使用；当前数据库里的候选人样本已归一到 `简历库`，后续解析流程仍然执行 AI 解析，但不把解析动作当作来源字段。
 - **候选人行级稳定标识**：`candidates` 列表现在返回 `record_key`，前端用它作为行和详情/编辑入口的稳定键，避免同名或同 `id` 的记录互相串单；`download:1` 这类原始下载行在首次打开时会解析成独立的本地候选人记录，不再落到别的候选人身上。
+- **Recruit 岗位管理集成边界确认**：HR-plateform 现在承担 Recruit 岗位发布、岗位列表、每日任务三个 UI 入口，数据源统一走 PostgreSQL `recruit` schema；不复制 `Recruit/jobs` 的 Next.js/SQLite 访问层，也不读取 `Recruit/jobs/data/app.db`。由于“岗位发布”需要写入 `recruit.job_postings` 并按 HR 登录用户映射或创建 `recruit.employees` 发布人，这一功能要求交付端数据库账号对 `recruit.employees` 与 `recruit.job_postings` 具备必要写权限，已经从早期“只读探针”边界升级为“岗位配置可写”边界。

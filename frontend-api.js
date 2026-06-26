@@ -364,6 +364,23 @@ window.hrApi = {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/recruit/candidates${qs ? `?${qs}` : ""}`);
   },
+  recruitEmployees() {
+    return this.request("/recruit/employees");
+  },
+  recruitJobPostings(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/recruit/job-postings${qs ? `?${qs}` : ""}`);
+  },
+  createRecruitJobPosting(payload) {
+    return this.request("/recruit/job-postings", { method: "POST", body: JSON.stringify(payload) });
+  },
+  updateRecruitJobPosting(id, payload) {
+    return this.request(`/recruit/job-postings/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  },
+  recruitDailyTaskStats(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/recruit/daily-task-stats${qs ? `?${qs}` : ""}`);
+  },
   downloadRecruitResume(agentId) {
     return fetch(`${this.baseUrl}/recruit/resumes/${agentId}/download`, {
       headers: { Authorization: `Bearer ${this.token}` }
