@@ -13,6 +13,14 @@ const navGroups = [
     ],
   },
   {
+    title: "岗位管理",
+    items: [
+      { href: "recruit-job-publish.html", label: "岗位发布", badge: "发布", icon: "file" },
+      { href: "recruit-job-list.html", label: "岗位列表", badge: "列表", icon: "inbox" },
+      { href: "recruit-daily-tasks.html", label: "每日任务", badge: "任务", icon: "chart" },
+    ],
+  },
+  {
     title: "系统设置",
     items: [
       { href: "dictionary.html", label: "标签字典", badge: "标签", icon: "settings" },
@@ -22,14 +30,6 @@ const navGroups = [
       { href: "data-permissions.html", label: "数据权限", badge: "范围", icon: "settings" },
       { href: "warranty.html", label: "质保期管理", badge: "质保", icon: "settings" },
       { href: "logs.html", label: "操作日志", badge: "日志", icon: "log" },
-    ],
-  },
-  {
-    title: "岗位管理",
-    items: [
-      { href: "recruit-job-publish.html", label: "岗位发布", badge: "发布", icon: "file" },
-      { href: "recruit-job-list.html", label: "岗位列表", badge: "列表", icon: "inbox" },
-      { href: "recruit-daily-tasks.html", label: "每日任务", badge: "任务", icon: "chart" },
     ],
   },
   {
