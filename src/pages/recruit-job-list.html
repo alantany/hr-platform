@@ -92,7 +92,7 @@
           <div>${activityLabels[job.candidate_activity] || job.candidate_activity || "-"}</div>
           <div>${job.daily_greet_limit || 20} 次</div>
           <div><span class="chip ${job.is_valid === "Y" ? "success" : "neutral"}">${job.is_valid === "Y" ? "有效" : "跳过"}</span></div>
-          <div class="table-actions"><button class="btn-sm" data-action="edit-recruit-job" data-id="${job.id}">编辑</button><button class="btn-sm ${job.is_valid === "Y" ? "" : "primary"}" data-action="toggle-recruit-job" data-id="${job.id}">${job.is_valid === "Y" ? "设为跳过" : "设为有效"}</button></div>
+          <div class="table-actions"><button class="btn-sm" data-action="edit-recruit-job" data-id="${job.id}">编辑</button><button class="btn-sm" style="color:#c0392b;" data-action="delete-recruit-job" data-id="${job.id}" data-title="${escapeHtml(job.job_title)}">删除</button></div>
         </div>
       `).join("") || '<div class="table-row" style="grid-template-columns: 1fr;"><div class="item-meta">暂无符合条件的 Recruit 岗位。</div></div>';
       document.querySelector("[data-recruit-foot]").textContent = `共 ${recruitJobState.filtered.length} 条记录`;
@@ -174,14 +174,32 @@
           });
           return;
         }
+        if (btn.dataset.action === "delete-recruit-job") {
+          const jobTitle = btn.dataset.title || "该岗位";
+          if (!confirm(`确认删除「${jobTitle}」？删除后无法恢复。`)) return;
+          try {
+            await window.withButtonBusy(btn, async () => {
+              await window.hrApi.deleteRecruitJobPosting(Number(btn.dataset.id));
+              showToast(`已删除：${jobTitle}`);
+              await loadJobs();
+            }, "删除中...");
+          } catch (err) {
+            showToast(`删除失败：${err.message || String(err)}`);
+          }
+          return;
+        }
         if (btn.dataset.action === "save-recruit-edit") {
           if (!recruitJobState.editingId) return;
-          await window.withButtonBusy(btn, async () => {
-            const result = await window.hrApi.updateRecruitJobPosting(recruitJobState.editingId, readEditPayload());
-            showToast(`已保存：${result.job.job_title}`);
-            document.querySelector("[data-recruit-edit-modal]").style.display = "none";
-            await loadJobs();
-          }, "保存中...");
+          try {
+            await window.withButtonBusy(btn, async () => {
+              const result = await window.hrApi.updateRecruitJobPosting(recruitJobState.editingId, readEditPayload());
+              showToast(`已保存：${result.job.job_title}`);
+              document.querySelector("[data-recruit-edit-modal]").style.display = "none";
+              await loadJobs();
+            }, "保存中...");
+          } catch (err) {
+            showToast(`保存失败：${err.message || String(err)}`);
+          }
         }
       });
     });

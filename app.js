@@ -3978,6 +3978,10 @@ function bindActionButtons() {
     if (btn.dataset.bound === "true") return;
     btn.dataset.bound = "true";
     btn.addEventListener("click", (event) => {
+      const explicitAction = btn.dataset.action || "";
+      if (explicitAction.includes("recruit") || location.pathname.includes("recruit-")) {
+        return; // 放行，不执行 preventDefault 和 handleGlobalButton
+      }
       event.preventDefault();
       withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));
     });
@@ -3987,8 +3991,14 @@ function bindActionButtons() {
 document.addEventListener("click", (event) => {
   const btn = event.target.closest("button");
   if (!btn) return;
-  const explicitAction = btn.dataset.action;
-  if (!explicitAction && !/^(详情|搜索|导入简历|导出选中|选择文件|查看项目进度|进入求职者数据池|查看待办)/.test((btn.textContent || "").trim())) return;
+
+  const explicitAction = btn.dataset.action || "";
+  if (explicitAction.includes("recruit") || location.pathname.includes("recruit-")) {
+    return;
+  }
+
+  const explicitActionCheck = btn.dataset.action;
+  if (!explicitActionCheck && !/^(详情|搜索|导入简历|导出选中|选择文件|查看项目进度|进入求职者数据池|查看待办)/.test((btn.textContent || "").trim())) return;
   if (btn.dataset.bound === "true") return;
   event.preventDefault();
   withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));

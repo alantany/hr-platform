@@ -1,5 +1,19 @@
 # Progress
 
+## 2026-06-26 (已完成 - Recruit UI 功能修复)
+
+- **修复岗位发布按钮被全局 Mock 拦截**：
+  * 定位到 `app.js` 的全局 `click` 事件监听器及 `bindActionButtons` 函数，两处都对 `recruit-` 相关页面/action 增加了放行逻辑，避免触发"已点击：发布岗位"的 Mock Toast。
+- **修复岗位发布 500 错误（数据库权限不足）**：
+  * 排查到 `recruit.job_postings` 表只授权了 `user_delivery` 的 SELECT 权限，缺少 INSERT/UPDATE/DELETE 及 sequence 写权限。
+  * 执行 `GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA recruit TO user_delivery` 及 sequence 权限补授后恢复正常。
+- **新增删除岗位功能**：
+  * 后端新增 `DELETE /api/recruit/job-postings/{id}` 接口，附审计日志。
+  * `frontend-api.js` 新增 `deleteRecruitJobPosting(id)` 方法。
+  * `recruit-job-list.html` 操作列新增红色删除按钮（带 confirm 确认），移除冗余的「设为跳过/有效」按钮，使编辑/删除两按钮并排显示。
+- **错误提示增强**：
+  * `recruit-job-publish.html` 和 `recruit-job-list.html` 的保存/删除操作均包裹了 try-catch，失败时通过 Toast 显示具体错误信息。
+
 ## 2026-06-25 (进行中 - AI 检索本地/远程差异排查)
 
 - **已确认差异来源**：
@@ -1727,3 +1741,7 @@
   * 后端新增 `/api/recruit/employees`、`/api/recruit/job-postings`、`/api/recruit/job-postings/{id}`、`/api/recruit/daily-task-stats`，统一读取/写入 PostgreSQL `recruit` schema，不使用 SQLite `Recruit/jobs/data/app.db`。
   * 岗位发布时优先按 HR 当前用户名匹配 `recruit.employees.login_name`，缺失时创建轻量发布人记录，再写入 `recruit.job_postings`；岗位列表支持编辑和 `is_valid` 有效/跳过切换；每日任务按日期读取统计。
   * 验证结果：`python -m py_compile backend/app/main.py backend/app/schemas.py` 通过；`uv run --with-requirements requirements.txt pytest tests/test_phase1_smoke.py -q` 通过；测试客户端登录后访问 `/api/recruit/job-postings` 与 `/api/recruit/daily-task-stats` 均返回 200；`node --check app.js && node --check frontend-api.js` 通过；Playwright 已验证三个新页面登录态渲染、标题和新导航分组可见。
+
+## 2026-06-26
+
+- Task completed at 2026-06-26 11:03:49. Update the summary with the latest finished work.

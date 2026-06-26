@@ -123,18 +123,22 @@
       document.addEventListener("click", async (event) => {
         const btn = event.target.closest('[data-action="submit-recruit-job"]');
         if (!btn) return;
-        await window.withButtonBusy(btn, async () => {
-          const result = await window.hrApi.createRecruitJobPosting(readPayload());
-          showToast(`已发布岗位：${result.job.job_title}`);
-          document.querySelectorAll("[data-recruit-field]").forEach((node) => {
-            if (node.dataset.recruitField === "work_location") node.value = "长春";
-            else if (node.dataset.recruitField === "candidate_activity") node.value = "1m";
-            else if (node.dataset.recruitField === "daily_greet_limit") node.value = "20";
-            else if (node.dataset.recruitField === "is_valid") node.value = "Y";
-            else node.value = "";
-          });
-          await loadPageData();
-        }, "发布中...");
+        try {
+          await window.withButtonBusy(btn, async () => {
+            const result = await window.hrApi.createRecruitJobPosting(readPayload());
+            showToast(`已发布岗位：${result.job.job_title}`);
+            document.querySelectorAll("[data-recruit-field]").forEach((node) => {
+              if (node.dataset.recruitField === "work_location") node.value = "长春";
+              else if (node.dataset.recruitField === "candidate_activity") node.value = "1m";
+              else if (node.dataset.recruitField === "daily_greet_limit") node.value = "20";
+              else if (node.dataset.recruitField === "is_valid") node.value = "Y";
+              else node.value = "";
+            });
+            await loadPageData();
+          }, "发布中...");
+        } catch (err) {
+          showToast(`发布失败：${err.message || String(err)}`);
+        }
       });
     });
   </script>

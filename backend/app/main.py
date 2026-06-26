@@ -2424,6 +2424,17 @@ def update_recruit_job_posting(job_id: int, payload: schemas.RecruitJobPostingUp
     return {"job": _recruit_job_out(obj, employee)}
 
 
+@app.delete("/api/recruit/job-postings/{job_id}")
+def delete_recruit_job_posting(job_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    obj = db.get(RecruitJobPosting, job_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Recruit 岗位不存在")
+    title = obj.job_title
+    crud.add_audit(db, user.username, "Recruit岗位管理", "删除岗位", "recruit_job_posting", str(job_id), detail=title)
+    db.delete(obj)
+    db.commit()
+    return {"ok": True, "deleted_id": job_id}
+
 @app.get("/api/recruit/daily-task-stats")
 def list_recruit_daily_task_stats(date: str | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(require_user)):
     query = db.query(RecruitDailyTaskStat)
