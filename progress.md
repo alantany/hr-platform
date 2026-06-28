@@ -1,6 +1,12 @@
 # Progress
 
-## 2026-06-28 (已完成 - UX 改进：编辑弹窗原地弹出 + 批量移除按钮移至岗位行)
+## 2026-06-28 (已完成 - 修复批量移除按钮首次不响应)
+
+- **根因**：`document.addEventListener('change', ...)` 被错误嵌套在 `document.addEventListener('click', ...)` 的回调体内——click 回调在 `withButtonBusy(...)` 之后缺少了 `});` 闭合，导致 change 监听器成了 click 回调的一部分。
+- **现象**：页面首次加载时 change 监听器注册数量为 0，勾选 checkbox 批量移除按钮没有反应；每点一次按钮就多注册一个 change 监听器（内存泄漏），点击一次按钮后才会有一个有效的监听器。
+- **修复**：在 click 监听器 `withButtonBusy(...)` 行之后补上 `});` 正确闭合，change 监听器作为独立的顶层 `addEventListener` 注册。
+- **验证**：`node --check app.js` 语法检查通过。
+
 
 - **编辑弹窗原地弹出**：`edit-candidate-tree` 改为动态注入候选人编辑弹窗到当前页 `document.body`，首次点击时创建并复用，不再跳转到 `candidates.html`。弹窗包含完整字段，点"确认保存"走现有的 `confirm-candidate-edit` 逻辑，点"取消"走 `close-candidate-edit-modal` 关闭。
 - **批量移除按钮移位**：从三个页面（customers/projects/positions）顶部工具栏的全局"批量移除候选人"按钮移除，改为在 `renderPositionTreeItem` 里每个岗位行渲染一个独立的"批量移除"按钮（`data-position-batch-delete="<positionId>"`），默认 `disabled` + 灰色（opacity 0.4）。

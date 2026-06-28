@@ -4739,12 +4739,13 @@ document.addEventListener("click", (event) => {
   if (btn.dataset.bound === "true") return;
   event.preventDefault();
   withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));
+});
 
 // Sync batch delete button visibility when tree checkboxes change
 document.addEventListener("change", (event) => {
   const target = event.target;
   if (target.classList.contains("tree-candidate-checkbox")) {
-    // 找到该 checkbox 所属的岗位节点，更新岗位级的批量移除按鈕状态
+    // 找到该 checkbox 所属的岗位节点，更新岗位级的批量移除按钮状态
     const positionNode = target.closest('[data-tree-node="position"]');
     if (positionNode) {
       const positionId = positionNode.dataset.id;
@@ -4765,8 +4766,6 @@ document.addEventListener("change", (event) => {
       }
     }
   }
-});
-
 });
 
 document.addEventListener("focusout", (event) => {
