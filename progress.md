@@ -1,9 +1,15 @@
 # Progress
 
+## 2026-06-28 (已完成 - UX 改进：编辑弹窗原地弹出 + 批量移除按钮移至岗位行)
+
+- **编辑弹窗原地弹出**：`edit-candidate-tree` 改为动态注入候选人编辑弹窗到当前页 `document.body`，首次点击时创建并复用，不再跳转到 `candidates.html`。弹窗包含完整字段，点"确认保存"走现有的 `confirm-candidate-edit` 逻辑，点"取消"走 `close-candidate-edit-modal` 关闭。
+- **批量移除按钮移位**：从三个页面（customers/projects/positions）顶部工具栏的全局"批量移除候选人"按钮移除，改为在 `renderPositionTreeItem` 里每个岗位行渲染一个独立的"批量移除"按钮（`data-position-batch-delete="<positionId>"`），默认 `disabled` + 灰色（opacity 0.4）。
+- **按岗位更新状态**：checkbox 变化时，`change` 监听器通过 `closest('[data-tree-node="position"]')` 找到所属岗位节点，只更新该岗位对应的批量移除按钮状态（勾选数 > 0 时激活并显示数量，归 0 时禁用）。
+- **验证**：`node --check app.js` 语法检查通过。
+
 ## 2026-06-28 (已完成 - 树候选人编辑与批量删除刷新修复)
 
 - **编辑按钮根因**：`edit-candidate-tree` 在树状页面查找 `[data-candidate-edit-modal]`，但该弹窗只在 `candidates.html` 中定义，在 customers/projects/positions 页面根本不存在，所以 `modal` 为 `null`，弹窗永远打不开。
-- **编辑按钮修复**：改为直接跳转到 `candidates.html?edit=<id>`，候选人页面初始化完成后自动检测 URL 参数并触发 `edit-candidate` 逻辑打开编辑弹窗，完成后用 `history.replaceState` 清除参数。
 - **批量删除变空根因**：`batch-delete-candidates-tree` 调用 `treeState.candidatesByPosition.clear()` 清空缓存后，直接调用 `renderXxxTreeFromState()` 渲染，但渲染时直接用空 Map，展开中的岗位候选人列表就变成空了（`loadPositionCandidates` 只在缓存 miss 时拉数据，但 render 函数本身不会主动调用 load）。
 - **批量删除修复**：clear 前先保存 `expandedPositions` 的 ID 列表，clear 后用 `Promise.all` 重新并发拉取所有已展开岗位的候选人，再调用 render 函数，保证删除后展开节点的候选人名单是最新的。
 - **验证**：`node --check app.js` 语法检查通过。

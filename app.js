@@ -241,6 +241,7 @@ const renderPositionTreeItem = (position, project, company, candidates = [], dep
           <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
           <button class="btn-sm" data-action="toggle-position-status" data-id="${position.id}" data-status="${position.status}">${position.status === '已关闭' ? '恢复' : '关闭'}</button>
           <button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button>
+          <button class="btn-sm danger" data-action="batch-delete-candidates-tree" data-position-batch-delete="${position.id}" disabled style="opacity:0.4;cursor:not-allowed;">批量移除</button>
         </div>
         <span class="chip ${statusChip}">${position.status}</span>
       </div>
@@ -2326,9 +2327,49 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "edit-candidate-tree") {
     const id = button.dataset.id || '';
     if (!id) throw new Error('候选人 ID 缺失');
-    // 候选人编辑弹窗只在 candidates.html 中存在，跳转到候选人页面并打开编辑
-    const base = location.pathname.replace(/\/[^\/]+$/, '');
-    location.href = `${base}/candidates.html?edit=${encodeURIComponent(id)}`;
+    // 动态注入候选人编辑弹窗（如果当前页面不存在）
+    if (!document.querySelector('[data-candidate-edit-modal]')) {
+      const div = document.createElement('div');
+      div.innerHTML = `<div class="modal" data-candidate-edit-modal style="display:none;position:fixed;inset:0;background:rgba(14,22,34,.45);z-index:2000;padding:24px;overflow-y:auto;"><div class="panel" style="max-width:960px;margin:4vh auto 24px;background:#fff;"><div class="section-head"><div><h3>编辑候选人</h3><div class="section-sub">保存后会写入候选人表并刷新列表。</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span style="border-left:1px solid rgba(15,23,42,.1);height:24px;margin:0 8px;"></span><button class="btn" data-action="close-candidate-edit-modal">取消</button><button class="btn primary" data-action="confirm-candidate-edit">确认保存</button></div></div><div class="grid-2" style="max-height:70vh;overflow-y:auto;padding:2px;"><div class="panel" style="box-shadow:none;border:1px solid rgba(15,23,42,.08);margin:0;"><div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">基本信息</div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">可根据原件信息修正拼写错误</div></div></div><input class="input" data-candidate-edit-name /></div><div class="list-item"><div class="item-top"><div><div class="item-title">性别</div><div class="item-meta">男 / 女</div></div></div><select class="input" data-candidate-edit-gender><option value="">不填</option><option value="男">男</option><option value="女">女</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">年龄</div><div class="item-meta">纯数字</div></div></div><input type="number" class="input" data-candidate-edit-age placeholder="如: 28" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">出生日期</div><div class="item-meta">请选择日期</div></div></div><input class="input" type="date" data-candidate-edit-birth-date /></div><div class="list-item"><div class="item-top"><div><div class="item-title">户口所在地</div></div></div><input class="input" data-candidate-edit-hukou placeholder="请输入户口所在地" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">城市</div></div></div><input class="input" data-candidate-edit-city placeholder="请输入城市" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta">仅限中国11位手机号</div></div></div><input class="input" data-candidate-edit-phone placeholder="13912345678" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">邮筱</div></div></div><input class="input" type="email" data-candidate-edit-email placeholder="example@domain.com" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">家庭情况</div></div></div><select class="input" data-candidate-edit-family><option value="">请选择</option><option value="未婚">未婚</option><option value="已婚">已婚</option><option value="已婚未育">已婚未育</option><option value="已婚已育">已婚已育</option></select></div></div><div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;">职业经历</div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div></div></div><input class="input" data-candidate-edit-title /></div><div class="list-item"><div class="item-top"><div><div class="item-title">最高学历</div></div></div><select class="input" data-candidate-edit-education><option value="高中">高中</option><option value="大专">大专</option><option value="本科" selected>本科</option><option value="硕士">硕士</option><option value="博士">博士</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">工作年限</div><div class="item-meta">年（数字）</div></div></div><input class="input" type="number" data-candidate-edit-exp-years /></div><div class="list-item"><div class="item-top"><div><div class="item-title">教育背景</div></div></div><textarea class="input" rows="3" data-candidate-edit-edu-detail></textarea></div><div class="list-item"><div class="item-top"><div><div class="item-title">职业经历</div></div></div><textarea class="input" rows="4" data-candidate-edit-work-history></textarea></div><div class="list-item"><div class="item-top"><div><div class="item-title">项目经历</div></div></div><textarea class="input" rows="3" data-candidate-edit-project-history></textarea></div><div class="list-item"><div class="item-top"><div><div class="item-title">专业证书</div></div></div><textarea class="input" rows="2" data-candidate-edit-certificates></textarea></div></div></div><div class="panel" style="box-shadow:none;border:1px solid rgba(15,23,42,.08);margin:0;"><div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">求职意向</div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta">仅限数字，单位（元/月）</div></div></div><input class="input" type="number" data-candidate-edit-salary placeholder="例如：25000" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">薪资结构</div><div class="item-meta">例：12薪+2个月年终</div></div></div><input class="input" data-candidate-edit-salary-structure /></div><div class="list-item"><div class="item-top"><div><div class="item-title">到岗周期</div></div></div><select class="input" data-candidate-edit-onboard><option value="一周">一周</option><option value="两周">两周</option><option value="一个月">一个月</option><option value="两个月">两个月</option><option value="三个月">三个月</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">职位状态</div></div></div><select class="input" data-candidate-edit-job-status><option value="在职">在职</option><option value="离职">离职</option><option value="随时到岗">随时到岗</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">求职意向</div><div class="item-meta">目标岗位、行业</div></div></div><textarea class="input" rows="3" data-candidate-edit-intention></textarea></div></div><div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;">评估</div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">核心价值</div></div></div><textarea class="input" rows="3" data-candidate-edit-core-value></textarea></div><div class="list-item"><div class="item-top"><div><div class="item-title">综合评估</div></div></div><textarea class="input" rows="3" data-candidate-edit-evaluation></textarea></div></div><div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;">系统状态</div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">当前状态</div><div class="item-meta">未锁定 / 锁定</div></div></div><select class="input" data-candidate-edit-status><option value="未锁定">未锁定</option><option value="锁定">锁定</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">来源</div></div></div><select class="input" data-candidate-edit-source><option value="手工导入">手工导入</option><option value="简历库">简历库</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">身份证号</div></div></div><input class="input" data-candidate-edit-idnumber placeholder="例如：110101199001011234" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">标签</div><div class="item-meta">逗号分隔</div></div></div><input class="input" data-candidate-edit-tags /></div></div></div></div></div></div>`;
+      document.body.appendChild(div.firstElementChild);
+    }
+    // id 已在 if 块之前声明，直接使用
+    const item = await window.hrApi.candidate(String(id));
+    if (!item) throw new Error('候选人不存在');
+    const modal = document.querySelector('[data-candidate-edit-modal]');
+    const fill = (sel, val) => { const el = document.querySelector(sel); if (el) el.value = val || ''; };
+    fill('[data-candidate-edit-name]', item.name);
+    fill('[data-candidate-edit-gender]', item.gender);
+    fill('[data-candidate-edit-age]', item.age || '');
+    fill('[data-candidate-edit-birth-date]', item.birth_date);
+    fill('[data-candidate-edit-hukou]', item.hukou_location);
+    fill('[data-candidate-edit-city]', item.city);
+    fill('[data-candidate-edit-phone]', item.phone);
+    fill('[data-candidate-edit-email]', item.email);
+    fill('[data-candidate-edit-idnumber]', item.id_number);
+    fill('[data-candidate-edit-family]', item.family_status);
+    fill('[data-candidate-edit-title]', item.current_title);
+    fill('[data-candidate-edit-education]', item.education);
+    fill('[data-candidate-edit-exp-years]', item.experience_years);
+    fill('[data-candidate-edit-certificates]', item.certificates);
+    fill('[data-candidate-edit-edu-detail]', item.education_detail);
+    fill('[data-candidate-edit-work-history]', item.work_history);
+    fill('[data-candidate-edit-project-history]', item.project_history);
+    fill('[data-candidate-edit-salary]', item.expected_salary);
+    fill('[data-candidate-edit-salary-structure]', item.salary_structure);
+    fill('[data-candidate-edit-onboard]', item.onboard_cycle);
+    fill('[data-candidate-edit-job-status]', item.job_status);
+    fill('[data-candidate-edit-intention]', item.job_intention);
+    fill('[data-candidate-edit-core-value]', item.core_value);
+    fill('[data-candidate-edit-evaluation]', item.comprehensive_evaluation);
+    fill('[data-candidate-edit-status]', item.locked ? '锁定' : (item.status || '未锁定'));
+    fill('[data-candidate-edit-source]', item.source);
+    fill('[data-candidate-edit-tags]', item.tags);
+    if (modal) {
+      modal.style.display = 'block';
+      modal.dataset.candidateId = String(item.id);
+      modal.dataset.target = JSON.stringify({ id: item.id });
+    }
     return;
   }
   if (button.dataset.action === "delete-candidate-tree") {
@@ -4703,11 +4744,26 @@ document.addEventListener("click", (event) => {
 document.addEventListener("change", (event) => {
   const target = event.target;
   if (target.classList.contains("tree-candidate-checkbox")) {
-    const checkboxes = document.querySelectorAll('.tree-candidate-checkbox:checked');
-    const count = checkboxes.length;
-    document.querySelectorAll('[data-batch-delete-candidates-btn]').forEach(btn => {
-      btn.textContent = count > 0 ? `批量移除候选人（${count}）` : '批量移除候选人';
-    });
+    // 找到该 checkbox 所属的岗位节点，更新岗位级的批量移除按鈕状态
+    const positionNode = target.closest('[data-tree-node="position"]');
+    if (positionNode) {
+      const positionId = positionNode.dataset.id;
+      const batchBtn = positionNode.querySelector(`[data-position-batch-delete="${positionId}"]`);
+      const checkedInPosition = positionNode.querySelectorAll('.tree-candidate-checkbox:checked').length;
+      if (batchBtn) {
+        if (checkedInPosition > 0) {
+          batchBtn.disabled = false;
+          batchBtn.style.opacity = '1';
+          batchBtn.style.cursor = 'pointer';
+          batchBtn.textContent = `批量移除（${checkedInPosition}）`;
+        } else {
+          batchBtn.disabled = true;
+          batchBtn.style.opacity = '0.4';
+          batchBtn.style.cursor = 'not-allowed';
+          batchBtn.textContent = '批量移除';
+        }
+      }
+    }
   }
 });
 
