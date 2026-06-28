@@ -192,9 +192,9 @@ const renderProjectListMarkup = (projects = []) => {
     return `
       <div class="list-item" data-id="${project.id}" data-company-id="${project.company_id}">
         <div class="item-top" style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 0.8fr 0.8fr 1.2fr 0.8fr 1.2fr 180px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project.company_name || '未知公司')}">${escapeHtml(project.company_name || '未知公司')}</div>
+          <button class="project-company-link" type="button" style="color:#6657ee;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;" title="${escapeHtml(project.company_name || '未知公司')}" onclick="location.href='./customers.html'">${escapeHtml(project.company_name || '未知公司')}</button>
           <div class="item-title" style="display: flex; align-items: center; gap: 6px; min-width: 0; margin-right: 0;">
-            <span style="font-weight: 600; color: #0f172a;">${escapeHtml(project.name)}</span>
+            <button class="project-name-link" type="button" style="font-weight:600;color:#0f172a;font-size:13px;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;" data-action="view-project-positions" data-project-id="${project.id}">${escapeHtml(project.name)}</button>
           </div>
           <div style="text-align: center;">
             <span class="chip ${chipClass}" style="width: 80px; text-align: center; display: inline-block; margin: 0 auto;">${project.status}</span>
@@ -4423,6 +4423,21 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
   if (button.dataset.action === "close-position-candidates-modal") {
     const modal = document.querySelector('[data-position-candidates-modal]');
     if (modal) modal.style.display = 'none';
+    return;
+  }
+
+  if (button.dataset.action === "view-project-positions") {
+    const projectId = button.dataset.projectId || '';
+    const tab = document.querySelector('[data-subtab=position-tab]');
+    if (tab) {
+      tab.click();
+      const select = document.querySelector('#search-position-project');
+      if (select) {
+        select.value = projectId;
+        const searchBtn = document.querySelector('#btn-position-search');
+        if (searchBtn) searchBtn.click();
+      }
+    }
     return;
   }
 
