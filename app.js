@@ -2322,6 +2322,7 @@ async function handleGlobalButton(button) {
     const modal = document.querySelector('[data-recommend-modal]');
     if (modal) modal.style.display = 'none';
     return;
+  }
   if (button.dataset.action === "edit-candidate-tree") {
     const id = Number(button.dataset.id || 0);
     if (!id) throw new Error('候选人 ID 缺失');
@@ -2398,8 +2399,6 @@ async function handleGlobalButton(button) {
     else if (page === "projects.html") await renderProjectTreeFromState();
     else if (page === "positions.html") await renderPositionTreeFromState();
     return;
-  }
-
   }
   if (button.dataset.action === "confirm-recommend") {
     const modal = document.querySelector('[data-recommend-modal]');

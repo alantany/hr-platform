@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-06-28 (已完成 - 树候选人编辑与批量删除按钮 Mock 修复)
+
+- **Bug 根因**：`app.js` 中 `close-recommend-modal` 的 `if` 块在 `return;` 后漏掉了关闭的 `}`，导致 `edit-candidate-tree` 和 `batch-delete-candidates-tree` 两个处理分支被错误嵌套在 `close-recommend-modal` 块内部。由于 `return` 在前，这两个分支永远执行不到，控制流最终落到全局兜底 `showToast("已点击：...")` 的 Mock 输出。
+- **修复方式**：在 `close-recommend-modal` 块的 `return;` 之后补上缺失的 `}`，并删除原本错位补偿的多余 `}`。
+- **影响范围**：客户管理页、项目管理页、岗位管理页三个树状视图中，候选人节点的"编辑"按钮（`edit-candidate-tree`）和"批量移除候选人"按钮（`batch-delete-candidates-tree`）现在能正常执行。
+- **验证**：`node --check app.js` 语法检查通过。
+
 ## 2026-06-28 (进行中 - 树分支视觉与项目树点击兜底)
 
 - 已把客户树和项目树的层级视觉改成线条 + 分支的结构，不再只是缩进方块。
