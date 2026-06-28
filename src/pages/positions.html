@@ -112,8 +112,8 @@
         }
         const list = document.querySelector('[data-position-list]');
         if (list) {
-          list.innerHTML = window.hrRenderPositionTree
-            ? window.hrRenderPositionTree(positions, projectMap, new Map())
+          list.innerHTML = window.hrRenderPositionList
+            ? window.hrRenderPositionList(positions, projectMap)
             : '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
         }
       } catch (err) {

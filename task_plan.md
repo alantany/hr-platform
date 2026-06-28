@@ -248,6 +248,15 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 清理客户列表硬编码进度与伪造评分
 - [x] 完成接口测试和三页浏览器验收
 - **Status:** complete
+
+### Phase 19 - 管理列表取消树状展开（已完成）
+
+- [x] 客户、项目、岗位列表移除展开箭头和子层内容
+- [x] 删除树状态、懒加载缓存和树专用事件
+- [x] 删除候选人树节点及树级批量操作
+- [x] 删除树分支和展开按钮样式
+- [x] 三页统一使用平铺列表刷新入口
+- **Status:** complete
 - [x] 更新权限相关页面和公共测试清理脚本，确保新表测试结束后不残留脏数据。
 - **Status:** complete
 

@@ -378,7 +378,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         status: document.querySelector('#search-project-status').value,
         level: document.querySelector('#search-project-level').value
       };
-      window.refreshTreePage();
+      window.refreshManagementPage();
     });
     document.querySelector('#btn-project-reset')?.addEventListener('click', () => {
       document.querySelector('#search-project-name').value = '';
@@ -386,7 +386,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       document.querySelector('#search-project-status').value = '';
       document.querySelector('#search-project-level').value = '';
       window.projectFilters = { name: '', companyId: '', status: '', level: '' };
-      window.refreshTreePage();
+      window.refreshManagementPage();
     });
 
     // 搜索与重置逻辑：岗位列表
@@ -398,7 +398,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         urgency: document.querySelector('#search-position-urgency').value,
         salaryRange: document.querySelector('#search-position-salary').value
       };
-      window.refreshTreePage();
+      window.refreshManagementPage();
     });
     document.querySelector('#btn-position-reset')?.addEventListener('click', () => {
       document.querySelector('#search-position-name').value = '';
@@ -407,11 +407,11 @@ window.addEventListener('DOMContentLoaded', async () => {
       document.querySelector('#search-position-urgency').value = '';
       document.querySelector('#search-position-salary').value = '';
       window.positionFilters = { name: '', companyId: '', projectId: '', urgency: '', salaryRange: '' };
-      window.refreshTreePage();
+      window.refreshManagementPage();
     });
 
     // 执行初次渲染
-    await window.refreshTreePage();
+    await window.refreshManagementPage();
 
   } catch (err) {
     console.warn(err);

@@ -143,174 +143,38 @@ const icons = {
 
 const navItems = navGroups.flatMap((group) => group.items);
 
-const renderCompanyListMarkup = (companies = []) => {
-  if (!companies.length) {
-    return '<div class="list-item"><div class="item-top"><div><div class="item-title">暂无客户列表</div><div class="item-meta">客户列表来自数据库。</div></div><span class="chip success">客户</span></div></div>';
-  }
-  return companies.map((c) => {
-    const meta = [c.contact_name, c.contact_phone, c.contact_email, c.address, c.cooperation_period, c.remark].filter(Boolean).join(' · ');
-    const chipClass = c.status === '招聘中' ? 'success' : 'neutral';
-    return `<div class="list-item"><div class="item-top"><div><div class="item-title">${c.name}</div><div class="item-meta">${meta || '暂无补充信息'}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-company" data-id="${c.id}">编辑</button><button class="btn-sm" data-action="delete-company" data-id="${c.id}">删除</button></div><span class="chip ${chipClass}">${c.status || '未招聘'}</span></div></div>`;
+const renderPositionListMarkup = (positions = [], projectsById = new Map()) => {
+  if (!positions.length) return '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
+  return positions.map((position) => {
+    const project = projectsById.get(position.project_id) || {};
+    const stats = window.positionRecommendationStats?.get(position.id) || { total: 0, selected: 0, unselected: 0, rejected: 0 };
+    const urgencyBg = position.urgency === '高'
+      ? 'background: #fee2e2; color: #ef4444; border: 1px solid #fecaca;'
+      : (position.urgency === '中' ? 'background: #ffedd5; color: #f97316; border: 1px solid #fed7aa;' : 'background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;');
+    const tagHtml = position.urgency === '高'
+      ? '<span class="chip" style="background:#fee2e2;color:#ef4444;border:1px solid #fecaca;margin-left:4px;padding:2px 6px;font-size:10px;font-weight:600;border-radius:4px;white-space:nowrap;">紧急</span>'
+      : '';
+    return `
+      <div class="list-item" data-id="${position.id}" data-project-id="${position.project_id}">
+        <div class="item-top" style="display:grid;grid-template-columns:1.2fr 1.5fr 1.8fr 0.8fr 0.8fr 1fr 1.2fr 2.5fr 180px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;">
+          <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.company_name || '未知公司')}">${escapeHtml(project.company_name || '未知公司')}</div>
+          <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.name || '')}">${escapeHtml(project.name || '--')}</div>
+          <div class="item-title" style="display:flex;align-items:center;gap:4px;min-width:0;margin-right:0;"><span style="font-weight:600;color:#0f172a;">${escapeHtml(position.name)}</span>${tagHtml}</div>
+          <div style="text-align:center;"><span class="chip" style="${urgencyBg}width:48px;text-align:center;display:inline-block;font-weight:600;">${position.urgency || '中'}</span></div>
+          <div style="color:#475569;font-size:13px;text-align:center;">${position.hiring_count || 1}人</div>
+          <div style="color:#475569;font-size:13px;text-align:center;">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
+          <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(position.location || '')}">${escapeHtml(position.location || '--')}</div>
+          <div style="display:flex;gap:8px;font-size:12px;font-weight:600;white-space:nowrap;"><span>候选人 <strong style="color:#8b5cf6;">${stats.total}</strong></span><span>选中 <strong style="color:#10b981;">${stats.selected}</strong></span><span>未选 <strong>${stats.unselected}</strong></span><span>淘汰 <strong style="color:#ef4444;">${stats.rejected}</strong></span></div>
+          <div class="table-actions" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;"><button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button><button class="btn-sm" data-action="noop" data-title="分配权限">分配权限</button><button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button></div>
+        </div>
+      </div>`;
   }).join('');
 };
 
-const treeState = {
-  expandedCompanies: new Set(),
-  expandedProjects: new Set(),
-  expandedPositions: new Set(),
-  projectsByCompany: new Map(),
-  positionsByProject: new Map(),
-  candidatesByPosition: new Map(),
-  loadingCompanies: new Set(),
-  loadingProjects: new Set(),
-  loadingPositions: new Set(),
-};
-
-const getCompanyNodeState = (companyId) => {
-  if (treeState.loadingCompanies.has(companyId)) return 'loading';
-  return treeState.expandedCompanies.has(companyId) ? 'expanded' : 'collapsed';
-};
-
-const getProjectNodeState = (projectId) => {
-  if (treeState.loadingProjects.has(projectId)) return 'loading';
-  return treeState.expandedProjects.has(projectId) ? 'expanded' : 'collapsed';
-};
-
-const getPositionNodeState = (positionId) => {
-  if (treeState.loadingPositions.has(positionId)) return 'loading';
-  return treeState.expandedPositions.has(positionId) ? 'expanded' : 'collapsed';
-};
-
-const renderTreeToggle = (state, level = 'company', targetId = '') => {
-  const isLoading = state === 'loading';
-  const isExpanded = state === 'expanded';
-  const symbol = isLoading ? '⏳' : isExpanded ? '▾' : '▸';
-  const label = isLoading ? '加载中' : isExpanded ? '收起' : '展开';
-  return `<button class="btn-sm tree-toggle${isLoading ? ' is-busy' : ''}" data-action="toggle-tree" data-tree-toggle="${level}" data-tree-id="${targetId}" aria-label="${label}" aria-expanded="${isExpanded}" type="button"${isLoading ? ' disabled' : ''}>${symbol}</button>`;
-};
-
-const renderCandidateTreeItem = (candidate, index = 1, depth = 3) => {
-  const meta = [
-    candidate.current_title || '暂无当前职位',
-    candidate.city || '',
-    candidate.source || '',
-    `推荐状态 ${candidate.recommendation_status || '待推荐'}`,
-  ].filter(Boolean).join(' · ');
-  const isLocked = Boolean(candidate.locked) || candidate.status === '锁定';
-  const isEven = index % 2 === 0;
-  const bgStyle = isEven ? 'background-color: #f8fafc;' : 'background-color: #ffffff;';
-  return `
-    <div class="list-item tree-node tree-node-candidate" data-tree-node="candidate" data-id="${candidate.id}" style="${bgStyle}">
-      <div class="item-top">
-        <span style="font-size: 11px; font-weight: 600; color: #94a3b8; width: 18px; display: inline-block; flex-shrink: 0; text-align: center; margin-right: 4px;">${index}</span>
-        <input type="checkbox" class="tree-candidate-checkbox" data-candidate-id="${candidate.id}" data-recommendation-id="${candidate.recommendation_id || ''}" aria-label="选择${candidate.name}" style="margin-right:8px;flex-shrink:0;" />
-        <div style="flex: 1; min-width: 0;">
-          <div class="item-title"><span>${escapeHtml(candidate.name || '未命名候选人')}</span></div>
-          <div class="item-meta">${escapeHtml(meta)}</div>
-        </div>
-        <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
-          <button class="btn-sm" data-action="edit-candidate-tree" data-id="${candidate.id}">编辑</button>
-        </div>
-        <span class="chip ${isLocked ? 'warning' : 'neutral'}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${isLocked ? '已锁定' : escapeHtml(candidate.status || '未锁定')}</span>
-      </div>
-    </div>`;
-};
-
-const renderPositionTreeItem = (position, project, company, candidates = [], depth = 2) => {
-  const state = getPositionNodeState(position.id);
-  const meta = [
-    company?.name || '未知客户',
-    project?.name || `项目 ${position.project_id}`,
-    position.location || '',
-    `招聘人数 ${position.hiring_count || 1}`,
-    position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}` : '',
-  ].filter(Boolean).join(' · ');
-  const children = treeState.expandedPositions.has(position.id)
-    ? candidates.map((candidate, idx) => renderCandidateTreeItem(candidate, idx + 1, depth + 1)).join('') || `<div class="list-item tree-node tree-node-empty"><div class="item-meta">该岗位下暂无已推荐候选人。</div></div>`
-    : '';
-
-  const isOnPositionPage = Boolean(document.querySelector('[data-position-list]'));
-
-  if (isOnPositionPage) {
-    const stats = window.positionRecommendationStats?.get(position.id) || { total: 0, selected: 0, unselected: 0, rejected: 0 };
-    const funnelHtml = `
-      <div style="display: flex; gap: 8px; font-size: 12px; font-weight: 600; flex-wrap: nowrap; white-space: nowrap;">
-        <span style="color: #64748b;">候选人 <strong style="color: #8b5cf6; font-size: 13px; margin-left: 2px;">${stats.total}</strong></span>
-        <span style="color: #64748b;">选中 <strong style="color: #10b981; font-size: 13px; margin-left: 2px;">${stats.selected}</strong></span>
-        <span style="color: #64748b;">未选 <strong style="color: #64748b; font-size: 13px; margin-left: 2px;">${stats.unselected}</strong></span>
-        <span style="color: #64748b;">淘汰 <strong style="color: #ef4444; font-size: 13px; margin-left: 2px;">${stats.rejected}</strong></span>
-      </div>
-    `;
-
-    // Urgency tag & chip
-    const urgencyBg = position.urgency === '高' 
-      ? 'background: #fee2e2; color: #ef4444; border: 1px solid #fecaca;' 
-      : (position.urgency === '中' ? 'background: #ffedd5; color: #f97316; border: 1px solid #fed7aa;' : 'background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;');
-    const urgencyText = position.urgency || '中';
-    const urgencyBadge = `<span class="chip" style="${urgencyBg} width: 48px; text-align: center; display: inline-block; font-weight: 600;">${urgencyText}</span>`;
-    const tagHtml = position.urgency === '高' 
-      ? `<span class="chip" style="background:#fee2e2; color:#ef4444; border:1px solid #fecaca; margin-left:4px; padding: 2px 6px; font-size:10px; font-weight:600; border-radius: 4px; white-space: nowrap;">x 紧急</span>` 
-      : '';
-
-    return `
-      <div class="list-item tree-node tree-node-position" data-tree-node="position" data-id="${position.id}" data-project-id="${position.project_id}">
-        <div class="item-top" style="display: grid; grid-template-columns: 1.2fr 1.5fr 1.8fr 0.8fr 0.8fr 1fr 1.2fr 2.5fr 180px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project?.company_name || company?.name || '未知公司')}">${escapeHtml(project?.company_name || company?.name || '未知公司')}</div>
-          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project?.name || '')}">${escapeHtml(project?.name || '--')}</div>
-          <div class="item-title" style="display: flex; align-items: center; gap: 4px; min-width: 0; margin-right: 0;">
-            ${renderTreeToggle(state, 'position', position.id)}
-            <span style="font-weight: 600; color: #0f172a;">${escapeHtml(position.name)}</span>
-            ${tagHtml}
-          </div>
-          <div style="text-align: center;">${urgencyBadge}</div>
-          <div style="color: #475569; font-size: 13px; text-align: center;">${position.hiring_count || 1}人</div>
-          <div style="color: #475569; font-size: 13px; text-align: center;">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
-          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(position.location || '')}">${escapeHtml(position.location || '--')}</div>
-          <div>${funnelHtml}</div>
-          <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end;">
-            <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
-            <button class="btn-sm" data-action="noop" data-title="分配权限">分配权限</button>
-            <button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button>
-          </div>
-        </div>
-        ${children ? `<div class="tree-children">${children}</div>` : ''}
-      </div>`;
-  }
-
-  return `
-    <div class="list-item tree-node tree-node-position" data-tree-node="position" data-id="${position.id}" data-project-id="${position.project_id}">
-      <div class="item-top">
-        <div style="flex: 1; min-width: 0;">
-          <div class="item-title">
-            ${renderTreeToggle(state, 'position', position.id)}
-            <span>${position.name}</span>
-          </div>
-          <div class="item-meta">${meta || '暂无补充信息'}</div>
-        </div>
-        <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
-          <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
-          <button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button>
-          <span style="border-left: 1px solid rgba(15,23,42,.1); height: 16px; margin: 0 24px; display: inline-block;"></span>
-          <button class="btn-sm primary" data-action="search-add-candidates" data-id="${position.id}">添加候选人</button>
-          <button class="btn-sm danger" data-action="batch-delete-candidates-tree" data-position-batch-delete="${position.id}" disabled style="opacity:0.4;cursor:not-allowed;">批量移除</button>
-        </div>
-      </div>
-      ${children ? `<div class="tree-children">${children}</div>` : ''}
-    </div>`;
-};
-
-const renderProjectTreeItem = (project, company, positions = [], candidatesByPosition = new Map(), depth = 1) => {
-  const state = getProjectNodeState(project.id);
-
-  const meta = [company?.name || project.company_name || '', project.work_location || '', project.project_period || '', `招聘人数 ${project.hiring_count || 0}人`, project.description ? project.description : ''].filter(Boolean).join(' · ');
-  const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
-  const children = treeState.expandedProjects.has(project.id)
-    ? positions.map((position) => renderPositionTreeItem(position, project, company, candidatesByPosition.get(position.id) || [], depth + 1)).join('') || '<div class="list-item tree-node tree-node-empty"><div class="item-meta">该项目下暂无岗位。</div></div>'
-    : '';
-
-  const isOnProjectPage = Boolean(document.querySelector('[data-project-list]'));
-  
-  if (isOnProjectPage) {
+const renderProjectListMarkup = (projects = []) => {
+  if (!projects.length) return '<div class="list-item"><div class="item-meta">当前暂无项目列表。</div></div>';
+  return projects.map((project) => {
+    const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
     const formatDate = (isoString) => {
       if (!isoString) return '--';
       return isoString.split('T')[0];
@@ -326,11 +190,10 @@ const renderProjectTreeItem = (project, company, positions = [], candidatesByPos
     const levelBadge = `<span class="chip" style="${levelBg} width: 48px; text-align: center; display: inline-block; font-weight: 600;">${levelText}</span>`;
 
     return `
-      <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" data-company-id="${project.company_id}">
+      <div class="list-item" data-id="${project.id}" data-company-id="${project.company_id}">
         <div class="item-top" style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 0.8fr 0.8fr 1.2fr 0.8fr 1.2fr 180px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project.company_name || company?.name || '未知公司')}">${escapeHtml(project.company_name || company?.name || '未知公司')}</div>
+          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project.company_name || '未知公司')}">${escapeHtml(project.company_name || '未知公司')}</div>
           <div class="item-title" style="display: flex; align-items: center; gap: 6px; min-width: 0; margin-right: 0;">
-            ${renderTreeToggle(state, 'project', project.id)}
             <span style="font-weight: 600; color: #0f172a;">${escapeHtml(project.name)}</span>
           </div>
           <div style="text-align: center;">
@@ -347,44 +210,19 @@ const renderProjectTreeItem = (project, company, positions = [], candidatesByPos
             <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
           </div>
         </div>
-        ${children ? `<div class="tree-children">${children}</div>` : ''}
       </div>`;
-  }
-
-  return `
-    <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" data-company-id="${project.company_id}">
-      <div class="item-top">
-        <div style="flex: 1; min-width: 0;">
-          <div class="item-title">
-            ${renderTreeToggle(state, 'project', project.id)}
-            <span>${project.name}</span>
-          </div>
-          <div class="item-meta">${meta || '暂无补充信息'}</div>
-        </div>
-        <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 220px; margin-right: 16px;">
-          <button class="btn-sm" data-action="edit-project" data-id="${project.id}">编辑</button>
-          <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
-        </div>
-        <span class="chip ${chipClass}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${project.status}</span>
-      </div>
-      ${children ? `<div class="tree-children">${children}</div>` : ''}
-    </div>`;
+  }).join('');
 };
 
-const renderCompanyTreeItem = (company, projects = [], positionsByProject = new Map(), candidatesByPosition = new Map()) => {
-  const state = getCompanyNodeState(company.id);
-  const children = treeState.expandedCompanies.has(company.id)
-    ? projects.map((project) => renderProjectTreeItem(project, company, positionsByProject.get(project.id) || [], candidatesByPosition, 1)).join('') || '<div class="list-item tree-node tree-node-empty"><div class="item-meta">该客户下暂无项目。</div></div>'
-    : '';
-  
-  const computedStatus = company.status || '未招聘';
-  const chipClass = computedStatus === '未招聘' ? 'neutral' : 'success';
-
-  return `
-    <div class="list-item tree-node tree-node-company" data-tree-node="company" data-id="${company.id}">
+const renderCompanyTableMarkup = (companies = []) => {
+  if (!companies.length) return '<div class="list-item"><div class="item-meta">暂无客户列表。</div></div>';
+  return companies.map((company) => {
+    const computedStatus = company.status || '未招聘';
+    const chipClass = computedStatus === '未招聘' ? 'neutral' : 'success';
+    return `
+    <div class="list-item" data-id="${company.id}">
       <div class="item-top" style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 0.8fr 0.8fr 1.2fr 100px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
         <div class="item-title" style="display: flex; align-items: center; gap: 6px; min-width: 0; margin-right: 0;">
-          ${renderTreeToggle(state, 'company', company.id)}
           <span style="font-weight: 600; color: #0f172a;">${escapeHtml(company.name)}</span>
         </div>
         <div style="color: #475569; font-size: 13px;">${escapeHtml(company.contact_name || '--')}</div>
@@ -400,22 +238,8 @@ const renderCompanyTreeItem = (company, projects = [], positionsByProject = new 
           <button class="btn-sm" data-action="delete-company" data-id="${company.id}">删除</button>
         </div>
       </div>
-      ${children ? `<div class="tree-children">${children}</div>` : ''}
     </div>`;
-};
-
-const renderCompanyTreeMarkup = (companies = [], projectsByCompany = new Map(), positionsByProject = new Map(), candidatesByPosition = new Map()) => {
-  if (!companies.length) {
-    return '<div class="list-item"><div class="item-top"><div><div class="item-title">暂无客户列表</div><div class="item-meta">客户列表来自数据库。</div></div><span class="chip success">客户</span></div></div>';
-  }
-  return companies.map((company) => renderCompanyTreeItem(company, projectsByCompany.get(company.id) || [], positionsByProject, candidatesByPosition)).join('');
-};
-
-const getProjectActionLabel = (status = '') => {
-  if (status === '招聘中') return '完结';
-  if (status === '招聘完毕') return '中止';
-  if (status === '招聘中止') return '恢复';
-  return '完结';
+  }).join('');
 };
 
 const getProjectNextStatus = (status = '') => {
@@ -425,164 +249,21 @@ const getProjectNextStatus = (status = '') => {
   return '招聘中';
 };
 
-const renderProjectListMarkup = (projects = []) => {
-  if (!projects.length) {
-    return '<div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无项目列表</div><div class="item-meta">项目表中的真实项目来自数据库。</div></div><span class="chip success">项目</span></div></div>';
-  }
-  return projects.slice(0, 3).map((p) => {
-    const meta = [p.company_name || '', p.work_location || '', p.project_period || '', `招聘人数 ${p.hiring_count}`, p.description ? p.description : ''].filter(Boolean).join(' · ');
-    const chipClass = p.status === '招聘完毕' ? 'neutral' : 'success';
-    return `<div class="list-item"><div class="item-top"><div><div class="item-title">${p.name}</div><div class="item-meta">${meta || '暂无补充信息'}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-project" data-id="${p.id}">编辑</button><button class="btn-sm" data-action="toggle-project" data-id="${p.id}">${getProjectActionLabel(p.status)}</button><button class="btn-sm" data-action="delete-project" data-id="${p.id}">删除</button></div><span class="chip ${chipClass}">${p.status}</span></div></div>`;
-  }).join('');
-};
-
-const renderProjectTreeMarkup = (projects = [], positionsByProject = new Map(), candidatesByPosition = new Map()) => {
-  if (!projects.length) {
-    return '<div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无项目列表</div><div class="item-meta">项目表中的真实项目来自数据库。</div></div><span class="chip success">项目</span></div></div>';
-  }
-  return projects.map((project) => {
-    const company = { name: project.company_name || '未知客户' };
-    const positions = positionsByProject.get(project.id) || [];
-    return renderProjectTreeItem(project, company, positions, candidatesByPosition, 1);
-  }).join('');
-};
-
-const renderPositionTreeMarkup = (positions = [], projectsById = new Map(), candidatesByPosition = new Map()) => {
-  if (!positions.length) {
-    return '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
-  }
-  return positions.map((position) => {
-    const project = projectsById.get(position.project_id) || { id: position.project_id, name: `项目 ${position.project_id}`, company_name: '未知客户' };
-    return renderPositionTreeItem(position, project, { name: project.company_name || '未知客户' }, candidatesByPosition.get(position.id) || [], 0);
-  }).join('');
-};
-
-window.hrRenderCompanyList = renderCompanyListMarkup;
+window.hrRenderCompanyList = renderCompanyTableMarkup;
 window.hrRenderProjectList = renderProjectListMarkup;
-window.hrRenderCompanyTree = renderCompanyTreeMarkup;
-window.hrRenderProjectTree = renderProjectTreeMarkup;
-window.hrRenderPositionTree = renderPositionTreeMarkup;
+window.hrRenderPositionList = renderPositionListMarkup;
 
-async function refreshCustomerTree() {
-  const list = document.querySelector('[data-company-list]');
-  if (!list) return;
-  const [companies, projects, positions] = await Promise.all([
-    window.hrApi.companies(),
-    window.hrApi.projects(),
-    window.hrApi.positions(),
-  ]);
-  const projectsByCompany = new Map();
-  projects.forEach((project) => {
-    const bucket = projectsByCompany.get(project.company_id) || [];
-    bucket.push(project);
-    projectsByCompany.set(project.company_id, bucket);
-  });
-  const positionsByProject = new Map();
-  positions.forEach((position) => {
-    const bucket = positionsByProject.get(position.project_id) || [];
-    bucket.push(position);
-    positionsByProject.set(position.project_id, bucket);
-  });
-  list.innerHTML = window.hrRenderCompanyTree
-    ? window.hrRenderCompanyTree(companies, projectsByCompany, positionsByProject, treeState.candidatesByPosition)
-    : renderCompanyListMarkup(companies);
-}
-
-async function renderCustomerTreeFromState() {
+async function refreshCustomerList() {
   const list = document.querySelector('[data-company-list]');
   if (!list) return;
   const companies = await window.hrApi.companies();
-  const projects = Array.from(treeState.projectsByCompany.entries()).flatMap(([, items]) => items);
-  const positions = Array.from(treeState.positionsByProject.entries()).flatMap(([, items]) => items);
-  const projectsByCompany = new Map();
-  projects.forEach((project) => {
-    const bucket = projectsByCompany.get(project.company_id) || [];
-    bucket.push(project);
-    projectsByCompany.set(project.company_id, bucket);
-  });
-  const positionsByProject = new Map();
-  positions.forEach((position) => {
-    const bucket = positionsByProject.get(position.project_id) || [];
-    bucket.push(position);
-    positionsByProject.set(position.project_id, bucket);
-  });
-  list.innerHTML = window.hrRenderCompanyTree
-    ? window.hrRenderCompanyTree(companies, projectsByCompany, positionsByProject, treeState.candidatesByPosition)
-    : renderCompanyListMarkup(companies);
+  list.innerHTML = renderCompanyTableMarkup(companies);
 }
 
-async function loadCompanyProjects(companyId) {
-  const companyKey = Number(companyId);
-  if (!companyKey) return [];
-  if (!treeState.projectsByCompany.has(companyKey)) {
-    treeState.loadingCompanies.add(companyKey);
-    try {
-      const projects = await window.hrApi.projects({ company_id: companyKey });
-      treeState.projectsByCompany.set(companyKey, projects);
-    } finally {
-      treeState.loadingCompanies.delete(companyKey);
-    }
-  }
-  return treeState.projectsByCompany.get(companyKey) || [];
-}
-
-async function loadProjectPositions(projectId) {
-  const projectKey = Number(projectId);
-  if (!projectKey) return [];
-  if (!treeState.positionsByProject.has(projectKey)) {
-    treeState.loadingProjects.add(projectKey);
-    try {
-      const positions = await window.hrApi.positions({ project_id: projectKey });
-      treeState.positionsByProject.set(projectKey, positions);
-    } finally {
-      treeState.loadingProjects.delete(projectKey);
-    }
-  }
-  return treeState.positionsByProject.get(projectKey) || [];
-}
-
-async function loadPositionCandidates(positionId) {
-  const positionKey = Number(positionId);
-  if (!positionKey) return [];
-  if (!treeState.candidatesByPosition.has(positionKey)) {
-    treeState.loadingPositions.add(positionKey);
-    try {
-      const recommendations = await window.hrApi.recommendations({ position_id: positionKey });
-      const latestByCandidate = new Map();
-      recommendations.forEach((recommendation) => {
-        if (!latestByCandidate.has(recommendation.candidate_id)) {
-          latestByCandidate.set(recommendation.candidate_id, recommendation);
-        }
-      });
-      const candidates = await Promise.all(Array.from(latestByCandidate.entries()).map(async ([candidateId, recommendation]) => {
-        try {
-          const candidate = await window.hrApi.candidate(String(candidateId));
-          return {
-            ...candidate,
-            recommendation_id: recommendation.id,
-            recommendation_status: recommendation.status,
-            recommendation_feedback: recommendation.feedback || '',
-          };
-        } catch (err) {
-          console.warn(`Failed to load candidate ${candidateId} for position ${positionKey}`, err);
-          return null;
-        }
-      }));
-      treeState.candidatesByPosition.set(positionKey, candidates.filter(Boolean));
-    } finally {
-      treeState.loadingPositions.delete(positionKey);
-    }
-  }
-  return treeState.candidatesByPosition.get(positionKey) || [];
-}
-
-async function renderProjectTreeFromState() {
+async function renderProjectListFromState() {
   const projectList = document.querySelector('[data-project-list]');
   if (!projectList) return;
-  const [projects, positions] = await Promise.all([
-    window.hrApi.projects(),
-    window.hrApi.positions(),
-  ]);
+  const projects = await window.hrApi.projects();
 
   let filteredProjects = projects;
   if (window.projectFilters) {
@@ -606,18 +287,10 @@ async function renderProjectTreeFromState() {
     projectTitle.textContent = `项目列表 (共 ${filteredProjects.length} 个)`;
   }
 
-  const positionsByProject = new Map();
-  positions.forEach((position) => {
-    const bucket = positionsByProject.get(position.project_id) || [];
-    bucket.push(position);
-    positionsByProject.set(position.project_id, bucket);
-  });
-  projectList.innerHTML = window.hrRenderProjectTree
-    ? window.hrRenderProjectTree(filteredProjects, positionsByProject, treeState.candidatesByPosition)
-    : (window.hrRenderProjectList ? window.hrRenderProjectList(filteredProjects) : '');
+  projectList.innerHTML = renderProjectListMarkup(filteredProjects);
 }
 
-async function renderPositionTreeFromState() {
+async function renderPositionListFromState() {
   const positionList = document.querySelector('[data-position-list]');
   if (!positionList) return;
   const [positions, projects, recommendations] = await Promise.all([
@@ -681,66 +354,18 @@ async function renderPositionTreeFromState() {
   }
 
   const projectsById = new Map(projects.map((project) => [project.id, project]));
-  positionList.innerHTML = window.hrRenderPositionTree
-    ? window.hrRenderPositionTree(filteredPositions, projectsById, treeState.candidatesByPosition)
-    : '';
+  positionList.innerHTML = renderPositionListMarkup(filteredPositions, projectsById);
 }
 
-window.refreshTreePage = async () => {
-  const expandedPositionIds = Array.from(treeState.expandedPositions);
-  treeState.candidatesByPosition.clear();
-  await Promise.all(expandedPositionIds.map(pid => loadPositionCandidates(pid)));
+window.refreshManagementPage = async () => {
   const page = location.pathname.split("/").pop() || "";
   if (page === "customers.html") {
-    await renderCustomerTreeFromState();
+    await refreshCustomerList();
   } else if (page === "projects.html") {
-    await renderProjectTreeFromState();
-    await renderPositionTreeFromState();
+    await renderProjectListFromState();
+    await renderPositionListFromState();
   } else if (page === "positions.html") {
-    await renderPositionTreeFromState();
-  }
-};
-
-window.hrToggleProjectTree = async function(projectId) {
-  const projectKey = Number(projectId);
-  if (!projectKey) return;
-  if (treeState.expandedProjects.has(projectKey)) {
-    treeState.expandedProjects.delete(projectKey);
-  } else {
-    treeState.expandedProjects.add(projectKey);
-    await loadProjectPositions(projectKey);
-  }
-  if (document.querySelector('[data-project-list]')) await renderProjectTreeFromState();
-  if (document.querySelector('[data-company-list]')) {
-    await renderCustomerTreeFromState();
-  }
-};
-
-window.hrTogglePositionTree = async function(positionId) {
-  const positionKey = Number(positionId);
-  if (!positionKey) return;
-  if (treeState.expandedPositions.has(positionKey)) {
-    treeState.expandedPositions.delete(positionKey);
-  } else {
-    treeState.expandedPositions.add(positionKey);
-    await loadPositionCandidates(positionKey);
-  }
-  if (document.querySelector('[data-company-list]')) await renderCustomerTreeFromState();
-  if (document.querySelector('[data-project-list]')) await renderProjectTreeFromState();
-  if (document.querySelector('[data-position-list]')) await renderPositionTreeFromState();
-};
-
-window.hrToggleCompanyTree = async function(companyId) {
-  const companyKey = Number(companyId);
-  if (!companyKey) return;
-  if (treeState.expandedCompanies.has(companyKey)) {
-    treeState.expandedCompanies.delete(companyKey);
-  } else {
-    treeState.expandedCompanies.add(companyKey);
-    await loadCompanyProjects(companyKey);
-  }
-  if (document.querySelector('[data-company-list]')) {
-    await renderCustomerTreeFromState();
+    await renderPositionListFromState();
   }
 };
 
@@ -852,35 +477,6 @@ async function render() {
   const el = document.getElementById("app");
   if (!el) return;
 
-  // 注入选择模式样式，隐藏导航外壳
-  const urlParams = new URLSearchParams(location.search);
-  const isSelectMode = urlParams.get('select_mode') === '1';
-  if (isSelectMode) {
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .sidebar { display: none !important; }
-      .topbar { display: none !important; }
-      .app-shell { min-height: 100% !important; display: block !important; }
-      body { background: #fff !important; }
-      .content { padding: 12px !important; margin: 0 !important; }
-      .metrics { display: none !important; }
-      .grid-2 { grid-template-columns: 1.2fr 1fr !important; gap: 12px !important; }
-      .toolbar { display: flex !important; flex-direction: row !important; gap: 10px !important; }
-      .input.wide { min-width: 0 !important; }
-      .grid-2 .panel { margin-bottom: 0 !important; }
-      .grid-2 .panel .list { display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; gap: 12px !important; padding: 8px 12px !important; }
-      .grid-2 .panel .list-item { flex: 1 1 130px !important; border: none !important; padding: 0 !important; margin: 0 !important; }
-      .grid-2 .panel .list-item:not(:last-child) { border-bottom: none !important; }
-      .grid-2 .panel .list-item .item-top { padding: 0 !important; }
-      .table-head, .table-row {
-        display: grid !important;
-        grid-template-columns: 48px 1.5fr 1fr 1fr 1fr 1fr 0.8fr 1fr !important;
-        gap: 10px !important;
-        align-items: center !important;
-      }
-    `;
-    document.head.appendChild(style);
-  }
   let currentUser = null;
   let unreadCount = 0;
   try {
@@ -995,7 +591,6 @@ function escapeHtml(value) {
 }
 
 function shouldShowButtonBusy(button) {
-  if (button?.dataset?.treeToggle) return false;
   const action = button?.dataset?.action || "";
   if (!action || button?.dataset?.busy === "true") return false;
   if (["logout", "refresh-page"].includes(action)) return false;
@@ -1244,49 +839,6 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "nav-import") return location.href = "./import.html";
   if (button.dataset.action === "nav-projects") return location.href = "./projects.html";
   if (button.dataset.action === "refresh-page") return location.reload();
-  if (button.dataset.action === "search-add-candidates") {
-    const positionId = button.dataset.id;
-    if (!positionId) throw new Error('岗位 ID 缺失');
-    
-    let modal = document.querySelector('[data-search-candidates-modal]');
-    if (!modal) {
-      const div = document.createElement('div');
-      div.innerHTML = `
-        <div class="modal" data-search-candidates-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2500; padding:24px;">
-          <div class="panel" style="max-width:1200px; width:95%; height:90vh; margin:2vh auto; background:#fff; display:flex; flex-direction:column; padding: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
-            <div class="section-head" style="padding: 16px 24px; border-bottom: 1px solid rgba(15,23,42,.08); margin:0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
-              <div>
-                <h3 style="font-size:18px; font-weight:600; color:#0f172a; margin:0;">选择候选人并加入岗位</h3>
-                <div class="section-sub" style="font-size:13px; color:#64748b; margin-top:2px;">搜索人才池中的候选人并一键加入当前岗位。</div>
-              </div>
-              <div>
-                <button class="btn" data-action="close-search-candidates-modal" style="padding: 8px 16px; font-size:14px; font-weight:500; border-radius:6px; cursor:pointer;">关闭窗口</button>
-              </div>
-            </div>
-            <div style="flex:1; width:100%; height:100%; position:relative; overflow:hidden;">
-              <iframe data-search-candidates-iframe style="width:100%; height:100%; border:none;" src=""></iframe>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(div.firstElementChild);
-      modal = document.querySelector('[data-search-candidates-modal]');
-    }
-    
-    const iframe = modal.querySelector('[data-search-candidates-iframe]');
-    if (iframe) {
-      const base = location.pathname.replace(/\/[^\/]+$/, '');
-      iframe.src = `${base}/candidates.html?select_mode=1&position_id=${positionId}`;
-    }
-    
-    modal.style.display = 'block';
-    return;
-  }
-  if (button.dataset.action === "close-search-candidates-modal") {
-    const modal = document.querySelector('[data-search-candidates-modal]');
-    if (modal) modal.style.display = 'none';
-    return;
-  }
   if (button.dataset.action === "refresh-audit-logs") {
     const rows = await window.hrApi.auditLogs({ limit: 200 });
     const list = document.querySelector('[data-audit-list]');
@@ -2555,32 +2107,6 @@ async function handleGlobalButton(button) {
     const selectedCandidates = Array.from(window.candidatesPageState?.selectedCandidates?.entries?.() || []);
     if (!selectedCandidates.length) throw new Error('请先勾选需要推荐的候选人');
 
-    const urlParams = new URLSearchParams(location.search);
-    const isSelectMode = urlParams.get('select_mode') === '1';
-    const targetPositionId = urlParams.get('position_id');
-    if (isSelectMode && targetPositionId) {
-      if (!confirm(`确定要将这 ${selectedCandidates.length} 名候选人加入当前岗位吗？`)) return;
-      const recordKeys = selectedCandidates.map(([recordKey]) => recordKey);
-      const result = await window.hrApi.createBatchRecommendations({
-        record_keys: recordKeys,
-        position_id: Number(targetPositionId),
-        recommender: 'admin',
-        status: '待推荐',
-        feedback: '通过岗位快捷搜索加入'
-      });
-      showToast(`成功添加 ${result.succeeded} 名候选人到当前岗位`);
-      
-      if (window.candidatesPageState) {
-        window.candidatesPageState.clearSelection();
-      }
-      
-      // 让父页面刷新树
-      if (window.parent && typeof window.parent.refreshTreePage === 'function') {
-        window.parent.refreshTreePage().catch(err => console.warn(err));
-      }
-      return;
-    }
-
     const modal = document.querySelector('[data-recommend-modal]');
     if (modal) {
       modal.dataset.recordKeys = JSON.stringify(selectedCandidates.map(([recordKey]) => recordKey));
@@ -2621,94 +2147,6 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "close-recommend-modal") {
     const modal = document.querySelector('[data-recommend-modal]');
     if (modal) modal.style.display = 'none';
-    return;
-  }
-  if (button.dataset.action === "edit-candidate-tree") {
-    const id = button.dataset.id || '';
-    if (!id) throw new Error('候选人 ID 缺失');
-    // 动态注入候选人编辑弹窗（如果当前页面不存在）
-    if (!document.querySelector('[data-candidate-edit-modal]')) {
-      const div = document.createElement('div');
-      div.innerHTML = `<div class="modal" data-candidate-edit-modal style="display:none;position:fixed;inset:0;background:rgba(14,22,34,.45);z-index:2000;padding:24px;overflow-y:auto;"><div class="panel" style="max-width:960px;margin:4vh auto 24px;background:#fff;"><div class="section-head"><div><h3>编辑候选人</h3><div class="section-sub">保存后会写入候选人表并刷新列表。</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span style="border-left:1px solid rgba(15,23,42,.1);height:24px;margin:0 8px;"></span><button class="btn" data-action="close-candidate-edit-modal">取消</button><button class="btn primary" data-action="confirm-candidate-edit">确认保存</button></div></div><div class="grid-2" style="max-height:70vh;overflow-y:auto;padding:2px;"><div class="panel" style="box-shadow:none;border:1px solid rgba(15,23,42,.08);margin:0;"><div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">基本信息</div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">可根据原件信息修正拼写错误</div></div></div><input class="input" data-candidate-edit-name /></div><div class="list-item"><div class="item-top"><div><div class="item-title">性别</div><div class="item-meta">男 / 女</div></div></div><select class="input" data-candidate-edit-gender><option value="">不填</option><option value="男">男</option><option value="女">女</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">年龄</div><div class="item-meta">纯数字</div></div></div><input type="number" class="input" data-candidate-edit-age placeholder="如: 28" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">出生日期</div><div class="item-meta">请选择日期</div></div></div><input class="input" type="date" data-candidate-edit-birth-date /></div><div class="list-item"><div class="item-top"><div><div class="item-title">户口所在地</div></div></div><input class="input" data-candidate-edit-hukou placeholder="请输入户口所在地" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">城市</div></div></div><input class="input" data-candidate-edit-city placeholder="请输入城市" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta">仅限中国11位手机号</div></div></div><input class="input" data-candidate-edit-phone placeholder="13912345678" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">邮筱</div></div></div><input class="input" type="email" data-candidate-edit-email placeholder="example@domain.com" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">家庭情况</div></div></div><select class="input" data-candidate-edit-family><option value="">请选择</option><option value="未婚">未婚</option><option value="已婚">已婚</option><option value="已婚未育">已婚未育</option><option value="已婚已育">已婚已育</option></select></div></div><div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;">职业经历</div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div></div></div><input class="input" data-candidate-edit-title /></div><div class="list-item"><div class="item-top"><div><div class="item-title">最高学历</div></div></div><select class="input" data-candidate-edit-education><option value="高中">高中</option><option value="大专">大专</option><option value="本科" selected>本科</option><option value="硕士">硕士</option><option value="博士">博士</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">工作年限</div><div class="item-meta">年（数字）</div></div></div><input class="input" type="number" data-candidate-edit-exp-years /></div><div class="list-item"><div class="item-top"><div><div class="item-title">教育背景</div></div></div><textarea class="input" rows="3" data-candidate-edit-edu-detail></textarea></div><div class="list-item"><div class="item-top"><div><div class="item-title">职业经历</div></div></div><textarea class="input" rows="4" data-candidate-edit-work-history></textarea></div><div class="list-item"><div class="item-top"><div><div class="item-title">项目经历</div></div></div><textarea class="input" rows="3" data-candidate-edit-project-history></textarea></div><div class="list-item"><div class="item-top"><div><div class="item-title">专业证书</div></div></div><textarea class="input" rows="2" data-candidate-edit-certificates></textarea></div></div></div><div class="panel" style="box-shadow:none;border:1px solid rgba(15,23,42,.08);margin:0;"><div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">求职意向</div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta">仅限数字，单位（元/月）</div></div></div><input class="input" type="number" data-candidate-edit-salary placeholder="例如：25000" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">薪资结构</div><div class="item-meta">例：12薪+2个月年终</div></div></div><input class="input" data-candidate-edit-salary-structure /></div><div class="list-item"><div class="item-top"><div><div class="item-title">到岗周期</div></div></div><select class="input" data-candidate-edit-onboard><option value="一周">一周</option><option value="两周">两周</option><option value="一个月">一个月</option><option value="两个月">两个月</option><option value="三个月">三个月</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">职位状态</div></div></div><select class="input" data-candidate-edit-job-status><option value="在职">在职</option><option value="离职">离职</option><option value="随时到岗">随时到岗</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">求职意向</div><div class="item-meta">目标岗位、行业</div></div></div><textarea class="input" rows="3" data-candidate-edit-intention></textarea></div></div><div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;">评估</div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">核心价值</div></div></div><textarea class="input" rows="3" data-candidate-edit-core-value></textarea></div><div class="list-item"><div class="item-top"><div><div class="item-title">综合评估</div></div></div><textarea class="input" rows="3" data-candidate-edit-evaluation></textarea></div></div><div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;">系统状态</div><div class="list"><div class="list-item"><div class="item-top"><div><div class="item-title">当前状态</div><div class="item-meta">未锁定 / 锁定</div></div></div><select class="input" data-candidate-edit-status><option value="未锁定">未锁定</option><option value="锁定">锁定</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">来源</div></div></div><select class="input" data-candidate-edit-source><option value="手工导入">手工导入</option><option value="简历库">简历库</option></select></div><div class="list-item"><div class="item-top"><div><div class="item-title">身份证号</div></div></div><input class="input" data-candidate-edit-idnumber placeholder="例如：110101199001011234" /></div><div class="list-item"><div class="item-top"><div><div class="item-title">标签</div><div class="item-meta">逗号分隔</div></div></div><input class="input" data-candidate-edit-tags /></div></div></div></div></div></div>`;
-      document.body.appendChild(div.firstElementChild);
-    }
-    // id 已在 if 块之前声明，直接使用
-    const item = await window.hrApi.candidate(String(id));
-    if (!item) throw new Error('候选人不存在');
-    const modal = document.querySelector('[data-candidate-edit-modal]');
-    const fill = (sel, val) => { const el = document.querySelector(sel); if (el) el.value = val || ''; };
-    fill('[data-candidate-edit-name]', item.name);
-    fill('[data-candidate-edit-gender]', item.gender);
-    fill('[data-candidate-edit-age]', item.age || '');
-    fill('[data-candidate-edit-birth-date]', item.birth_date);
-    fill('[data-candidate-edit-hukou]', item.hukou_location);
-    fill('[data-candidate-edit-city]', item.city);
-    fill('[data-candidate-edit-phone]', item.phone);
-    fill('[data-candidate-edit-email]', item.email);
-    fill('[data-candidate-edit-idnumber]', item.id_number);
-    fill('[data-candidate-edit-family]', item.family_status);
-    fill('[data-candidate-edit-title]', item.current_title);
-    fill('[data-candidate-edit-education]', item.education);
-    fill('[data-candidate-edit-exp-years]', item.experience_years);
-    fill('[data-candidate-edit-certificates]', item.certificates);
-    fill('[data-candidate-edit-edu-detail]', item.education_detail);
-    fill('[data-candidate-edit-work-history]', item.work_history);
-    fill('[data-candidate-edit-project-history]', item.project_history);
-    fill('[data-candidate-edit-salary]', item.expected_salary);
-    fill('[data-candidate-edit-salary-structure]', item.salary_structure);
-    fill('[data-candidate-edit-onboard]', item.onboard_cycle);
-    fill('[data-candidate-edit-job-status]', item.job_status);
-    fill('[data-candidate-edit-intention]', item.job_intention);
-    fill('[data-candidate-edit-core-value]', item.core_value);
-    fill('[data-candidate-edit-evaluation]', item.comprehensive_evaluation);
-    fill('[data-candidate-edit-status]', item.locked ? '锁定' : (item.status || '未锁定'));
-    fill('[data-candidate-edit-source]', item.source);
-    fill('[data-candidate-edit-tags]', item.tags);
-    if (modal) {
-      modal.style.display = 'block';
-      modal.dataset.candidateId = String(item.id);
-      modal.dataset.target = JSON.stringify({ id: item.id });
-    }
-    return;
-  }
-  if (button.dataset.action === "delete-candidate-tree") {
-    const recommendationId = Number(button.dataset.recommendationId || 0);
-    if (!recommendationId) throw new Error('推荐记录 ID 缺失');
-    if (!confirm('确定将该候选人从此岗位移除并解除锁定吗？')) return;
-    await window.hrApi.deleteRecommendation(recommendationId);
-    showToast('候选人已移除并解除锁定');
-    // 保留已展开岗位 ID，clear 缓存后重新拉取候选人再渲染
-    const expandedPositionIds = Array.from(treeState.expandedPositions);
-    treeState.candidatesByPosition.clear();
-    await Promise.all(expandedPositionIds.map(pid => loadPositionCandidates(pid)));
-    const page = location.pathname.split("/").pop() || "";
-    if (page === "customers.html") await renderCustomerTreeFromState();
-    else if (page === "projects.html") await renderProjectTreeFromState();
-    else if (page === "positions.html") await renderPositionTreeFromState();
-    return;
-  }
-  if (button.dataset.action === "batch-delete-candidates-tree") {
-    const checkboxes = document.querySelectorAll('.tree-candidate-checkbox:checked');
-    if (!checkboxes.length) throw new Error('请先选择要移除的候选人');
-    const items = Array.from(checkboxes).map(cb => ({
-      recommendationId: Number(cb.dataset.recommendationId || 0),
-      candidateId: Number(cb.dataset.candidateId || 0),
-    })).filter(item => item.recommendationId > 0);
-    if (!items.length) throw new Error('没有可移除的推荐记录');
-    if (!confirm(`确定批量移除 ${items.length} 名候选人并解除锁定吗？`)) return;
-    const ids = items.map(item => item.recommendationId);
-    const result = await window.hrApi.batchDeleteRecommendations(ids);
-    showToast(`已移除 ${result.deleted} 名候选人`);
-    // 保留已展开岗位 ID，clear 缓存后重新拉取候选人再渲染
-    const expandedPositionIds = Array.from(treeState.expandedPositions);
-    treeState.candidatesByPosition.clear();
-    await Promise.all(expandedPositionIds.map(pid => loadPositionCandidates(pid)));
-    checkboxes.forEach(cb => cb.checked = false);
-    document.querySelectorAll('[data-batch-delete-candidates-btn]').forEach(btn => btn.textContent = '批量移除候选人');
-    const page = location.pathname.split("/").pop() || "";
-    if (page === "customers.html") await renderCustomerTreeFromState();
-    else if (page === "projects.html") await renderProjectTreeFromState();
-    else if (page === "positions.html") await renderPositionTreeFromState();
     return;
   }
   if (button.dataset.action === "confirm-recommend") {
@@ -3712,10 +3150,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       const list = document.querySelector('[data-company-list]');
       if (list) {
         const companies = await window.hrApi.companies();
-        if (window.hrRenderCompanyTree) {
-          await refreshCustomerTree();
+        if (window.hrRenderCompanyList) {
+          await refreshCustomerList();
         } else {
-          list.innerHTML = renderCompanyListMarkup(companies);
+          list.innerHTML = renderCompanyTableMarkup(companies);
         }
       }
       await refreshCompanyMetrics();
@@ -3775,8 +3213,8 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
         const projects = await window.hrApi.projects();
         list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
       }
-      if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
-        await refreshCustomerTree();
+      if (window.hrRenderCompanyList && document.querySelector('[data-company-list]')) {
+        await refreshCustomerList();
       }
       showToast(`项目状态已更新：${project.name}`);
     } else if (target.kind === 'delete-project') {
@@ -3786,8 +3224,8 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
         const projects = await window.hrApi.projects();
         list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
       }
-      if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
-        await refreshCustomerTree();
+      if (window.hrRenderCompanyList && document.querySelector('[data-company-list]')) {
+        await refreshCustomerList();
       }
       showToast("项目已删除");
     }
@@ -4569,10 +4007,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const list = document.querySelector('[data-company-list]');
     if (list) {
       const companies = await window.hrApi.companies();
-      if (window.hrRenderCompanyTree) {
-        await refreshCustomerTree();
+      if (window.hrRenderCompanyList) {
+        await refreshCustomerList();
       } else {
-        list.innerHTML = renderCompanyListMarkup(companies);
+        list.innerHTML = renderCompanyTableMarkup(companies);
       }
     }
     await refreshCompanyMetrics();
@@ -4607,10 +4045,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const list = document.querySelector('[data-company-list]');
     if (list) {
       const companies = await window.hrApi.companies();
-      if (window.hrRenderCompanyTree) {
-        await refreshCustomerTree();
+      if (window.hrRenderCompanyList) {
+        await refreshCustomerList();
       } else {
-        list.innerHTML = renderCompanyListMarkup(companies);
+        list.innerHTML = renderCompanyTableMarkup(companies);
       }
     }
     await refreshCompanyMetrics();
@@ -4676,10 +4114,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     });
     if (modal) modal.style.display = 'none';
     if (document.querySelector('[data-project-list]')) {
-      await window.refreshTreePage();
+      await window.refreshManagementPage();
     }
     if (document.querySelector('[data-company-list]')) {
-      if (window.hrRenderCompanyTree) await refreshCustomerTree();
+      if (window.hrRenderCompanyList) await refreshCustomerList();
     }
     await refreshProjectMetrics();
     showToast(`项目已更新：${project.name}`);
@@ -4711,10 +4149,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const modal = document.querySelector('[data-project-modal]');
     if (modal) modal.style.display = 'none';
     if (document.querySelector('[data-project-list]')) {
-      await window.refreshTreePage();
+      await window.refreshManagementPage();
     }
     if (document.querySelector('[data-company-list]')) {
-      if (window.hrRenderCompanyTree) await refreshCustomerTree();
+      if (window.hrRenderCompanyList) await refreshCustomerList();
     }
     await refreshProjectMetrics();
     showToast(`已创建项目：${project.name}`);
@@ -4750,11 +4188,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     });
     const modal = document.querySelector('[data-position-modal]');
     if (modal) modal.style.display = 'none';
-    treeState.positionsByProject.delete(projectId);
     if (document.querySelector('[data-company-list]')) {
-      if (window.hrRenderCompanyTree) await refreshCustomerTree();
+      if (window.hrRenderCompanyList) await refreshCustomerList();
     } else if (document.querySelector('[data-project-list]')) {
-      await window.refreshTreePage();
+      await window.refreshManagementPage();
     }
     showToast(`已创建岗位：${position.name}`);
     return;
@@ -4814,11 +4251,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       location,
     });
     if (modal) modal.style.display = 'none';
-    treeState.positionsByProject.delete(projectId);
     if (document.querySelector('[data-company-list]')) {
-      if (window.hrRenderCompanyTree) await refreshCustomerTree();
+      if (window.hrRenderCompanyList) await refreshCustomerList();
     } else if (document.querySelector('[data-project-list]')) {
-      await window.refreshTreePage();
+      await window.refreshManagementPage();
     }
     showToast(`岗位已更新：${position.name}`);
     return;
@@ -4829,17 +4265,12 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     if (!item) throw new Error('未找到岗位');
     if (!confirm(`确认删除岗位「${item.name}」？删除后会同步清理关联记录。`)) return;
     await window.hrApi.deletePosition(item.id);
-    treeState.positionsByProject.delete(item.project_id);
     if (document.querySelector('[data-company-list]')) {
-      if (window.hrRenderCompanyTree) await refreshCustomerTree();
+      if (window.hrRenderCompanyList) await refreshCustomerList();
     } else if (document.querySelector('[data-project-list]')) {
-      await window.refreshTreePage();
+      await window.refreshManagementPage();
     } else {
-      const list = document.querySelector('[data-position-list]');
-      if (list) {
-        const positions = await window.hrApi.positions();
-        list.innerHTML = window.hrRenderPositionList ? window.hrRenderPositionList(positions) : '';
-      }
+      await window.refreshManagementPage();
     }
     showToast("岗位已删除");
     return;
@@ -4915,8 +4346,6 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
 
 function bindActionButtons() {
   document.querySelectorAll("button[data-action]").forEach((btn) => {
-    // Tree nodes are replaced after each toggle, so they use the delegated listener below.
-    if (btn.dataset.action === "toggle-tree") return;
     if (btn.dataset.bound === "true") return;
     btn.dataset.bound = "true";
     btn.addEventListener("click", (event) => {
@@ -4934,30 +4363,6 @@ document.addEventListener("click", (event) => {
   const btn = event.target.closest("button");
   if (!btn) return;
 
-  if (btn.dataset.treeToggle) {
-    event.preventDefault();
-    const targetId = Number(btn.dataset.treeId || 0);
-    if (!targetId) return;
-    const toggleByLevel = {
-      company: window.hrToggleCompanyTree,
-      project: window.hrToggleProjectTree,
-      position: window.hrTogglePositionTree,
-    };
-    const toggle = toggleByLevel[btn.dataset.treeToggle];
-    if (!toggle) return;
-    
-    const closeToast = showLoadingToast("正在加载数据...");
-    toggle(targetId)
-      .then(() => {
-        closeToast();
-      })
-      .catch((err) => {
-        closeToast();
-        showToast(`操作失败：${err.message || err}`);
-      });
-    return;
-  }
-
   const explicitAction = btn.dataset.action || "";
   if (explicitAction.includes("recruit") || location.pathname.includes("recruit-")) {
     return;
@@ -4968,33 +4373,6 @@ document.addEventListener("click", (event) => {
   if (btn.dataset.bound === "true") return;
   event.preventDefault();
   withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));
-});
-
-// Sync batch delete button visibility when tree checkboxes change
-document.addEventListener("change", (event) => {
-  const target = event.target;
-  if (target.classList.contains("tree-candidate-checkbox")) {
-    // 找到该 checkbox 所属的岗位节点，更新岗位级的批量移除按钮状态
-    const positionNode = target.closest('[data-tree-node="position"]');
-    if (positionNode) {
-      const positionId = positionNode.dataset.id;
-      const batchBtn = positionNode.querySelector(`[data-position-batch-delete="${positionId}"]`);
-      const checkedInPosition = positionNode.querySelectorAll('.tree-candidate-checkbox:checked').length;
-      if (batchBtn) {
-        if (checkedInPosition > 0) {
-          batchBtn.disabled = false;
-          batchBtn.style.opacity = '1';
-          batchBtn.style.cursor = 'pointer';
-          batchBtn.textContent = `批量移除（${checkedInPosition}）`;
-        } else {
-          batchBtn.disabled = true;
-          batchBtn.style.opacity = '0.4';
-          batchBtn.style.cursor = 'not-allowed';
-          batchBtn.textContent = '批量移除';
-        }
-      }
-    }
-  }
 });
 
 document.addEventListener("focusout", (event) => {

@@ -223,9 +223,6 @@ window.hrApi = {
   deleteRecommendation(id) {
     return this.request(`/recommendations/${id}`, { method: "DELETE" });
   },
-  batchDeleteRecommendations(ids) {
-    return this.request("/recommendations/batch-delete", { method: "POST", body: JSON.stringify(ids) });
-  },
   recommendations(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/recommendations${qs ? `?${qs}` : ""}`);

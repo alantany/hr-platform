@@ -158,9 +158,7 @@ window.__PAGE_BODY__ = `
         document.querySelector('[data-company-positions]').textContent = String(companies.reduce((sum, company) => sum + (company.position_count || 0), 0));
         const list = document.querySelector('[data-company-list]');
         if (list) {
-          list.innerHTML = window.hrRenderCompanyTree
-            ? window.hrRenderCompanyTree(companies, new Map(), new Map(), new Map())
-            : (window.hrRenderCompanyList ? window.hrRenderCompanyList(companies) : '');
+          list.innerHTML = window.hrRenderCompanyList ? window.hrRenderCompanyList(companies) : '';
         }
       } catch (err) {
         console.warn(err);
