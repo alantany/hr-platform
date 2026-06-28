@@ -2325,13 +2325,43 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "edit-candidate-tree") {
     const id = Number(button.dataset.id || 0);
     if (!id) throw new Error('候选人 ID 缺失');
-    const candidate = await window.hrApi.candidate(String(id));
-    if (!candidate) throw new Error('候选人不存在');
-    const fakeBtn = {
-      dataset: { action: 'edit-candidate', id: id },
-      textContent: ''
-    };
-    return handleGlobalButton(fakeBtn);
+    const item = await window.hrApi.candidate(String(id));
+    if (!item) throw new Error('候选人不存在');
+    const modal = document.querySelector('[data-candidate-edit-modal]');
+    const fill = (sel, val) => { const el = document.querySelector(sel); if (el) el.value = val || ''; };
+    fill('[data-candidate-edit-name]', item.name);
+    fill('[data-candidate-edit-gender]', item.gender);
+    fill('[data-candidate-edit-age]', item.age || '');
+    fill('[data-candidate-edit-birth-date]', item.birth_date);
+    fill('[data-candidate-edit-hukou]', item.hukou_location);
+    fill('[data-candidate-edit-city]', item.city);
+    fill('[data-candidate-edit-phone]', item.phone);
+    fill('[data-candidate-edit-email]', item.email);
+    fill('[data-candidate-edit-idnumber]', item.id_number);
+    fill('[data-candidate-edit-family]', item.family_status);
+    fill('[data-candidate-edit-title]', item.current_title);
+    fill('[data-candidate-edit-education]', item.education);
+    fill('[data-candidate-edit-exp-years]', item.experience_years);
+    fill('[data-candidate-edit-certificates]', item.certificates);
+    fill('[data-candidate-edit-edu-detail]', item.education_detail);
+    fill('[data-candidate-edit-work-history]', item.work_history);
+    fill('[data-candidate-edit-project-history]', item.project_history);
+    fill('[data-candidate-edit-salary]', item.expected_salary);
+    fill('[data-candidate-edit-salary-structure]', item.salary_structure);
+    fill('[data-candidate-edit-onboard]', item.onboard_cycle);
+    fill('[data-candidate-edit-job-status]', item.job_status);
+    fill('[data-candidate-edit-intention]', item.job_intention);
+    fill('[data-candidate-edit-core-value]', item.core_value);
+    fill('[data-candidate-edit-evaluation]', item.comprehensive_evaluation);
+    fill('[data-candidate-edit-status]', item.locked ? '锁定' : (item.status || '激活'));
+    fill('[data-candidate-edit-source]', item.source);
+    fill('[data-candidate-edit-tags]', item.tags);
+    if (modal) {
+      modal.style.display = 'block';
+      modal.dataset.candidateId = String(item.id);
+      modal.dataset.target = JSON.stringify({ id: item.id });
+    }
+    return;
   }
   if (button.dataset.action === "delete-candidate-tree") {
     const recommendationId = Number(button.dataset.recommendationId || 0);

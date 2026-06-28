@@ -1829,3 +1829,9 @@
 - 工具栏的"批量移除候选人"按钮从默认隐藏改为始终可见，选中候选人后自动显示选中数量。
 - 批量删除完成后按钮重置为"批量移除候选人"，不再隐藏。
 - 验证：`node --check app.js`、`python3 -m py_compile backend/app/main.py` 通过。
+
+## 2026-06-28 (树候选人编辑/删除 实现真实功能)
+
+- **修复编辑候选人按钮**：`edit-candidate-tree` 不再用 fakeBtn 间接调用 `handleGlobalButton`（fakeBtn 缺少 `tagName`/真实 DOM 属性，容易触发末端的兜底 mock toast）。改为直接在处理器内获取候选人数据、填充编辑表单、打开编辑弹窗，与 `edit-candidate` 处理器行为一致。
+- **修复批量删除候选人按钮**：确认 `batch-delete-candidates-tree` 处理器已在 `handleGlobalButton` 内且位于兜底 mock 之前，可直接匹配 action。
+- 验证：`node --check app.js` 通过。

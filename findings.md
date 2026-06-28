@@ -1505,3 +1505,5 @@
 - 2026-06-28：树内复选框与批量移除按钮同步通过 `document.addEventListener("change", ...)` 实现。动态渲染的树节点无法直接绑定事件，因此选用事件委托方案。
 
 - 2026-06-28：候选树节点删除功能统一收口：去掉每行独立删除按钮，改用工具栏"批量移除候选人"按钮。按钮始终可见，选中后自动显示计数"批量移除候选人（N）"。删除完成后重置文字而非隐藏，方便再次操作。
+
+- 2026-06-28：`handleGlobalButton` 末尾有兜底 mock 代码 `showToast(\`已点击：${text || "按钮"}\`)`，所有未匹配到具体处理器的按钮都会走到这里。`edit-candidate-tree` 原先通过 `fakeBtn = { dataset: {...}, textContent: '' }` 间接调用 `handleGlobalButton`，但由于 `fakeBtn` 缺少 `tagName`、真实的 `textContent` 等 DOM 属性，且依赖的 `edit-candidate` 处理器参数传递路径复杂，容易触发兜底 toast。改为在处理器内直接实现编辑逻辑，消除间接调用。
