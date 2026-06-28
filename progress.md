@@ -1,5 +1,28 @@
 # Progress
 
+## 2026-06-28 (进行中 - 树分支视觉与项目树点击兜底)
+
+- 已把客户树和项目树的层级视觉改成线条 + 分支的结构，不再只是缩进方块。
+- 已给项目/客户树的展开按钮补了直接调用的 `onclick` 兜底，减少全局事件流漏接导致的“点不动”问题。
+
+## 2026-06-28 (进行中 - 编辑上下级固定展示与项目树修复)
+
+- 已把项目编辑和岗位编辑里的上一级字段改成固定展示，不再使用下拉框选择。
+- 已修复项目管理页树状展开箭头点击不生效的问题，项目列表现在可以展开查看岗位。
+- 已补齐项目管理页与客户管理页一致的项目/岗位编辑只读上下级展示。
+
+## 2026-06-28 (进行中 - 客户/项目树状总览补强)
+
+- 已修复客户页树状项目编辑弹窗的客户名称回显问题，展开后编辑项目现在会自动显示当前客户。
+- 已给项目管理页补上与客户页一致的“项目 -> 岗位”树状展开视图，岗位可以直接在项目列表中展开查看并编辑。
+- 已在项目管理页补齐岗位编辑弹窗，避免树节点的编辑按钮触发空 DOM 报错。
+
+## 2026-06-28 (进行中 - 客户树状总览页)
+
+- 已开始把客户管理页改造成客户 -> 项目 -> 岗位的树状总览入口。
+- 当前实现方向是：客户首屏只渲染客户节点，项目和岗位在点击展开箭头后按需加载，并保留项目/岗位的编辑、状态切换和删除入口。
+- 已补充树状渲染样式、展开按钮和客户页初始渲染骨架，正在做最后一轮静态校验与交互收口。
+
 ## 2026-06-26 (已完成 - Recruit UI 功能修复)
 
 - **修复岗位发布按钮被全局 Mock 拦截**：
@@ -1746,3 +1769,16 @@
 
 - Task completed at 2026-06-26 11:03:49. Update the summary with the latest finished work.
 - Task completed at 2026-06-26 11:16:16. Update the summary with the latest finished work.
+
+## 2026-06-28
+
+- Task finalized by Codex hook (unknown) at 2026-06-28 09:59:49
+- Task finalized by Codex hook (unknown) at 2026-06-28 10:07:08
+- Task finalized by Codex hook (unknown) at 2026-06-28 10:12:49
+- Task finalized by Codex hook (unknown) at 2026-06-28 10:15:30
+- Task finalized by Codex hook (unknown) at 2026-06-28 10:21:09
+- Task finalized by Codex hook (unknown) at 2026-06-28 10:29:38
+- Task finalized by Codex hook (unknown) at 2026-06-28 10:33:32
+- Task finalized by Codex hook (unknown) at 2026-06-28 10:38:16
+- 2026-06-28：修复客户管理和项目管理树形箭头无法展开的问题。移除树按钮内联 `onclick` 及 `handleGlobalButton` 内的重复树切换分支，统一使用 document 级事件委托；`bindActionButtons` 跳过动态树按钮，并为箭头补充 `aria-expanded`、加载禁用状态。
+- 2026-06-28：完成真实浏览器回归。客户页展开后显示 1 个项目，再展开显示 1 个岗位，随后项目和客户均可正常折叠；项目管理页展开后显示 1 个岗位；`node --check app.js`、`git diff --check` 通过，浏览器控制台无错误。

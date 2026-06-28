@@ -155,6 +155,123 @@ const renderCompanyListMarkup = (companies = []) => {
   }).join('');
 };
 
+const treeState = {
+  expandedCompanies: new Set(),
+  expandedProjects: new Set(),
+  projectsByCompany: new Map(),
+  positionsByProject: new Map(),
+  loadingCompanies: new Set(),
+  loadingProjects: new Set(),
+};
+
+const getCompanyNodeState = (companyId) => {
+  if (treeState.loadingCompanies.has(companyId)) return 'loading';
+  return treeState.expandedCompanies.has(companyId) ? 'expanded' : 'collapsed';
+};
+
+const getProjectNodeState = (projectId) => {
+  if (treeState.loadingProjects.has(projectId)) return 'loading';
+  return treeState.expandedProjects.has(projectId) ? 'expanded' : 'collapsed';
+};
+
+const renderTreeToggle = (state, level = 'company', targetId = '') => {
+  const isLoading = state === 'loading';
+  const isExpanded = state === 'expanded';
+  const symbol = isLoading ? '⏳' : isExpanded ? '▾' : '▸';
+  const label = isLoading ? '加载中' : isExpanded ? '收起' : '展开';
+  return `<button class="btn-sm tree-toggle${isLoading ? ' is-busy' : ''}" data-action="toggle-tree" data-tree-toggle="${level}" data-tree-id="${targetId}" aria-label="${label}" aria-expanded="${isExpanded}" type="button"${isLoading ? ' disabled' : ''}>${symbol}</button>`;
+};
+
+const renderPositionTreeItem = (position, project, company, depth = 2) => {
+  const statusChip = position.status === '已关闭' ? 'neutral' : position.urgency === '高' ? 'warning' : 'success';
+  const meta = [
+    company?.name || '未知客户',
+    project?.name || `项目 ${position.project_id}`,
+    position.location || '',
+    `招聘人数 ${position.hiring_count || 1}`,
+    position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}` : '',
+  ].filter(Boolean).join(' · ');
+  return `
+    <div class="list-item tree-node tree-node-position" data-tree-node="position" data-id="${position.id}" data-project-id="${position.project_id}" style="margin-left:${depth * 18}px">
+      <div class="item-top">
+        <div>
+          <div class="item-title">${position.name}</div>
+          <div class="item-meta">${meta || '暂无补充信息'}</div>
+        </div>
+        <div class="table-actions">
+          <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
+          <button class="btn-sm" data-action="toggle-position-status" data-id="${position.id}" data-status="${position.status}">${position.status === '已关闭' ? '恢复' : '关闭'}</button>
+          <button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button>
+        </div>
+        <span class="chip ${statusChip}">${position.status}</span>
+      </div>
+    </div>`;
+};
+
+const renderProjectTreeItem = (project, company, positions = [], depth = 1) => {
+  const state = getProjectNodeState(project.id);
+  const meta = [company?.name || project.company_name || '', project.work_location || '', project.project_period || '', `招聘人数 ${project.hiring_count}`, project.description ? project.description : ''].filter(Boolean).join(' · ');
+  const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
+  const children = treeState.expandedProjects.has(project.id)
+    ? positions.map((position) => renderPositionTreeItem(position, project, company, depth + 1)).join('') || `<div class="list-item tree-node tree-node-empty" style="margin-left:${(depth + 1) * 18}px"><div class="item-meta">该项目下暂无岗位。</div></div>`
+    : '';
+  return `
+    <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" data-company-id="${project.company_id}" style="margin-left:${depth * 18}px">
+      <div class="item-top">
+        <div>
+          <div class="item-title">
+            ${renderTreeToggle(state, 'project', project.id)}
+            <span>${project.name}</span>
+          </div>
+          <div class="item-meta">${meta || '暂无补充信息'}</div>
+        </div>
+        <div class="table-actions">
+          <button class="btn-sm" data-action="edit-project" data-id="${project.id}">编辑</button>
+          <button class="btn-sm" data-action="toggle-project" data-id="${project.id}">${getProjectActionLabel(project.status)}</button>
+          <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
+        </div>
+        <span class="chip ${chipClass}">${project.status}</span>
+      </div>
+      ${children ? `<div class="tree-children">${children}</div>` : ''}
+    </div>`;
+};
+
+const renderCompanyTreeItem = (company, projects = [], positionsByProject = new Map()) => {
+  const state = getCompanyNodeState(company.id);
+  const meta = [company.contact_name, company.contact_phone, company.contact_email, company.address, company.cooperation_period, company.remark].filter(Boolean).join(' · ');
+  const actionLabel = company.status === '失效' ? '恢复' : '失效';
+  const chipClass = company.status === '失效' ? 'neutral' : 'success';
+  const children = treeState.expandedCompanies.has(company.id)
+    ? projects.map((project) => renderProjectTreeItem(project, company, positionsByProject.get(project.id) || [], 1)).join('') || '<div class="list-item tree-node tree-node-empty" style="margin-left:18px"><div class="item-meta">该客户下暂无项目。</div></div>'
+    : '';
+  return `
+    <div class="list-item tree-node tree-node-company" data-tree-node="company" data-id="${company.id}">
+      <div class="item-top">
+        <div>
+          <div class="item-title">
+            ${renderTreeToggle(state, 'company', company.id)}
+            <span>${company.name}</span>
+          </div>
+          <div class="item-meta">${meta || '暂无补充信息'}</div>
+        </div>
+        <div class="table-actions">
+          <button class="btn-sm" data-action="edit-company" data-id="${company.id}">编辑</button>
+          <button class="btn-sm" data-action="toggle-company" data-id="${company.id}">${actionLabel}</button>
+          <button class="btn-sm" data-action="delete-company" data-id="${company.id}">删除</button>
+        </div>
+        <span class="chip ${chipClass}">${company.status || '招聘中'}</span>
+      </div>
+      ${children ? `<div class="tree-children">${children}</div>` : ''}
+    </div>`;
+};
+
+const renderCompanyTreeMarkup = (companies = [], projectsByCompany = new Map(), positionsByProject = new Map()) => {
+  if (!companies.length) {
+    return '<div class="list-item"><div class="item-top"><div><div class="item-title">暂无客户列表</div><div class="item-meta">客户列表来自数据库。</div></div><span class="chip success">客户</span></div></div>';
+  }
+  return companies.map((company) => renderCompanyTreeItem(company, projectsByCompany.get(company.id) || [], positionsByProject)).join('');
+};
+
 const getProjectActionLabel = (status = '') => {
   if (status === '招聘中') return '完结';
   if (status === '招聘完毕') return '中止';
@@ -180,8 +297,164 @@ const renderProjectListMarkup = (projects = []) => {
   }).join('');
 };
 
+const renderProjectTreeMarkup = (projects = [], positionsByProject = new Map()) => {
+  if (!projects.length) {
+    return '<div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无项目列表</div><div class="item-meta">项目表中的真实项目来自数据库。</div></div><span class="chip success">项目</span></div></div>';
+  }
+  return projects.map((project) => {
+    const state = getProjectNodeState(project.id);
+    const meta = [project.company_name || '', project.work_location || '', project.project_period || '', `招聘人数 ${project.hiring_count}`, project.description ? project.description : ''].filter(Boolean).join(' · ');
+    const positions = positionsByProject.get(project.id) || [];
+    const children = treeState.expandedProjects.has(project.id)
+      ? positions.map((position) => renderPositionTreeItem(position, project, { name: project.company_name }, 2)).join('') || '<div class="list-item tree-node tree-node-empty" style="margin-left:36px"><div class="item-meta">该项目下暂无岗位。</div></div>'
+      : '';
+    const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
+    return `
+      <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" style="margin-left:0">
+        <div class="item-top">
+          <div>
+            <div class="item-title">
+              ${renderTreeToggle(state, 'project', project.id)}
+              <span>${project.name}</span>
+            </div>
+            <div class="item-meta">${meta || '暂无补充信息'}</div>
+          </div>
+          <div class="table-actions">
+            <button class="btn-sm" data-action="edit-project" data-id="${project.id}">编辑</button>
+            <button class="btn-sm" data-action="toggle-project" data-id="${project.id}">${getProjectActionLabel(project.status)}</button>
+            <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
+          </div>
+          <span class="chip ${chipClass}">${project.status}</span>
+        </div>
+        ${children ? `<div class="tree-children">${children}</div>` : ''}
+      </div>`;
+  }).join('');
+};
+
 window.hrRenderCompanyList = renderCompanyListMarkup;
 window.hrRenderProjectList = renderProjectListMarkup;
+window.hrRenderCompanyTree = renderCompanyTreeMarkup;
+window.hrRenderProjectTree = renderProjectTreeMarkup;
+
+async function refreshCustomerTree() {
+  const list = document.querySelector('[data-company-list]');
+  if (!list) return;
+  const [companies, projects, positions] = await Promise.all([
+    window.hrApi.companies(),
+    window.hrApi.projects(),
+    window.hrApi.positions(),
+  ]);
+  const projectsByCompany = new Map();
+  projects.forEach((project) => {
+    const bucket = projectsByCompany.get(project.company_id) || [];
+    bucket.push(project);
+    projectsByCompany.set(project.company_id, bucket);
+  });
+  const positionsByProject = new Map();
+  positions.forEach((position) => {
+    const bucket = positionsByProject.get(position.project_id) || [];
+    bucket.push(position);
+    positionsByProject.set(position.project_id, bucket);
+  });
+  list.innerHTML = window.hrRenderCompanyTree
+    ? window.hrRenderCompanyTree(companies, projectsByCompany, positionsByProject)
+    : renderCompanyListMarkup(companies);
+}
+
+async function renderCustomerTreeFromState() {
+  const list = document.querySelector('[data-company-list]');
+  if (!list) return;
+  const companies = await window.hrApi.companies();
+  const projects = Array.from(treeState.projectsByCompany.entries()).flatMap(([, items]) => items);
+  const positions = Array.from(treeState.positionsByProject.entries()).flatMap(([, items]) => items);
+  const projectsByCompany = new Map();
+  projects.forEach((project) => {
+    const bucket = projectsByCompany.get(project.company_id) || [];
+    bucket.push(project);
+    projectsByCompany.set(project.company_id, bucket);
+  });
+  const positionsByProject = new Map();
+  positions.forEach((position) => {
+    const bucket = positionsByProject.get(position.project_id) || [];
+    bucket.push(position);
+    positionsByProject.set(position.project_id, bucket);
+  });
+  list.innerHTML = window.hrRenderCompanyTree
+    ? window.hrRenderCompanyTree(companies, projectsByCompany, positionsByProject)
+    : renderCompanyListMarkup(companies);
+}
+
+async function loadCompanyProjects(companyId) {
+  const companyKey = Number(companyId);
+  if (!companyKey) return [];
+  if (!treeState.projectsByCompany.has(companyKey)) {
+    treeState.loadingCompanies.add(companyKey);
+    try {
+      const projects = await window.hrApi.projects({ company_id: companyKey });
+      treeState.projectsByCompany.set(companyKey, projects);
+    } finally {
+      treeState.loadingCompanies.delete(companyKey);
+    }
+  }
+  return treeState.projectsByCompany.get(companyKey) || [];
+}
+
+async function loadProjectPositions(projectId) {
+  const projectKey = Number(projectId);
+  if (!projectKey) return [];
+  if (!treeState.positionsByProject.has(projectKey)) {
+    treeState.loadingProjects.add(projectKey);
+    try {
+      const positions = await window.hrApi.positions({ project_id: projectKey });
+      treeState.positionsByProject.set(projectKey, positions);
+    } finally {
+      treeState.loadingProjects.delete(projectKey);
+    }
+  }
+  return treeState.positionsByProject.get(projectKey) || [];
+}
+
+window.hrToggleProjectTree = async function(projectId) {
+  const projectKey = Number(projectId);
+  if (!projectKey) return;
+  if (treeState.expandedProjects.has(projectKey)) {
+    treeState.expandedProjects.delete(projectKey);
+  } else {
+    treeState.expandedProjects.add(projectKey);
+    await loadProjectPositions(projectKey);
+  }
+  const projectList = document.querySelector('[data-project-list]');
+  if (projectList) {
+    const projects = await window.hrApi.projects();
+    const positions = await window.hrApi.positions();
+    const positionsByProject = new Map();
+    positions.forEach((position) => {
+      const bucket = positionsByProject.get(position.project_id) || [];
+      bucket.push(position);
+      positionsByProject.set(position.project_id, bucket);
+    });
+    projectList.innerHTML = window.hrRenderProjectTree
+      ? window.hrRenderProjectTree(projects, positionsByProject)
+      : (window.hrRenderProjectList ? window.hrRenderProjectList(projects) : '');
+  }
+  if (document.querySelector('[data-company-list]')) {
+    await renderCustomerTreeFromState();
+  }
+};
+
+window.hrToggleCompanyTree = async function(companyId) {
+  const companyKey = Number(companyId);
+  if (!companyKey) return;
+  if (treeState.expandedCompanies.has(companyKey)) {
+    treeState.expandedCompanies.delete(companyKey);
+  } else {
+    treeState.expandedCompanies.add(companyKey);
+    await loadCompanyProjects(companyKey);
+  }
+  if (document.querySelector('[data-company-list]')) {
+    await renderCustomerTreeFromState();
+  }
+};
 
 function getNavVisibility(role, permissions = null) {
   const permissionSet = permissions ? new Set(permissions) : null;
@@ -570,6 +843,18 @@ function renderExportCard(c) {
 async function handleGlobalButton(button) {
   const text = (button.textContent || "").trim();
   const page = location.pathname.split("/").pop() || "";
+  if (page === "positions.html" && [
+    "open-position-modal",
+    "close-position-modal",
+    "confirm-position-create",
+    "edit-position",
+    "close-position-edit-modal",
+    "confirm-position-edit",
+    "toggle-position-status",
+    "delete-position",
+  ].includes(button.dataset.action || "")) {
+    return;
+  }
   if (button.dataset.action === "logout") {
     try {
       await window.hrApi.logout();
@@ -2905,7 +3190,11 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       const list = document.querySelector('[data-company-list]');
       if (list) {
         const companies = await window.hrApi.companies();
-        list.innerHTML = renderCompanyListMarkup(companies);
+        if (window.hrRenderCompanyTree) {
+          await refreshCustomerTree();
+        } else {
+          list.innerHTML = renderCompanyListMarkup(companies);
+        }
       }
       await refreshCompanyMetrics();
       showToast(`客户状态已更新：${company.name}`);
@@ -2914,7 +3203,11 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       const list = document.querySelector('[data-company-list]');
       if (list) {
         const companies = await window.hrApi.companies();
-        list.innerHTML = renderCompanyListMarkup(companies);
+        if (window.hrRenderCompanyTree) {
+          await refreshCustomerTree();
+        } else {
+          list.innerHTML = renderCompanyListMarkup(companies);
+        }
       }
       await refreshCompanyMetrics();
       showToast("客户已删除");
@@ -2973,6 +3266,9 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
         const projects = await window.hrApi.projects();
         list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
       }
+      if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
+        await refreshCustomerTree();
+      }
       showToast(`项目状态已更新：${project.name}`);
     } else if (target.kind === 'delete-project') {
       await window.hrApi.deleteProject(target.id);
@@ -2980,6 +3276,9 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       if (list) {
         const projects = await window.hrApi.projects();
         list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
+      }
+      if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
+        await refreshCustomerTree();
       }
       showToast("项目已删除");
     }
@@ -3764,7 +4063,11 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const list = document.querySelector('[data-company-list]');
     if (list) {
       const companies = await window.hrApi.companies();
-      list.innerHTML = renderCompanyListMarkup(companies);
+      if (window.hrRenderCompanyTree) {
+        await refreshCustomerTree();
+      } else {
+        list.innerHTML = renderCompanyListMarkup(companies);
+      }
     }
     await refreshCompanyMetrics();
     showToast(`客户已更新：${company.name}`);
@@ -3800,7 +4103,11 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const list = document.querySelector('[data-company-list]');
     if (list) {
       const companies = await window.hrApi.companies();
-      list.innerHTML = renderCompanyListMarkup(companies);
+      if (window.hrRenderCompanyTree) {
+        await refreshCustomerTree();
+      } else {
+        list.innerHTML = renderCompanyListMarkup(companies);
+      }
     }
     await refreshCompanyMetrics();
     showToast(`已创建客户：${company.name}`);
@@ -3815,9 +4122,17 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const projects = await window.hrApi.projects();
     const item = projects.find(p => p.id === Number(button.dataset.id));
     if (!item) throw new Error('未找到项目');
+    const companies = await window.hrApi.companies();
+    const company = companies.find(c => c.id === Number(item.company_id));
     const modal = document.querySelector('[data-project-edit-modal]');
     if (modal) modal.style.display = 'block';
     document.querySelector('[data-project-edit-company]').value = String(item.company_id || '');
+    const companyDisplay = document.querySelector('[data-project-edit-company-display]');
+    if (companyDisplay) {
+      companyDisplay.textContent = company
+        ? `当前客户：${company.name}`
+        : `当前客户：${item.company_name || '未知客户'}`;
+    }
     document.querySelector('[data-project-edit-name]').value = item.name || '';
     document.querySelector('[data-project-edit-status]').value = item.status || '招聘中';
     document.querySelector('[data-project-edit-level]').value = item.level || 'A';
@@ -3862,7 +4177,21 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const list = document.querySelector('[data-project-list]');
     if (list) {
       const projects = await window.hrApi.projects();
-      list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
+      if (window.hrRenderProjectTree && document.querySelector('[data-project-list]')) {
+        const positions = await window.hrApi.positions();
+        const positionsByProject = new Map();
+        positions.forEach((position) => {
+          const bucket = positionsByProject.get(position.project_id) || [];
+          bucket.push(position);
+          positionsByProject.set(position.project_id, bucket);
+        });
+        list.innerHTML = window.hrRenderProjectTree ? window.hrRenderProjectTree(projects, positionsByProject) : renderProjectListMarkup(projects);
+      } else {
+        list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
+      }
+    }
+    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
+      await refreshCustomerTree();
     }
     await refreshProjectMetrics();
     showToast(`项目已更新：${project.name}`);
@@ -3898,10 +4227,163 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const list = document.querySelector('[data-project-list]');
     if (list) {
       const projects = await window.hrApi.projects();
-      list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
+      if (window.hrRenderProjectTree && document.querySelector('[data-project-list]')) {
+        const positions = await window.hrApi.positions();
+        const positionsByProject = new Map();
+        positions.forEach((position) => {
+          const bucket = positionsByProject.get(position.project_id) || [];
+          bucket.push(position);
+          positionsByProject.set(position.project_id, bucket);
+        });
+        list.innerHTML = window.hrRenderProjectTree ? window.hrRenderProjectTree(projects, positionsByProject) : renderProjectListMarkup(projects);
+      } else {
+        list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
+      }
+    }
+    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
+      await refreshCustomerTree();
     }
     await refreshProjectMetrics();
     showToast(`已创建项目：${project.name}`);
+    return;
+  }
+  if (button.dataset.action === "open-position-modal") {
+    const modal = document.querySelector('[data-position-modal]');
+    if (modal) modal.style.display = 'block';
+    return;
+  }
+  if (button.dataset.action === "close-position-modal") {
+    const modal = document.querySelector('[data-position-modal]');
+    if (modal) modal.style.display = 'none';
+    return;
+  }
+  if (button.dataset.action === "confirm-position-create") {
+    const projectId = Number(document.querySelector('[data-position-project]')?.value || 0);
+    const name = document.querySelector('[data-position-name]')?.value?.trim() || '';
+    const urgency = document.querySelector('[data-position-urgency]')?.value || '中';
+    const hiringCount = Number(document.querySelector('[data-position-count]')?.value || 1);
+    const salaryMin = Number(document.querySelector('[data-position-salary-min]')?.value || 0) || null;
+    const salaryMax = Number(document.querySelector('[data-position-salary-max]')?.value || 0) || null;
+    const location = document.querySelector('[data-position-location]')?.value?.trim() || '';
+    const status = document.querySelector('[data-position-status]')?.value || '待招';
+    if (!projectId || !name) throw new Error('请先选择项目并填写岗位名称');
+    const position = await window.hrApi.createPosition({
+      project_id: projectId,
+      name,
+      urgency,
+      hiring_count: hiringCount,
+      salary_min: salaryMin,
+      salary_max: salaryMax,
+      location,
+      status,
+    });
+    const modal = document.querySelector('[data-position-modal]');
+    if (modal) modal.style.display = 'none';
+    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
+      treeState.positionsByProject.delete(projectId);
+      await refreshCustomerTree();
+    }
+    showToast(`已创建岗位：${position.name}`);
+    return;
+  }
+  if (button.dataset.action === "edit-position") {
+    const positions = await window.hrApi.positions();
+    const item = positions.find(p => p.id === Number(button.dataset.id));
+    if (!item) throw new Error('未找到岗位');
+    const projects = await window.hrApi.projects();
+    const companies = await window.hrApi.companies();
+    const project = projects.find(p => p.id === Number(item.project_id));
+    const company = companies.find(c => c.id === Number(project?.company_id));
+    const modal = document.querySelector('[data-position-edit-modal]');
+    document.querySelector('[data-position-edit-project]').value = String(item.project_id || '');
+    const companyDisplay = document.querySelector('[data-position-edit-company-display]');
+    if (companyDisplay) {
+      companyDisplay.textContent = company && project
+        ? `所属公司：${company.name} · ${project.name}`
+        : `所属公司：${project?.company_name || '未知公司'} · ${project?.name || '未知项目'}`;
+    }
+    document.querySelector('[data-position-edit-name]').value = item.name || '';
+    document.querySelector('[data-position-edit-urgency]').value = item.urgency || '中';
+    document.querySelector('[data-position-edit-count]').value = String(item.hiring_count || 1);
+    document.querySelector('[data-position-edit-salary-min]').value = item.salary_min || '';
+    document.querySelector('[data-position-edit-salary-max]').value = item.salary_max || '';
+    document.querySelector('[data-position-edit-location]').value = item.location || '';
+    document.querySelector('[data-position-edit-status]').value = item.status || '待招';
+    if (modal) {
+      modal.style.display = 'block';
+      modal.dataset.target = JSON.stringify({ id: item.id });
+    }
+    return;
+  }
+  if (button.dataset.action === "close-position-edit-modal") {
+    const modal = document.querySelector('[data-position-edit-modal]');
+    if (modal) modal.style.display = 'none';
+    return;
+  }
+  if (button.dataset.action === "confirm-position-edit") {
+    const modal = document.querySelector('[data-position-edit-modal]');
+    const target = modal?.dataset.target ? JSON.parse(modal.dataset.target) : null;
+    if (!target) throw new Error('没有待编辑的岗位');
+    const projectId = Number(document.querySelector('[data-position-edit-project]')?.value || 0);
+    const name = document.querySelector('[data-position-edit-name]')?.value?.trim() || '';
+    const urgency = document.querySelector('[data-position-edit-urgency]')?.value || '中';
+    const hiringCount = Number(document.querySelector('[data-position-edit-count]')?.value || 1);
+    const salaryMin = Number(document.querySelector('[data-position-edit-salary-min]')?.value || 0) || null;
+    const salaryMax = Number(document.querySelector('[data-position-edit-salary-max]')?.value || 0) || null;
+    const location = document.querySelector('[data-position-edit-location]')?.value?.trim() || '';
+    const status = document.querySelector('[data-position-edit-status]')?.value || '待招';
+    if (!projectId || !name) throw new Error('请先选择项目并填写岗位名称');
+    const position = await window.hrApi.updatePosition(target.id, {
+      project_id: projectId,
+      name,
+      urgency,
+      hiring_count: hiringCount,
+      salary_min: salaryMin,
+      salary_max: salaryMax,
+      location,
+      status,
+    });
+    if (modal) modal.style.display = 'none';
+    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
+      treeState.positionsByProject.delete(projectId);
+      await refreshCustomerTree();
+    }
+    showToast(`岗位已更新：${position.name}`);
+    return;
+  }
+  if (button.dataset.action === "toggle-position-status") {
+    const positions = await window.hrApi.positions();
+    const item = positions.find(p => p.id === Number(button.dataset.id));
+    if (!item) throw new Error('未找到岗位');
+    const position = await window.hrApi.updatePosition(item.id, { status: item.status === '已关闭' ? '待招' : '已关闭' });
+    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
+      treeState.positionsByProject.delete(item.project_id);
+      await refreshCustomerTree();
+    }
+    const list = document.querySelector('[data-position-list]');
+    if (list && !document.querySelector('[data-company-list]')) {
+      const positions = await window.hrApi.positions();
+      list.innerHTML = positions.map((p) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${p.name}</div><div class="item-meta">${p.location || ''} · 招聘人数 ${p.hiring_count}${p.salary_min || p.salary_max ? ` · ${p.salary_min || ''}-${p.salary_max || ''}` : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-position" data-id="${p.id}">编辑</button><button class="btn-sm" data-action="toggle-position-status" data-id="${p.id}" data-status="${p.status}">${p.status === '已关闭' ? '恢复' : '关闭'}</button><button class="btn-sm" data-action="delete-position" data-id="${p.id}">删除</button></div><span class="chip ${p.status === '已关闭' ? 'neutral' : p.urgency === '高' ? 'warning' : 'success'}">${p.status}</span></div></div>`).join('');
+    }
+    showToast(`岗位状态已更新：${position.name}`);
+    return;
+  }
+  if (button.dataset.action === "delete-position") {
+    const positions = await window.hrApi.positions();
+    const item = positions.find(p => p.id === Number(button.dataset.id));
+    if (!item) throw new Error('未找到岗位');
+    if (!confirm(`确认删除岗位「${item.name}」？删除后会同步清理关联记录。`)) return;
+    await window.hrApi.deletePosition(item.id);
+    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
+      treeState.positionsByProject.delete(item.project_id);
+      await refreshCustomerTree();
+    }
+    const list = document.querySelector('[data-position-list]');
+    if (list && !document.querySelector('[data-company-list]')) {
+      const positions = await window.hrApi.positions();
+      list.innerHTML = window.hrRenderPositionList ? window.hrRenderPositionList(positions) : '';
+    }
+    showToast("岗位已删除");
     return;
   }
   if (button.dataset.action === "open-tag-modal") {
@@ -3975,6 +4457,8 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
 
 function bindActionButtons() {
   document.querySelectorAll("button[data-action]").forEach((btn) => {
+    // Tree nodes are replaced after each toggle, so they use the delegated listener below.
+    if (btn.dataset.action === "toggle-tree") return;
     if (btn.dataset.bound === "true") return;
     btn.dataset.bound = "true";
     btn.addEventListener("click", (event) => {
@@ -3991,6 +4475,18 @@ function bindActionButtons() {
 document.addEventListener("click", (event) => {
   const btn = event.target.closest("button");
   if (!btn) return;
+
+  if (btn.dataset.treeToggle) {
+    event.preventDefault();
+    const targetId = Number(btn.dataset.treeId || 0);
+    if (!targetId) return;
+    const toggle = btn.dataset.treeToggle === 'company'
+      ? window.hrToggleCompanyTree
+      : window.hrToggleProjectTree;
+    withButtonBusy(btn, () => toggle(targetId))
+      .catch((err) => showToast(`操作失败：${err.message || err}`));
+    return;
+  }
 
   const explicitAction = btn.dataset.action || "";
   if (explicitAction.includes("recruit") || location.pathname.includes("recruit-")) {

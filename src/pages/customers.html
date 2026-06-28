@@ -74,20 +74,87 @@ window.__PAGE_BODY__ = `
       </div>
     </div>
   </div>
+
+  <div class="modal" data-project-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
+    <div class="panel" style="max-width:620px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
+      <div class="section-head">
+        <div><h3>项目操作确认</h3><div class="section-sub">确认后才会执行状态变更或删除。</div></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-project-action-modal">取消</button><button class="btn primary" data-action="confirm-project-action">确认执行</button></div>
+      </div>
+      <div class="list">
+        <div class="list-item"><div class="item-top"><div><div class="item-title" data-project-action-title>项目操作确认</div><div class="item-meta" data-project-action-desc>点击列表按钮后会在这里显示项目名称与动作。</div></div><span class="chip warning">确认</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" data-project-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
+    <div class="panel" style="max-width:760px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
+      <div class="section-head">
+        <div><h3>维护项目信息</h3><div class="section-sub">修改项目基础信息后保存。</div></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-project-edit-modal">取消</button><button class="btn primary" data-action="confirm-project-edit">确认保存</button></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+          <div class="list">
+            <div class="list-item">
+              <div class="item-top"><div><div class="item-title">客户</div></div></div>
+              <div class="input" style="display:flex;align-items:center;min-height:42px;background:#f8fafc;color:#334155;" data-project-edit-company-display>当前客户：请选择项目</div>
+              <input type="hidden" data-project-edit-company />
+            </div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">项目名称</div></div></div><input class="input" data-project-edit-name /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-project-edit-status><option value="招聘中">招聘中</option><option value="招聘完毕">招聘完毕</option><option value="招聘中止">招聘中止</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">级别</div></div></div><select class="input" data-project-edit-level><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div></div></div><input class="input" type="number" min="1" data-project-edit-count /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div></div></div><input class="input" data-project-edit-location /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">项目周期</div></div></div><input class="input" data-project-edit-period /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">项目备注</div></div></div><input class="input" data-project-edit-desc /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" data-position-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
+    <div class="panel" style="max-width:760px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
+      <div class="section-head">
+        <div><h3>编辑岗位</h3><div class="section-sub">修改岗位信息后保存，会同步到数据库。</div></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-position-edit-modal">取消</button><button class="btn primary" data-action="confirm-position-edit">确认保存</button></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+          <div class="list">
+            <div class="list-item">
+              <div class="item-top"><div><div class="item-title">所属项目</div></div></div>
+              <div class="input" style="display:flex;align-items:center;min-height:42px;background:#f8fafc;color:#334155;" data-position-edit-company-display>所属公司：请选择项目后自动显示</div>
+              <input type="hidden" data-position-edit-project />
+            </div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">岗位名称</div></div></div><input class="input" data-position-edit-name /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">紧急程度</div></div></div><select class="input" data-position-edit-urgency><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div></div></div><input class="input" type="number" min="1" data-position-edit-count /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">最低薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-min /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">最高薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-max /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div></div></div><input class="input" data-position-edit-location /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-position-edit-status><option value="待招">待招</option><option value="招聘中">招聘中</option><option value="暂停招聘">暂停招聘</option><option value="已关闭">已关闭</option></select></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 `;
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
       try {
         const companies = await window.hrApi.companies();
-        const projects = await window.hrApi.projects();
         const deliveries = await window.hrApi.deliveries();
         document.querySelector('[data-company-total]').textContent = String(companies.length);
-        document.querySelector('[data-company-projects]').textContent = String(projects.length);
+        document.querySelector('[data-company-projects]').textContent = '0';
         document.querySelector('[data-company-delivery]').textContent = String(deliveries.length);
         document.querySelector('[data-company-score]').textContent = (deliveries.length ? (4.0 + Math.min(0.9, deliveries.length / 100)).toFixed(1) : '0.0');
         const list = document.querySelector('[data-company-list]');
         if (list) {
-          list.innerHTML = window.hrRenderCompanyList ? window.hrRenderCompanyList(companies) : '';
+          list.innerHTML = window.hrRenderCompanyTree
+            ? window.hrRenderCompanyTree(companies, new Map(), new Map())
+            : (window.hrRenderCompanyList ? window.hrRenderCompanyList(companies) : '');
         }
       } catch (err) {
         console.warn(err);
