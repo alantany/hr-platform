@@ -190,7 +190,7 @@ const renderTreeToggle = (state, level = 'company', targetId = '') => {
   return `<button class="btn-sm tree-toggle${isLoading ? ' is-busy' : ''}" data-action="toggle-tree" data-tree-toggle="${level}" data-tree-id="${targetId}" aria-label="${label}" aria-expanded="${isExpanded}" type="button"${isLoading ? ' disabled' : ''}>${symbol}</button>`;
 };
 
-const renderCandidateTreeItem = (candidate, depth = 3) => {
+const renderCandidateTreeItem = (candidate, index = 1, depth = 3) => {
   const meta = [
     candidate.current_title || '暂无当前职位',
     candidate.city || '',
@@ -198,9 +198,12 @@ const renderCandidateTreeItem = (candidate, depth = 3) => {
     `推荐状态 ${candidate.recommendation_status || '待推荐'}`,
   ].filter(Boolean).join(' · ');
   const isLocked = Boolean(candidate.locked) || candidate.status === '锁定';
+  const isEven = index % 2 === 0;
+  const bgStyle = isEven ? 'background-color: #f8fafc;' : 'background-color: #ffffff;';
   return `
-    <div class="list-item tree-node tree-node-candidate" data-tree-node="candidate" data-id="${candidate.id}" style="margin-left:${depth * 18}px">
+    <div class="list-item tree-node tree-node-candidate" data-tree-node="candidate" data-id="${candidate.id}" style="${bgStyle}">
       <div class="item-top">
+        <span style="font-size: 11px; font-weight: 600; color: #94a3b8; width: 18px; display: inline-block; flex-shrink: 0; text-align: center; margin-right: 4px;">${index}</span>
         <input type="checkbox" class="tree-candidate-checkbox" data-candidate-id="${candidate.id}" data-recommendation-id="${candidate.recommendation_id || ''}" aria-label="选择${candidate.name}" style="margin-right:8px;flex-shrink:0;" />
         <div style="flex: 1; min-width: 0;">
           <div class="item-title"><span>${escapeHtml(candidate.name || '未命名候选人')}</span></div>
@@ -225,10 +228,10 @@ const renderPositionTreeItem = (position, project, company, candidates = [], dep
     position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}` : '',
   ].filter(Boolean).join(' · ');
   const children = treeState.expandedPositions.has(position.id)
-    ? candidates.map((candidate) => renderCandidateTreeItem(candidate, depth + 1)).join('') || `<div class="list-item tree-node tree-node-empty" style="margin-left:${(depth + 1) * 18}px"><div class="item-meta">该岗位下暂无已推荐候选人。</div></div>`
+    ? candidates.map((candidate, idx) => renderCandidateTreeItem(candidate, idx + 1, depth + 1)).join('') || `<div class="list-item tree-node tree-node-empty"><div class="item-meta">该岗位下暂无已推荐候选人。</div></div>`
     : '';
   return `
-    <div class="list-item tree-node tree-node-position" data-tree-node="position" data-id="${position.id}" data-project-id="${position.project_id}" style="margin-left:${depth * 18}px">
+    <div class="list-item tree-node tree-node-position" data-tree-node="position" data-id="${position.id}" data-project-id="${position.project_id}">
       <div class="item-top">
         <div style="flex: 1; min-width: 0;">
           <div class="item-title">
@@ -256,10 +259,10 @@ const renderProjectTreeItem = (project, company, positions = [], candidatesByPos
   const meta = [company?.name || project.company_name || '', project.work_location || '', project.project_period || '', `招聘人数 ${project.hiring_count}`, project.description ? project.description : ''].filter(Boolean).join(' · ');
   const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
   const children = treeState.expandedProjects.has(project.id)
-    ? positions.map((position) => renderPositionTreeItem(position, project, company, candidatesByPosition.get(position.id) || [], depth + 1)).join('') || `<div class="list-item tree-node tree-node-empty" style="margin-left:${(depth + 1) * 18}px"><div class="item-meta">该项目下暂无岗位。</div></div>`
+    ? positions.map((position) => renderPositionTreeItem(position, project, company, candidatesByPosition.get(position.id) || [], depth + 1)).join('') || '<div class="list-item tree-node tree-node-empty"><div class="item-meta">该项目下暂无岗位。</div></div>'
     : '';
   return `
-    <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" data-company-id="${project.company_id}" style="margin-left:${depth * 18}px">
+    <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" data-company-id="${project.company_id}">
       <div class="item-top">
         <div style="flex: 1; min-width: 0;">
           <div class="item-title">
@@ -285,7 +288,7 @@ const renderCompanyTreeItem = (company, projects = [], positionsByProject = new 
   const actionLabel = company.status === '失效' ? '恢复' : '失效';
   const chipClass = company.status === '失效' ? 'neutral' : 'success';
   const children = treeState.expandedCompanies.has(company.id)
-    ? projects.map((project) => renderProjectTreeItem(project, company, positionsByProject.get(project.id) || [], candidatesByPosition, 1)).join('') || '<div class="list-item tree-node tree-node-empty" style="margin-left:18px"><div class="item-meta">该客户下暂无项目。</div></div>'
+    ? projects.map((project) => renderProjectTreeItem(project, company, positionsByProject.get(project.id) || [], candidatesByPosition, 1)).join('') || '<div class="list-item tree-node tree-node-empty"><div class="item-meta">该客户下暂无项目。</div></div>'
     : '';
   return `
     <div class="list-item tree-node tree-node-company" data-tree-node="company" data-id="${company.id}">
@@ -349,7 +352,7 @@ const renderProjectTreeMarkup = (projects = [], positionsByProject = new Map(), 
     const meta = [project.company_name || '', project.work_location || '', project.project_period || '', `招聘人数 ${project.hiring_count}`, project.description ? project.description : ''].filter(Boolean).join(' · ');
     const positions = positionsByProject.get(project.id) || [];
     const children = treeState.expandedProjects.has(project.id)
-      ? positions.map((position) => renderPositionTreeItem(position, project, { name: project.company_name }, candidatesByPosition.get(position.id) || [], 2)).join('') || '<div class="list-item tree-node tree-node-empty" style="margin-left:36px"><div class="item-meta">该项目下暂无岗位。</div></div>'
+      ? positions.map((position) => renderPositionTreeItem(position, project, { name: project.company_name }, candidatesByPosition.get(position.id) || [], 2)).join('') || '<div class="list-item tree-node tree-node-empty"><div class="item-meta">该项目下暂无岗位。</div></div>'
       : '';
     const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
     return `
