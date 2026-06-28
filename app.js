@@ -208,7 +208,6 @@ const renderCandidateTreeItem = (candidate, depth = 3) => {
         </div>
         <div class="table-actions">
           <button class="btn-sm" data-action="edit-candidate-tree" data-id="${candidate.id}">编辑</button>
-          <button class="btn-sm" data-action="delete-candidate-tree" data-id="${candidate.id}" data-recommendation-id="${candidate.recommendation_id || ''}">删除</button>
         </div>
         <span class="chip ${isLocked ? 'warning' : 'neutral'}">${isLocked ? '已锁定' : escapeHtml(candidate.status || '未锁定')}</span>
       </div>
@@ -2363,7 +2362,7 @@ async function handleGlobalButton(button) {
     showToast(`已移除 ${result.deleted} 名候选人`);
     treeState.candidatesByPosition.clear();
     checkboxes.forEach(cb => cb.checked = false);
-    document.querySelectorAll('[data-batch-delete-candidates-btn]').forEach(btn => btn.style.display = 'none');
+    document.querySelectorAll('[data-batch-delete-candidates-btn]').forEach(btn => btn.textContent = '批量移除候选人');
     const page = location.pathname.split("/").pop() || "";
     if (page === "customers.html") await renderCustomerTreeFromState();
     else if (page === "projects.html") await renderProjectTreeFromState();
@@ -4707,7 +4706,6 @@ document.addEventListener("change", (event) => {
     const checkboxes = document.querySelectorAll('.tree-candidate-checkbox:checked');
     const count = checkboxes.length;
     document.querySelectorAll('[data-batch-delete-candidates-btn]').forEach(btn => {
-      btn.style.display = count > 0 ? '' : 'none';
       btn.textContent = count > 0 ? `批量移除候选人（${count}）` : '批量移除候选人';
     });
   }
