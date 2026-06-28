@@ -257,6 +257,15 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 删除树分支和展开按钮样式
 - [x] 三页统一使用平铺列表刷新入口
 - **Status:** complete
+
+### Phase 20 - 客户名称悬浮项目岗位预览（已完成）
+
+- [x] 客户名称悬浮或聚焦显示项目需求列表
+- [x] 项目行展示岗位数、状态和级别
+- [x] 点击项目展示对应岗位明细
+- [x] 岗位展示紧急程度、人数和薪资范围
+- [x] 保持三张管理列表平铺，不恢复旧树逻辑
+- **Status:** complete
 - [x] 更新权限相关页面和公共测试清理脚本，确保新表测试结束后不残留脏数据。
 - **Status:** complete
 

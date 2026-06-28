@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>客户管理</title><link rel="stylesheet" href="../../styles.css" /><script defer src="../../frontend-api.js"></script><script defer src="../../app.js"></script></head><body><div id="app"></div><script>
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>客户管理</title><link rel="stylesheet" href="../../styles.css?v=20260628-customer-preview" /><script defer src="../../frontend-api.js"></script><script defer src="../../app.js"></script></head><body><div id="app"></div><script>
 window.__PAGE_BODY__ = `
   <section class="metrics">
     <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户公司数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-company-total>0</div><div class="metric-label">当前在库客户</div></div>
@@ -111,7 +111,7 @@ window.__PAGE_BODY__ = `
             </div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目名称</div></div></div><input class="input" data-project-edit-name /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-project-edit-status><option value="招聘中">招聘中</option><option value="招聘完毕">招聘完毕</option><option value="招聘中止">招聘中止</option></select></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">级别</div></div></div><select class="input" data-project-edit-level><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">级别</div></div></div><select class="input" data-project-edit-level><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div></div></div><input class="input" data-project-edit-location /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目周期</div></div></div><input class="input" data-project-edit-period /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目备注</div></div></div><input class="input" data-project-edit-desc /></div>
@@ -150,18 +150,37 @@ window.__PAGE_BODY__ = `
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
       try {
-        const [companies, projects] = await Promise.all([window.hrApi.companies(), window.hrApi.projects()]);
-        const deliveries = await window.hrApi.deliveries();
+        const [companies, projects, positions, deliveries] = await Promise.all([
+          window.hrApi.companies(),
+          window.hrApi.projects(),
+          window.hrApi.positions(),
+          window.hrApi.deliveries(),
+        ]);
         document.querySelector('[data-company-total]').textContent = String(companies.length);
         document.querySelector('[data-company-projects]').textContent = String(projects.filter(project => project.status === '招聘中').length);
         document.querySelector('[data-company-delivery]').textContent = String(deliveries.length);
         document.querySelector('[data-company-positions]').textContent = String(companies.reduce((sum, company) => sum + (company.position_count || 0), 0));
         const list = document.querySelector('[data-company-list]');
         if (list) {
-          list.innerHTML = window.hrRenderCompanyList ? window.hrRenderCompanyList(companies) : '';
+          list.innerHTML = window.hrRenderCompanyList ? window.hrRenderCompanyList(companies, projects, positions) : '';
         }
       } catch (err) {
         console.warn(err);
       }
     });
-</script></body></html>
+</script>
+  <div class="modal" data-position-candidates-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
+    <div class="panel" style="max-width:960px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
+      <div class="section-head">
+        <div>
+          <h3 data-position-candidates-title>岗位候选人</h3>
+          <div class="section-sub">该岗位下已推荐的候选人列表。</div>
+        </div>
+        <div class="hero-actions" style="margin-top:0;">
+          <button class="btn" data-action="close-position-candidates-modal">关闭</button>
+        </div>
+      </div>
+      <div data-position-candidates-list>暂无数据</div>
+    </div>
+  </div>
+</body></html>
