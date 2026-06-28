@@ -239,6 +239,7 @@ const renderPositionTreeItem = (position, project, company, candidates = [], dep
         </div>
         <div class="table-actions">
           <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
+          <button class="btn-sm primary" data-action="search-add-candidates" data-id="${position.id}">添加候选人</button>
           <button class="btn-sm" data-action="toggle-position-status" data-id="${position.id}" data-status="${position.status}">${position.status === '已关闭' ? '恢复' : '关闭'}</button>
           <button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button>
           <button class="btn-sm danger" data-action="batch-delete-candidates-tree" data-position-batch-delete="${position.id}" disabled style="opacity:0.4;cursor:not-allowed;">批量移除</button>
@@ -532,6 +533,16 @@ async function renderPositionTreeFromState() {
     : '';
 }
 
+window.refreshTreePage = async () => {
+  const expandedPositionIds = Array.from(treeState.expandedPositions);
+  treeState.candidatesByPosition.clear();
+  await Promise.all(expandedPositionIds.map(pid => loadPositionCandidates(pid)));
+  const page = location.pathname.split("/").pop() || "";
+  if (page === "customers.html") await renderCustomerTreeFromState();
+  else if (page === "projects.html") await renderProjectTreeFromState();
+  else if (page === "positions.html") await renderPositionTreeFromState();
+};
+
 window.hrToggleProjectTree = async function(projectId) {
   const projectKey = Number(projectId);
   if (!projectKey) return;
@@ -682,6 +693,21 @@ async function render() {
   const key = page.replace(".html", "");
   const el = document.getElementById("app");
   if (!el) return;
+
+  // 注入选择模式样式，隐藏导航外壳
+  const urlParams = new URLSearchParams(location.search);
+  const isSelectMode = urlParams.get('select_mode') === '1';
+  if (isSelectMode) {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .sidebar { display: none !important; }
+      .topbar { display: none !important; }
+      .app-shell { min-height: 100% !important; display: block !important; }
+      body { background: #fff !important; }
+      .content { padding: 12px !important; margin: 0 !important; }
+    `;
+    document.head.appendChild(style);
+  }
   let currentUser = null;
   let unreadCount = 0;
   try {
@@ -1045,6 +1071,49 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "nav-import") return location.href = "./import.html";
   if (button.dataset.action === "nav-projects") return location.href = "./projects.html";
   if (button.dataset.action === "refresh-page") return location.reload();
+  if (button.dataset.action === "search-add-candidates") {
+    const positionId = button.dataset.id;
+    if (!positionId) throw new Error('岗位 ID 缺失');
+    
+    let modal = document.querySelector('[data-search-candidates-modal]');
+    if (!modal) {
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <div class="modal" data-search-candidates-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2500; padding:24px;">
+          <div class="panel" style="max-width:1200px; width:95%; height:90vh; margin:2vh auto; background:#fff; display:flex; flex-direction:column; padding: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+            <div class="section-head" style="padding: 16px 24px; border-bottom: 1px solid rgba(15,23,42,.08); margin:0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+              <div>
+                <h3 style="font-size:18px; font-weight:600; color:#0f172a; margin:0;">选择候选人并加入岗位</h3>
+                <div class="section-sub" style="font-size:13px; color:#64748b; margin-top:2px;">搜索人才池中的候选人并一键加入当前岗位。</div>
+              </div>
+              <div>
+                <button class="btn" data-action="close-search-candidates-modal" style="padding: 8px 16px; font-size:14px; font-weight:500; border-radius:6px; cursor:pointer;">关闭窗口</button>
+              </div>
+            </div>
+            <div style="flex:1; width:100%; height:100%; position:relative; overflow:hidden;">
+              <iframe data-search-candidates-iframe style="width:100%; height:100%; border:none;" src=""></iframe>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(div.firstElementChild);
+      modal = document.querySelector('[data-search-candidates-modal]');
+    }
+    
+    const iframe = modal.querySelector('[data-search-candidates-iframe]');
+    if (iframe) {
+      const base = location.pathname.replace(/\/[^\/]+$/, '');
+      iframe.src = `${base}/candidates.html?select_mode=1&position_id=${positionId}`;
+    }
+    
+    modal.style.display = 'block';
+    return;
+  }
+  if (button.dataset.action === "close-search-candidates-modal") {
+    const modal = document.querySelector('[data-search-candidates-modal]');
+    if (modal) modal.style.display = 'none';
+    return;
+  }
   if (button.dataset.action === "refresh-audit-logs") {
     const rows = await window.hrApi.auditLogs({ limit: 200 });
     const list = document.querySelector('[data-audit-list]');
@@ -2282,6 +2351,33 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "open-batch-recommend-modal") {
     const selectedCandidates = Array.from(window.candidatesPageState?.selectedCandidates?.entries?.() || []);
     if (!selectedCandidates.length) throw new Error('请先勾选需要推荐的候选人');
+
+    const urlParams = new URLSearchParams(location.search);
+    const isSelectMode = urlParams.get('select_mode') === '1';
+    const targetPositionId = urlParams.get('position_id');
+    if (isSelectMode && targetPositionId) {
+      if (!confirm(`确定要将这 ${selectedCandidates.length} 名候选人加入当前岗位吗？`)) return;
+      const recordKeys = selectedCandidates.map(([recordKey]) => recordKey);
+      const result = await window.hrApi.createBatchRecommendations({
+        record_keys: recordKeys,
+        position_id: Number(targetPositionId),
+        recommender: 'admin',
+        status: '待推荐',
+        feedback: '通过岗位快捷搜索加入'
+      });
+      showToast(`成功添加 ${result.succeeded} 名候选人到当前岗位`);
+      
+      if (window.candidatesPageState) {
+        window.candidatesPageState.clearSelection();
+      }
+      
+      // 让父页面刷新树
+      if (window.parent && typeof window.parent.refreshTreePage === 'function') {
+        window.parent.refreshTreePage().catch(err => console.warn(err));
+      }
+      return;
+    }
+
     const modal = document.querySelector('[data-recommend-modal]');
     if (modal) {
       modal.dataset.recordKeys = JSON.stringify(selectedCandidates.map(([recordKey]) => recordKey));

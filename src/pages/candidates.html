@@ -1005,7 +1005,9 @@
           const count = this.selectedCandidates.size;
           const recommendButton = document.querySelector('[data-selected-count]');
           if (recommendButton) {
-            recommendButton.textContent = `推荐至岗位（${count}）`;
+            const urlParams = new URLSearchParams(location.search);
+            const isSelectMode = urlParams.get('select_mode') === '1';
+            recommendButton.textContent = isSelectMode ? `加入当前岗位（${count}）` : `推荐至岗位（${count}）`;
             recommendButton.disabled = count === 0;
           }
         },

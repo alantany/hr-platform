@@ -1,5 +1,16 @@
 # Progress
 
+## 2026-06-28 (已完成 - 岗位列表快捷搜索添加候选人)
+
+- **功能需求**：在岗位管理标签页的岗位列表中增加候选人搜索功能，无需跳转直接在当前页面拉出候选人池并一键加入岗位。
+- **技术实现**：
+  1. 在 `renderPositionTreeItem` 中的岗位操作栏增加“添加候选人”按钮。
+  2. 点击该按钮触发 `search-add-candidates` 动作，在当前页面动态创建并弹出 `[data-search-candidates-modal]` 悬浮窗，内置嵌入了 `candidates.html?select_mode=1&position_id=<positionId>` 的 `iframe`。
+  3. `app.js` 的 `render()` 中加入样式控制：若是 iframe 模式（`select_mode=1`），自动注入 CSS 样式强行隐藏 sidebar 导航栏、header 顶栏，并将 content 设为 100% 满屏显示，使得悬浮窗内外观完全契合。
+  4. `candidates.html` 中判断 `select_mode=1` 时，同步将“推荐至岗位”按钮文案改为“加入当前岗位”。
+  5. 选中候选人点击“加入当前岗位”后，在 `app.js` 中直接调取 `createBatchRecommendations` 批量加入当前岗位，完成后静默触发父页面的 `window.refreshTreePage()` 刷新父页面的岗位树候选人列表，无需重刷整个页面，体验极其平滑。
+- **验证**：`node --check app.js` 语法检查通过。
+
 ## 2026-06-28 (已完成 - 修复批量移除按钮首次不响应)
 
 - **根因**：`document.addEventListener('change', ...)` 被错误嵌套在 `document.addEventListener('click', ...)` 的回调体内——click 回调在 `withButtonBusy(...)` 之后缺少了 `});` 闭合，导致 change 监听器成了 click 回调的一部分。
