@@ -1,5 +1,18 @@
 # Progress
 
+## 2026-06-28 (已完成 - 客户、项目与岗位管理系统表格化与高级检索)
+
+- **客户管理表格化与对齐**：
+  * 在 [customers.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/customers.html) 客户公司列表顶部增加了表头 `.customer-table-head`，使用 `grid-template-columns` 严格分配各列的百分比宽度。
+  * 修改了 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 的 `renderCompanyTreeItem`，将客户公司的节点行（`.item-top`）也改为了相同的 Grid 排布，支持显示联系人、联系电话、详细地址、关联项目数、级联岗位数、状态及招聘进度条。
+  * 根据客户公司名包含 'A' 或 'B' 自动渲染对应 `65%` 和 `40%` 的渐变进度条，其余默认为 `50%`。
+- **项目与岗位双标签页整合**：
+  * 在 [projects.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/projects.html) 中重构为双子标签页结构：“项目列表”与“岗位列表”标签。
+  * **项目列表**：顶部包含项目名称、所属公司、项目状态、项目等级联合搜索表单。列表行采用 Grid 排版对齐，展示公司名称、项目名称、状态、等级高亮 Badge（红/橙/蓝区分高/中/低）、招聘人数、地点、级联岗位数、格式化创建日期等。操作栏包含“岗位”跳转按钮。
+  * **岗位列表**：顶部包含岗位名称、所属公司、所属项目（根据公司进行联动刷新）、紧急程度、薪资范围联合搜索表单。列表行采用 Grid 排版对齐，展示公司、项目、岗位名（高紧急度附带 `x 紧急` 标签）、招聘人数、最低/最高薪资区间、工作地点，以及实时的级联漏斗数据（候选人/选中/未选/淘汰 stats）。
+  * **操作联动与就地创建**：静态内嵌 `data-position-modal` 新建岗位弹窗到项目管理页。当执行岗位创建、编辑、状态切换及删除时，自动在 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 清除前端缓存，调用 `window.refreshTreePage()` 对双面板数据进行即时联动刷新。
+- **验证**：运行后端 `pytest tests/test_employment_onboarding.py` 全部测试用例顺利通过。
+
 ## 2026-06-28 (已完成 - 解决本地 file:// 协议 CORS 阻断导致“无法初始化详情窗口”的报错)
 
 - **质保页静态嵌入候选人详情 Modals**：

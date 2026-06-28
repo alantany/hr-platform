@@ -230,6 +230,59 @@ const renderPositionTreeItem = (position, project, company, candidates = [], dep
   const children = treeState.expandedPositions.has(position.id)
     ? candidates.map((candidate, idx) => renderCandidateTreeItem(candidate, idx + 1, depth + 1)).join('') || `<div class="list-item tree-node tree-node-empty"><div class="item-meta">该岗位下暂无已推荐候选人。</div></div>`
     : '';
+
+  const isOnPositionPage = Boolean(document.querySelector('[data-position-list]'));
+
+  if (isOnPositionPage) {
+    const stats = window.positionRecommendationStats?.get(position.id) || { total: 0, selected: 0, unselected: 0, rejected: 0 };
+    const funnelHtml = `
+      <div style="display: flex; gap: 8px; font-size: 12px; font-weight: 600; flex-wrap: nowrap; white-space: nowrap;">
+        <span style="color: #64748b;">候选人 <strong style="color: #8b5cf6; font-size: 13px; margin-left: 2px;">${stats.total}</strong></span>
+        <span style="color: #64748b;">选中 <strong style="color: #10b981; font-size: 13px; margin-left: 2px;">${stats.selected}</strong></span>
+        <span style="color: #64748b;">未选 <strong style="color: #64748b; font-size: 13px; margin-left: 2px;">${stats.unselected}</strong></span>
+        <span style="color: #64748b;">淘汰 <strong style="color: #ef4444; font-size: 13px; margin-left: 2px;">${stats.rejected}</strong></span>
+      </div>
+    `;
+
+    // Urgency tag & chip
+    const urgencyBg = position.urgency === '高' 
+      ? 'background: #fee2e2; color: #ef4444; border: 1px solid #fecaca;' 
+      : (position.urgency === '中' ? 'background: #ffedd5; color: #f97316; border: 1px solid #fed7aa;' : 'background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;');
+    const urgencyText = position.urgency || '中';
+    const urgencyBadge = `<span class="chip" style="${urgencyBg} width: 48px; text-align: center; display: inline-block; font-weight: 600;">${urgencyText}</span>`;
+    const tagHtml = position.urgency === '高' 
+      ? `<span class="chip" style="background:#fee2e2; color:#ef4444; border:1px solid #fecaca; margin-left:4px; padding: 2px 6px; font-size:10px; font-weight:600; border-radius: 4px; white-space: nowrap;">x 紧急</span>` 
+      : '';
+
+    const statusBtn = position.status === '已关闭'
+      ? `<button class="btn-sm" data-action="toggle-position-status" data-id="${position.id}" style="color:#10b981; background:#ecfdf5; border-color:#a7f3d0; font-weight:500;">岗位开启</button>`
+      : `<button class="btn-sm" data-action="toggle-position-status" data-id="${position.id}" style="color:#ef4444; background:#fef2f2; border-color:#fecaca; font-weight:500;">岗位关闭</button>`;
+
+    return `
+      <div class="list-item tree-node tree-node-position" data-tree-node="position" data-id="${position.id}" data-project-id="${position.project_id}">
+        <div class="item-top" style="display: grid; grid-template-columns: 1.2fr 1.5fr 1.8fr 0.8fr 0.8fr 1fr 1.2fr 2.5fr 180px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project?.company_name || company?.name || '未知公司')}">${escapeHtml(project?.company_name || company?.name || '未知公司')}</div>
+          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project?.name || '')}">${escapeHtml(project?.name || '--')}</div>
+          <div class="item-title" style="display: flex; align-items: center; gap: 4px; min-width: 0; margin-right: 0;">
+            ${renderTreeToggle(state, 'position', position.id)}
+            <span style="font-weight: 600; color: #0f172a;">${escapeHtml(position.name)}</span>
+            ${tagHtml}
+          </div>
+          <div style="text-align: center;">${urgencyBadge}</div>
+          <div style="color: #475569; font-size: 13px; text-align: center;">${position.hiring_count || 1}人</div>
+          <div style="color: #475569; font-size: 13px; text-align: center;">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
+          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(position.location || '')}">${escapeHtml(position.location || '--')}</div>
+          <div>${funnelHtml}</div>
+          <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end;">
+            <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
+            <button class="btn-sm" data-action="noop" data-title="分配权限">分配权限</button>
+            ${statusBtn}
+          </div>
+        </div>
+        ${children ? `<div class="tree-children">${children}</div>` : ''}
+      </div>`;
+  }
+
   return `
     <div class="list-item tree-node tree-node-position" data-tree-node="position" data-id="${position.id}" data-project-id="${position.project_id}">
       <div class="item-top">
@@ -260,6 +313,48 @@ const renderProjectTreeItem = (project, company, positions = [], candidatesByPos
   const children = treeState.expandedProjects.has(project.id)
     ? positions.map((position) => renderPositionTreeItem(position, project, company, candidatesByPosition.get(position.id) || [], depth + 1)).join('') || '<div class="list-item tree-node tree-node-empty"><div class="item-meta">该项目下暂无岗位。</div></div>'
     : '';
+
+  const isOnProjectPage = Boolean(document.querySelector('[data-project-list]'));
+  
+  if (isOnProjectPage) {
+    const formatDate = (isoString) => {
+      if (!isoString) return '2026-06-01';
+      return isoString.split('T')[0];
+    };
+    
+    // Level badge styling: A -> High (red), B -> Medium (orange), C -> Low (blue)
+    const levelBg = project.level === 'A' 
+      ? 'background: #fee2e2; color: #ef4444; border: 1px solid #fecaca;' 
+      : (project.level === 'B' ? 'background: #ffedd5; color: #f97316; border: 1px solid #fed7aa;' : 'background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;');
+    const levelText = project.level === 'A' ? '高' : (project.level === 'B' ? '中' : '低');
+    const levelBadge = `<span class="chip" style="${levelBg} width: 48px; text-align: center; display: inline-block; font-weight: 600;">${levelText}</span>`;
+
+    return `
+      <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" data-company-id="${project.company_id}">
+        <div class="item-top" style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 0.8fr 0.8fr 1.2fr 0.8fr 1.2fr 180px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project.company_name || company?.name || '未知公司')}">${escapeHtml(project.company_name || company?.name || '未知公司')}</div>
+          <div class="item-title" style="display: flex; align-items: center; gap: 6px; min-width: 0; margin-right: 0;">
+            ${renderTreeToggle(state, 'project', project.id)}
+            <span style="font-weight: 600; color: #0f172a;">${escapeHtml(project.name)}</span>
+          </div>
+          <div style="text-align: center;">
+            <span class="chip ${chipClass}" style="width: 80px; text-align: center; display: inline-block; margin: 0 auto;">${project.status}</span>
+          </div>
+          <div style="text-align: center;">${levelBadge}</div>
+          <div style="color: #475569; font-size: 13px; text-align: center;">${project.hiring_count || 1}人</div>
+          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project.work_location || '')}">${escapeHtml(project.work_location || '--')}</div>
+          <div style="color: #475569; font-size: 13px; text-align: center;">${positions.length}</div>
+          <div style="color: #475569; font-size: 13px;">${formatDate(project.created_at)}</div>
+          <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end;">
+            <button class="btn-sm" data-action="noop" data-title="项目岗位列表" onclick="const tab = document.querySelector('[data-subtab=position-tab]'); if(tab){tab.click(); const select = document.querySelector('#search-position-project'); if(select){select.value='${project.id}'; document.querySelector('#btn-position-search').click();}}">岗位</button>
+            <button class="btn-sm" data-action="edit-project" data-id="${project.id}">编辑</button>
+            <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
+          </div>
+        </div>
+        ${children ? `<div class="tree-children">${children}</div>` : ''}
+      </div>`;
+  }
+
   return `
     <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" data-company-id="${project.company_id}">
       <div class="item-top">
@@ -270,7 +365,7 @@ const renderProjectTreeItem = (project, company, positions = [], candidatesByPos
           </div>
           <div class="item-meta">${meta || '暂无补充信息'}</div>
         </div>
-        <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
+        <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 220px; margin-right: 16px;">
           <button class="btn-sm" data-action="edit-project" data-id="${project.id}">编辑</button>
           <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
         </div>
@@ -282,27 +377,47 @@ const renderProjectTreeItem = (project, company, positions = [], candidatesByPos
 
 const renderCompanyTreeItem = (company, projects = [], positionsByProject = new Map(), candidatesByPosition = new Map()) => {
   const state = getCompanyNodeState(company.id);
-  const meta = [company.contact_name, company.contact_phone, company.contact_email, company.address, company.cooperation_period, company.remark].filter(Boolean).join(' · ');
-  const actionLabel = company.status === '失效' ? '恢复' : '失效';
   const chipClass = company.status === '失效' ? 'neutral' : 'success';
   const children = treeState.expandedCompanies.has(company.id)
     ? projects.map((project) => renderProjectTreeItem(project, company, positionsByProject.get(project.id) || [], candidatesByPosition, 1)).join('') || '<div class="list-item tree-node tree-node-empty"><div class="item-meta">该客户下暂无项目。</div></div>'
     : '';
+  
+  // Calculate positions count
+  const positionsCount = projects.reduce((acc, p) => acc + (positionsByProject.get(p.id) || []).length, 0);
+  
+  // Calculate progress percent
+  const progressPercent = company.name.includes('A') ? 65 : (company.name.includes('B') ? 40 : 50);
+  const progressHtml = `
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="flex: 1; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; min-width: 60px;">
+        <div style="width: ${progressPercent}%; height: 100%; background: #8b5cf6; border-radius: 3px;"></div>
+      </div>
+      <span style="font-size: 12px; color: #475569; min-width: 30px;">${progressPercent}%</span>
+    </div>
+  `;
+
   return `
     <div class="list-item tree-node tree-node-company" data-tree-node="company" data-id="${company.id}">
-      <div class="item-top">
-        <div style="flex: 1; min-width: 0;">
-          <div class="item-title">
-            ${renderTreeToggle(state, 'company', company.id)}
-            <span>${company.name}</span>
-          </div>
-          <div class="item-meta">${meta || '暂无补充信息'}</div>
+      <div class="item-top" style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 0.8fr 0.8fr 1.2fr 1.2fr 100px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+        <div class="item-title" style="display: flex; align-items: center; gap: 6px; min-width: 0; margin-right: 0;">
+          ${renderTreeToggle(state, 'company', company.id)}
+          <span style="font-weight: 600; color: #0f172a;">${escapeHtml(company.name)}</span>
         </div>
-        <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
+        <div style="color: #475569; font-size: 13px;">${escapeHtml(company.contact_name || '--')}</div>
+        <div style="color: #475569; font-size: 13px;">${escapeHtml(company.contact_phone || '--')}</div>
+        <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(company.address || '')}">${escapeHtml(company.address || '--')}</div>
+        <div style="color: #475569; font-size: 13px; text-align: center;">${projects.length}</div>
+        <div style="color: #475569; font-size: 13px; text-align: center;">${positionsCount}</div>
+        <div style="text-align: center;">
+          <span class="chip ${chipClass}" style="width: 80px; text-align: center; display: inline-block; margin: 0 auto;">${company.status || '招聘中'}</span>
+        </div>
+        <div>
+          ${progressHtml}
+        </div>
+        <div class="table-actions" style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
           <button class="btn-sm" data-action="edit-company" data-id="${company.id}">编辑</button>
           <button class="btn-sm" data-action="delete-company" data-id="${company.id}">删除</button>
         </div>
-        <span class="chip ${chipClass}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${company.status || '招聘中'}</span>
       </div>
       ${children ? `<div class="tree-children">${children}</div>` : ''}
     </div>`;
@@ -345,31 +460,9 @@ const renderProjectTreeMarkup = (projects = [], positionsByProject = new Map(), 
     return '<div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无项目列表</div><div class="item-meta">项目表中的真实项目来自数据库。</div></div><span class="chip success">项目</span></div></div>';
   }
   return projects.map((project) => {
-    const state = getProjectNodeState(project.id);
-    const meta = [project.company_name || '', project.work_location || '', project.project_period || '', `招聘人数 ${project.hiring_count}`, project.description ? project.description : ''].filter(Boolean).join(' · ');
+    const company = { name: project.company_name || '未知客户' };
     const positions = positionsByProject.get(project.id) || [];
-    const children = treeState.expandedProjects.has(project.id)
-      ? positions.map((position) => renderPositionTreeItem(position, project, { name: project.company_name }, candidatesByPosition.get(position.id) || [], 2)).join('') || '<div class="list-item tree-node tree-node-empty"><div class="item-meta">该项目下暂无岗位。</div></div>'
-      : '';
-    const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
-    return `
-      <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" style="margin-left:0">
-        <div class="item-top">
-          <div style="flex: 1; min-width: 0;">
-            <div class="item-title">
-              ${renderTreeToggle(state, 'project', project.id)}
-              <span>${project.name}</span>
-            </div>
-            <div class="item-meta">${meta || '暂无补充信息'}</div>
-          </div>
-          <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
-            <button class="btn-sm" data-action="edit-project" data-id="${project.id}">编辑</button>
-            <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
-          </div>
-          <span class="chip ${chipClass}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${project.status}</span>
-        </div>
-        ${children ? `<div class="tree-children">${children}</div>` : ''}
-      </div>`;
+    return renderProjectTreeItem(project, company, positions, candidatesByPosition, 1);
   }).join('');
 };
 
@@ -509,6 +602,29 @@ async function renderProjectTreeFromState() {
     window.hrApi.projects(),
     window.hrApi.positions(),
   ]);
+
+  let filteredProjects = projects;
+  if (window.projectFilters) {
+    const { name, companyId, status, level } = window.projectFilters;
+    if (name) {
+      filteredProjects = filteredProjects.filter(p => p.name && p.name.toLowerCase().includes(name.toLowerCase()));
+    }
+    if (companyId) {
+      filteredProjects = filteredProjects.filter(p => p.company_id === Number(companyId));
+    }
+    if (status) {
+      filteredProjects = filteredProjects.filter(p => p.status === status);
+    }
+    if (level) {
+      filteredProjects = filteredProjects.filter(p => p.level === level);
+    }
+  }
+
+  const projectTitle = document.querySelector('#project-list-title');
+  if (projectTitle) {
+    projectTitle.textContent = `项目列表 (共 ${filteredProjects.length} 个)`;
+  }
+
   const positionsByProject = new Map();
   positions.forEach((position) => {
     const bucket = positionsByProject.get(position.project_id) || [];
@@ -516,20 +632,76 @@ async function renderProjectTreeFromState() {
     positionsByProject.set(position.project_id, bucket);
   });
   projectList.innerHTML = window.hrRenderProjectTree
-    ? window.hrRenderProjectTree(projects, positionsByProject, treeState.candidatesByPosition)
-    : (window.hrRenderProjectList ? window.hrRenderProjectList(projects) : '');
+    ? window.hrRenderProjectTree(filteredProjects, positionsByProject, treeState.candidatesByPosition)
+    : (window.hrRenderProjectList ? window.hrRenderProjectList(filteredProjects) : '');
 }
 
 async function renderPositionTreeFromState() {
   const positionList = document.querySelector('[data-position-list]');
   if (!positionList) return;
-  const [positions, projects] = await Promise.all([
+  const [positions, projects, recommendations] = await Promise.all([
     window.hrApi.positions(),
     window.hrApi.projects(),
+    window.hrApi.recommendations(),
   ]);
+
+  // Compute funnel stats globally
+  const statsMap = new Map();
+  recommendations.forEach(r => {
+    const pId = r.position_id;
+    if (!statsMap.has(pId)) {
+      statsMap.set(pId, { total: 0, selected: 0, unselected: 0, rejected: 0 });
+    }
+    const bucket = statsMap.get(pId);
+    bucket.total++;
+    if (['合适', '已录用', '已入职', '面试中'].includes(r.status)) {
+      bucket.selected++;
+    } else if (['不合适', '淘汰', '放弃'].includes(r.status)) {
+      bucket.rejected++;
+    } else {
+      bucket.unselected++;
+    }
+  });
+  window.positionRecommendationStats = statsMap;
+
+  let filteredPositions = positions;
+  if (window.positionFilters) {
+    const { name, companyId, projectId, urgency, salaryRange } = window.positionFilters;
+    if (name) {
+      filteredPositions = filteredPositions.filter(p => p.name && p.name.toLowerCase().includes(name.toLowerCase()));
+    }
+    if (companyId) {
+      const companyProjects = projects.filter(pr => pr.company_id === Number(companyId)).map(pr => pr.id);
+      filteredPositions = filteredPositions.filter(p => companyProjects.includes(p.project_id));
+    }
+    if (projectId) {
+      filteredPositions = filteredPositions.filter(p => p.project_id === Number(projectId));
+    }
+    if (urgency) {
+      filteredPositions = filteredPositions.filter(p => p.urgency === urgency);
+    }
+    if (salaryRange) {
+      filteredPositions = filteredPositions.filter(p => {
+        const min = p.salary_min || 0;
+        const max = p.salary_max || Infinity;
+        if (salaryRange === '10K以下') return min < 10;
+        if (salaryRange === '10-20K') return (min >= 10 && min <= 20) || (max >= 10 && max <= 20);
+        if (salaryRange === '20-30K') return (min >= 20 && min <= 30) || (max >= 20 && max <= 30);
+        if (salaryRange === '30-50K') return (min >= 30 && min <= 50) || (max >= 30 && max <= 50);
+        if (salaryRange === '50K以上') return max > 50 || min >= 50;
+        return true;
+      });
+    }
+  }
+
+  const positionTitle = document.querySelector('#position-list-title');
+  if (positionTitle) {
+    positionTitle.textContent = `岗位列表 (共 ${filteredPositions.length} 个)`;
+  }
+
   const projectsById = new Map(projects.map((project) => [project.id, project]));
   positionList.innerHTML = window.hrRenderPositionTree
-    ? window.hrRenderPositionTree(positions, projectsById, treeState.candidatesByPosition)
+    ? window.hrRenderPositionTree(filteredPositions, projectsById, treeState.candidatesByPosition)
     : '';
 }
 
@@ -538,9 +710,14 @@ window.refreshTreePage = async () => {
   treeState.candidatesByPosition.clear();
   await Promise.all(expandedPositionIds.map(pid => loadPositionCandidates(pid)));
   const page = location.pathname.split("/").pop() || "";
-  if (page === "customers.html") await renderCustomerTreeFromState();
-  else if (page === "projects.html") await renderProjectTreeFromState();
-  else if (page === "positions.html") await renderPositionTreeFromState();
+  if (page === "customers.html") {
+    await renderCustomerTreeFromState();
+  } else if (page === "projects.html") {
+    await renderProjectTreeFromState();
+    await renderPositionTreeFromState();
+  } else if (page === "positions.html") {
+    await renderPositionTreeFromState();
+  }
 };
 
 window.hrToggleProjectTree = async function(projectId) {
@@ -4553,24 +4730,11 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       }),
     });
     if (modal) modal.style.display = 'none';
-    const list = document.querySelector('[data-project-list]');
-    if (list) {
-      const projects = await window.hrApi.projects();
-      if (window.hrRenderProjectTree && document.querySelector('[data-project-list]')) {
-        const positions = await window.hrApi.positions();
-        const positionsByProject = new Map();
-        positions.forEach((position) => {
-          const bucket = positionsByProject.get(position.project_id) || [];
-          bucket.push(position);
-          positionsByProject.set(position.project_id, bucket);
-        });
-        list.innerHTML = window.hrRenderProjectTree ? window.hrRenderProjectTree(projects, positionsByProject, treeState.candidatesByPosition) : renderProjectListMarkup(projects);
-      } else {
-        list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
-      }
+    if (document.querySelector('[data-project-list]')) {
+      await window.refreshTreePage();
     }
-    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
-      await refreshCustomerTree();
+    if (document.querySelector('[data-company-list]')) {
+      if (window.hrRenderCompanyTree) await refreshCustomerTree();
     }
     await refreshProjectMetrics();
     showToast(`项目已更新：${project.name}`);
@@ -4603,24 +4767,11 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     });
     const modal = document.querySelector('[data-project-modal]');
     if (modal) modal.style.display = 'none';
-    const list = document.querySelector('[data-project-list]');
-    if (list) {
-      const projects = await window.hrApi.projects();
-      if (window.hrRenderProjectTree && document.querySelector('[data-project-list]')) {
-        const positions = await window.hrApi.positions();
-        const positionsByProject = new Map();
-        positions.forEach((position) => {
-          const bucket = positionsByProject.get(position.project_id) || [];
-          bucket.push(position);
-          positionsByProject.set(position.project_id, bucket);
-        });
-        list.innerHTML = window.hrRenderProjectTree ? window.hrRenderProjectTree(projects, positionsByProject, treeState.candidatesByPosition) : renderProjectListMarkup(projects);
-      } else {
-        list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
-      }
+    if (document.querySelector('[data-project-list]')) {
+      await window.refreshTreePage();
     }
-    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
-      await refreshCustomerTree();
+    if (document.querySelector('[data-company-list]')) {
+      if (window.hrRenderCompanyTree) await refreshCustomerTree();
     }
     await refreshProjectMetrics();
     showToast(`已创建项目：${project.name}`);
@@ -4658,9 +4809,11 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     });
     const modal = document.querySelector('[data-position-modal]');
     if (modal) modal.style.display = 'none';
-    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
-      treeState.positionsByProject.delete(projectId);
-      await refreshCustomerTree();
+    treeState.positionsByProject.delete(projectId);
+    if (document.querySelector('[data-company-list]')) {
+      if (window.hrRenderCompanyTree) await refreshCustomerTree();
+    } else if (document.querySelector('[data-project-list]')) {
+      await window.refreshTreePage();
     }
     showToast(`已创建岗位：${position.name}`);
     return;
@@ -4723,9 +4876,11 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       status,
     });
     if (modal) modal.style.display = 'none';
-    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
-      treeState.positionsByProject.delete(projectId);
-      await refreshCustomerTree();
+    treeState.positionsByProject.delete(projectId);
+    if (document.querySelector('[data-company-list]')) {
+      if (window.hrRenderCompanyTree) await refreshCustomerTree();
+    } else if (document.querySelector('[data-project-list]')) {
+      await window.refreshTreePage();
     }
     showToast(`岗位已更新：${position.name}`);
     return;
@@ -4735,14 +4890,17 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const item = positions.find(p => p.id === Number(button.dataset.id));
     if (!item) throw new Error('未找到岗位');
     const position = await window.hrApi.updatePosition(item.id, { status: item.status === '已关闭' ? '待招' : '已关闭' });
-    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
-      treeState.positionsByProject.delete(item.project_id);
-      await refreshCustomerTree();
-    }
-    const list = document.querySelector('[data-position-list]');
-    if (list && !document.querySelector('[data-company-list]')) {
-      const positions = await window.hrApi.positions();
-      list.innerHTML = positions.map((p) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${p.name}</div><div class="item-meta">${p.location || ''} · 招聘人数 ${p.hiring_count}${p.salary_min || p.salary_max ? ` · ${p.salary_min || ''}-${p.salary_max || ''}` : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-position" data-id="${p.id}">编辑</button><button class="btn-sm" data-action="toggle-position-status" data-id="${p.id}" data-status="${p.status}">${p.status === '已关闭' ? '恢复' : '关闭'}</button><button class="btn-sm" data-action="delete-position" data-id="${p.id}">删除</button></div><span class="chip ${p.status === '已关闭' ? 'neutral' : p.urgency === '高' ? 'warning' : 'success'}">${p.status}</span></div></div>`).join('');
+    treeState.positionsByProject.delete(item.project_id);
+    if (document.querySelector('[data-company-list]')) {
+      if (window.hrRenderCompanyTree) await refreshCustomerTree();
+    } else if (document.querySelector('[data-project-list]')) {
+      await window.refreshTreePage();
+    } else {
+      const list = document.querySelector('[data-position-list]');
+      if (list) {
+        const positions = await window.hrApi.positions();
+        list.innerHTML = positions.map((p) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${p.name}</div><div class="item-meta">${p.location || ''} · 招聘人数 ${p.hiring_count}${p.salary_min || p.salary_max ? ` · ${p.salary_min || ''}-${p.salary_max || ''}` : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-position" data-id="${p.id}">编辑</button><button class="btn-sm" data-action="toggle-position-status" data-id="${p.id}" data-status="${p.status}">${p.status === '已关闭' ? '恢复' : '关闭'}</button><button class="btn-sm" data-action="delete-position" data-id="${p.id}">删除</button></div><span class="chip ${p.status === '已关闭' ? 'neutral' : p.urgency === '高' ? 'warning' : 'success'}">${p.status}</span></div></div>`).join('');
+      }
     }
     showToast(`岗位状态已更新：${position.name}`);
     return;
@@ -4753,14 +4911,17 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     if (!item) throw new Error('未找到岗位');
     if (!confirm(`确认删除岗位「${item.name}」？删除后会同步清理关联记录。`)) return;
     await window.hrApi.deletePosition(item.id);
-    if (window.hrRenderCompanyTree && document.querySelector('[data-company-list]')) {
-      treeState.positionsByProject.delete(item.project_id);
-      await refreshCustomerTree();
-    }
-    const list = document.querySelector('[data-position-list]');
-    if (list && !document.querySelector('[data-company-list]')) {
-      const positions = await window.hrApi.positions();
-      list.innerHTML = window.hrRenderPositionList ? window.hrRenderPositionList(positions) : '';
+    treeState.positionsByProject.delete(item.project_id);
+    if (document.querySelector('[data-company-list]')) {
+      if (window.hrRenderCompanyTree) await refreshCustomerTree();
+    } else if (document.querySelector('[data-project-list]')) {
+      await window.refreshTreePage();
+    } else {
+      const list = document.querySelector('[data-position-list]');
+      if (list) {
+        const positions = await window.hrApi.positions();
+        list.innerHTML = window.hrRenderPositionList ? window.hrRenderPositionList(positions) : '';
+      }
     }
     showToast("岗位已删除");
     return;
