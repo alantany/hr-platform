@@ -103,6 +103,7 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 | 批量推荐接口测试返回 `405 Method Not Allowed` | 1 | 预期红灯；新增 `/api/recommendations/batch` 后复测 |
 | 更新任务记录时补丁 hunk 顺序错误 | 2 | 按文件中的实际行序重新组织补丁后写入 |
 | `check-complete.sh` 显示 `22/21 phases complete` | 1 | 旧计划存在重复阶段编号；确认 Phase 15 全部完成，本次不重排历史阶段 |
+| 推荐成功锁定测试断言 `locked is True` 失败 | 1 | 预期红灯；将候选人锁定与推荐记录放入同一事务 |
 
 ### Phase 10 - Final acceptance closeout
 
@@ -168,6 +169,16 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 将推荐入口移至列表工具栏并移除详情页入口
 - [x] 补齐批量结果汇总、审计与单条通知
 - [x] 完成后端自动化、浏览器交互与测试数据清理验证
+- **Status:** complete
+
+### Phase 16 - 推荐锁定与岗位候选人树（已完成）
+
+- [x] 单条和批量推荐成功后立即锁定候选人
+- [x] 树状态新增岗位展开和按岗位懒加载推荐候选人
+- [x] 客户管理页展示客户 → 项目 → 岗位 → 候选人
+- [x] 项目管理页展示项目 → 岗位 → 候选人
+- [x] 岗位管理页改为岗位 → 候选人树
+- [x] 完成接口回归、三页浏览器验收和测试数据清理
 - **Status:** complete
 
 ### Phase 14 - 薪资福利入职跟踪表与相关优化（已完成）

@@ -153,7 +153,7 @@ window.__PAGE_BODY__ = `
         const list = document.querySelector('[data-company-list]');
         if (list) {
           list.innerHTML = window.hrRenderCompanyTree
-            ? window.hrRenderCompanyTree(companies, new Map(), new Map())
+            ? window.hrRenderCompanyTree(companies, new Map(), new Map(), new Map())
             : (window.hrRenderCompanyList ? window.hrRenderCompanyList(companies) : '');
         }
       } catch (err) {

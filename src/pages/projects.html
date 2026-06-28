@@ -134,7 +134,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         positionsByProject.set(position.project_id, bucket);
       });
       list.innerHTML = window.hrRenderProjectTree
-        ? window.hrRenderProjectTree(projects, positionsByProject)
+        ? window.hrRenderProjectTree(projects, positionsByProject, new Map())
         : (window.hrRenderProjectList ? window.hrRenderProjectList(projects) : '');
     }
   } catch (err) { console.warn(err); }

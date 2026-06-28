@@ -68,6 +68,7 @@ def test_batch_recommendations_continue_and_summarize():
         headers=headers,
     )
     assert existing.status_code == 200
+    client.post(f"/api/candidates/{duplicate['id']}/release", headers=headers)
 
     notifications_before = client.get("/api/notifications", headers=headers).json()
     response = client.post(
@@ -115,6 +116,10 @@ def test_batch_recommendations_continue_and_summarize():
         duplicate["id"],
     }
     assert all(item["feedback"] == "统一推荐理由" for item in recommendations if item["candidate_id"] != duplicate["id"])
+    assert client.get(f"/api/candidates/{first['id']}", headers=headers).json()["locked"] is True
+    assert client.get(f"/api/candidates/{first['id']}", headers=headers).json()["status"] == "锁定"
+    assert client.get(f"/api/candidates/{second['id']}", headers=headers).json()["locked"] is True
+    assert client.get(f"/api/candidates/{duplicate['id']}", headers=headers).json()["locked"] is False
 
     notifications_after = client.get("/api/notifications", headers=headers).json()
     new_notifications = [
@@ -153,6 +158,9 @@ def test_batch_recommendations_pass_record_keys_to_candidate_resolution(monkeypa
     assert response.status_code == 200
     assert response.json()["succeeded"] == 1
     assert seen_keys == ["download:987654321"]
+    locked_candidate = client.get(f"/api/candidates/{candidate['id']}", headers=headers).json()
+    assert locked_candidate["locked"] is True
+    assert locked_candidate["status"] == "锁定"
 
 
 def test_batch_recommendations_reject_inaccessible_position(monkeypatch):

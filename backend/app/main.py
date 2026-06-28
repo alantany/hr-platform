@@ -1194,7 +1194,9 @@ def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depe
     if candidate.locked:
         raise HTTPException(status_code=400, detail="候选人已锁定，无法重复推荐")
     obj = crud.create_recommendation(db, payload)
-    crud.add_audit(db, user.username, "推荐交付", "创建推荐记录", "recommendation", "new", detail=str(payload.candidate_id))
+    candidate.locked = True
+    candidate.status = "锁定"
+    crud.add_audit(db, user.username, "推荐交付", "创建推荐记录并锁定候选人", "recommendation", "new", detail=str(payload.candidate_id))
     db.commit()
     db.refresh(obj)
     return obj
@@ -1275,6 +1277,8 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
                 feedback=payload.feedback,
             )
             recommendation = crud.create_recommendation(db, recommendation_payload)
+            candidate.locked = True
+            candidate.status = "锁定"
             db.flush()
             crud.add_audit(
                 db,

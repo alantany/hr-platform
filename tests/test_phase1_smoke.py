@@ -116,6 +116,8 @@ def test_phase1_chain_smoke():
     recommendation_blocked = client.post("/api/recommendations", json={"candidate_id": candidate["id"], "position_id": position["id"], "recommender": "admin"}, headers=headers)
     released = client.post(f"/api/candidates/{candidate['id']}/release", headers=headers).json()
     recommendation = client.post("/api/recommendations", json={"candidate_id": candidate["id"], "position_id": position["id"], "recommender": "admin"}, headers=headers).json()
+    locked_after_recommendation = client.get(f"/api/candidates/{candidate['id']}", headers=headers).json()
+    client.post(f"/api/candidates/{candidate['id']}/release", headers=headers)
     rec = client.post("/api/recommendations", json={"candidate_id": candidate["id"], "position_id": position["id"], "recommender": "admin"}, headers=headers).json()
     feedback_record = client.post("/api/recommendation-feedbacks", json={"recommendation_id": rec["id"], "status": "客户已收", "feedback": "客户同意推进", "customer_comment": "安排下一步面试", "operator": "admin"}, headers=headers).json()
     feedback_records = client.get(f"/api/recommendation-feedbacks?recommendation_id={rec['id']}", headers=headers).json()
@@ -174,6 +176,8 @@ def test_phase1_chain_smoke():
     assert recommendation_blocked.status_code == 400
     assert released["locked"] is False
     assert recommendation["candidate_id"] == candidate["id"]
+    assert locked_after_recommendation["locked"] is True
+    assert locked_after_recommendation["status"] == "锁定"
     assert preset["name"] == f"快捷-{suffix}"
     assert any(item["name"] == f"快捷-{suffix}" for item in presets)
     assert rec["candidate_id"] == candidate["id"]

@@ -158,10 +158,13 @@ const renderCompanyListMarkup = (companies = []) => {
 const treeState = {
   expandedCompanies: new Set(),
   expandedProjects: new Set(),
+  expandedPositions: new Set(),
   projectsByCompany: new Map(),
   positionsByProject: new Map(),
+  candidatesByPosition: new Map(),
   loadingCompanies: new Set(),
   loadingProjects: new Set(),
+  loadingPositions: new Set(),
 };
 
 const getCompanyNodeState = (companyId) => {
@@ -174,6 +177,11 @@ const getProjectNodeState = (projectId) => {
   return treeState.expandedProjects.has(projectId) ? 'expanded' : 'collapsed';
 };
 
+const getPositionNodeState = (positionId) => {
+  if (treeState.loadingPositions.has(positionId)) return 'loading';
+  return treeState.expandedPositions.has(positionId) ? 'expanded' : 'collapsed';
+};
+
 const renderTreeToggle = (state, level = 'company', targetId = '') => {
   const isLoading = state === 'loading';
   const isExpanded = state === 'expanded';
@@ -182,7 +190,28 @@ const renderTreeToggle = (state, level = 'company', targetId = '') => {
   return `<button class="btn-sm tree-toggle${isLoading ? ' is-busy' : ''}" data-action="toggle-tree" data-tree-toggle="${level}" data-tree-id="${targetId}" aria-label="${label}" aria-expanded="${isExpanded}" type="button"${isLoading ? ' disabled' : ''}>${symbol}</button>`;
 };
 
-const renderPositionTreeItem = (position, project, company, depth = 2) => {
+const renderCandidateTreeItem = (candidate, depth = 3) => {
+  const meta = [
+    candidate.current_title || '暂无当前职位',
+    candidate.city || '',
+    candidate.source || '',
+    `推荐状态 ${candidate.recommendation_status || '待推荐'}`,
+  ].filter(Boolean).join(' · ');
+  const isLocked = Boolean(candidate.locked) || candidate.status === '锁定';
+  return `
+    <div class="list-item tree-node tree-node-candidate" data-tree-node="candidate" data-id="${candidate.id}" style="margin-left:${depth * 18}px">
+      <div class="item-top">
+        <div>
+          <div class="item-title"><span>${escapeHtml(candidate.name || '未命名候选人')}</span></div>
+          <div class="item-meta">${escapeHtml(meta)}</div>
+        </div>
+        <span class="chip ${isLocked ? 'warning' : 'neutral'}">${isLocked ? '已锁定' : escapeHtml(candidate.status || '未锁定')}</span>
+      </div>
+    </div>`;
+};
+
+const renderPositionTreeItem = (position, project, company, candidates = [], depth = 2) => {
+  const state = getPositionNodeState(position.id);
   const statusChip = position.status === '已关闭' ? 'neutral' : position.urgency === '高' ? 'warning' : 'success';
   const meta = [
     company?.name || '未知客户',
@@ -191,11 +220,17 @@ const renderPositionTreeItem = (position, project, company, depth = 2) => {
     `招聘人数 ${position.hiring_count || 1}`,
     position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}` : '',
   ].filter(Boolean).join(' · ');
+  const children = treeState.expandedPositions.has(position.id)
+    ? candidates.map((candidate) => renderCandidateTreeItem(candidate, depth + 1)).join('') || `<div class="list-item tree-node tree-node-empty" style="margin-left:${(depth + 1) * 18}px"><div class="item-meta">该岗位下暂无已推荐候选人。</div></div>`
+    : '';
   return `
     <div class="list-item tree-node tree-node-position" data-tree-node="position" data-id="${position.id}" data-project-id="${position.project_id}" style="margin-left:${depth * 18}px">
       <div class="item-top">
         <div>
-          <div class="item-title">${position.name}</div>
+          <div class="item-title">
+            ${renderTreeToggle(state, 'position', position.id)}
+            <span>${position.name}</span>
+          </div>
           <div class="item-meta">${meta || '暂无补充信息'}</div>
         </div>
         <div class="table-actions">
@@ -205,15 +240,16 @@ const renderPositionTreeItem = (position, project, company, depth = 2) => {
         </div>
         <span class="chip ${statusChip}">${position.status}</span>
       </div>
+      ${children ? `<div class="tree-children">${children}</div>` : ''}
     </div>`;
 };
 
-const renderProjectTreeItem = (project, company, positions = [], depth = 1) => {
+const renderProjectTreeItem = (project, company, positions = [], candidatesByPosition = new Map(), depth = 1) => {
   const state = getProjectNodeState(project.id);
   const meta = [company?.name || project.company_name || '', project.work_location || '', project.project_period || '', `招聘人数 ${project.hiring_count}`, project.description ? project.description : ''].filter(Boolean).join(' · ');
   const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
   const children = treeState.expandedProjects.has(project.id)
-    ? positions.map((position) => renderPositionTreeItem(position, project, company, depth + 1)).join('') || `<div class="list-item tree-node tree-node-empty" style="margin-left:${(depth + 1) * 18}px"><div class="item-meta">该项目下暂无岗位。</div></div>`
+    ? positions.map((position) => renderPositionTreeItem(position, project, company, candidatesByPosition.get(position.id) || [], depth + 1)).join('') || `<div class="list-item tree-node tree-node-empty" style="margin-left:${(depth + 1) * 18}px"><div class="item-meta">该项目下暂无岗位。</div></div>`
     : '';
   return `
     <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" data-company-id="${project.company_id}" style="margin-left:${depth * 18}px">
@@ -236,13 +272,13 @@ const renderProjectTreeItem = (project, company, positions = [], depth = 1) => {
     </div>`;
 };
 
-const renderCompanyTreeItem = (company, projects = [], positionsByProject = new Map()) => {
+const renderCompanyTreeItem = (company, projects = [], positionsByProject = new Map(), candidatesByPosition = new Map()) => {
   const state = getCompanyNodeState(company.id);
   const meta = [company.contact_name, company.contact_phone, company.contact_email, company.address, company.cooperation_period, company.remark].filter(Boolean).join(' · ');
   const actionLabel = company.status === '失效' ? '恢复' : '失效';
   const chipClass = company.status === '失效' ? 'neutral' : 'success';
   const children = treeState.expandedCompanies.has(company.id)
-    ? projects.map((project) => renderProjectTreeItem(project, company, positionsByProject.get(project.id) || [], 1)).join('') || '<div class="list-item tree-node tree-node-empty" style="margin-left:18px"><div class="item-meta">该客户下暂无项目。</div></div>'
+    ? projects.map((project) => renderProjectTreeItem(project, company, positionsByProject.get(project.id) || [], candidatesByPosition, 1)).join('') || '<div class="list-item tree-node tree-node-empty" style="margin-left:18px"><div class="item-meta">该客户下暂无项目。</div></div>'
     : '';
   return `
     <div class="list-item tree-node tree-node-company" data-tree-node="company" data-id="${company.id}">
@@ -265,11 +301,11 @@ const renderCompanyTreeItem = (company, projects = [], positionsByProject = new 
     </div>`;
 };
 
-const renderCompanyTreeMarkup = (companies = [], projectsByCompany = new Map(), positionsByProject = new Map()) => {
+const renderCompanyTreeMarkup = (companies = [], projectsByCompany = new Map(), positionsByProject = new Map(), candidatesByPosition = new Map()) => {
   if (!companies.length) {
     return '<div class="list-item"><div class="item-top"><div><div class="item-title">暂无客户列表</div><div class="item-meta">客户列表来自数据库。</div></div><span class="chip success">客户</span></div></div>';
   }
-  return companies.map((company) => renderCompanyTreeItem(company, projectsByCompany.get(company.id) || [], positionsByProject)).join('');
+  return companies.map((company) => renderCompanyTreeItem(company, projectsByCompany.get(company.id) || [], positionsByProject, candidatesByPosition)).join('');
 };
 
 const getProjectActionLabel = (status = '') => {
@@ -297,7 +333,7 @@ const renderProjectListMarkup = (projects = []) => {
   }).join('');
 };
 
-const renderProjectTreeMarkup = (projects = [], positionsByProject = new Map()) => {
+const renderProjectTreeMarkup = (projects = [], positionsByProject = new Map(), candidatesByPosition = new Map()) => {
   if (!projects.length) {
     return '<div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无项目列表</div><div class="item-meta">项目表中的真实项目来自数据库。</div></div><span class="chip success">项目</span></div></div>';
   }
@@ -306,7 +342,7 @@ const renderProjectTreeMarkup = (projects = [], positionsByProject = new Map()) 
     const meta = [project.company_name || '', project.work_location || '', project.project_period || '', `招聘人数 ${project.hiring_count}`, project.description ? project.description : ''].filter(Boolean).join(' · ');
     const positions = positionsByProject.get(project.id) || [];
     const children = treeState.expandedProjects.has(project.id)
-      ? positions.map((position) => renderPositionTreeItem(position, project, { name: project.company_name }, 2)).join('') || '<div class="list-item tree-node tree-node-empty" style="margin-left:36px"><div class="item-meta">该项目下暂无岗位。</div></div>'
+      ? positions.map((position) => renderPositionTreeItem(position, project, { name: project.company_name }, candidatesByPosition.get(position.id) || [], 2)).join('') || '<div class="list-item tree-node tree-node-empty" style="margin-left:36px"><div class="item-meta">该项目下暂无岗位。</div></div>'
       : '';
     const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
     return `
@@ -331,10 +367,21 @@ const renderProjectTreeMarkup = (projects = [], positionsByProject = new Map()) 
   }).join('');
 };
 
+const renderPositionTreeMarkup = (positions = [], projectsById = new Map(), candidatesByPosition = new Map()) => {
+  if (!positions.length) {
+    return '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
+  }
+  return positions.map((position) => {
+    const project = projectsById.get(position.project_id) || { id: position.project_id, name: `项目 ${position.project_id}`, company_name: '未知客户' };
+    return renderPositionTreeItem(position, project, { name: project.company_name || '未知客户' }, candidatesByPosition.get(position.id) || [], 0);
+  }).join('');
+};
+
 window.hrRenderCompanyList = renderCompanyListMarkup;
 window.hrRenderProjectList = renderProjectListMarkup;
 window.hrRenderCompanyTree = renderCompanyTreeMarkup;
 window.hrRenderProjectTree = renderProjectTreeMarkup;
+window.hrRenderPositionTree = renderPositionTreeMarkup;
 
 async function refreshCustomerTree() {
   const list = document.querySelector('[data-company-list]');
@@ -357,7 +404,7 @@ async function refreshCustomerTree() {
     positionsByProject.set(position.project_id, bucket);
   });
   list.innerHTML = window.hrRenderCompanyTree
-    ? window.hrRenderCompanyTree(companies, projectsByCompany, positionsByProject)
+    ? window.hrRenderCompanyTree(companies, projectsByCompany, positionsByProject, treeState.candidatesByPosition)
     : renderCompanyListMarkup(companies);
 }
 
@@ -380,7 +427,7 @@ async function renderCustomerTreeFromState() {
     positionsByProject.set(position.project_id, bucket);
   });
   list.innerHTML = window.hrRenderCompanyTree
-    ? window.hrRenderCompanyTree(companies, projectsByCompany, positionsByProject)
+    ? window.hrRenderCompanyTree(companies, projectsByCompany, positionsByProject, treeState.candidatesByPosition)
     : renderCompanyListMarkup(companies);
 }
 
@@ -414,6 +461,72 @@ async function loadProjectPositions(projectId) {
   return treeState.positionsByProject.get(projectKey) || [];
 }
 
+async function loadPositionCandidates(positionId) {
+  const positionKey = Number(positionId);
+  if (!positionKey) return [];
+  if (!treeState.candidatesByPosition.has(positionKey)) {
+    treeState.loadingPositions.add(positionKey);
+    try {
+      const recommendations = await window.hrApi.recommendations({ position_id: positionKey });
+      const latestByCandidate = new Map();
+      recommendations.forEach((recommendation) => {
+        if (!latestByCandidate.has(recommendation.candidate_id)) {
+          latestByCandidate.set(recommendation.candidate_id, recommendation);
+        }
+      });
+      const candidates = await Promise.all(Array.from(latestByCandidate.entries()).map(async ([candidateId, recommendation]) => {
+        try {
+          const candidate = await window.hrApi.candidate(String(candidateId));
+          return {
+            ...candidate,
+            recommendation_id: recommendation.id,
+            recommendation_status: recommendation.status,
+            recommendation_feedback: recommendation.feedback || '',
+          };
+        } catch (err) {
+          console.warn(`Failed to load candidate ${candidateId} for position ${positionKey}`, err);
+          return null;
+        }
+      }));
+      treeState.candidatesByPosition.set(positionKey, candidates.filter(Boolean));
+    } finally {
+      treeState.loadingPositions.delete(positionKey);
+    }
+  }
+  return treeState.candidatesByPosition.get(positionKey) || [];
+}
+
+async function renderProjectTreeFromState() {
+  const projectList = document.querySelector('[data-project-list]');
+  if (!projectList) return;
+  const [projects, positions] = await Promise.all([
+    window.hrApi.projects(),
+    window.hrApi.positions(),
+  ]);
+  const positionsByProject = new Map();
+  positions.forEach((position) => {
+    const bucket = positionsByProject.get(position.project_id) || [];
+    bucket.push(position);
+    positionsByProject.set(position.project_id, bucket);
+  });
+  projectList.innerHTML = window.hrRenderProjectTree
+    ? window.hrRenderProjectTree(projects, positionsByProject, treeState.candidatesByPosition)
+    : (window.hrRenderProjectList ? window.hrRenderProjectList(projects) : '');
+}
+
+async function renderPositionTreeFromState() {
+  const positionList = document.querySelector('[data-position-list]');
+  if (!positionList) return;
+  const [positions, projects] = await Promise.all([
+    window.hrApi.positions(),
+    window.hrApi.projects(),
+  ]);
+  const projectsById = new Map(projects.map((project) => [project.id, project]));
+  positionList.innerHTML = window.hrRenderPositionTree
+    ? window.hrRenderPositionTree(positions, projectsById, treeState.candidatesByPosition)
+    : '';
+}
+
 window.hrToggleProjectTree = async function(projectId) {
   const projectKey = Number(projectId);
   if (!projectKey) return;
@@ -423,23 +536,24 @@ window.hrToggleProjectTree = async function(projectId) {
     treeState.expandedProjects.add(projectKey);
     await loadProjectPositions(projectKey);
   }
-  const projectList = document.querySelector('[data-project-list]');
-  if (projectList) {
-    const projects = await window.hrApi.projects();
-    const positions = await window.hrApi.positions();
-    const positionsByProject = new Map();
-    positions.forEach((position) => {
-      const bucket = positionsByProject.get(position.project_id) || [];
-      bucket.push(position);
-      positionsByProject.set(position.project_id, bucket);
-    });
-    projectList.innerHTML = window.hrRenderProjectTree
-      ? window.hrRenderProjectTree(projects, positionsByProject)
-      : (window.hrRenderProjectList ? window.hrRenderProjectList(projects) : '');
-  }
+  if (document.querySelector('[data-project-list]')) await renderProjectTreeFromState();
   if (document.querySelector('[data-company-list]')) {
     await renderCustomerTreeFromState();
   }
+};
+
+window.hrTogglePositionTree = async function(positionId) {
+  const positionKey = Number(positionId);
+  if (!positionKey) return;
+  if (treeState.expandedPositions.has(positionKey)) {
+    treeState.expandedPositions.delete(positionKey);
+  } else {
+    treeState.expandedPositions.add(positionKey);
+    await loadPositionCandidates(positionKey);
+  }
+  if (document.querySelector('[data-company-list]')) await renderCustomerTreeFromState();
+  if (document.querySelector('[data-project-list]')) await renderProjectTreeFromState();
+  if (document.querySelector('[data-position-list]')) await renderPositionTreeFromState();
 };
 
 window.hrToggleCompanyTree = async function(companyId) {
@@ -4209,7 +4323,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
           bucket.push(position);
           positionsByProject.set(position.project_id, bucket);
         });
-        list.innerHTML = window.hrRenderProjectTree ? window.hrRenderProjectTree(projects, positionsByProject) : renderProjectListMarkup(projects);
+        list.innerHTML = window.hrRenderProjectTree ? window.hrRenderProjectTree(projects, positionsByProject, treeState.candidatesByPosition) : renderProjectListMarkup(projects);
       } else {
         list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
       }
@@ -4259,7 +4373,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
           bucket.push(position);
           positionsByProject.set(position.project_id, bucket);
         });
-        list.innerHTML = window.hrRenderProjectTree ? window.hrRenderProjectTree(projects, positionsByProject) : renderProjectListMarkup(projects);
+        list.innerHTML = window.hrRenderProjectTree ? window.hrRenderProjectTree(projects, positionsByProject, treeState.candidatesByPosition) : renderProjectListMarkup(projects);
       } else {
         list.innerHTML = window.hrRenderProjectList ? window.hrRenderProjectList(projects) : renderProjectListMarkup(projects);
       }
@@ -4504,9 +4618,13 @@ document.addEventListener("click", (event) => {
     event.preventDefault();
     const targetId = Number(btn.dataset.treeId || 0);
     if (!targetId) return;
-    const toggle = btn.dataset.treeToggle === 'company'
-      ? window.hrToggleCompanyTree
-      : window.hrToggleProjectTree;
+    const toggleByLevel = {
+      company: window.hrToggleCompanyTree,
+      project: window.hrToggleProjectTree,
+      position: window.hrTogglePositionTree,
+    };
+    const toggle = toggleByLevel[btn.dataset.treeToggle];
+    if (!toggle) return;
     withButtonBusy(btn, () => toggle(targetId))
       .catch((err) => showToast(`操作失败：${err.message || err}`));
     return;

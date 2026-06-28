@@ -114,21 +114,9 @@
         }
         const list = document.querySelector('[data-position-list]');
         if (list) {
-          list.innerHTML = positions.map((p) => `
-            <div class="list-item">
-              <div class="item-top">
-                <div>
-                  <div class="item-title">${p.name}</div>
-                  <div class="item-meta">${projectMap.get(p.project_id)?.company_name || '未知公司'} · ${projectMap.get(p.project_id)?.name || `项目 ${p.project_id}`} · ${p.location || ''} · 招聘人数 ${p.hiring_count}${p.salary_min || p.salary_max ? ` · ${p.salary_min || ''}-${p.salary_max || ''}` : ''}</div>
-                </div>
-                <div class="table-actions">
-                  <button class="btn-sm" data-action="edit-position" data-id="${p.id}">编辑</button>
-                  <button class="btn-sm" data-action="toggle-position-status" data-id="${p.id}" data-status="${p.status}">${p.status === '已关闭' ? '恢复' : '关闭'}</button>
-                  <button class="btn-sm" data-action="delete-position" data-id="${p.id}">删除</button>
-                </div>
-                <span class="chip ${p.status === '已关闭' ? 'neutral' : p.urgency === '高' ? 'warning' : 'success'}">${p.status}</span>
-              </div>
-            </div>`).join('') || '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
+          list.innerHTML = window.hrRenderPositionTree
+            ? window.hrRenderPositionTree(positions, projectMap, new Map())
+            : '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
         }
       } catch (err) {
         console.warn(err);
