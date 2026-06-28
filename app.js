@@ -159,7 +159,7 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map()) => {
         <div class="item-top" style="display:grid;grid-template-columns:1.2fr 1.5fr 1.8fr 0.8fr 0.8fr 1fr 1.2fr 2.5fr 180px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;">
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.company_name || '未知公司')}">${escapeHtml(project.company_name || '未知公司')}</div>
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.name || '')}">${escapeHtml(project.name || '--')}</div>
-          <div class="item-title" style="display:flex;align-items:center;gap:4px;min-width:0;margin-right:0;"><span style="font-weight:600;color:#0f172a;">${escapeHtml(position.name)}</span>${tagHtml}</div>
+          <div class="item-title" style="display:flex;align-items:center;gap:4px;min-width:0;margin-right:0;"><button type="button" data-action="show-position-candidates" data-position-id="${position.id}" style="font-weight:600;color:#0f172a;font-size:13px;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;">${escapeHtml(position.name)}</button>${tagHtml}</div>
           <div style="text-align:center;"><span class="chip" style="${urgencyBg}width:48px;text-align:center;display:inline-block;font-weight:600;">${position.urgency || '中'}</span></div>
           <div style="color:#475569;font-size:13px;text-align:center;">${position.hiring_count || 1}人</div>
           <div style="color:#475569;font-size:13px;text-align:center;">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
@@ -4367,65 +4367,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
   }
 
   if (button.dataset.action === "show-position-candidates") {
-    const positionId = Number(button.dataset.positionId);
-    const positionName = button.dataset.positionName || '岗位';
-    const modal = document.querySelector('[data-position-candidates-modal]');
-    if (!modal) throw new Error('未找到候选人弹窗');
-
-    // Fetch recommendations and candidates
-    const recommendations = await window.hrApi.recommendations({ position_id: positionId });
-
-    // Fetch candidate details for each recommendation
-    const candidateDetails = await Promise.all(
-      recommendations.map(async (rec) => {
-        try {
-          const candidate = await window.hrApi.candidate(rec.candidate_id);
-          return { ...rec, candidate };
-        } catch {
-          return { ...rec, candidate: null };
-        }
-      })
-    );
-
-    // Update modal title
-    const titleEl = document.querySelector('[data-position-candidates-title]');
-    if (titleEl) titleEl.textContent = positionName + ' - 推荐候选人';
-
-    const list = document.querySelector('[data-position-candidates-list]');
-    if (!list) return;
-
-    if (!candidateDetails.length) {
-      list.innerHTML = '<div class="list-item"><div class="item-meta">暂无推荐候选人。</div></div>';
-    } else {
-      list.innerHTML = '<div class="table-head" style="display:grid;grid-template-columns:1.2fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr;gap:10px;padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-weight:600;color:#475569;font-size:13px;align-items:center;"><div>候选人</div><div>手机号</div><div>当前职位</div><div>城市</div><div>学历</div><div>经验</div><div>推荐状态</div></div>' +
-        candidateDetails.map((item) => {
-          const c = item.candidate;
-          if (!c) {
-            return '<div class="list-item" style="padding:12px 16px;border-bottom:1px solid #e2e8f0;"><div class="item-meta">候选人数据不可用 (ID: ' + item.candidate_id + ')</div></div>';
-          }
-          const statusColor = item.status === '已录用' || item.status === '已入职' ? 'success' :
-                             item.status === '淘汰' || item.status === '不合适' ? 'neutral' : 'warning';
-          return '<div class="list-item" style="display:grid;grid-template-columns:1.2fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;">' +
-            '<div style="font-weight:600;color:#0f172a;">' + (c.name || '--') + '</div>' +
-            '<div style="color:#475569;font-size:13px;">' + (c.phone || '--') + '</div>' +
-            '<div style="color:#475569;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + (c.current_title || '') + '">' + (c.current_title || '--') + '</div>' +
-            '<div style="color:#475569;font-size:13px;text-align:center;">' + (c.city || '--') + '</div>' +
-            '<div style="color:#475569;font-size:13px;text-align:center;">' + (c.education || '--') + '</div>' +
-            '<div style="color:#475569;font-size:13px;text-align:center;">' + (c.experience_years != null ? c.experience_years + '年' : '--') + '</div>' +
-            '<div style="text-align:center;"><span class="chip ' + statusColor + '" style="font-size:11px;padding:3px 8px;">' + (item.status || '待推荐') + '</span></div>' +
-            '</div>';
-        }).join('');
-    }
-
-    modal.style.display = 'block';
+    const positionId = button.dataset.positionId || '0';
+    location.href = './position-candidates.html?position_id=' + positionId;
     return;
   }
-  if (button.dataset.action === "close-position-candidates-modal") {
-    const modal = document.querySelector('[data-position-candidates-modal]');
-    if (modal) modal.style.display = 'none';
-    return;
-  }
-
   if (button.dataset.action === "view-project-positions") {
     const projectId = button.dataset.projectId || '';
     const tab = document.querySelector('[data-subtab=position-tab]');
