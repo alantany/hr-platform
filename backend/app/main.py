@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import inspect, text
+from sqlalchemy import func, inspect, text
 from sqlalchemy.orm import Session
 
 from fastapi.responses import FileResponse
@@ -82,6 +82,9 @@ def ensure_schema() -> None:
         }.items():
             if column not in proj_cols:
                 conn.execute(text(ddl))
+        conn.execute(text("UPDATE projects SET level = '高' WHERE level = 'A'"))
+        conn.execute(text("UPDATE projects SET level = '中' WHERE level = 'B'"))
+        conn.execute(text("UPDATE projects SET level = '低' WHERE level = 'C'"))
 
         # users
         user_cols = {col['name'] for col in inspector.get_columns("users")}
@@ -540,12 +543,62 @@ def audit_logs(
     )
 
 
+def _company_out(db: Session, company: Company) -> dict:
+    project_count = db.query(func.count(Project.id)).filter(Project.company_id == company.id).scalar() or 0
+    position_count = (
+        db.query(func.count(Position.id))
+        .join(Project, Project.id == Position.project_id)
+        .filter(Project.company_id == company.id)
+        .scalar()
+        or 0
+    )
+    active_project_count = (
+        db.query(func.count(Project.id))
+        .filter(Project.company_id == company.id, Project.status == "招聘中")
+        .scalar()
+        or 0
+    )
+    item = schemas.CompanyOut.model_validate(company, from_attributes=True).model_dump()
+    item.update({
+        "status": "招聘中" if active_project_count else "未招聘",
+        "project_count": project_count,
+        "position_count": position_count,
+    })
+    return item
+
+
+def _project_out(db: Session, project: Project, company_name: str | None = None) -> dict:
+    hiring_count, position_count = (
+        db.query(func.coalesce(func.sum(Position.hiring_count), 0), func.count(Position.id))
+        .filter(Position.project_id == project.id)
+        .one()
+    )
+    if company_name is None:
+        company_name = db.query(Company.name).filter(Company.id == project.company_id).scalar() or ""
+    level = {"A": "高", "B": "中", "C": "低"}.get(project.level, project.level)
+    return {
+        "id": project.id,
+        "company_id": project.company_id,
+        "company_name": company_name,
+        "name": project.name,
+        "status": project.status,
+        "level": level,
+        "hiring_count": int(hiring_count or 0),
+        "position_count": int(position_count or 0),
+        "work_location": project.work_location,
+        "project_period": project.project_period,
+        "description": project.description,
+        "owner_user_id": project.owner_user_id,
+        "created_at": project.created_at,
+    }
+
+
 @app.get("/api/companies", response_model=list[schemas.CompanyOut])
 def list_companies(db: Session = Depends(get_db), user: User = Depends(require_user)):
     items = db.query(Company).order_by(Company.created_at.desc()).all()
-    if security.is_admin(user):
-        return items
-    return [item for item in items if security.can_access_scope(db, user, "company", item.id)]
+    if not security.is_admin(user):
+        items = [item for item in items if security.can_access_scope(db, user, "company", item.id)]
+    return [_company_out(db, item) for item in items]
 
 
 @app.post("/api/companies", response_model=schemas.CompanyOut)
@@ -558,7 +611,7 @@ def add_company(payload: schemas.CompanyCreate, db: Session = Depends(get_db), u
     crud.add_audit(db, user.username, "客户公司管理", "创建客户公司", "company", "new", detail=payload.name)
     db.commit()
     db.refresh(obj)
-    return obj
+    return _company_out(db, obj)
 
 
 @app.patch("/api/companies/{company_id}", response_model=schemas.CompanyOut)
@@ -572,22 +625,7 @@ def edit_company(company_id: int, payload: schemas.CompanyUpdate, db: Session = 
     crud.add_audit(db, user.username, "客户公司管理", "更新客户公司", "company", str(company_id), detail=obj.name)
     db.commit()
     db.refresh(obj)
-    return obj
-
-
-@app.post("/api/companies/{company_id}/toggle", response_model=schemas.CompanyOut)
-def toggle_company(company_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    obj = db.get(Company, company_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="客户公司不存在")
-    if not security.is_admin(user):
-        enforce_company_access(db, user, company_id)
-    status_cycle = {"招聘中": "空闲", "空闲": "失效", "失效": "招聘中"}
-    obj.status = status_cycle.get(obj.status, "招聘中")
-    crud.add_audit(db, user.username, "客户公司管理", "切换客户状态", "company", str(company_id), detail=obj.name)
-    db.commit()
-    db.refresh(obj)
-    return obj
+    return _company_out(db, obj)
 
 
 @app.delete("/api/companies/{company_id}")
@@ -616,9 +654,7 @@ def list_projects(company_id: int | None = Query(default=None), db: Session = De
     for project, company_name in rows:
         if not security.is_admin(user) and not security.can_access_scope(db, user, "project", project.id):
             continue
-        item = schemas.ProjectOut.model_validate(project, from_attributes=True).model_dump()
-        item["company_name"] = company_name or ""
-        result.append(item)
+        result.append(_project_out(db, project, company_name or ""))
     return result
 
 
@@ -634,7 +670,7 @@ def add_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db), u
     crud.add_audit(db, user.username, "项目管理", "创建项目", "project", "new", detail=payload.name)
     db.commit()
     db.refresh(obj)
-    return obj
+    return _project_out(db, obj)
 
 
 @app.patch("/api/projects/{project_id}", response_model=schemas.ProjectOut)
@@ -648,7 +684,7 @@ def edit_project(project_id: int, payload: schemas.ProjectUpdate, db: Session = 
     crud.add_audit(db, user.username, "项目管理", "更新项目", "project", str(project_id), detail=obj.name)
     db.commit()
     db.refresh(obj)
-    return obj
+    return _project_out(db, obj)
 
 
 @app.post("/api/projects/{project_id}/toggle", response_model=schemas.ProjectOut)
@@ -663,7 +699,7 @@ def toggle_project(project_id: int, db: Session = Depends(get_db), user: User = 
     crud.add_audit(db, user.username, "项目管理", "切换项目状态", "project", str(project_id), detail=obj.name)
     db.commit()
     db.refresh(obj)
-    return obj
+    return _project_out(db, obj)
 
 
 @app.delete("/api/projects/{project_id}")
@@ -716,21 +752,6 @@ def edit_position(position_id: int, payload: schemas.PositionUpdate, db: Session
         enforce_position_access(db, user, position_id)
     crud.update_position(db, obj, payload)
     crud.add_audit(db, user.username, "岗位管理", "更新岗位", "position", str(position_id), detail=obj.name)
-    db.commit()
-    db.refresh(obj)
-    return obj
-
-
-@app.post("/api/positions/{position_id}/toggle", response_model=schemas.PositionOut)
-def toggle_position(position_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    obj = db.get(Position, position_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="岗位不存在")
-    if not security.is_admin(user):
-        enforce_position_access(db, user, position_id)
-    status_cycle = {"待招": "招聘中", "招聘中": "已关闭", "已关闭": "待招"}
-    obj.status = status_cycle.get(obj.status, "待招")
-    crud.add_audit(db, user.username, "岗位管理", "切换岗位状态", "position", str(position_id), detail=obj.name)
     db.commit()
     db.refresh(obj)
     return obj

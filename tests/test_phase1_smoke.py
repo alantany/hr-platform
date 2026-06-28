@@ -22,12 +22,11 @@ def test_phase1_chain_smoke():
     headers = auth_headers()
     company = client.post("/api/companies", json={"name": f"测试客户B-{suffix}", "contact_name": "负责人", "contact_phone": "13800002222"}, headers=headers).json()
     updated_company = client.patch(f"/api/companies/{company['id']}", json={"contact_name": "负责人-改"}, headers=headers).json()
-    toggled_company = client.post(f"/api/companies/{company['id']}/toggle", headers=headers).json()
     project = client.post("/api/projects", json={"company_id": company["id"], "name": f"测试项目B-{suffix}", "work_location": "深圳"}, headers=headers).json()
     updated_project = client.patch(f"/api/projects/{project['id']}", json={"status": "招聘完毕"}, headers=headers).json()
     toggled_project = client.post(f"/api/projects/{project['id']}/toggle", headers=headers).json()
     position = client.post("/api/positions", json={"project_id": project["id"], "name": f"后端工程师B-{suffix}", "urgency": "高"}, headers=headers).json()
-    updated_position = client.patch(f"/api/positions/{position['id']}", json={"status": "暂停招聘", "salary_min": 20, "salary_max": 35, "location": "广州"}, headers=headers).json()
+    updated_position = client.patch(f"/api/positions/{position['id']}", json={"salary_min": 20, "salary_max": 35, "location": "广州"}, headers=headers).json()
     positions = client.get(f"/api/positions?project_id={project['id']}", headers=headers).json()
     candidate = client.post("/api/candidates", json={"name": f"候选人B-{suffix}", "phone": f"1381111{suffix[:4]}", "city": "深圳"}, headers=headers).json()
     updated_candidate = client.patch(f"/api/candidates/{candidate['id']}", json={"phone": f"1392222{suffix[:4]}", "city": "广州", "status": "激活", "source": "页面编辑"}, headers=headers).json()
@@ -130,12 +129,11 @@ def test_phase1_chain_smoke():
 
     assert company["name"] == f"测试客户B-{suffix}"
     assert updated_company["contact_name"] == "负责人-改"
-    assert toggled_company["status"] in {"招聘中", "空闲", "失效"}
+    assert company["status"] == "未招聘"
     assert project["company_id"] == company["id"]
     assert updated_project["status"] == "招聘完毕"
     assert toggled_project["status"] in {"招聘中", "招聘完毕", "招聘中止"}
     assert position["project_id"] == project["id"]
-    assert updated_position["status"] == "暂停招聘"
     assert updated_position["salary_min"] == 20
     assert updated_position["salary_max"] == 35
     assert updated_position["location"] == "广州"

@@ -3,12 +3,12 @@ window.__PAGE_BODY__ = `
   <section class="metrics">
     <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户公司数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-company-total>0</div><div class="metric-label">当前在库客户</div></div>
     <div class="metric-card"><div class="metric-top"><div><div class="section-sub">进行中项目</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-company-projects>0</div><div class="metric-label">持续推进中的招聘包</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">本月交付人数</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-company-delivery>0</div><div class="metric-label">基于交付记录统计</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户评分</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-company-score>0.0</div><div class="metric-label">综合满意度</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">累计交付人数</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-company-delivery>0</div><div class="metric-label">基于全部交付记录统计</div></div>
+    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">岗位总数</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-company-positions>0</div><div class="metric-label">当前客户全部岗位</div></div>
   </section>
   <section class="panel">
     <div class="section-head"><div><h3>客户公司</h3><div class="section-sub">甲方公司及其项目推进概览。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-company-modal">新建客户</button><button class="btn" data-action="refresh-page">刷新列表</button></div></div>
-    <div class="table-head customer-table-head" style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 0.8fr 0.8fr 1.2fr 1.2fr 100px; gap: 10px; padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569; font-size: 13px; align-items: center;">
+    <div class="table-head customer-table-head" style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 0.8fr 0.8fr 1.2fr 100px; gap: 10px; padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569; font-size: 13px; align-items: center;">
       <div>公司名称</div>
       <div>联系人</div>
       <div>联系电话</div>
@@ -16,7 +16,6 @@ window.__PAGE_BODY__ = `
       <div style="text-align: center;">项目数</div>
       <div style="text-align: center;">岗位数</div>
       <div style="text-align: center;">状态</div>
-      <div>招聘进度</div>
       <div style="text-align: right;">操作</div>
     </div>
     <div class="list" data-company-list>
@@ -39,7 +38,6 @@ window.__PAGE_BODY__ = `
             <div class="list-item"><div class="item-top"><div><div class="item-title">联系邮箱</div><div class="item-meta">邮箱地址</div></div></div><input class="input" data-company-email /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">公司地址</div><div class="item-meta">办公地址</div></div></div><input class="input" data-company-address /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">合作周期</div><div class="item-meta">起止日期</div></div></div><input class="input" data-company-period placeholder="例如 2026-06-01 ~ 2026-12-31" /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">默认招聘中</div></div></div><select class="input" data-company-status><option value="招聘中">招聘中</option><option value="空闲">空闲</option><option value="失效">失效</option></select></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">备注</div><div class="item-meta">补充说明</div></div></div><input class="input" data-company-remark /></div>
           </div>
         </div>
@@ -54,7 +52,7 @@ window.__PAGE_BODY__ = `
   <div class="modal" data-company-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
     <div class="panel" style="max-width:620px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
       <div class="section-head">
-        <div><h3>客户操作确认</h3><div class="section-sub">确认后才会执行状态变更或删除。</div></div>
+        <div><h3>客户操作确认</h3><div class="section-sub">确认后才会执行删除。</div></div>
         <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-company-action-modal">取消</button><button class="btn primary" data-action="confirm-company-action">确认执行</button></div>
       </div>
       <div class="list">
@@ -78,7 +76,6 @@ window.__PAGE_BODY__ = `
             <div class="list-item"><div class="item-top"><div><div class="item-title">联系邮箱</div></div></div><input class="input" data-company-edit-email /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">公司地址</div></div></div><input class="input" data-company-edit-address /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">合作周期</div></div></div><input class="input" data-company-edit-period /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-company-edit-status><option value="招聘中">招聘中</option><option value="空闲">空闲</option><option value="失效">失效</option></select></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">备注</div></div></div><input class="input" data-company-edit-remark /></div>
           </div>
         </div>
@@ -115,7 +112,6 @@ window.__PAGE_BODY__ = `
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目名称</div></div></div><input class="input" data-project-edit-name /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-project-edit-status><option value="招聘中">招聘中</option><option value="招聘完毕">招聘完毕</option><option value="招聘中止">招聘中止</option></select></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">级别</div></div></div><select class="input" data-project-edit-level><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div></div></div><input class="input" type="number" min="1" data-project-edit-count /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div></div></div><input class="input" data-project-edit-location /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目周期</div></div></div><input class="input" data-project-edit-period /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目备注</div></div></div><input class="input" data-project-edit-desc /></div>
@@ -145,7 +141,6 @@ window.__PAGE_BODY__ = `
             <div class="list-item"><div class="item-top"><div><div class="item-title">最低薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-min /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">最高薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-max /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div></div></div><input class="input" data-position-edit-location /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-position-edit-status><option value="待招">待招</option><option value="招聘中">招聘中</option><option value="暂停招聘">暂停招聘</option><option value="已关闭">已关闭</option></select></div>
           </div>
         </div>
       </div>
@@ -155,12 +150,12 @@ window.__PAGE_BODY__ = `
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
       try {
-        const companies = await window.hrApi.companies();
+        const [companies, projects] = await Promise.all([window.hrApi.companies(), window.hrApi.projects()]);
         const deliveries = await window.hrApi.deliveries();
         document.querySelector('[data-company-total]').textContent = String(companies.length);
-        document.querySelector('[data-company-projects]').textContent = '0';
+        document.querySelector('[data-company-projects]').textContent = String(projects.filter(project => project.status === '招聘中').length);
         document.querySelector('[data-company-delivery]').textContent = String(deliveries.length);
-        document.querySelector('[data-company-score]').textContent = (deliveries.length ? (4.0 + Math.min(0.9, deliveries.length / 100)).toFixed(1) : '0.0');
+        document.querySelector('[data-company-positions]').textContent = String(companies.reduce((sum, company) => sum + (company.position_count || 0), 0));
         const list = document.querySelector('[data-company-list]');
         if (list) {
           list.innerHTML = window.hrRenderCompanyTree

@@ -60,7 +60,7 @@ from backend.app.models import Candidate
 
 @patch("backend.app.main.parse_and_create_candidate")
 def test_batch_import_smoke(mock_parse):
-    def side_effect(db, full_path, save_name, username):
+    def side_effect(db, full_path, save_name, username, owner_user_id):
         stem = Path(full_path).stem
         if "_" in stem:
             stem = stem.split("_", 1)[1]

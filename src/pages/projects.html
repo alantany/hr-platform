@@ -50,9 +50,9 @@ window.__PAGE_BODY__ = `
       <label style="font-size: 12px; font-weight: 600; color: #475569;">项目等级</label>
       <select class="input" id="search-project-level" style="height: 38px; font-size: 13px; background: #fff;">
         <option value="">全部</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
+        <option value="高">高</option>
+        <option value="中">中</option>
+        <option value="低">低</option>
       </select>
     </div>
     <div style="display: flex; gap: 8px;">
@@ -134,7 +134,7 @@ window.__PAGE_BODY__ = `
   <!-- 岗位列表面板 -->
   <section class="panel" id="position-panel" style="display: none;">
     <div class="section-head">
-      <div><h3 id="position-list-title">岗位列表</h3><div class="section-sub">按项目统一管理岗位需求、薪资范围和招聘状态。</div></div>
+    <div><h3 id="position-list-title">岗位列表</h3><div class="section-sub">按项目统一管理岗位需求、紧急程度和薪资范围。</div></div>
       <div class="hero-actions" style="margin-top:0">
         <button class="btn primary" style="background-color: #00c497; border-color: #00c497;" data-action="noop" data-title="JD单生成岗位">📎 JD单生成岗位</button>
         <button class="btn primary" data-action="open-position-modal">新建岗位</button>
@@ -170,8 +170,7 @@ window.__PAGE_BODY__ = `
             <div class="list-item"><div class="item-top"><div><div class="item-title">客户</div><div class="item-meta">从客户表选择关联公司</div></div></div><select class="input" data-project-company></select></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目名称</div><div class="item-meta">招聘项目名称</div></div></div><input class="input" data-project-name /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">默认招聘中</div></div></div><select class="input" data-project-status><option value="招聘中">招聘中</option><option value="招聘完毕">招聘完毕</option><option value="招聘中止">招聘中止</option></select></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">级别</div><div class="item-meta">A / B / C</div></div></div><select class="input" data-project-level><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div><div class="item-meta">岗位总需求</div></div></div><input class="input" type="number" min="1" data-project-count value="1" /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">级别</div><div class="item-meta">高 / 中 / 低</div></div></div><select class="input" data-project-level><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div><div class="item-meta">办公或驻场地点</div></div></div><input class="input" data-project-location /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目周期</div><div class="item-meta">起止日期</div></div></div><input class="input" data-project-period placeholder="例如 2026-06-01 ~ 2026-12-31" /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目备注</div><div class="item-meta">补充说明</div></div></div><input class="input" data-project-desc /></div>
@@ -213,8 +212,7 @@ window.__PAGE_BODY__ = `
             </div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目名称</div></div></div><input class="input" data-project-edit-name /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-project-edit-status><option value="招聘中">招聘中</option><option value="招聘完毕">招聘完毕</option><option value="招聘中止">招聘中止</option></select></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">级别</div></div></div><select class="input" data-project-edit-level><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div></div></div><input class="input" type="number" min="1" data-project-edit-count /></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">级别</div></div></div><select class="input" data-project-edit-level><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div></div></div><input class="input" data-project-edit-location /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目周期</div></div></div><input class="input" data-project-edit-period /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">项目备注</div></div></div><input class="input" data-project-edit-desc /></div>
@@ -244,7 +242,6 @@ window.__PAGE_BODY__ = `
             <div class="list-item"><div class="item-top"><div><div class="item-title">最低薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-min /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">最高薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-max /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div></div></div><input class="input" data-position-edit-location /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div></div></div><select class="input" data-position-edit-status><option value="待招">待招</option><option value="招聘中">招聘中</option><option value="暂停招聘">暂停招聘</option><option value="已关闭">已关闭</option></select></div>
           </div>
         </div>
       </div>
@@ -272,7 +269,6 @@ window.__PAGE_BODY__ = `
             <div class="list-item"><div class="item-top"><div><div class="item-title">最低薪资</div><div class="item-meta">月薪下限</div></div></div><input class="input" type="number" min="0" data-position-salary-min /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">最高薪资</div><div class="item-meta">月薪上限</div></div></div><input class="input" type="number" min="0" data-position-salary-max /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div><div class="item-meta">岗位地点</div></div></div><input class="input" data-position-location /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">默认待招</div></div></div><select class="input" data-position-status><option value="待招">待招</option><option value="招聘中">招聘中</option><option value="暂停招聘">暂停招聘</option><option value="已关闭">已关闭</option></select></div>
           </div>
         </div>
       </div>
@@ -297,9 +293,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     const finished = document.querySelector('[data-project-finished]');
     const urgent = document.querySelector('[data-project-urgent]');
     if (total) total.textContent = String(projects.length);
-    if (active) active.textContent = String(projects.filter(p => p.status !== '招聘完毕').length);
+    if (active) active.textContent = String(projects.filter(p => p.status === '招聘中').length);
     if (finished) finished.textContent = String(projects.filter(p => p.status === '招聘完毕').length);
-    if (urgent) urgent.textContent = String(projects.filter(p => (p.hiring_count || 0) > 5).length);
+    if (urgent) urgent.textContent = String(positions.filter(position => position.urgency === '高').length);
     
     const companyOptions = companies.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
     

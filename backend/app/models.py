@@ -69,7 +69,7 @@ class Company(Base, TimestampMixin):
     contact_email: Mapped[str] = mapped_column(String(128), default="", nullable=False)
     address: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     cooperation_period: Mapped[str] = mapped_column(String(128), default="", nullable=False)
-    status: Mapped[str] = mapped_column(String(32), default="招聘中", nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="未招聘", nullable=False)
     remark: Mapped[str] = mapped_column(Text, default="", nullable=False)
     owner_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
@@ -84,8 +84,9 @@ class Project(Base, TimestampMixin):
     company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="招聘中", nullable=False)
-    level: Mapped[str] = mapped_column(String(16), default="A", nullable=False)
-    hiring_count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    level: Mapped[str] = mapped_column(String(16), default="中", nullable=False)
+    # Legacy storage column. The public project hiring count is derived from positions.
+    hiring_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     work_location: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     project_period: Mapped[str] = mapped_column(String(128), default="", nullable=False)
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)

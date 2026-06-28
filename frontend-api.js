@@ -71,9 +71,6 @@ window.hrApi = {
   updateCompany(id, payload) {
     return this.request(`/companies/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
   },
-  toggleCompany(id) {
-    return this.request(`/companies/${id}/toggle`, { method: "POST" });
-  },
   deleteCompany(id) {
     return this.request(`/companies/${id}`, { method: "DELETE" });
   },
@@ -102,9 +99,6 @@ window.hrApi = {
   },
   updatePosition(id, payload) {
     return this.request(`/positions/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
-  },
-  togglePosition(id) {
-    return this.request(`/positions/${id}/toggle`, { method: "POST" });
   },
   deletePosition(id) {
     return this.request(`/positions/${id}`, { method: "DELETE" });

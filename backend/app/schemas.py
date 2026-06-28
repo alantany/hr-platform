@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
@@ -116,13 +117,15 @@ class CompanyCreate(BaseModel):
     contact_email: str = ""
     address: str = ""
     cooperation_period: str = ""
-    status: str = "招聘中"
     remark: str = ""
     owner_user_id: int | None = None
 
 
 class CompanyOut(CompanyCreate):
     id: int
+    status: str = "未招聘"
+    project_count: int = 0
+    position_count: int = 0
 
 
 class CompanyUpdate(BaseModel):
@@ -132,7 +135,6 @@ class CompanyUpdate(BaseModel):
     contact_email: str | None = None
     address: str | None = None
     cooperation_period: str | None = None
-    status: str | None = None
     remark: str | None = None
 
 
@@ -140,8 +142,7 @@ class ProjectCreate(BaseModel):
     company_id: int
     name: str
     status: str = "招聘中"
-    level: str = "A"
-    hiring_count: int = 1
+    level: Literal["高", "中", "低"] = "中"
     work_location: str = ""
     project_period: str = ""
     description: str = ""
@@ -151,14 +152,16 @@ class ProjectCreate(BaseModel):
 class ProjectOut(ProjectCreate):
     id: int
     company_name: str = ""
+    hiring_count: int = 0
+    position_count: int = 0
+    created_at: datetime | None = None
 
 
 class ProjectUpdate(BaseModel):
     company_id: int | None = None
     name: str | None = None
     status: str | None = None
-    level: str | None = None
-    hiring_count: int | None = None
+    level: Literal["高", "中", "低"] | None = None
     work_location: str | None = None
     project_period: str | None = None
     description: str | None = None
@@ -172,7 +175,6 @@ class PositionCreate(BaseModel):
     salary_min: int | None = None
     salary_max: int | None = None
     location: str = ""
-    status: str = "待招"
     age_requirement: str = ""
     education_requirement: str = ""
     experience_requirement: str = ""
@@ -192,7 +194,6 @@ class PositionUpdate(BaseModel):
     salary_min: int | None = None
     salary_max: int | None = None
     location: str | None = None
-    status: str | None = None
     age_requirement: str | None = None
     education_requirement: str | None = None
     experience_requirement: str | None = None
