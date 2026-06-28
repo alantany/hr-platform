@@ -1917,6 +1917,12 @@
 - 2026-06-28：Phase 16 完成。最终批量推荐、Phase 1 主链和权限回归共 12 个用例通过；Node 语法检查、Python 编译、`git diff --check` 通过。
 - 2026-06-28：浏览器验收确认三页岗位候选人均可展开和折叠，控制台无错误；测试创建的候选人、客户、项目、岗位数据库计数均为 0。
 - Task finalized by Codex hook (unknown) at 2026-06-28 11:19:36
+- Task finalized by Codex hook (unknown) at 2026-06-28 22:25:27
+- Task finalized by Codex hook (unknown) at 2026-06-28 22:26:04
+- Task finalized by Codex hook (unknown) at 2026-06-28 22:29:54
+- Task finalized by Codex hook (unknown) at 2026-06-28 22:29:56
+- Task finalized by Codex hook (unknown) at 2026-06-28 22:35:57
+- Task finalized by Codex hook (unknown) at 2026-06-28 22:35:59
 
 ## 2026-06-28 (锁定状态一致性修复)
 
@@ -1994,3 +2000,10 @@
 - **批量导出**：新增 `positionBatchExport` 函数，从 `window.__positionCandidateIds` 读取当前岗位下的候选人 ID 列表，只加载这些候选人到导出弹窗。不再加载全库候选人。
 - **单行导出**：重写 `positionExportSingle` 函数，只加载单个候选人并填充导出弹窗，同时加载导出历史记录。
 - **验证**：node --check app.js、git diff --check 通过。
+
+## 2026-06-28 (对照需求截图对齐页面字段和交互)
+
+- 候选人姓名从纯文本改为带紫色下划线的可点击链接（`data-action="view-detail"`），点击打开候选人详情弹窗，与需求截图一致。
+- 每行"导出"按钮标签改为"简历导出"，与需求截图对齐。
+- 候选人详情弹窗补充 `data-candidate-detail-certificates` 字段（专业证书），确保 `view-detail` 处理器可正常填写所有字段。
+- 验证：node --check app.js、git diff --check 通过。
