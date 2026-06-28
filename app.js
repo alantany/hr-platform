@@ -1631,11 +1631,41 @@ async function handleGlobalButton(button) {
   }
   
   if (button.dataset.action === "view-detail") {
+    if (!document.querySelector('[data-candidate-detail-modal]')) {
+      try {
+        const res = await fetch('candidates.html');
+        if (res.ok) {
+          const htmlText = await res.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(htmlText, 'text/html');
+          const modalSelectors = [
+            '[data-candidate-detail-modal]',
+            '[data-candidate-edit-modal]',
+            '[data-candidate-mail-modal]',
+            '[data-add-note-modal]',
+            '[data-add-tracking-modal]',
+            '[data-salary-tracking-modal]',
+            '[data-candidate-followup-modal]'
+          ];
+          modalSelectors.forEach(sel => {
+            if (!document.querySelector(sel)) {
+              const modal = doc.querySelector(sel);
+              if (modal) {
+                document.body.appendChild(modal);
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.error("动态加载候选人详情 Modal 失败:", err);
+      }
+    }
     const title = button.dataset.title || text || "详情";
     const candidateKey = button.dataset.candidateKey || button.dataset.rowKey || button.dataset.id || '';
     const modal = document.querySelector('[data-candidate-detail-modal]');
+    if (!modal) throw new Error("无法初始化详情窗口");
     const item = candidateKey ? await window.hrApi.candidate(candidateKey) : null;
-    if (modal) modal.style.display = 'block';
+    modal.style.display = 'block';
     const resolvedId = item?.id != null ? String(item.id) : '';
     document.body.dataset.candidateId = resolvedId;
     document.querySelector('[data-candidate-detail-title]').textContent = `${item?.name || title} 详情`;
