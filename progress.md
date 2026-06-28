@@ -1971,3 +1971,10 @@
 - 客户悬浮弹窗点击岗位 → 跳转到该页面；项目管理岗位列表点击岗位名称 → 跳转到该页面。
 - 旧的内嵌弹窗模式已移除，`show-position-candidates` 处理器改为页面跳转。
 - 验证：node --check app.js、git diff --check 通过。
+
+## 2026-06-28 (修复 position-candidates.html 权限拦截问题)
+
+- 将 position-candidates.html 注册到 getNavVisibility 所有分支（超级管理员、组长、普通用户），使其可通过页面权限检查。
+- 在 pages 元数据中添加 position-candidates 键，显示正确的面包屑及页面标题。
+- 该页面为详情页（从客户悬浮弹窗/项目管理岗位列表跳转进入），不加入侧边栏导航项。
+- 验证：node --check app.js、git diff --check 通过。

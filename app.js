@@ -77,6 +77,11 @@ const pages = {
     title: "岗位管理",
     desc: "统一管理项目下的岗位、紧急程度、招聘人数与薪资范围。",
   },
+  "position-candidates": {
+    crumbs: "项目管理 / 岗位候选人",
+    title: "岗位候选人管理",
+    desc: "管理该岗位下的推荐候选人。",
+  },
   "recruit-job-publish": {
     crumbs: "岗位管理 / 岗位发布",
     title: "岗位发布",
@@ -440,11 +445,15 @@ window.refreshManagementPage = async () => {
 
 function getNavVisibility(role, permissions = null) {
   const permissionSet = permissions ? new Set(permissions) : null;
+  // Detail pages accessible from other pages, not in sidebar
+  const detailPages = new Set(["position-candidates.html"]);
   if (permissionSet?.has("all")) {
-    return new Set(navItems.map(({ href }) => href));
+    const result = new Set(navItems.map(({ href }) => href));
+    detailPages.forEach(p => result.add(p));
+    return result;
   }
   if (permissionSet?.size) {
-    const allowed = new Set(["dashboard.html"]);
+    const allowed = new Set(["dashboard.html", ...detailPages]);
     navItems.forEach(({ href }) => {
       const key = href.replace(".html", "");
       if (permissionSet.has(`page:${key}`)) allowed.add(href);
@@ -453,7 +462,9 @@ function getNavVisibility(role, permissions = null) {
   }
   const normalized = String(role || "").toLowerCase();
   if (String(role || "").includes("超级") || normalized.includes("admin")) {
-    return new Set(navItems.map(({ href }) => href));
+    const result = new Set(navItems.map(({ href }) => href));
+    detailPages.forEach(p => result.add(p));
+    return result;
   }
   if (String(role || "").includes("组长") || String(role || "").includes("主管") || normalized.includes("leader")) {
     return new Set([
@@ -470,6 +481,7 @@ function getNavVisibility(role, permissions = null) {
       "notifications.html",
       "statistics.html",
       "db-explorer.html",
+      "position-candidates.html",
     ]);
   }
   return new Set([
@@ -484,6 +496,7 @@ function getNavVisibility(role, permissions = null) {
       "evaluations.html",
       "notifications.html",
     "db-explorer.html",
+    "position-candidates.html",
   ]);
 }
 
