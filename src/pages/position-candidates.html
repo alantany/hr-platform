@@ -19,6 +19,7 @@
             <div class="section-sub" data-page-sub>加载中...</div>
           </div>
           <div class="hero-actions" style="margin-top:0;">
+            <button class="btn" data-action="open-export-modal">批量导出</button>
             <button class="btn" onclick="history.back()">返回</button>
           </div>
         </div>
@@ -57,19 +58,6 @@
       </section>
     `;
 
-    function formatSalaryRange(position) {
-      const min = position?.salary_min;
-      const max = position?.salary_max;
-      if (min || max) return (min || '0') + '-' + (max || '不限') + 'K';
-      return '薪资面议';
-    }
-
-    function refreshList() {
-      const list = document.querySelector('[data-candidate-list]');
-      if (list) list.innerHTML = '<div class="list-item"><div class="item-meta">加载中...</div></div>';
-      initPage();
-    }
-
     async function initPage() {
       const params = new URLSearchParams(location.search);
       const positionId = params.get('position_id');
@@ -97,7 +85,7 @@
         setText('[data-position-name]', position.name);
         setText('[data-company-name]', company?.name || '--');
         setText('[data-project-name]', project?.name || '--');
-        setText('[data-position-salary]', formatSalaryRange(position));
+        setText('[data-position-salary]', formatSalary(position));
         setText('[data-position-location]', position.location || '--');
         setText('[data-hiring-count]', position.hiring_count || 1);
 
@@ -105,13 +93,10 @@
         if (urgencyEl) {
           urgencyEl.textContent = position.urgency || '--';
           if (position.urgency === '高') {
-            urgencyEl.className = 'chip';
             urgencyEl.style.cssText = 'font-size:11px;padding:2px 8px;background:#fee2e2;color:#ef4444;border:1px solid #fecaca;';
           } else if (position.urgency === '中') {
-            urgencyEl.className = 'chip';
             urgencyEl.style.cssText = 'font-size:11px;padding:2px 8px;background:#ffedd5;color:#f97316;border:1px solid #fed7aa;';
           } else {
-            urgencyEl.className = 'chip';
             urgencyEl.style.cssText = 'font-size:11px;padding:2px 8px;background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe;';
           }
         }
@@ -131,6 +116,14 @@
         );
 
         setText('[data-recommend-count]', candidateDetails.length);
+        // Store candidate IDs for batch export
+        const allCandidateIds = candidateDetails.map(item => item.candidate?.id).filter(Boolean).map(String);
+        const exportBtn = document.querySelector('[data-action="open-export-modal"]');
+        if (exportBtn && allCandidateIds.length) {
+          // Override default open-export-modal to use position's candidates
+          const orig = exportBtn.onclick;
+          exportBtn.dataset.positionCandidateIds = JSON.stringify(allCandidateIds);
+        }
 
         const list = document.querySelector('[data-candidate-list]');
         if (!candidateDetails.length) {
@@ -139,14 +132,14 @@
           list.innerHTML = candidateDetails.map((item) => {
             const c = item.candidate;
             if (!c) {
-              return '<div class="list-item" style="display:grid;grid-template-columns:1.5fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr 200px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:13px;"><div>候选人数据不可用 (ID: ' + item.candidate_id + ')</div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>';
+              return '<div class="list-item" style="display:grid;grid-template-columns:1.5fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr 200px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:13px;"><div>候选人不可用 (ID: ' + item.candidate_id + ')</div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>';
             }
-            const statusColor = item.status === '已录用' || item.status === '已入职' ? 'success' : 
+            const statusColor = item.status === '已录用' || item.status === '已入职' ? 'success' :
                                item.status === '淘汰' || item.status === '不合适' ? 'neutral' : 'warning';
             return '<div class="list-item" style="display:grid;grid-template-columns:1.5fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr 200px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;">'
               + '<div style="display:flex;align-items:center;gap:8px;">'
               + '<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">' + (c.name || '?').charAt(0) + '</div>'
-              + '<div><div style="font-weight:600;color:#0f172a;font-size:13px;cursor:pointer;color:#6657ee;text-decoration:underline;text-underline-offset:2px;" data-candidate-name-link data-id="' + c.id + '" onclick="showCandidateDetail(' + c.id + ')">' + (c.name || '--') + '</div>'
+              + '<div><div style="font-weight:600;color:#0f172a;font-size:13px;">' + (c.name || '--') + '</div>'
               + '<div style="font-size:11px;color:#94a3b8;">' + (c.email || '') + '</div></div></div>'
               + '<div style="color:#475569;font-size:13px;">' + (c.phone || '--') + '</div>'
               + '<div style="color:#475569;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + (c.current_title || '') + '">' + (c.current_title || '--') + '</div>'
@@ -155,9 +148,9 @@
               + '<div style="color:#475569;font-size:13px;text-align:center;">' + (c.experience_years != null ? c.experience_years + '年' : '--') + '</div>'
               + '<div style="text-align:center;"><span class="chip ' + statusColor + '" style="font-size:11px;padding:3px 8px;">' + (item.status || '待推荐') + '</span></div>'
               + '<div class="table-actions" style="display:flex;gap:6px;align-items:center;justify-content:center;">'
-              + '<button class="btn-sm" data-action="edit-candidate" data-id="' + c.id + '">详情</button>'
-              + '<button class="btn-sm" onclick="exportCandidate(' + c.id + ', \'' + (c.name || '').replace(/'/g, "\\'") + '\')">导出</button>'
-              + '<button class="btn-sm" style="color:#ef4444;border-color:#fecaca;" onclick="removeRecommendation(' + item.id + ', ' + c.id + ', \'' + (c.name || '').replace(/'/g, "\\'") + '\', this)">移除</button>'
+              + '<button class="btn-sm" data-action="view-detail" data-id="' + c.id + '">详情</button>'
+              + '<button class="btn-sm" onclick="positionExportSingle(' + c.id + ', \'' + (c.name || '').replace(/'/g, "\\'") + '\')">导出</button>'
+              + '<button class="btn-sm" style="color:#ef4444;border-color:#fecaca;" onclick="removeRecommendation(' + item.id + ', \'' + (c.name || '').replace(/'/g, "\\'") + '\', this)">移除</button>'
               + '</div>'
               + '</div>';
           }).join('');
@@ -169,70 +162,36 @@
       }
     }
 
+    function formatSalary(p) {
+      const min = p?.salary_min;
+      const max = p?.salary_max;
+      if (min || max) return (min || '0') + '-' + (max || '不限') + 'K';
+      return '薪资面议';
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
       initPage();
     });
 
-    // -- Shared helper functions -- //
-
-    function showCandidateDetail(candidateId) {
+    // Single export: open export modal (shows all candidates, user can select/deselect)
+    async function positionExportSingle(candidateId, candidateName) {
       const fakeBtn = document.createElement('button');
-      fakeBtn.dataset.action = 'edit-candidate';
-      fakeBtn.dataset.id = String(candidateId);
+      fakeBtn.dataset.action = 'open-export-modal';
       fakeBtn.style.display = 'none';
       document.body.appendChild(fakeBtn);
       fakeBtn.click();
       setTimeout(() => fakeBtn.remove(), 100);
     }
 
-    async function exportCandidate(candidateId, candidateName) {
-      try {
-        const c = await window.hrApi.candidate(candidateId);
-        if (!c) throw new Error('候选人不存在');
-
-        const companyName = document.querySelector('[data-company-name]')?.textContent || '';
-        const projectName = document.querySelector('[data-project-name]')?.textContent || '';
-        const positionName = document.querySelector('[data-position-name]')?.textContent || '';
-
-        const record = await window.hrApi.createExportRecord({
-          candidate_id: c.id,
-          candidate_name: c.name || '',
-          company_name: companyName,
-          project_name: projectName,
-          position_name: positionName,
-          format: 'PDF',
-          watermarked: true,
-          exported_by: 'admin',
-          file_name: (c.name || '候选人') + '-简历报告.pdf',
-          file_path: '',
-          contract_no: '',
-          project_no: '',
-          headhunter_position: '',
-        });
-        if (record && record.file_path) {
-          await new Promise(r => setTimeout(r, 500));
-          const link = document.createElement('a');
-          link.href = record.file_path;
-          link.download = record.file_name;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-        showToast((candidateName || '候选人') + ' 的简历已导出');
-      } catch (err) {
-        showToast('导出失败：' + (err.message || err));
-      }
-    }
-
-    async function removeRecommendation(recommendationId, candidateId, candidateName, btnEl) {
+    // Remove recommendation
+    async function removeRecommendation(recommendationId, candidateName, btnEl) {
       if (!confirm('确认将 ' + (candidateName || '该候选人') + ' 从当前岗位移除？')) return;
       try {
         if (btnEl) { btnEl.disabled = true; btnEl.textContent = '移除中...'; }
         await window.hrApi.deleteRecommendation(recommendationId);
         showToast('已移除 ' + (candidateName || '候选人'));
-        // Refresh the list
-        setTimeout(() => refreshList(), 300);
+        setTimeout(() => location.reload(), 300);
       } catch (err) {
         showToast('移除失败：' + (err.message || err));
         if (btnEl) { btnEl.disabled = false; btnEl.textContent = '移除'; }
@@ -248,10 +207,55 @@
         container.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
       } else {
-        // Fallback to window.showToast if available
         try { window.showToast(msg); } catch(e) { alert(msg); }
       }
     }
   </script>
+
+      <div class="modal" data-export-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:820px; margin:4vh auto 0; background:#fff; max-height:90vh; overflow-y:auto;">
+          <div class="section-head" style="position:sticky; top:0; background:#fff; z-index:1; border-bottom:1px solid rgba(15,23,42,.06); padding-bottom:16px; margin-bottom:0;">
+            <div>
+              <h3>简历导出</h3>
+              <div class="section-sub">为每位候选人分别填写合同编号、项目编号和猎头职位（选填），确认后各自生成一份 PDF 简历并自动下载。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" data-action="close-export-modal">取消</button>
+              <button class="btn primary" data-action="confirm-export-upload">确认导出</button>
+            </div>
+          </div>
+          <div class="grid-2" style="padding:16px;">
+            <div style="display:flex; flex-direction:column; gap:0;">
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;">待导出候选人</div>
+              <div data-export-candidates-list style="display:flex; flex-direction:column; gap:10px;">
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;">最近导出记录</div>
+              <div class="list" data-export-history-modal style="border:1px solid rgba(15,23,42,.08); border-radius:8px; overflow:hidden;">
+                <div class="list-item"><div class="item-meta">导出记录来自数据库，可按候选人回看。</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+            <div class="panel" style="box-shadow:none;border:1px solid rgba(15,23,42,.08);">
+              <h4>工作与教育</h4>
+              <div class="list"><div class="list-item"><div><div class="item-title">当前职位</div></div><div data-candidate-detail-title>--</div></div><div class="list-item"><div><div class="item-title">学历</div></div><div data-candidate-detail-education>--</div></div><div class="list-item"><div><div class="item-title">从业年限</div></div><div data-candidate-detail-exp>--</div></div><div class="list-item"><div><div class="item-title">教育经历</div></div><div data-candidate-detail-edu-detail style="white-space:pre-wrap;">--</div></div><div class="list-item"><div><div class="item-title">工作经历</div></div><div data-candidate-detail-work-history style="white-space:pre-wrap;">--</div></div><div class="list-item"><div><div class="item-title">项目经历</div></div><div data-candidate-detail-project-history style="white-space:pre-wrap;">--</div></div></div>
+            </div>
+            <div class="panel" style="box-shadow:none;border:1px solid rgba(15,23,42,.08);">
+              <h4>薪资与意向</h4>
+              <div class="list"><div class="list-item"><div><div class="item-title">期望薪资</div></div><div data-candidate-detail-salary>--</div></div><div class="list-item"><div><div class="item-title">薪资结构</div></div><div data-candidate-detail-salary-structure style="white-space:pre-wrap;">--</div></div><div class="list-item"><div><div class="item-title">到岗周期</div></div><div data-candidate-detail-onboard>--</div></div><div class="list-item"><div><div class="item-title">目前状态</div></div><div data-candidate-detail-job-status>--</div></div><div class="list-item"><div><div class="item-title">求职意向</div></div><div data-candidate-detail-intention>--</div></div><div class="list-item"><div><div class="item-title">核心价值</div></div><div data-candidate-detail-core-value style="white-space:pre-wrap;">--</div></div></div>
+            </div>
+            <div class="panel" style="box-shadow:none;border:1px solid rgba(15,23,42,.08);">
+              <h4>综合评价</h4>
+              <div class="list"><div class="list-item"><div><div class="item-title">综合评估</div></div><div data-candidate-detail-evaluation style="white-space:pre-wrap;">--</div></div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;padding:12px 0;"><button class="btn" data-action="edit-candidate" data-id="" style="margin-right:auto;"><span>&#9998;</span> 编辑</button><button class="btn" data-action="open-detail-note-modal"><span>&#128221;</span> 备注</button><button class="btn" data-action="open-detail-salary-modal"><span>&#128178;</span> 薪资</button><button class="btn" data-action="open-detail-mail-modal"><span>&#9993;</span> 邮件</button></div>
+        </div>
+      </div>
+
 </body>
 </html>

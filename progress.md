@@ -1978,3 +1978,12 @@
 - 在 pages 元数据中添加 position-candidates 键，显示正确的面包屑及页面标题。
 - 该页面为详情页（从客户悬浮弹窗/项目管理岗位列表跳转进入），不加入侧边栏导航项。
 - 验证：node --check app.js、git diff --check 通过。
+
+## 2026-06-28 (修复详情和导出按钮)
+
+- **详情按钮修复**：改为 `data-action="view-detail" data-id="${c.id}"`，由现有 `view-detail` 处理器动态从 candidates.html 加载候选人的详情/编辑弹窗，不再使用自定义 fakeBtn 方式。
+- **导出按钮修复**：添加简历池的导出弹窗 HTML，包括合同编号/项目编号/猎头职位三个元数据输入字段的卡片，以及最近的导出记录面板。
+  - 批量导出按钮（页面顶部工具栏）直接复用 `open-export-modal` 处理器
+  - 每行"导出"按钮使用 `positionExportSingle` 函数触发导出弹窗
+- **移除按钮**：保持原有逻辑，调用 `deleteRecommendation` 后刷新列表。
+- 验证：node --check app.js、git diff --check 通过。
