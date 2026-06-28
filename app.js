@@ -237,11 +237,12 @@ const renderPositionTreeItem = (position, project, company, candidates = [], dep
           </div>
           <div class="item-meta">${meta || '暂无补充信息'}</div>
         </div>
-        <div class="table-actions">
+        <div class="table-actions" style="display: flex; gap: 8px; align-items: center;">
           <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
-          <button class="btn-sm primary" data-action="search-add-candidates" data-id="${position.id}">添加候选人</button>
           <button class="btn-sm" data-action="toggle-position-status" data-id="${position.id}" data-status="${position.status}">${position.status === '已关闭' ? '恢复' : '关闭'}</button>
           <button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button>
+          <span style="border-left: 1px solid rgba(15,23,42,.1); height: 16px; margin: 0 4px; display: inline-block;"></span>
+          <button class="btn-sm primary" data-action="search-add-candidates" data-id="${position.id}">添加候选人</button>
           <button class="btn-sm danger" data-action="batch-delete-candidates-tree" data-position-batch-delete="${position.id}" disabled style="opacity:0.4;cursor:not-allowed;">批量移除</button>
         </div>
         <span class="chip ${statusChip}">${position.status}</span>
@@ -705,6 +706,21 @@ async function render() {
       .app-shell { min-height: 100% !important; display: block !important; }
       body { background: #fff !important; }
       .content { padding: 12px !important; margin: 0 !important; }
+      .metrics { display: none !important; }
+      .grid-2 { grid-template-columns: 1.2fr 1fr !important; gap: 12px !important; }
+      .toolbar { display: flex !important; flex-direction: row !important; gap: 10px !important; }
+      .input.wide { min-width: 0 !important; }
+      .grid-2 .panel { margin-bottom: 0 !important; }
+      .grid-2 .panel .list { display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; gap: 12px !important; padding: 8px 12px !important; }
+      .grid-2 .panel .list-item { flex: 1 1 130px !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+      .grid-2 .panel .list-item:not(:last-child) { border-bottom: none !important; }
+      .grid-2 .panel .list-item .item-top { padding: 0 !important; }
+      .table-head, .table-row {
+        display: grid !important;
+        grid-template-columns: 48px 1.5fr 1fr 1fr 1fr 1fr 0.8fr 1fr !important;
+        gap: 10px !important;
+        align-items: center !important;
+      }
     `;
     document.head.appendChild(style);
   }
