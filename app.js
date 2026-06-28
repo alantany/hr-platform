@@ -242,7 +242,6 @@ const renderPositionTreeItem = (position, project, company, candidates = [], dep
         </div>
         <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
           <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
-          <button class="btn-sm" data-action="toggle-position-status" data-id="${position.id}" data-status="${position.status}">${position.status === '已关闭' ? '恢复' : '关闭'}</button>
           <button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button>
           <span style="border-left: 1px solid rgba(15,23,42,.1); height: 16px; margin: 0 24px; display: inline-block;"></span>
           <button class="btn-sm primary" data-action="search-add-candidates" data-id="${position.id}">添加候选人</button>
@@ -273,7 +272,6 @@ const renderProjectTreeItem = (project, company, positions = [], candidatesByPos
         </div>
         <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
           <button class="btn-sm" data-action="edit-project" data-id="${project.id}">编辑</button>
-          <button class="btn-sm" data-action="toggle-project" data-id="${project.id}">${getProjectActionLabel(project.status)}</button>
           <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
         </div>
         <span class="chip ${chipClass}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${project.status}</span>
@@ -302,7 +300,6 @@ const renderCompanyTreeItem = (company, projects = [], positionsByProject = new 
         </div>
         <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
           <button class="btn-sm" data-action="edit-company" data-id="${company.id}">编辑</button>
-          <button class="btn-sm" data-action="toggle-company" data-id="${company.id}">${actionLabel}</button>
           <button class="btn-sm" data-action="delete-company" data-id="${company.id}">删除</button>
         </div>
         <span class="chip ${chipClass}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${company.status || '招聘中'}</span>
@@ -358,19 +355,18 @@ const renderProjectTreeMarkup = (projects = [], positionsByProject = new Map(), 
     return `
       <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" style="margin-left:0">
         <div class="item-top">
-          <div>
+          <div style="flex: 1; min-width: 0;">
             <div class="item-title">
               ${renderTreeToggle(state, 'project', project.id)}
               <span>${project.name}</span>
             </div>
             <div class="item-meta">${meta || '暂无补充信息'}</div>
           </div>
-          <div class="table-actions">
+          <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
             <button class="btn-sm" data-action="edit-project" data-id="${project.id}">编辑</button>
-            <button class="btn-sm" data-action="toggle-project" data-id="${project.id}">${getProjectActionLabel(project.status)}</button>
             <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
           </div>
-          <span class="chip ${chipClass}">${project.status}</span>
+          <span class="chip ${chipClass}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${project.status}</span>
         </div>
         ${children ? `<div class="tree-children">${children}</div>` : ''}
       </div>`;
