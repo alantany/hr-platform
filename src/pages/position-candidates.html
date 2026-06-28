@@ -12,36 +12,40 @@
   <div id="app"></div>
   <script>
     window.__PAGE_BODY__ = `
-      <section class="panel">
-        <div class="section-head">
+      <section class="position-candidates-page">
+        <div class="position-candidates-hero">
           <div>
-            <h3 data-page-title>岗位候选人</h3>
+            <h3 data-page-title>岗位候选人列表</h3>
             <div class="section-sub" data-page-sub>加载中...</div>
           </div>
-          <div class="hero-actions" style="margin-top:0;">
-            <button class="btn" onclick="positionBatchExport()">批量导出</button>
+          <div class="position-candidates-actions">
+            <button class="btn primary" onclick="openPositionCandidatePicker()">添加候选人</button>
+            <button class="btn position-export-button" onclick="positionBatchExport()">导出简历</button>
             <button class="btn" onclick="history.back()">返回</button>
           </div>
         </div>
 
-        <div class="position-header" style="display:flex;gap:16px;padding:16px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;">
-          <div style="flex:1;min-width:200px;">
-            <div style="font-size:18px;font-weight:700;color:#0f172a;" data-position-name>--</div>
-            <div style="font-size:13px;color:#64748b;margin-top:4px;">
-              <span data-company-name>--</span> · <span data-project-name>--</span>
-            </div>
-          </div>
-          <div style="text-align:right;min-width:200px;">
-            <div style="font-size:13px;color:#475569;">
-              <span class="chip" data-urgency-chip style="font-size:11px;padding:2px 8px;">--</span>
-              <span data-position-salary>--</span> · <span data-position-location>--</span>
-            </div>
-            <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
-              招聘 <span data-hiring-count class="chip neutral" style="font-size:11px;padding:2px 8px;">0</span> 人 · 已推荐 <span data-recommend-count class="chip success" style="font-size:11px;padding:2px 8px;">0</span> 人
-            </div>
+        <div class="position-candidates-summary panel">
+          <div class="position-summary-item"><span>紧急程度：</span><span class="position-urgency-badge" data-urgency-chip>--</span></div>
+          <div class="position-summary-item"><span>招聘人数：</span><strong data-hiring-count>0人</strong></div>
+          <div class="position-summary-item"><span>薪资范围：</span><strong data-position-salary>--</strong></div>
+          <div class="position-summary-item"><span>候选人数量：</span><strong class="is-primary" data-candidate-count>0人</strong></div>
+          <div class="position-summary-item"><span>已推荐：</span><strong class="is-success" data-recommend-count>0人</strong></div>
+          <div class="position-summary-item"><span>已录用：</span><strong class="is-success" data-hired-count>0人</strong></div>
+          <div class="position-processing-limit">剩余 2h 处理时限</div>
+        </div>
+
+        <div class="position-candidates-filter panel">
+          <label class="position-filter-field position-filter-keyword"><span>候选人姓名</span><input class="input" type="search" placeholder="搜索候选人" data-position-filter-keyword /></label>
+          <label class="position-filter-field"><span>推荐状态</span><select class="input" data-position-filter-status><option value="">全部</option><option value="待推荐">待推荐</option><option value="已推荐">已推荐</option><option value="面试中">面试中</option><option value="已录用">已录用</option><option value="未录用">未录用</option></select></label>
+          <label class="position-filter-field"><span>匹配度</span><select class="input" data-position-filter-match><option value="">全部</option><option value="90">90%以上</option><option value="80">80%-90%</option><option value="70">70%-80%</option><option value="below70">70%以下</option></select></label>
+          <div class="position-filter-actions">
+            <button class="btn primary" type="button" onclick="applyPositionCandidateFilters()">搜索</button>
+            <button class="btn" type="button" onclick="resetPositionCandidateFilters()">重置</button>
           </div>
         </div>
 
+        <div class="panel position-candidates-table">
         <div class="table-head" style="display:grid;grid-template-columns:1.5fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr 200px;gap:10px;padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-weight:600;color:#475569;font-size:13px;align-items:center;">
           <div>候选人</div>
           <div>手机号</div>
@@ -54,6 +58,7 @@
         </div>
         <div data-candidate-list>
           <div class="list-item"><div class="item-meta">加载中...</div></div>
+        </div>
         </div>
       </section>
 
@@ -222,14 +227,10 @@
         const company = companies.find(c => c.id === (project?.company_id));
 
         const setText = (sel, val) => { const el = document.querySelector(sel); if (el) el.textContent = val || '--'; };
-        setText('[data-page-title]', (position.name || '岗位') + ' - 候选人管理');
-        setText('[data-page-sub]', '管理该岗位下的推荐候选人');
-        setText('[data-position-name]', position.name);
-        setText('[data-company-name]', company?.name || '--');
-        setText('[data-project-name]', project?.name || '--');
+        setText('[data-page-title]', '岗位候选人列表');
+        setText('[data-page-sub]', [company?.name, project?.name, position.name].filter(Boolean).join(' · '));
         setText('[data-position-salary]', formatSalary(position));
-        setText('[data-position-location]', position.location || '--');
-        setText('[data-hiring-count]', position.hiring_count || 1);
+        setText('[data-hiring-count]', (position.hiring_count || 1) + '人');
 
         const urgencyEl = document.querySelector('[data-urgency-chip]');
         if (urgencyEl) {
@@ -257,17 +258,50 @@
           })
         );
 
-        setText('[data-recommend-count]', candidateDetails.length);
+        window.__positionCandidateRows = candidateDetails;
+        const recommendedCount = candidateDetails.filter(function(item) { return normalizeRecommendationStatus(item.status) !== '待推荐'; }).length;
+        const hiredCount = candidateDetails.filter(function(item) { return normalizeRecommendationStatus(item.status) === '已录用'; }).length;
+        setText('[data-candidate-count]', candidateDetails.length + '人');
+        setText('[data-recommend-count]', recommendedCount + '人');
+        setText('[data-hired-count]', hiredCount + '人');
         // Store candidate IDs for batch export
         window.__positionCandidateIds = candidateDetails.map(function(item) {
           return item.candidate?.id;
         }).filter(Boolean).map(String);
 
+        renderPositionCandidateRows(candidateDetails);
+      } catch (err) {
+        console.warn(err);
         const list = document.querySelector('[data-candidate-list]');
-        if (!candidateDetails.length) {
-          list.innerHTML = '<div class="list-item"><div class="item-meta">该岗位暂无推荐候选人。</div></div>';
-        } else {
-          list.innerHTML = candidateDetails.map((item) => {
+        if (list) list.innerHTML = '<div class="list-item"><div class="item-meta">加载失败：' + err.message + '</div></div>';
+      }
+    }
+
+    function normalizeRecommendationStatus(status) {
+      const value = String(status || '待推荐');
+      if (['已录用', '已入职'].includes(value)) return '已录用';
+      if (['未录用', '淘汰', '不合适', '拒绝'].includes(value)) return '未录用';
+      if (['面试中', '安排面试'].includes(value)) return '面试中';
+      if (['已推荐', '客户已收', '客户未收'].includes(value)) return '已推荐';
+      return '待推荐';
+    }
+
+    function getRecommendationMatchScore(item) {
+      const raw = item?.match_score ?? item?.match_degree ?? item?.candidate?.match_score ?? item?.candidate?.match_degree;
+      if (raw === null || raw === undefined || raw === '') return null;
+      const score = Number(String(raw).replace('%', ''));
+      return Number.isFinite(score) ? score : null;
+    }
+
+    function renderPositionCandidateRows(candidateDetails) {
+      const list = document.querySelector('[data-candidate-list]');
+      if (!list) return;
+      if (!candidateDetails.length) {
+        const hasFilters = Boolean(document.querySelector('[data-position-filter-keyword]')?.value || document.querySelector('[data-position-filter-status]')?.value || document.querySelector('[data-position-filter-match]')?.value);
+        list.innerHTML = '<div class="list-item"><div class="item-meta">' + (hasFilters ? '没有符合筛选条件的候选人。' : '该岗位暂无推荐候选人。') + '</div></div>';
+        return;
+      }
+      list.innerHTML = candidateDetails.map((item) => {
             const c = item.candidate;
             if (!c) {
               return '<div class="list-item" style="display:grid;grid-template-columns:1.5fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr 200px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:13px;"><div>候选人不可用 (ID: ' + item.candidate_id + ')</div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>';
@@ -292,24 +326,61 @@
               + '</div>'
               + '</div>';
           }).join('');
-        }
-      } catch (err) {
-        console.warn(err);
-        const list = document.querySelector('[data-candidate-list]');
-        if (list) list.innerHTML = '<div class="list-item"><div class="item-meta">加载失败：' + err.message + '</div></div>';
-      }
+    }
+
+    function applyPositionCandidateFilters() {
+      const keyword = document.querySelector('[data-position-filter-keyword]')?.value.trim().toLowerCase() || '';
+      const status = document.querySelector('[data-position-filter-status]')?.value || '';
+      const matchBand = document.querySelector('[data-position-filter-match]')?.value || '';
+      const rows = (window.__positionCandidateRows || []).filter(function(item) {
+        const nameMatches = !keyword || String(item.candidate?.name || '').toLowerCase().includes(keyword);
+        const statusMatches = !status || normalizeRecommendationStatus(item.status) === status;
+        const score = getRecommendationMatchScore(item);
+        let matchMatches = !matchBand;
+        if (matchBand === '90') matchMatches = score !== null && score >= 90;
+        if (matchBand === '80') matchMatches = score !== null && score >= 80 && score < 90;
+        if (matchBand === '70') matchMatches = score !== null && score >= 70 && score < 80;
+        if (matchBand === 'below70') matchMatches = score !== null && score < 70;
+        return nameMatches && statusMatches && matchMatches;
+      });
+      renderPositionCandidateRows(rows);
+    }
+
+    function resetPositionCandidateFilters() {
+      const keyword = document.querySelector('[data-position-filter-keyword]');
+      const status = document.querySelector('[data-position-filter-status]');
+      const match = document.querySelector('[data-position-filter-match]');
+      if (keyword) keyword.value = '';
+      if (status) status.value = '';
+      if (match) match.value = '';
+      renderPositionCandidateRows(window.__positionCandidateRows || []);
+    }
+
+    function openPositionCandidatePicker() {
+      const positionId = new URLSearchParams(location.search).get('position_id');
+      if (!positionId) return;
+      location.href = './candidates.html?select_mode=1&position_id=' + encodeURIComponent(positionId);
     }
 
     function formatSalary(p) {
       const min = p?.salary_min;
       const max = p?.salary_max;
-      if (min || max) return (min || '0') + '-' + (max || '不限') + 'K';
+      const display = function(value, fallback) {
+        if (value === null || value === undefined || value === '') return fallback;
+        const amount = Number(value);
+        if (!Number.isFinite(amount)) return value;
+        return amount >= 1000 ? String(amount / 1000) : String(amount);
+      };
+      if (min || max) return display(min, '0') + '-' + display(max, '不限') + 'K';
       return '薪资面议';
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
-      initPage();
+      await initPage();
+      document.querySelector('[data-position-filter-keyword]')?.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') applyPositionCandidateFilters();
+      });
     });
 
     // Single export: open export modal with only this candidate

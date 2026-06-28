@@ -12,305 +12,459 @@
   <div id="app"></div>
   <script>
     window.__PAGE_BODY__ = `
-      <section class="hero">
-        <div class="hero-card">
-          <div class="eyebrow">招聘交付 · 全局视图</div>
-          <h2>把客户需求、项目推进和候选人流转放进同一张工作台里。</h2>
-          <p>这里展示的不是花哨大屏，而是猎头交付最关键的经营状态：今天推进了多少候选人、哪些项目最紧急、哪个团队正在失速。</p>
-          <div class="hero-actions">
-            <button class="btn primary" data-action="nav-projects">查看项目进度</button>
-            <button class="btn" data-action="nav-candidates">进入求职者数据池</button>
-            <button class="btn warn" data-action="nav-logs">查看待办</button>
-          </div>
-        </div>
-        <div class="panel">
-          <h3>今日概览</h3>
-          <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title">紧急岗位</div><div class="item-meta">根据真实项目与岗位数据自动展示</div></div><span class="tag orange" data-dashboard-urgent-tag>自动</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">质保提醒</div><div class="item-meta">根据真实质保规则自动展示</div></div><span class="tag red" data-dashboard-warranty-tag>自动</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">系统通知</div><div class="item-meta">根据真实通知列表自动展示</div></div><span class="tag blue" data-dashboard-notice-tag>自动</span></div></div>
-          </div>
-        </div>
-      </section>
-      <section class="stats-grid">
-        <div class="stat-card"><div class="stat-value" data-stat-card="candidates">0</div><div class="stat-label">求职者总数</div><div class="stat-delta">来自数据库统计</div></div>
-        <div class="stat-card"><div class="stat-value" data-stat-card="companies">0</div><div class="stat-label">客户公司数</div><div class="stat-delta">来自数据库统计</div></div>
-        <div class="stat-card"><div class="stat-value" data-stat-card="recommendations">0</div><div class="stat-label">总推荐数</div><div class="stat-delta">来自数据库统计</div></div>
-        <div class="stat-card"><div class="stat-value" data-stat-card="pending">0</div><div class="stat-label">待处理需求</div><div class="stat-delta" style="color:var(--accent)">来自数据库统计</div></div>
-        <div class="stat-card"><div class="stat-value" data-stat-card="users">0</div><div class="stat-label">总操作员数</div><div class="stat-delta">来自数据库统计</div></div>
-      </section>
-      <section class="grid-2 page-section">
-        <div class="panel">
-          <h3>项目岗位进度</h3>
-          <div class="list" data-dashboard-project-progress>
-            <div class="list-item"><div class="item-meta">项目推进进度来自数据库。</div></div>
-          </div>
-        </div>
-        <div class="panel">
-          <h3>最近操作日志</h3>
-          <div class="timeline" data-dashboard-audit-logs>
-            <div class="list-item"><div class="item-meta">最近的操作留痕来自审计日志。</div></div>
-          </div>
-        </div>
-      </section>
-      <section class="grid-2 page-section">
-        <div class="panel">
-          <h3>最近推荐</h3>
-          <div class="list" data-recommendation-list>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">暂无推荐记录</div><div class="item-meta">推荐进展来自推荐记录。</div></div><span class="tag blue">推荐</span></div></div>
-          </div>
-        </div>
-        <div class="panel">
-          <h3>最近交付</h3>
-          <div class="list" data-delivery-list>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">暂无交付记录</div><div class="item-meta">交付进展来自交付记录。</div></div><span class="tag green">交付</span></div></div>
-          </div>
-        </div>
-      </section>
-      <section class="grid-3 page-section">
-        <div class="panel">
-          <h3>团队绩效排行</h3>
-          <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title" data-team-name="1">当前暂无团队排行</div><div class="item-meta" data-team-meta="1">组长维度的推进统计来自统计表。</div></div><span class="tag green" data-team-score="1">0 次</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title" data-team-name="2">当前暂无团队排行</div><div class="item-meta" data-team-meta="2">组长维度的推进统计来自统计表。</div></div><span class="tag blue" data-team-score="2">0 次</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title" data-team-name="3">当前暂无团队排行</div><div class="item-meta" data-team-meta="3">组长维度的推进统计来自统计表。</div></div><span class="tag gray" data-team-score="3">0 次</span></div></div>
-          </div>
-        </div>
-        <div class="panel">
-          <h3>客户效果排行</h3>
-          <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title" data-customer-name="1">当前暂无客户排行</div><div class="item-meta" data-customer-meta="1">客户维度的项目推进情况来自统计表。</div></div><span class="tag green" data-customer-rank="1">Top 1</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title" data-customer-name="2">当前暂无客户排行</div><div class="item-meta" data-customer-meta="2">客户维度的项目推进情况来自统计表。</div></div><span class="tag blue" data-customer-rank="2">Top 2</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title" data-customer-name="3">当前暂无客户排行</div><div class="item-meta" data-customer-meta="3">客户维度的项目推进情况来自统计表。</div></div><span class="tag gray" data-customer-rank="3">Top 3</span></div></div>
-          </div>
-        </div>
-        <div class="panel">
-          <h3>我的待办</h3>
-          <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无待办</div><div class="item-meta">业务待处理事项来自待办表。</div></div><span class="tag orange">处理</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无待办</div><div class="item-meta">业务待处理事项来自待办表。</div></div><span class="tag red">提醒</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">当前暂无待办</div><div class="item-meta">业务待处理事项来自待办表。</div></div><span class="tag blue">查看</span></div></div>
-          </div>
-        </div>
-      </section>
-
-      <div class="modal" data-recommendation-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:760px; margin:10vh auto 0; background:#fff;">
-          <div class="section-head">
+      <section class="dashboard-redesign">
+        <section class="dashboard-workbench panel">
+          <div class="dashboard-workbench-head">
             <div>
-              <h3>推荐状态确认</h3>
-              <div class="section-sub">确认后才会真实更新推荐记录并写入通知。</div>
+              <div class="eyebrow">首页工作台 · 数据看板</div>
+              <h2>把每天推荐节奏、月度转化结果和团队处理压力放在同一屏里。</h2>
+              <p>上方看总量，中间看本月每天推荐给客户的候选人数量，底部看月度面试、推荐、入职和反馈结果。</p>
             </div>
-            <div class="hero-actions" style="margin-top:0">
-              <button class="btn" data-action="close-recommendation-modal">取消</button>
-              <button class="btn primary" data-action="confirm-recommendation-status">确认保存</button>
+            <div class="dashboard-workbench-actions">
+              <button class="btn primary" data-action="nav-candidates">进入候选人库</button>
+              <button class="btn" data-action="nav-projects">查看项目进度</button>
+              <button class="btn warn" data-action="nav-logs">查看待办</button>
             </div>
           </div>
-          <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title" data-recommendation-modal-title>等待选择推荐</div><div class="item-meta" data-recommendation-modal-desc>点击推荐按钮后确认推进状态。</div></div><span class="tag blue">确认</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">推进状态</div><div class="item-meta">客户已收 / 客户未收 / 安排面试 / 拒绝</div></div></div><select class="input" data-recommendation-modal-status><option value="客户已收">客户已收</option><option value="客户未收">客户未收</option><option value="安排面试">安排面试</option><option value="拒绝">拒绝</option></select></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">客户反馈</div><div class="item-meta">保存推荐结果追踪记录</div></div></div><textarea class="input" rows="4" data-recommendation-modal-feedback placeholder="填写客户反馈"></textarea></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">客户评语</div><div class="item-meta">补充客户对候选人的评价</div></div></div><textarea class="input" rows="4" data-recommendation-modal-comment placeholder="填写客户评语"></textarea></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">反馈历史</div><div class="item-meta">每次状态变化都会保留记录</div></div></div><div class="list" data-recommendation-feedback-list><div class="list-item"><div class="item-meta">暂无反馈记录。</div></div></div></div>
+        </section>
+
+        <section class="dashboard-kanban-grid" data-dashboard-top-cards></section>
+
+        <section class="dashboard-calendar-panel panel">
+          <div class="dashboard-section-head">
+            <div>
+              <h3>推荐日历</h3>
+              <p class="panel-sub">按推荐交付节奏展示每天推荐给客户的候选人数量。</p>
+            </div>
+            <div class="dashboard-calendar-toolbar">
+              <button class="dashboard-calendar-nav" type="button" data-calendar-nav="-1" aria-label="上一个月">‹</button>
+              <div class="dashboard-calendar-month" data-calendar-month-label>--</div>
+              <button class="dashboard-calendar-nav" type="button" data-calendar-nav="1" aria-label="下一个月">›</button>
+            </div>
           </div>
-        </div>
-      </div>
+          <div class="dashboard-calendar-summary" data-calendar-summary></div>
+          <div class="dashboard-calendar-board">
+            <div class="dashboard-calendar-weekdays" data-calendar-weekdays></div>
+            <div class="dashboard-calendar-grid" data-calendar-grid></div>
+          </div>
+          <div class="dashboard-calendar-detail" data-calendar-detail></div>
+        </section>
+
+        <section class="dashboard-month-panel panel">
+          <div class="dashboard-section-head">
+            <div>
+              <h3>月度数据看板</h3>
+              <p class="panel-sub">围绕当前展示月份汇总推荐、面试、入职和客户反馈表现。</p>
+            </div>
+            <div class="dashboard-month-caption" data-month-caption>--</div>
+          </div>
+          <div class="dashboard-month-grid" data-dashboard-month-cards></div>
+        </section>
+      </section>
     `;
+
+    const dashboardState = {
+      summary: null,
+      projects: [],
+      todos: [],
+      recommendations: [],
+      deliveries: [],
+      interviews: [],
+      employments: [],
+      feedbacks: [],
+      auditLogs: [],
+      calendarMonth: null,
+      selectedDayKey: '',
+    };
+
+    const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
+
+    function parseDateValue(value) {
+      if (!value) return null;
+      if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+      const normalized = typeof value === 'string' && value.includes(' ') ? value.replace(' ', 'T') : value;
+      const date = new Date(normalized);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function monthStart(date) {
+      return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+
+    function addMonths(date, offset) {
+      return new Date(date.getFullYear(), date.getMonth() + offset, 1);
+    }
+
+    function dayKey(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function formatMonthLabel(date) {
+      return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+    }
+
+    function formatDayLabel(date) {
+      return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+
+    function sameMonth(left, right) {
+      return left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth();
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat('zh-CN').format(Number(value || 0));
+    }
+
+    function getLatestDate(rows, pickers) {
+      const dates = rows
+        .flatMap((row) => pickers.map((picker) => parseDateValue(row[picker])))
+        .filter(Boolean)
+        .sort((a, b) => b - a);
+      return dates[0] || null;
+    }
+
+    function getRecommendationAuditRows() {
+      return dashboardState.auditLogs
+        .filter((row) => String(row.module || '').includes('推荐') || String(row.action || '').includes('推荐'))
+        .map((row) => ({
+          date: parseDateValue(row.created_at),
+          operator: row.actor || '未署名顾问',
+          source: 'audit',
+        }))
+        .filter((row) => row.date);
+    }
+
+    function getCalendarEvents() {
+      if (dashboardState.deliveries.length) {
+        return dashboardState.deliveries.map((item) => ({
+          date: parseDateValue(item.delivered_at),
+          operator: item.delivered_by || '未署名顾问',
+          source: 'delivery',
+        })).filter((item) => item.date);
+      }
+      if (dashboardState.recommendations.length) {
+        return dashboardState.recommendations.map((item) => ({
+          date: parseDateValue(item.created_at),
+          operator: item.recommender || '未署名顾问',
+          source: 'recommendation',
+        })).filter((item) => item.date);
+      }
+      return getRecommendationAuditRows();
+    }
+
+    function getMonthRows(rows, picker, monthDate, predicate = null) {
+      return rows.filter((row) => {
+        const date = parseDateValue(row[picker]);
+        if (!date || !sameMonth(date, monthDate)) return false;
+        return predicate ? predicate(row) : true;
+      });
+    }
+
+    function getMonthlyMetrics(monthDate) {
+      const monthlyRecommendations = getMonthRows(dashboardState.recommendations, 'created_at', monthDate);
+      const monthlyDeliveries = getMonthRows(dashboardState.deliveries, 'delivered_at', monthDate);
+      const monthlyInterviews = getMonthRows(dashboardState.interviews, 'created_at', monthDate);
+      const monthlyEmployments = getMonthRows(
+        dashboardState.employments,
+        'created_at',
+        monthDate,
+        (row) => ['已入职', '已录用'].includes(row.status)
+      );
+      const monthlyFeedbacks = getMonthRows(dashboardState.feedbacks, 'created_at', monthDate);
+      const monthlyCalendarEvents = getCalendarEvents().filter((row) => sameMonth(row.date, monthDate));
+      const activeProjects = dashboardState.projects.filter((row) => row.status !== '招聘完毕').length;
+      const activeOperators = new Set(monthlyCalendarEvents.map((row) => row.operator || '未署名顾问')).size;
+      return {
+        monthlyRecommendations,
+        monthlyDeliveries,
+        monthlyInterviews,
+        monthlyEmployments,
+        monthlyFeedbacks,
+        monthlyCalendarEvents,
+        activeProjects,
+        activeOperators,
+      };
+    }
+
+    function renderTopCards() {
+      const container = document.querySelector('[data-dashboard-top-cards]');
+      if (!container || !dashboardState.summary) return;
+      const metrics = getMonthlyMetrics(dashboardState.calendarMonth);
+      const cards = [
+        {
+          title: '求职者总数',
+          value: dashboardState.summary.candidate_count,
+          note: `本月有 ${metrics.monthlyCalendarEvents.length} 次推荐推进`,
+          tone: 'primary',
+        },
+        {
+          title: '客户公司数',
+          value: dashboardState.summary.company_count,
+          note: `当前有 ${metrics.activeProjects} 个项目在推进`,
+          tone: 'success',
+        },
+        {
+          title: '总推荐数',
+          value: dashboardState.summary.recommendation_count,
+          note: `本月已交付 ${metrics.monthlyDeliveries.length} 次`,
+          tone: 'warning',
+        },
+        {
+          title: '待处理需求',
+          value: dashboardState.todos.length,
+          note: dashboardState.todos.length ? '请优先处理高优先级待办' : '当前待办已清空',
+          tone: 'danger',
+        },
+        {
+          title: '总操作员数',
+          value: dashboardState.summary.user_count,
+          note: `本月活跃顾问 ${metrics.activeOperators} 人`,
+          tone: 'neutral',
+        },
+      ];
+      container.innerHTML = cards.map((card) => `
+        <article class="dashboard-kanban-card tone-${card.tone}">
+          <div class="dashboard-kanban-title">${card.title}</div>
+          <div class="dashboard-kanban-body">
+            <strong>${formatNumber(card.value)}</strong>
+            <span>${card.note}</span>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function renderCalendarWeekdays() {
+      const container = document.querySelector('[data-calendar-weekdays]');
+      if (!container) return;
+      container.innerHTML = WEEKDAY_LABELS.map((label) => `<div>${label}</div>`).join('');
+    }
+
+    function buildCalendarCells(monthDate, eventRows) {
+      const firstDay = monthStart(monthDate);
+      const start = new Date(firstDay);
+      start.setDate(firstDay.getDate() - firstDay.getDay());
+      const counts = eventRows.reduce((acc, row) => {
+        const key = dayKey(row.date);
+        acc[key] = acc[key] || { count: 0, operators: new Set() };
+        acc[key].count += 1;
+        acc[key].operators.add(row.operator);
+        return acc;
+      }, {});
+      const todayKey = dayKey(new Date());
+      const cells = [];
+      for (let index = 0; index < 42; index += 1) {
+        const cellDate = new Date(start);
+        cellDate.setDate(start.getDate() + index);
+        const key = dayKey(cellDate);
+        const stat = counts[key] || { count: 0, operators: new Set() };
+        cells.push({
+          key,
+          date: cellDate,
+          inMonth: sameMonth(cellDate, monthDate),
+          isToday: key === todayKey,
+          isSelected: key === dashboardState.selectedDayKey,
+          count: stat.count,
+          operatorCount: stat.operators.size,
+        });
+      }
+      return cells;
+    }
+
+    function renderCalendar() {
+      const monthDate = dashboardState.calendarMonth || monthStart(new Date());
+      const events = getCalendarEvents().filter((row) => sameMonth(row.date, monthDate));
+      const cells = buildCalendarCells(monthDate, events);
+      const monthLabel = document.querySelector('[data-calendar-month-label]');
+      if (monthLabel) monthLabel.textContent = formatMonthLabel(monthDate);
+
+      const grid = document.querySelector('[data-calendar-grid]');
+      if (grid) {
+        grid.innerHTML = cells.map((cell) => `
+          <button
+            type="button"
+            class="dashboard-calendar-cell${cell.inMonth ? '' : ' is-outside'}${cell.isToday ? ' is-today' : ''}${cell.isSelected ? ' is-selected' : ''}"
+            data-day-key="${cell.key}"
+          >
+            <span class="dashboard-calendar-date">${cell.date.getDate()}</span>
+            <span class="dashboard-calendar-count">${cell.count ? `${cell.count}条` : '0条'}</span>
+          </button>
+        `).join('');
+      }
+
+      const total = events.length;
+      const peak = cells
+        .filter((cell) => cell.inMonth)
+        .sort((left, right) => right.count - left.count)[0];
+      const summary = document.querySelector('[data-calendar-summary]');
+      if (summary) {
+        summary.innerHTML = `
+          <div class="dashboard-summary-chip">
+            <strong>${formatNumber(total)}</strong>
+            <span>本月累计推荐</span>
+          </div>
+          <div class="dashboard-summary-chip">
+            <strong>${peak && peak.count ? formatDayLabel(peak.date) : '--'}</strong>
+            <span>${peak && peak.count ? `单日峰值 ${peak.count} 条` : '暂无推荐峰值'}</span>
+          </div>
+        `;
+      }
+
+      const selectedDate = parseDateValue(dashboardState.selectedDayKey) || monthDate;
+      const detailRows = events.filter((item) => dayKey(item.date) === dashboardState.selectedDayKey);
+      const detail = document.querySelector('[data-calendar-detail]');
+      if (detail) {
+        const operatorCount = new Set(detailRows.map((row) => row.operator)).size;
+        detail.innerHTML = `
+          <div class="dashboard-calendar-detail-copy">
+            <div class="dashboard-calendar-detail-title">${dashboardState.selectedDayKey ? formatDayLabel(selectedDate) : `${formatMonthLabel(monthDate)}总览`}</div>
+            <div class="dashboard-calendar-detail-meta">
+              ${detailRows.length ? `当天推荐 ${detailRows.length} 条，涉及 ${operatorCount} 位顾问` : '当天暂无推荐交付记录'}
+            </div>
+          </div>
+          <div class="dashboard-calendar-detail-tags">
+            ${detailRows.slice(0, 4).map((row) => `<span class="dashboard-operator-chip">${row.operator}</span>`).join('') || '<span class="dashboard-operator-chip is-muted">暂无顾问记录</span>'}
+          </div>
+        `;
+      }
+    }
+
+    function renderMonthCards() {
+      const monthDate = dashboardState.calendarMonth || monthStart(new Date());
+      const metrics = getMonthlyMetrics(monthDate);
+      const container = document.querySelector('[data-dashboard-month-cards]');
+      if (!container) return;
+      const cards = [
+        {
+          title: '本月面试数量',
+          value: metrics.monthlyInterviews.length,
+          note: `安排面试状态 ${metrics.monthlyRecommendations.filter((row) => row.status === '安排面试').length} 条`,
+          tone: 'primary',
+        },
+        {
+          title: '本月推荐数量',
+          value: metrics.monthlyRecommendations.length || metrics.monthlyCalendarEvents.length,
+          note: metrics.monthlyDeliveries.length ? `已形成 ${metrics.monthlyDeliveries.length} 条交付记录` : '本月暂未形成交付记录',
+          tone: 'success',
+        },
+        {
+          title: '本月入职数量',
+          value: metrics.monthlyEmployments.length,
+          note: metrics.monthlyEmployments.length ? '已录用 / 已入职记录已纳入统计' : '本月暂无入职转化',
+          tone: 'warning',
+        },
+        {
+          title: '本月客户反馈',
+          value: metrics.monthlyFeedbacks.length,
+          note: metrics.monthlyFeedbacks.length ? '客户反馈记录已沉淀到推荐链路' : '本月暂无客户反馈记录',
+          tone: 'danger',
+        },
+      ];
+      container.innerHTML = cards.map((card) => `
+        <article class="dashboard-month-card tone-${card.tone}">
+          <div class="dashboard-month-card-label">${card.title}</div>
+          <div class="dashboard-month-card-value">${formatNumber(card.value)}</div>
+          <div class="dashboard-month-card-note">${card.note}</div>
+        </article>
+      `).join('');
+
+      const caption = document.querySelector('[data-month-caption]');
+      if (caption) caption.textContent = formatMonthLabel(monthDate);
+    }
+
+    function ensureSelectedDay() {
+      const monthDate = dashboardState.calendarMonth;
+      const events = getCalendarEvents().filter((row) => sameMonth(row.date, monthDate));
+      const availableKeys = [...new Set(events.map((row) => dayKey(row.date)))].sort();
+      if (availableKeys.includes(dashboardState.selectedDayKey)) return;
+      const today = new Date();
+      const todayKey = dayKey(today);
+      dashboardState.selectedDayKey =
+        (sameMonth(today, monthDate) && availableKeys.includes(todayKey) && todayKey) ||
+        availableKeys[availableKeys.length - 1] ||
+        dayKey(monthDate);
+    }
+
+    function bindCalendarEvents() {
+      document.addEventListener('click', (event) => {
+        const navButton = event.target.closest('[data-calendar-nav]');
+        if (navButton) {
+          dashboardState.calendarMonth = addMonths(dashboardState.calendarMonth, Number(navButton.dataset.calendarNav || 0));
+          ensureSelectedDay();
+          renderTopCards();
+          renderCalendar();
+          renderMonthCards();
+          return;
+        }
+        const dayButton = event.target.closest('[data-day-key]');
+        if (!dayButton) return;
+        dashboardState.selectedDayKey = dayButton.dataset.dayKey || dashboardState.selectedDayKey;
+        renderCalendar();
+      });
+    }
+
+    async function loadDashboardData() {
+      const requests = await Promise.allSettled([
+        window.hrApi.dashboardSummary(),
+        window.hrApi.projects(),
+        window.hrApi.dashboardTodos(),
+        window.hrApi.recommendations(),
+        window.hrApi.deliveries(),
+        window.hrApi.interviewRecords(),
+        window.hrApi.employmentRecords(),
+        window.hrApi.recommendationFeedbacks(),
+        window.hrApi.auditLogs(),
+      ]);
+      const [
+        summaryResult,
+        projectsResult,
+        todosResult,
+        recommendationsResult,
+        deliveriesResult,
+        interviewsResult,
+        employmentsResult,
+        feedbacksResult,
+        auditLogsResult,
+      ] = requests;
+
+      dashboardState.summary = summaryResult.status === 'fulfilled' ? summaryResult.value : {
+        candidate_count: 0,
+        company_count: 0,
+        recommendation_count: 0,
+        user_count: 0,
+      };
+      dashboardState.projects = projectsResult.status === 'fulfilled' ? projectsResult.value : [];
+      dashboardState.todos = todosResult.status === 'fulfilled' ? todosResult.value : [];
+      dashboardState.recommendations = recommendationsResult.status === 'fulfilled' ? recommendationsResult.value : [];
+      dashboardState.deliveries = deliveriesResult.status === 'fulfilled' ? deliveriesResult.value : [];
+      dashboardState.interviews = interviewsResult.status === 'fulfilled' ? interviewsResult.value : [];
+      dashboardState.employments = employmentsResult.status === 'fulfilled' ? employmentsResult.value : [];
+      dashboardState.feedbacks = feedbacksResult.status === 'fulfilled' ? feedbacksResult.value : [];
+      dashboardState.auditLogs = auditLogsResult.status === 'fulfilled' ? auditLogsResult.value : [];
+
+      const latestActivity =
+        getLatestDate(getCalendarEvents(), ['date']) ||
+        getLatestDate(dashboardState.interviews, ['created_at']) ||
+        getLatestDate(dashboardState.employments, ['created_at']) ||
+        new Date();
+
+      dashboardState.calendarMonth = monthStart(latestActivity);
+      ensureSelectedDay();
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
+      renderCalendarWeekdays();
+      bindCalendarEvents();
       try {
-        const summary = await window.hrApi.dashboardSummary();
-        const recommendations = await window.hrApi.recommendations();
-        const app = document.querySelector('#app');
-        if (app && summary) {
-          const statNodes = [
-            { node: app.querySelector('.stats-grid .stat-card:nth-child(1) .stat-value'), value: summary.candidate_count },
-            { node: app.querySelector('.stats-grid .stat-card:nth-child(2) .stat-value'), value: summary.company_count },
-            { node: app.querySelector('.stats-grid .stat-card:nth-child(3) .stat-value'), value: summary.recommendation_count },
-            { node: app.querySelector('.stats-grid .stat-card:nth-child(4) .stat-value'), value: summary.project_count },
-            { node: app.querySelector('.stats-grid .stat-card:nth-child(5) .stat-value'), value: summary.user_count },
-          ];
-          statNodes.forEach(({ node, value }) => { if (node) node.textContent = String(value); });
-          const marker = document.createElement('div');
-          marker.className = 'panel';
-          marker.style.marginTop = '16px';
-          marker.innerHTML = `
-            <h3>业务概览</h3>
-            <div class="list">
-          <div class="list-item"><div class="item-top"><div><div class="item-title">候选人 / 客户 / 项目 / 岗位</div><div class="item-meta">${summary.candidate_count} / ${summary.company_count} / ${summary.project_count} / ${summary.position_count}</div></div><span class="tag blue">概览</span></div></div>
-              <div class="list-item"><div class="item-top"><div><div class="item-title">推荐 / 交付 / 审计</div><div class="item-meta">${summary.recommendation_count} / ${summary.delivery_count} / ${summary.audit_log_count}</div></div><span class="tag green">统计</span></div></div>
-            </div>
-          `;
-          app.querySelector('.content').appendChild(marker);
-        }
-      } catch (err) {
-        console.warn('dashboard api load failed', err);
-      }
-      try {
-        const projects = await window.hrApi.projects();
-        const warranties = await window.hrApi.warrantyRules();
-        const notices = await window.hrApi.notifications();
-        const auditLogs = await window.hrApi.auditLogs();
-        const urgentTag = document.querySelector('[data-dashboard-urgent-tag]');
-        const warrantyTag = document.querySelector('[data-dashboard-warranty-tag]');
-        const noticeTag = document.querySelector('[data-dashboard-notice-tag]');
-        if (urgentTag) urgentTag.textContent = projects.some(p => (p.hiring_count || 0) > 5) ? '自动' : '正常';
-        if (warrantyTag) warrantyTag.textContent = warranties.some(r => Number(r.remind_days || 0) <= 7) ? '自动' : '正常';
-        if (noticeTag) noticeTag.textContent = notices.length ? '自动' : '空';
-        const mainList = document.querySelector('.hero .panel .list');
-        if (mainList) {
-          const urgentProject = projects.find(p => (p.hiring_count || 0) > 5) || projects[0];
-          const warrantyRule = warranties.find(r => Number(r.remind_days || 0) <= 7) || warranties[0];
-          const notice = notices[0];
-          const items = [];
-          if (urgentProject) {
-            items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${urgentProject.name}</div><div class="item-meta">${urgentProject.work_location || '待补充'} · 招聘人数 ${urgentProject.hiring_count || 0}</div></div><span class="tag orange">${(urgentProject.hiring_count || 0) > 5 ? '紧急' : '推进中'}</span></div></div>`);
-          }
-          if (warrantyRule) {
-            items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">质保：${warrantyRule.scope}</div><div class="item-meta">${warrantyRule.months} 个月 · 提前 ${warrantyRule.remind_days} 天提醒</div></div><span class="tag red">${warrantyRule.auto_expire ? '自动' : '手动'}</span></div></div>`);
-          }
-          if (notice) {
-            items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${notice.title}</div><div class="item-meta">${notice.type || '通知'} · ${notice.content || ''}</div></div><span class="tag blue">${notice.read ? '已读' : '未读'}</span></div></div>`);
-          }
-          if (items.length) mainList.innerHTML = items.join('');
-        }
-        const progressList = document.querySelector('[data-dashboard-project-progress]');
-        if (progressList) {
-          progressList.innerHTML = projects.slice(0, 3).map(project => {
-            const ratio = project.hiring_count ? Math.min(100, Math.round(((project.hiring_count || 0) / Math.max(1, (project.hiring_count || 0))) * 100)) : 0;
-            return `<div class="list-item"><div class="item-top"><div><div class="item-title">${project.name}</div><div class="item-meta">${project.work_location || '待补充'} · 招聘人数 ${project.hiring_count || 0} · 级别 ${project.level || 'A'}</div></div><span class="tag ${project.status === '招聘完毕' ? 'green' : 'orange'}">${project.status || '招聘中'}</span></div><div class="item-meta mono">${ratio}%</div></div>`;
-          }).join('') || '<div class="list-item"><div class="item-meta">项目数据来自数据库。</div></div>';
-        }
-        const auditList = document.querySelector('[data-dashboard-audit-logs]');
-        if (auditList) {
-          auditList.innerHTML = auditLogs.slice(0, 3).map(log => `<div class="list-item"><div class="item-top"><div><div class="item-title">${log.actor}</div><div class="item-meta">${log.module} · ${log.action} · ${log.created_at}</div></div><span class="tag ${String(log.module).includes('权限') ? 'gray' : String(log.module).includes('推荐') ? 'green' : 'blue'}">${log.result}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">审计日志来自数据库。</div></div>';
-        }
-        const teamPanel = document.querySelector('.grid-3 .panel:nth-child(1) .list');
-        if (teamPanel) {
-          const teams = Object.values((recommendations || []).reduce((acc, r) => {
-            const key = r.recommender || '未命名';
-            if (!acc[key]) acc[key] = { name: key, total: 0, active: 0 };
-            acc[key].total += 1;
-            if (['客户已收', '安排面试', '已录用'].includes(r.status)) acc[key].active += 1;
-            return acc;
-          }, {})).sort((a, b) => b.total - a.total);
-          teamPanel.innerHTML = teams.slice(0, 3).map((team, idx) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${team.name}</div><div class="item-meta">${team.total} 条推荐 · 活跃 ${team.active} 条</div></div><span class="tag ${idx === 0 ? 'green' : idx === 1 ? 'blue' : 'gray'}">${team.total} 次</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">团队排行来自数据库。</div></div>';
-        }
-        const customerPanel = document.querySelector('.grid-3 .panel:nth-child(2) .list');
-        if (customerPanel) {
-          const customers = Object.values(projects.reduce((acc, p) => {
-            const key = p.company_name;
-            if (!acc[key]) acc[key] = { name: key, total: 0, active: 0 };
-            acc[key].total += 1;
-            if (p.status !== '招聘完毕') acc[key].active += 1;
-            return acc;
-          }, {})).sort((a, b) => b.active - a.active);
-          customerPanel.innerHTML = customers.slice(0, 3).map((customer, idx) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${customer.name}</div><div class="item-meta">${customer.total} 个项目 · 进行中 ${customer.active}</div></div><span class="tag ${idx === 0 ? 'green' : idx === 1 ? 'blue' : 'gray'}">Top ${idx + 1}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">客户排行来自数据库。</div></div>';
-        }
-        const todoPanel = document.querySelector('.grid-3 .panel:last-of-type .list');
-        const todos = await window.hrApi.dashboardTodos();
-        if (todoPanel) {
-          todoPanel.innerHTML = todos.map(todo => `<div class="list-item"><div class="item-top"><div><div class="item-title">${todo.title}</div><div class="item-meta">${todo.meta}</div></div><span class="tag ${todo.color}">${todo.tag}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">待办事项来自数据库。</div></div>';
-        }
-      } catch (err) {
-        console.warn('dashboard top cards load failed', err);
-      }
-      try {
-        const deliveries = await window.hrApi.deliveries();
-        const rList = document.querySelector('[data-recommendation-list]');
-        const dList = document.querySelector('[data-delivery-list]');
-        if (rList) {
-          rList.innerHTML = recommendations.slice(0, 3).map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">候选人 ${r.candidate_id} → 岗位 ${r.position_id}</div><div class="item-meta">${r.recommender} · ${r.status} · ${r.feedback || ''}${r.customer_comment ? ` · ${r.customer_comment}` : ''}</div></div><div class="table-actions"><button class="btn-sm primary" data-action="recommendation-status" data-id="${r.id}" data-status="客户已收">客户已收</button><button class="btn-sm" data-action="recommendation-status" data-id="${r.id}" data-status="客户未收">客户未收</button><button class="btn-sm" data-action="recommendation-status" data-id="${r.id}" data-status="安排面试">安排面试</button><button class="btn-sm" data-action="recommendation-status" data-id="${r.id}" data-status="拒绝">拒绝</button></div></div></div>`).join('');
-          
-          rList.addEventListener('click', async (e) => {
-            const btn = e.target.closest('[data-action="recommendation-status"]');
-            if (!btn) return;
-            const recId = Number(btn.getAttribute('data-id'));
-            const targetStatus = btn.getAttribute('data-status');
-            
-            const modal = document.querySelector('[data-recommendation-modal]');
-            if (!modal) return;
-            
-            modal.setAttribute('data-current-id', recId);
-            const titleNode = modal.querySelector('[data-recommendation-modal-title]');
-            if (titleNode) titleNode.textContent = `确认将推荐 ID: ${recId} 的状态流转为: ${targetStatus}`;
-            
-            const selectNode = modal.querySelector('[data-recommendation-modal-status]');
-            if (selectNode) selectNode.value = targetStatus;
-            
-            const feedbackNode = modal.querySelector('[data-recommendation-modal-feedback]');
-            if (feedbackNode) feedbackNode.value = '';
-            const commentNode = modal.querySelector('[data-recommendation-modal-comment]');
-            if (commentNode) commentNode.value = '';
-            
-            const feedbackListContainer = modal.querySelector('[data-recommendation-feedback-list]');
-            if (feedbackListContainer) {
-              feedbackListContainer.innerHTML = '<div class="list-item"><div class="item-meta">加载历史反馈中...</div></div>';
-              try {
-                const feedbacks = await window.hrApi.recommendationFeedbacks({ recommendation_id: recId });
-                feedbackListContainer.innerHTML = feedbacks.map(f => `
-                  <div class="list-item">
-                    <div class="item-top">
-                      <div>
-                        <div class="item-title">${f.status}</div>
-                        <div class="item-meta">${f.feedback || '无内容'}</div>
-                      </div>
-                      <span class="tag gray">${f.created_at}</span>
-                    </div>
-                  </div>
-                `).join('') || '<div class="list-item"><div class="item-meta">暂无反馈记录。</div></div>';
-              } catch (err) {
-                feedbackListContainer.innerHTML = '<div class="list-item"><div class="item-meta">加载历史反馈失败</div></div>';
-              }
-            }
-            modal.style.display = 'block';
-          });
-        }
-        if (dList) {
-          dList.innerHTML = deliveries.slice(0, 3).map(d => `<div class="list-item"><div class="item-top"><div><div class="item-title">推荐 ${d.recommendation_id}</div><div class="item-meta">${d.delivered_by} · ${d.channel} · ${d.delivered_at}</div></div><span class="tag green">交付</span></div></div>`).join('');
-        }
-      } catch (err) {
-        console.warn('recommendation delivery load failed', err);
-      }
-
-      const modal = document.querySelector('[data-recommendation-modal]');
-      if (modal) {
-        const closeBtn = modal.querySelector('[data-action="close-recommendation-modal"]');
-        if (closeBtn) {
-          closeBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-          });
-        }
-        
-        const confirmBtn = modal.querySelector('[data-action="confirm-recommendation-status"]');
-        if (confirmBtn) {
-          confirmBtn.addEventListener('click', async () => {
-            const recId = Number(modal.getAttribute('data-current-id'));
-            const status = modal.querySelector('[data-recommendation-modal-status]').value;
-            const feedback = modal.querySelector('[data-recommendation-modal-feedback]').value;
-            const comment = modal.querySelector('[data-recommendation-modal-comment]').value;
-            
-            try {
-              const updatePayload = { status };
-              if (comment.trim()) {
-                updatePayload.customer_comment = comment.trim();
-              }
-              await window.hrApi.updateRecommendation(recId, updatePayload);
-              
-              await window.hrApi.createRecommendationFeedback({
-                recommendation_id: recId,
-                status,
-                feedback: feedback.trim() || `状态流转为: ${status}`
-              });
-              
-              modal.style.display = 'none';
-              alert('状态更新成功！');
-              window.location.reload();
-            } catch (err) {
-              alert('操作失败: ' + err.message);
-            }
-          });
-        }
+        await loadDashboardData();
+        renderTopCards();
+        renderCalendar();
+        renderMonthCards();
+      } catch (error) {
+        console.warn('dashboard load failed', error);
       }
     });
   </script>

@@ -1925,6 +1925,9 @@
 - Task finalized by Codex hook (unknown) at 2026-06-28 22:35:59
 - Task finalized by Codex hook (unknown) at 2026-06-28 22:37:39
 - Task finalized by Codex hook (unknown) at 2026-06-28 22:39:26
+- Task finalized by Codex hook (unknown) at 2026-06-28 22:42:15
+- Task finalized by Codex hook (unknown) at 2026-06-28 22:43:09
+- Task finalized by Codex hook (unknown) at 2026-06-28 22:44:15
 
 ## 2026-06-28 (锁定状态一致性修复)
 
@@ -2009,3 +2012,20 @@
 - 每行"导出"按钮标签改为"简历导出"，与需求截图对齐。
 - 候选人详情弹窗补充 `data-candidate-detail-certificates` 字段（专业证书），确保 `view-detail` 处理器可正常填写所有字段。
 - 验证：node --check app.js、git diff --check 通过。
+
+## 2026-06-28（完成 - 岗位候选人页顶部信息与筛选区）
+
+- 按截图补齐“岗位候选人列表”标题、客户/项目/岗位副标题、添加候选人、导出简历、岗位摘要统计和处理时限提示。
+- 增加候选人姓名、推荐状态、匹配度三个筛选项；推荐状态与匹配度选项完全对齐用户截图，并实现搜索、回车搜索和重置。
+- “添加候选人”接入现有 `candidates.html?select_mode=1&position_id=...` 岗位选人流程；统计值由真实岗位和推荐记录计算。
+- 修正岗位薪资为千元口径显示（例如数据库 `20000-30000` 展示为 `20-30K`）。
+- 浏览器验证：真实岗位 41 正常显示 4 名候选人；姓名筛选、状态筛选、匹配度空结果和重置均正常；桌面与 390px 窄屏无页面级横向溢出，控制台无错误。
+
+## 2026-06-28（完成 - 首页重做为数据卡 + 推荐日历 + 月度看板）
+
+- 已将 [src/pages/dashboard.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/dashboard.html) 从旧版多区块首页改为三段式结构：顶部 5 个数据 kanban、中部推荐日历、底部月度数据看板。
+- 顶部 5 张卡片继续读取真实摘要数据，并补上当前推进项目数、待办数、活跃顾问数等说明；中部日历按交付/推荐/审计日志的时间回退链展示每天推荐给客户的数量；底部看板汇总当前月份的面试、推荐、入职和客户反馈。
+- 已在 [styles.css](/Users/huaiyuan/Desktop/workspace/hr-plateform/styles.css) 补齐首页专属卡片、日历、月份切换、日历详情和月度卡片样式，并新增窄屏 topbar 堆叠与日历局部横向滚动规则。
+- 浏览器验证：
+  - 桌面端首页可正常渲染新布局，5 张卡片、推荐日历和月度看板均出现，控制台无 warn/error。
+  - 390px 窄屏下页面级 `scrollWidth === clientWidth === 390`，无页面级横向溢出；首页内容可在侧栏下继续阅读，按钮与看板卡片仍可见。
