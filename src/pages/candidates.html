@@ -196,6 +196,7 @@
             <div class="section-sub">按岗位需求筛选、推进和管理候选人。</div>
           </div>
           <div class="hero-actions" style="margin-top:0">
+            <button class="btn primary" data-action="open-batch-recommend-modal" data-selected-count disabled style="height:38px;">推荐至岗位（0）</button>
             <button class="btn secondary" data-action="export-selected" style="height:38px;">导出简历</button>
           </div>
         </div>
@@ -346,7 +347,6 @@
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" data-action="close-candidate-detail-modal">关闭</button>
               <button class="btn" data-action="edit-candidate" data-id="">编辑资料</button>
-              <button class="btn primary" data-action="open-recommend-modal" data-id="" style="background-color: #4f46e5; border-color: #4f46e5;">推荐至岗位</button>
               <button class="btn primary" data-action="open-candidate-mail-modal">发送邮件</button>
             </div>
           </div>
@@ -696,15 +696,16 @@
         <div class="panel" style="max-width:540px; margin:12vh auto 0; background:#fff;">
           <div class="section-head">
             <div>
-              <h3>推荐至岗位</h3>
-              <div class="section-sub">为候选人创建新的项目推荐记录</div>
+              <h3>批量推荐至岗位</h3>
+              <div class="section-sub" data-recommend-selected-summary>请选择候选人后发起推荐</div>
             </div>
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" data-action="close-recommend-modal">取消</button>
-              <button class="btn primary" data-action="confirm-recommend" style="background-color: #4f46e5; border-color: #4f46e5;">确认推荐</button>
+              <button class="btn primary" data-action="confirm-recommend">确认推荐</button>
             </div>
           </div>
           <div class="list">
+            <div class="list-item" data-recommend-candidate-summary></div>
             <div class="list-item">
               <div class="item-top"><div><div class="item-title">选择客户公司</div></div></div>
               <select class="input" data-recommend-company-select style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:6px; padding:0 12px;"></select>
@@ -721,6 +722,7 @@
               <div class="item-top"><div><div class="item-title">推荐反馈评语</div></div></div>
               <textarea class="input" rows="4" data-recommend-feedback-textarea placeholder="输入推荐理由或针对该岗位的客户评语..." style="width:100%; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px;"></textarea>
             </div>
+            <div class="list-item" data-recommend-result style="display:none;"></div>
           </div>
         </div>
       </div>
@@ -978,9 +980,37 @@
       window.candidatesPageState = {
         list: [],
         rawList: [],
+        selectedCandidates: new Map(),
+        visiblePageItems: [],
         currentPage: 1,
         pageSize: 10,
+        recordKey(item) {
+          return String(item?.record_key || `candidate:${item?.id}`);
+        },
+        clearSelection() {
+          this.selectedCandidates.clear();
+          this.syncSelectionUI();
+        },
+        syncSelectionUI() {
+          document.querySelectorAll('[data-candidate-select]').forEach((checkbox) => {
+            checkbox.checked = this.selectedCandidates.has(String(checkbox.dataset.recordKey || ''));
+          });
+          const visibleKeys = this.visiblePageItems.map((item) => this.recordKey(item));
+          const selectedVisible = visibleKeys.filter((key) => this.selectedCandidates.has(key)).length;
+          const toggleAll = document.querySelector('[data-action="toggle-all-candidates"]');
+          if (toggleAll) {
+            toggleAll.checked = visibleKeys.length > 0 && selectedVisible === visibleKeys.length;
+            toggleAll.indeterminate = selectedVisible > 0 && selectedVisible < visibleKeys.length;
+          }
+          const count = this.selectedCandidates.size;
+          const recommendButton = document.querySelector('[data-selected-count]');
+          if (recommendButton) {
+            recommendButton.textContent = `推荐至岗位（${count}）`;
+            recommendButton.disabled = count === 0;
+          }
+        },
         applyFilters() {
+          this.selectedCandidates.clear();
           const keyword = document.querySelector('[data-field="candidate-keyword"]')?.value?.trim() || "";
           const city = document.querySelector('[data-field="candidate-city"]')?.value?.trim() || "";
           const education = document.querySelector('[data-filter-education]')?.value || "";
@@ -1108,6 +1138,7 @@
           const start = (this.currentPage - 1) * this.pageSize;
           const end = start + this.pageSize;
           const pageItems = this.list.slice(start, end);
+          this.visiblePageItems = pageItems;
 
           const totalNode = document.querySelector('[data-candidate-total]');
           const newNode = document.querySelector('[data-candidate-new]');
@@ -1130,7 +1161,7 @@
 
           const table = document.querySelector('.table-card');
           if (table) {
-            table.querySelectorAll('.table-row').forEach(row => row.remove());
+            table.querySelectorAll('.table-row-wrapper, .table-row').forEach(row => row.remove());
             
             const rows = pageItems.map(i => {
               const rowKey = String(i.record_key || `candidate:${i.id}`);
@@ -1144,7 +1175,7 @@
               return `
                 <div class="table-row-wrapper" style="border-bottom: 1px solid #f1f5f9;">
                   <div class="table-row" data-row-key="${rowKey}" style="border-bottom: none;">
-                    <div><input type="checkbox" data-id="${i.id}" aria-label="选择${i.name}" /></div>
+                    <div><input type="checkbox" data-candidate-select data-record-key="${rowKey}" data-id="${i.id}" aria-label="选择${i.name}" ${this.selectedCandidates.has(rowKey) ? 'checked' : ''} /></div>
                     <div style="display: flex; align-items: center; gap: 12px;">
                       <button class="btn-sm" data-action="toggle-details" data-id="${rowKey}" data-row-key="${rowKey}" title="展开生命周期" style="padding: 4px; min-width: 24px; min-height: 24px; height: 24px; border-radius: 4px; box-shadow: none; border: 1px solid #e2e8f0; background: #fff;"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" style="transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
                       <div class="row-title" style="margin-left: 0;">
@@ -1203,6 +1234,7 @@
               head.insertAdjacentHTML('afterend', rows);
             }
           }
+          this.syncSelectionUI();
         },
         render() {
           this.applyFilters();
@@ -1430,11 +1462,26 @@
       document.addEventListener('change', (e) => {
         if (e.target.matches('[data-action="toggle-all-candidates"]')) {
           const checked = e.target.checked;
-          document.querySelectorAll('.table-card .table-row input[type="checkbox"]').forEach(cb => {
-            if (!cb.disabled) {
-              cb.checked = checked;
+          window.candidatesPageState.visiblePageItems.forEach((item) => {
+            const key = window.candidatesPageState.recordKey(item);
+            if (checked) {
+              window.candidatesPageState.selectedCandidates.set(key, item);
+            } else {
+              window.candidatesPageState.selectedCandidates.delete(key);
             }
           });
+          window.candidatesPageState.syncSelectionUI();
+          return;
+        }
+        if (e.target.matches('[data-candidate-select]')) {
+          const key = String(e.target.dataset.recordKey || '');
+          const item = window.candidatesPageState.rawList.find((candidate) => window.candidatesPageState.recordKey(candidate) === key);
+          if (e.target.checked && item) {
+            window.candidatesPageState.selectedCandidates.set(key, item);
+          } else {
+            window.candidatesPageState.selectedCandidates.delete(key);
+          }
+          window.candidatesPageState.syncSelectionUI();
         }
       });
 

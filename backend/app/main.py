@@ -1200,6 +1200,147 @@ def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depe
     return obj
 
 
+@app.post("/api/recommendations/batch", response_model=schemas.RecommendationBatchOut)
+def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    record_keys = [str(key).strip() for key in payload.record_keys if str(key).strip()]
+    if not record_keys:
+        raise HTTPException(status_code=400, detail="没有待推荐的候选人")
+    position = db.get(Position, payload.position_id)
+    if not position:
+        raise HTTPException(status_code=404, detail="岗位不存在")
+    enforce_position_access(db, user, position.id)
+
+    items: list[schemas.RecommendationBatchItem] = []
+    processed_candidate_ids: set[int] = set()
+    succeeded = 0
+    skipped = 0
+    failed = 0
+    recommender = payload.recommender or user.username
+
+    for record_key in record_keys:
+        candidate = None
+        try:
+            candidate = crud.ensure_local_candidate(db, record_key)
+            if not candidate:
+                failed += 1
+                items.append(schemas.RecommendationBatchItem(
+                    record_key=record_key,
+                    result="failed",
+                    reason="候选人不存在",
+                ))
+                continue
+            enforce_candidate_access(db, user, candidate)
+            if candidate.id in processed_candidate_ids:
+                skipped += 1
+                items.append(schemas.RecommendationBatchItem(
+                    record_key=record_key,
+                    candidate_id=candidate.id,
+                    candidate_name=candidate.name,
+                    result="skipped",
+                    reason="本批次已包含该候选人",
+                ))
+                continue
+            processed_candidate_ids.add(candidate.id)
+            if candidate.locked:
+                skipped += 1
+                items.append(schemas.RecommendationBatchItem(
+                    record_key=record_key,
+                    candidate_id=candidate.id,
+                    candidate_name=candidate.name,
+                    result="skipped",
+                    reason="候选人已锁定",
+                ))
+                continue
+            existing = db.query(Recommendation).filter(
+                Recommendation.candidate_id == candidate.id,
+                Recommendation.position_id == position.id,
+            ).first()
+            if existing:
+                skipped += 1
+                items.append(schemas.RecommendationBatchItem(
+                    record_key=record_key,
+                    candidate_id=candidate.id,
+                    candidate_name=candidate.name,
+                    result="skipped",
+                    reason="候选人已推荐至该岗位",
+                    recommendation_id=existing.id,
+                ))
+                continue
+
+            recommendation_payload = schemas.RecommendationCreate(
+                candidate_id=candidate.id,
+                position_id=position.id,
+                recommender=recommender,
+                status=payload.status,
+                feedback=payload.feedback,
+            )
+            recommendation = crud.create_recommendation(db, recommendation_payload)
+            db.flush()
+            crud.add_audit(
+                db,
+                user.username,
+                "推荐交付",
+                "批量创建推荐记录",
+                "recommendation",
+                str(recommendation.id),
+                detail=f"候选人 {candidate.id} -> 岗位 {position.id}",
+            )
+            db.commit()
+            db.refresh(recommendation)
+            succeeded += 1
+            items.append(schemas.RecommendationBatchItem(
+                record_key=record_key,
+                candidate_id=candidate.id,
+                candidate_name=candidate.name,
+                result="success",
+                reason="推荐成功",
+                recommendation_id=recommendation.id,
+            ))
+        except HTTPException as exc:
+            db.rollback()
+            failed += 1
+            items.append(schemas.RecommendationBatchItem(
+                record_key=record_key,
+                candidate_id=candidate.id if candidate else None,
+                candidate_name=candidate.name if candidate else "",
+                result="failed",
+                reason=str(exc.detail),
+            ))
+        except Exception:
+            db.rollback()
+            failed += 1
+            items.append(schemas.RecommendationBatchItem(
+                record_key=record_key,
+                candidate_id=candidate.id if candidate else None,
+                candidate_name=candidate.name if candidate else "",
+                result="failed",
+                reason="推荐处理失败",
+            ))
+
+    notification_id = None
+    if succeeded:
+        notification = Notification(
+            user=user.username,
+            title=f"批量推荐完成：{succeeded} 人",
+            type="业务处理",
+            read=False,
+            target_path="./candidates.html",
+        )
+        db.add(notification)
+        db.commit()
+        db.refresh(notification)
+        notification_id = notification.id
+
+    return schemas.RecommendationBatchOut(
+        total=len(record_keys),
+        succeeded=succeeded,
+        skipped=skipped,
+        failed=failed,
+        items=items,
+        notification_id=notification_id,
+    )
+
+
 @app.get("/api/recommendations", response_model=list[schemas.RecommendationOut])
 def get_recommendations(candidate_id: int | None = Query(default=None), position_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(require_user)):
     items = crud.list_recommendations(db, candidate_id=candidate_id, position_id=position_id)

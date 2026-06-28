@@ -455,6 +455,32 @@ class RecommendationOut(RecommendationCreate):
     id: int
 
 
+class RecommendationBatchCreate(BaseModel):
+    record_keys: list[str] = Field(default_factory=list)
+    position_id: int
+    recommender: str = ""
+    status: str = "待推荐"
+    feedback: str = ""
+
+
+class RecommendationBatchItem(BaseModel):
+    record_key: str
+    candidate_id: int | None = None
+    candidate_name: str = ""
+    result: str
+    reason: str = ""
+    recommendation_id: int | None = None
+
+
+class RecommendationBatchOut(BaseModel):
+    total: int
+    succeeded: int
+    skipped: int
+    failed: int
+    items: list[RecommendationBatchItem] = Field(default_factory=list)
+    notification_id: int | None = None
+
+
 class RecommendationUpdate(BaseModel):
     status: str | None = None
     feedback: str | None = None

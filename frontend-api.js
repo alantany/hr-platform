@@ -223,6 +223,9 @@ window.hrApi = {
   createRecommendation(payload) {
     return this.request("/recommendations", { method: "POST", body: JSON.stringify(payload) });
   },
+  createBatchRecommendations(payload) {
+    return this.request("/recommendations/batch", { method: "POST", body: JSON.stringify(payload) });
+  },
   recommendations(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/recommendations${qs ? `?${qs}` : ""}`);

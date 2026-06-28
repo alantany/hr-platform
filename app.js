@@ -652,6 +652,7 @@ const busyLabelByAction = {
   "toggle-details": "加载详情...",
   "confirm-search-preset-upload": "保存中...",
   "confirm-recommendation-status": "保存中...",
+  "open-batch-recommend-modal": "加载岗位...",
   "confirm-candidate-edit": "保存中...",
   "confirm-candidate-create": "创建中...",
   "confirm-recommend": "推荐中...",
@@ -683,7 +684,7 @@ function shouldShowButtonBusy(button) {
   return Boolean(
     busyLabelByAction[action] ||
     /^(confirm|refresh|read|delete|toggle|search|export|import)-/.test(action) ||
-    ["view-detail", "toggle-details", "edit-candidate", "edit-company", "edit-project", "edit-salary-record", "open-recommend-modal", "open-candidate-mail-modal", "open-add-salary-modal"].includes(action)
+    ["view-detail", "toggle-details", "edit-candidate", "edit-company", "edit-project", "edit-salary-record", "open-batch-recommend-modal", "open-candidate-mail-modal", "open-add-salary-modal"].includes(action)
   );
 }
 
@@ -1468,10 +1469,6 @@ async function handleGlobalButton(button) {
     if (editBtn) {
       editBtn.dataset.id = resolvedId;
     }
-    const recommendBtn = document.querySelector('[data-candidate-detail-modal] [data-action="open-recommend-modal"]');
-    if (recommendBtn) {
-      recommendBtn.dataset.id = resolvedId;
-    }
     const projectsContainer = document.querySelector('[data-candidate-detail-projects]');
     if (projectsContainer) {
       projectsContainer.innerHTML = '<div class="list-item"><div class="item-meta">加载中...</div></div>';
@@ -2163,13 +2160,26 @@ async function handleGlobalButton(button) {
     if (actionDesc) actionDesc.textContent = candidate.locked ? '确认后将解除锁定，允许继续流转。' : '确认后将锁定该候选人，避免重复操作。';
     return;
   }
-  if (button.dataset.action === "open-recommend-modal") {
-    const candidateId = String(button.dataset.id || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
-    if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
+  if (button.dataset.action === "open-batch-recommend-modal") {
+    const selectedCandidates = Array.from(window.candidatesPageState?.selectedCandidates?.entries?.() || []);
+    if (!selectedCandidates.length) throw new Error('请先勾选需要推荐的候选人');
     const modal = document.querySelector('[data-recommend-modal]');
     if (modal) {
-      modal.dataset.candidateId = candidateId;
+      modal.dataset.recordKeys = JSON.stringify(selectedCandidates.map(([recordKey]) => recordKey));
       modal.style.display = 'block';
+    }
+    const selectedSummary = document.querySelector('[data-recommend-selected-summary]');
+    const candidateSummary = document.querySelector('[data-recommend-candidate-summary]');
+    const resultPanel = document.querySelector('[data-recommend-result]');
+    if (selectedSummary) selectedSummary.textContent = `已选择 ${selectedCandidates.length} 位候选人，将统一推荐至同一岗位`;
+    if (candidateSummary) {
+      const names = selectedCandidates.slice(0, 6).map(([, candidate]) => escapeHtml(candidate?.name || '未命名候选人'));
+      const remaining = selectedCandidates.length - names.length;
+      candidateSummary.innerHTML = `<div class="item-title">本次候选人</div><div class="item-meta">${names.join('、')}${remaining > 0 ? ` 等 ${selectedCandidates.length} 人` : ''}</div>`;
+    }
+    if (resultPanel) {
+      resultPanel.style.display = 'none';
+      resultPanel.innerHTML = '';
     }
     const companySelect = document.querySelector('[data-recommend-company-select]');
     const projectSelect = document.querySelector('[data-recommend-project-select]');
@@ -2197,42 +2207,56 @@ async function handleGlobalButton(button) {
   }
   if (button.dataset.action === "confirm-recommend") {
     const modal = document.querySelector('[data-recommend-modal]');
-    const candidateId = modal?.dataset.candidateId || '';
-    if (!candidateId || candidateId === '0') throw new Error('没有待推荐的候选人');
+    let recordKeys = [];
+    try {
+      recordKeys = JSON.parse(modal?.dataset.recordKeys || '[]');
+    } catch (err) {
+      recordKeys = [];
+    }
+    if (!recordKeys.length) throw new Error('没有待推荐的候选人');
     const positionSelect = document.querySelector('[data-recommend-position-select]');
     const positionId = positionSelect?.value;
     if (!positionId) throw new Error('请选择要推荐的招聘岗位');
     const feedbackTextarea = document.querySelector('[data-recommend-feedback-textarea]');
     const feedback = feedbackTextarea?.value?.trim() || '';
-    const record = await window.hrApi.createRecommendation({
-      candidate_id: Number(candidateId),
+    const result = await window.hrApi.createBatchRecommendations({
+      record_keys: recordKeys,
       position_id: Number(positionId),
       recommender: 'admin',
       status: '待推荐',
       feedback: feedback
     });
-    await window.hrApi.createNotification({
-      user: 'admin',
-      title: `候选人已推荐：新推荐`,
-      type: '业务处理',
-      content: `候选人已被推荐，等待后续推进`,
-      target_path: './candidates.html',
-      read: false,
-    });
-    if (modal) modal.style.display = 'none';
-    showToast(`成功推荐候选人！`);
-    const detailModal = document.querySelector('[data-candidate-detail-modal]');
-    if (detailModal && detailModal.dataset.candidateId === candidateId) {
-      const fakeBtn = document.createElement("button");
-      fakeBtn.dataset.action = "view-detail";
-      fakeBtn.dataset.id = candidateId;
-      handleGlobalButton(fakeBtn).catch(err => console.warn(err));
+    const successfulKeys = new Set(result.items.filter((item) => item.result === 'success').map((item) => item.record_key));
+    successfulKeys.forEach((recordKey) => window.candidatesPageState?.selectedCandidates?.delete(recordKey));
+    window.candidatesPageState?.syncSelectionUI?.();
+
+    const remainingItems = result.items.filter((item) => item.result !== 'success');
+    const remainingKeys = remainingItems.map((item) => item.record_key);
+    if (modal) modal.dataset.recordKeys = JSON.stringify(remainingKeys);
+    if (!remainingItems.length) {
+      if (modal) modal.style.display = 'none';
+      showToast(`批量推荐完成：成功 ${result.succeeded} 人`);
+      return;
     }
-    if (window.candidatesPageState && window.candidatesPageState.renderOnly) {
-      const list = await window.hrApi.candidates();
-      window.candidatesPageState.list = list;
-      window.candidatesPageState.renderOnly();
+
+    const selectedSummary = document.querySelector('[data-recommend-selected-summary]');
+    const candidateSummary = document.querySelector('[data-recommend-candidate-summary]');
+    const resultPanel = document.querySelector('[data-recommend-result]');
+    if (selectedSummary) selectedSummary.textContent = `成功 ${result.succeeded} 人，剩余 ${remainingItems.length} 人待处理`;
+    if (candidateSummary) {
+      candidateSummary.innerHTML = `<div class="item-title">处理汇总</div><div class="item-meta">成功 ${result.succeeded} · 跳过 ${result.skipped} · 失败 ${result.failed}</div>`;
     }
+    if (resultPanel) {
+      resultPanel.style.display = 'block';
+      resultPanel.innerHTML = `<div class="item-title">未完成候选人</div><div class="list" style="margin-top:8px;">${remainingItems.map((item) => `
+        <div class="list-item" style="padding:8px 0;border:0;border-top:1px solid rgba(15,23,42,.06);">
+          <div class="item-top">
+            <div><div class="item-title">${escapeHtml(item.candidate_name || item.record_key)}</div><div class="item-meta">${escapeHtml(item.reason || '处理失败')}</div></div>
+            <span class="chip ${item.result === 'skipped' ? 'warning' : 'danger'}">${item.result === 'skipped' ? '已跳过' : '失败'}</span>
+          </div>
+        </div>`).join('')}</div>`;
+    }
+    showToast(`批量推荐：成功 ${result.succeeded}，跳过 ${result.skipped}，失败 ${result.failed}`);
     return;
   }
   if (button.dataset.action === "open-add-note-modal") {

@@ -100,6 +100,9 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 | Error | Attempt | Resolution |
 |-------|---------|------------|
 | `create_goal` 失败，提示已有未完成 goal | 1 | 不重复创建 goal，按用户当前 `/goal` 目标继续执行 |
+| 批量推荐接口测试返回 `405 Method Not Allowed` | 1 | 预期红灯；新增 `/api/recommendations/batch` 后复测 |
+| 更新任务记录时补丁 hunk 顺序错误 | 2 | 按文件中的实际行序重新组织补丁后写入 |
+| `check-complete.sh` 显示 `22/21 phases complete` | 1 | 旧计划存在重复阶段编号；确认 Phase 15 全部完成，本次不重排历史阶段 |
 
 ### Phase 10 - Final acceptance closeout
 
@@ -156,6 +159,15 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 升级 Worker 为守护进程（Daemon），利用 `NOT IN` 差集排查法实现 24 小时无遗漏新数据同步拉取。
 - [x] 修复 `crud.py` 候选人列表接口：更正外部关联表为 `resume_downloads`，并加入名字/ID 级业务防重墙，彻底解决 UI 大量冗余记录问题。
 - [x] 升级数据库资源探针：解除了 Pagination 限制，支持大表全量透视诊断。
+- **Status:** complete
+
+### Phase 15 - 候选人批量推荐至岗位（已完成）
+
+- [x] 新增批量推荐接口，支持稳定 `record_key`、部分成功、锁定和重复跳过
+- [x] 候选人列表实现跨分页选择、当前页全选和选择数量反馈
+- [x] 将推荐入口移至列表工具栏并移除详情页入口
+- [x] 补齐批量结果汇总、审计与单条通知
+- [x] 完成后端自动化、浏览器交互与测试数据清理验证
 - **Status:** complete
 
 ### Phase 14 - 薪资福利入职跟踪表与相关优化（已完成）
