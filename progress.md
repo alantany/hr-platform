@@ -1987,3 +1987,10 @@
   - 每行"导出"按钮使用 `positionExportSingle` 函数触发导出弹窗
 - **移除按钮**：保持原有逻辑，调用 `deleteRecommendation` 后刷新列表。
 - 验证：node --check app.js、git diff --check 通过。
+
+## 2026-06-28 (修复详情按钮报错 + 导出范围限定)
+
+- **详情按钮**：在 position-candidates.html 中直接内嵌了 `data-candidate-detail-modal` 和 `data-candidate-edit-modal` 两个弹窗（精简版，包含 view-detail handler 所需的所有 data-* 选择器）。这样 `view-detail` 处理器无需跨文件 fetch candidates.html，直接在当前页面找到弹窗并填充数据，"编辑资料"按钮也可正常工作。
+- **批量导出**：新增 `positionBatchExport` 函数，从 `window.__positionCandidateIds` 读取当前岗位下的候选人 ID 列表，只加载这些候选人到导出弹窗。不再加载全库候选人。
+- **单行导出**：重写 `positionExportSingle` 函数，只加载单个候选人并填充导出弹窗，同时加载导出历史记录。
+- **验证**：node --check app.js、git diff --check 通过。
