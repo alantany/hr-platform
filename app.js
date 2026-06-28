@@ -202,14 +202,14 @@ const renderCandidateTreeItem = (candidate, depth = 3) => {
     <div class="list-item tree-node tree-node-candidate" data-tree-node="candidate" data-id="${candidate.id}" style="margin-left:${depth * 18}px">
       <div class="item-top">
         <input type="checkbox" class="tree-candidate-checkbox" data-candidate-id="${candidate.id}" data-recommendation-id="${candidate.recommendation_id || ''}" aria-label="选择${candidate.name}" style="margin-right:8px;flex-shrink:0;" />
-        <div>
+        <div style="flex: 1; min-width: 0;">
           <div class="item-title"><span>${escapeHtml(candidate.name || '未命名候选人')}</span></div>
           <div class="item-meta">${escapeHtml(meta)}</div>
         </div>
-        <div class="table-actions">
+        <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
           <button class="btn-sm" data-action="edit-candidate-tree" data-id="${candidate.id}">编辑</button>
         </div>
-        <span class="chip ${isLocked ? 'warning' : 'neutral'}">${isLocked ? '已锁定' : escapeHtml(candidate.status || '未锁定')}</span>
+        <span class="chip ${isLocked ? 'warning' : 'neutral'}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${isLocked ? '已锁定' : escapeHtml(candidate.status || '未锁定')}</span>
       </div>
     </div>`;
 };
@@ -230,22 +230,22 @@ const renderPositionTreeItem = (position, project, company, candidates = [], dep
   return `
     <div class="list-item tree-node tree-node-position" data-tree-node="position" data-id="${position.id}" data-project-id="${position.project_id}" style="margin-left:${depth * 18}px">
       <div class="item-top">
-        <div>
+        <div style="flex: 1; min-width: 0;">
           <div class="item-title">
             ${renderTreeToggle(state, 'position', position.id)}
             <span>${position.name}</span>
           </div>
           <div class="item-meta">${meta || '暂无补充信息'}</div>
         </div>
-        <div class="table-actions" style="display: flex; gap: 8px; align-items: center;">
+        <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
           <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
           <button class="btn-sm" data-action="toggle-position-status" data-id="${position.id}" data-status="${position.status}">${position.status === '已关闭' ? '恢复' : '关闭'}</button>
           <button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button>
-          <span style="border-left: 1px solid rgba(15,23,42,.1); height: 16px; margin: 0 4px; display: inline-block;"></span>
+          <span style="border-left: 1px solid rgba(15,23,42,.1); height: 16px; margin: 0 24px; display: inline-block;"></span>
           <button class="btn-sm primary" data-action="search-add-candidates" data-id="${position.id}">添加候选人</button>
           <button class="btn-sm danger" data-action="batch-delete-candidates-tree" data-position-batch-delete="${position.id}" disabled style="opacity:0.4;cursor:not-allowed;">批量移除</button>
         </div>
-        <span class="chip ${statusChip}">${position.status}</span>
+        <span class="chip ${statusChip}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${position.status}</span>
       </div>
       ${children ? `<div class="tree-children">${children}</div>` : ''}
     </div>`;
@@ -261,19 +261,19 @@ const renderProjectTreeItem = (project, company, positions = [], candidatesByPos
   return `
     <div class="list-item tree-node tree-node-project" data-tree-node="project" data-id="${project.id}" data-company-id="${project.company_id}" style="margin-left:${depth * 18}px">
       <div class="item-top">
-        <div>
+        <div style="flex: 1; min-width: 0;">
           <div class="item-title">
             ${renderTreeToggle(state, 'project', project.id)}
             <span>${project.name}</span>
           </div>
           <div class="item-meta">${meta || '暂无补充信息'}</div>
         </div>
-        <div class="table-actions">
+        <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
           <button class="btn-sm" data-action="edit-project" data-id="${project.id}">编辑</button>
           <button class="btn-sm" data-action="toggle-project" data-id="${project.id}">${getProjectActionLabel(project.status)}</button>
           <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
         </div>
-        <span class="chip ${chipClass}">${project.status}</span>
+        <span class="chip ${chipClass}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${project.status}</span>
       </div>
       ${children ? `<div class="tree-children">${children}</div>` : ''}
     </div>`;
@@ -290,19 +290,19 @@ const renderCompanyTreeItem = (company, projects = [], positionsByProject = new 
   return `
     <div class="list-item tree-node tree-node-company" data-tree-node="company" data-id="${company.id}">
       <div class="item-top">
-        <div>
+        <div style="flex: 1; min-width: 0;">
           <div class="item-title">
             ${renderTreeToggle(state, 'company', company.id)}
             <span>${company.name}</span>
           </div>
           <div class="item-meta">${meta || '暂无补充信息'}</div>
         </div>
-        <div class="table-actions">
+        <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-shrink: 0; width: 420px; margin-right: 16px;">
           <button class="btn-sm" data-action="edit-company" data-id="${company.id}">编辑</button>
           <button class="btn-sm" data-action="toggle-company" data-id="${company.id}">${actionLabel}</button>
           <button class="btn-sm" data-action="delete-company" data-id="${company.id}">删除</button>
         </div>
-        <span class="chip ${chipClass}">${company.status || '招聘中'}</span>
+        <span class="chip ${chipClass}" style="flex-shrink: 0; width: 80px; text-align: center; display: inline-block;">${company.status || '招聘中'}</span>
       </div>
       ${children ? `<div class="tree-children">${children}</div>` : ''}
     </div>`;
@@ -838,6 +838,7 @@ function escapeHtml(value) {
 }
 
 function shouldShowButtonBusy(button) {
+  if (button?.dataset?.treeToggle) return false;
   const action = button?.dataset?.action || "";
   if (!action || button?.dataset?.busy === "true") return false;
   if (["logout", "refresh-page"].includes(action)) return false;
@@ -4836,8 +4837,16 @@ document.addEventListener("click", (event) => {
     };
     const toggle = toggleByLevel[btn.dataset.treeToggle];
     if (!toggle) return;
-    withButtonBusy(btn, () => toggle(targetId))
-      .catch((err) => showToast(`操作失败：${err.message || err}`));
+    
+    const closeToast = showLoadingToast("正在加载数据...");
+    toggle(targetId)
+      .then(() => {
+        closeToast();
+      })
+      .catch((err) => {
+        closeToast();
+        showToast(`操作失败：${err.message || err}`);
+      });
     return;
   }
 
