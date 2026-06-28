@@ -1,6 +1,13 @@
 # Progress
 
-## 2026-06-28 (已完成 - 树候选人编辑与批量删除按钮 Mock 修复)
+## 2026-06-28 (已完成 - 树候选人编辑与批量删除刷新修复)
+
+- **编辑按钮根因**：`edit-candidate-tree` 在树状页面查找 `[data-candidate-edit-modal]`，但该弹窗只在 `candidates.html` 中定义，在 customers/projects/positions 页面根本不存在，所以 `modal` 为 `null`，弹窗永远打不开。
+- **编辑按钮修复**：改为直接跳转到 `candidates.html?edit=<id>`，候选人页面初始化完成后自动检测 URL 参数并触发 `edit-candidate` 逻辑打开编辑弹窗，完成后用 `history.replaceState` 清除参数。
+- **批量删除变空根因**：`batch-delete-candidates-tree` 调用 `treeState.candidatesByPosition.clear()` 清空缓存后，直接调用 `renderXxxTreeFromState()` 渲染，但渲染时直接用空 Map，展开中的岗位候选人列表就变成空了（`loadPositionCandidates` 只在缓存 miss 时拉数据，但 render 函数本身不会主动调用 load）。
+- **批量删除修复**：clear 前先保存 `expandedPositions` 的 ID 列表，clear 后用 `Promise.all` 重新并发拉取所有已展开岗位的候选人，再调用 render 函数，保证删除后展开节点的候选人名单是最新的。
+- **验证**：`node --check app.js` 语法检查通过。
+
 
 - **Bug 根因**：`app.js` 中 `close-recommend-modal` 的 `if` 块在 `return;` 后漏掉了关闭的 `}`，导致 `edit-candidate-tree` 和 `batch-delete-candidates-tree` 两个处理分支被错误嵌套在 `close-recommend-modal` 块内部。由于 `return` 在前，这两个分支永远执行不到，控制流最终落到全局兜底 `showToast("已点击：...")` 的 Mock 输出。
 - **修复方式**：在 `close-recommend-modal` 块的 `return;` 之后补上缺失的 `}`，并删除原本错位补偿的多余 `}`。

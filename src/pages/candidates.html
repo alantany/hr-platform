@@ -1088,9 +1088,9 @@
           // 4. 状态过滤 (unlocked / locked)
           if (excludeVal) {
             if (excludeVal === 'unlocked') {
-              filtered = filtered.filter(i => !i.locked);
+              filtered = filtered.filter(i => !i.locked && i.status !== '锁定');
             } else if (excludeVal === 'locked') {
-              filtered = filtered.filter(i => i.locked);
+              filtered = filtered.filter(i => i.locked || i.status === '锁定');
             }
           }
           
@@ -1245,6 +1245,23 @@
         window.candidatesPageState.rawList = await window.hrApi.candidates();
         window.candidatesPageState.render();
       } catch (err) { console.warn(err); }
+
+      // 从树状页面跳转过来时，URL 可能带有 ?edit=<id>，自动打开编辑弹窗
+      try {
+        const urlParams = new URLSearchParams(location.search);
+        const editId = urlParams.get('edit');
+        if (editId) {
+          const btn = document.createElement('button');
+          btn.dataset.action = 'edit-candidate';
+          btn.dataset.candidateKey = editId;
+          // 等数据加载完再触发
+          setTimeout(() => {
+            handleGlobalButton(btn).catch(err => console.warn('自动打开编辑弹窗失败', err));
+          }, 300);
+          // 清除 URL 参数，避免刷新重复触发
+          history.replaceState(null, '', location.pathname);
+        }
+      } catch (editErr) { console.warn('自动打开编辑弹窗失败', editErr); }
 
       // 城市二级联动及搜索数据字典（全国31个省、直辖市、自治区）
       const CITY_DATA = [

@@ -2324,55 +2324,23 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "edit-candidate-tree") {
-    const id = Number(button.dataset.id || 0);
+    const id = button.dataset.id || '';
     if (!id) throw new Error('候选人 ID 缺失');
-    const item = await window.hrApi.candidate(String(id));
-    if (!item) throw new Error('候选人不存在');
-    const modal = document.querySelector('[data-candidate-edit-modal]');
-    const fill = (sel, val) => { const el = document.querySelector(sel); if (el) el.value = val || ''; };
-    fill('[data-candidate-edit-name]', item.name);
-    fill('[data-candidate-edit-gender]', item.gender);
-    fill('[data-candidate-edit-age]', item.age || '');
-    fill('[data-candidate-edit-birth-date]', item.birth_date);
-    fill('[data-candidate-edit-hukou]', item.hukou_location);
-    fill('[data-candidate-edit-city]', item.city);
-    fill('[data-candidate-edit-phone]', item.phone);
-    fill('[data-candidate-edit-email]', item.email);
-    fill('[data-candidate-edit-idnumber]', item.id_number);
-    fill('[data-candidate-edit-family]', item.family_status);
-    fill('[data-candidate-edit-title]', item.current_title);
-    fill('[data-candidate-edit-education]', item.education);
-    fill('[data-candidate-edit-exp-years]', item.experience_years);
-    fill('[data-candidate-edit-certificates]', item.certificates);
-    fill('[data-candidate-edit-edu-detail]', item.education_detail);
-    fill('[data-candidate-edit-work-history]', item.work_history);
-    fill('[data-candidate-edit-project-history]', item.project_history);
-    fill('[data-candidate-edit-salary]', item.expected_salary);
-    fill('[data-candidate-edit-salary-structure]', item.salary_structure);
-    fill('[data-candidate-edit-onboard]', item.onboard_cycle);
-    fill('[data-candidate-edit-job-status]', item.job_status);
-    fill('[data-candidate-edit-intention]', item.job_intention);
-    fill('[data-candidate-edit-core-value]', item.core_value);
-    fill('[data-candidate-edit-evaluation]', item.comprehensive_evaluation);
-    fill('[data-candidate-edit-status]', item.locked ? '锁定' : (item.status || '激活'));
-    fill('[data-candidate-edit-source]', item.source);
-    fill('[data-candidate-edit-tags]', item.tags);
-    if (modal) {
-      modal.style.display = 'block';
-      modal.dataset.candidateId = String(item.id);
-      modal.dataset.target = JSON.stringify({ id: item.id });
-    }
+    // 候选人编辑弹窗只在 candidates.html 中存在，跳转到候选人页面并打开编辑
+    const base = location.pathname.replace(/\/[^\/]+$/, '');
+    location.href = `${base}/candidates.html?edit=${encodeURIComponent(id)}`;
     return;
   }
   if (button.dataset.action === "delete-candidate-tree") {
     const recommendationId = Number(button.dataset.recommendationId || 0);
-    const candidateId = Number(button.dataset.id || 0);
     if (!recommendationId) throw new Error('推荐记录 ID 缺失');
     if (!confirm('确定将该候选人从此岗位移除并解除锁定吗？')) return;
     await window.hrApi.deleteRecommendation(recommendationId);
     showToast('候选人已移除并解除锁定');
-    // Refresh the tree - clear expanded positions cache
+    // 保留已展开岗位 ID，clear 缓存后重新拉取候选人再渲染
+    const expandedPositionIds = Array.from(treeState.expandedPositions);
     treeState.candidatesByPosition.clear();
+    await Promise.all(expandedPositionIds.map(pid => loadPositionCandidates(pid)));
     const page = location.pathname.split("/").pop() || "";
     if (page === "customers.html") await renderCustomerTreeFromState();
     else if (page === "projects.html") await renderProjectTreeFromState();
@@ -2391,7 +2359,10 @@ async function handleGlobalButton(button) {
     const ids = items.map(item => item.recommendationId);
     const result = await window.hrApi.batchDeleteRecommendations(ids);
     showToast(`已移除 ${result.deleted} 名候选人`);
+    // 保留已展开岗位 ID，clear 缓存后重新拉取候选人再渲染
+    const expandedPositionIds = Array.from(treeState.expandedPositions);
     treeState.candidatesByPosition.clear();
+    await Promise.all(expandedPositionIds.map(pid => loadPositionCandidates(pid)));
     checkboxes.forEach(cb => cb.checked = false);
     document.querySelectorAll('[data-batch-delete-candidates-btn]').forEach(btn => btn.textContent = '批量移除候选人');
     const page = location.pathname.split("/").pop() || "";
