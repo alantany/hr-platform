@@ -1381,6 +1381,54 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
     return obj
 
 
+@app.delete("/api/recommendations/{recommendation_id}")
+def delete_recommendation(recommendation_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    from .models import Recommendation, Candidate, CandidateTrackingEvent
+    obj = db.get(Recommendation, recommendation_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="推荐记录不存在")
+    enforce_recommendation_access(db, user, obj)
+    candidate = db.get(Candidate, obj.candidate_id)
+    # 删除推荐记录的下游数据
+    db.query(RecommendationFeedback).filter(RecommendationFeedback.recommendation_id == recommendation_id).delete()
+    db.query(Delivery).filter(Delivery.recommendation_id == recommendation_id).delete()
+    db.query(CandidateTrackingEvent).filter(CandidateTrackingEvent.recommendation_id == recommendation_id).delete()
+    db.delete(obj)
+    # 解锁候选人
+    if candidate:
+        candidate.locked = False
+        candidate.status = "未锁定"
+    crud.add_audit(db, user.username, "推荐交付", "删除推荐记录并解锁候选人", "recommendation", str(recommendation_id), detail=str(obj.candidate_id))
+    db.commit()
+    return {"detail": "推荐记录已删除，候选人已解锁"}
+
+
+@app.post("/api/recommendations/batch-delete")
+def batch_delete_recommendations(payload: list[int], db: Session = Depends(get_db), user: User = Depends(require_user)):
+    from .models import Recommendation, Candidate, CandidateTrackingEvent
+    deleted = 0
+    for recommendation_id in payload:
+        obj = db.get(Recommendation, recommendation_id)
+        if not obj:
+            continue
+        try:
+            enforce_recommendation_access(db, user, obj)
+        except HTTPException:
+            continue
+        candidate = db.get(Candidate, obj.candidate_id)
+        db.query(RecommendationFeedback).filter(RecommendationFeedback.recommendation_id == recommendation_id).delete()
+        db.query(Delivery).filter(Delivery.recommendation_id == recommendation_id).delete()
+        db.query(CandidateTrackingEvent).filter(CandidateTrackingEvent.recommendation_id == recommendation_id).delete()
+        db.delete(obj)
+        if candidate:
+            candidate.locked = False
+            candidate.status = "未锁定"
+        deleted += 1
+    crud.add_audit(db, user.username, "推荐交付", "批量删除推荐记录", "recommendation", "batch", detail=f"Count: {deleted}")
+    db.commit()
+    return {"detail": f"已删除 {deleted} 条推荐记录", "deleted": deleted}
+
+
 @app.get("/api/recommendation-feedbacks", response_model=list[schemas.RecommendationFeedbackOut])
 def get_recommendation_feedbacks(recommendation_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(require_user)):
     items = crud.list_recommendation_feedbacks(db, recommendation_id=recommendation_id)

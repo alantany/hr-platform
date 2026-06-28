@@ -1804,3 +1804,21 @@
 - 2026-06-28：完成三页真实浏览器展开验收。客户页 `客户→项目→岗位→候选人`、项目页 `项目→岗位→候选人`、岗位页 `岗位→候选人` 均可展开，岗位下读取 4 条推荐候选人，分支线和状态标签显示正常。
 - 2026-06-28：Phase 16 完成。最终批量推荐、Phase 1 主链和权限回归共 12 个用例通过；Node 语法检查、Python 编译、`git diff --check` 通过。
 - 2026-06-28：浏览器验收确认三页岗位候选人均可展开和折叠，控制台无错误；测试创建的候选人、客户、项目、岗位数据库计数均为 0。
+- Task finalized by Codex hook (unknown) at 2026-06-28 11:19:36
+
+## 2026-06-28 (锁定状态一致性修复)
+
+- **修复批量推荐后候选人列表不刷新**：`confirm-recommend` 处理完成后没有调用 `applyFilters()`，导致候选人卡片的 `locked` / `status` 仍显示旧数据。已在两处出口补上 `window.candidatesPageState?.applyFilters()`。
+- **修复编辑详情改"锁定"与搜索过滤条件不一致**：
+  * 根因 1：编辑弹窗把 `status` 改为"锁定"，但后端 `update_candidate` 只设 `status` 不更新 `locked` 布尔值。
+  * 根因 2：前端"未锁定"过滤只查 `!i.locked`，漏过了 `{ status: "锁定", locked: false }` 的记录。
+  * 修复：后端 `crud.py` 的 `update_candidate` 在 `status = "锁定"` 时同步 `locked = True`；前端 `candidates.html` 的 `applyFilters` 改为双字段检查（`!i.locked && i.status !== '锁定'` / `i.locked || i.status === '锁定'`）。
+- 验证结果：`python3 -m py_compile backend/app/crud.py` 通过，`node --check app.js` 通过。
+
+## 2026-06-28 (树候选人编辑/删除与批量移除)
+
+- 后端新增 `DELETE /api/recommendations/{id}`（单条删除推荐 + 解锁候选人 + 清理下游）和 `POST /api/recommendations/batch-delete`（批量删除推荐 + 解锁候选人）。
+- 前端候选树节点 `renderCandidateTreeItem` 新增编辑按钮、删除按钮和复选框。编辑按钮直接复用候选人详情页的编辑弹窗，删除按钮移除推荐并解锁候选人。
+- 客户管理、项目管理、岗位管理三个页面的工具栏均新增"批量移除候选人"按钮，默认隐藏，选中候选人后自动显示选中数量。
+- 新增复选框 change 事件监听，自动同步批量按钮可见性和选中计数。
+- 验证：`node --check app.js`、`node --check frontend-api.js`、`python3 -m py_compile backend/app/main.py` 全部通过。

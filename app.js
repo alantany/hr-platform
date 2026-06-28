@@ -201,9 +201,14 @@ const renderCandidateTreeItem = (candidate, depth = 3) => {
   return `
     <div class="list-item tree-node tree-node-candidate" data-tree-node="candidate" data-id="${candidate.id}" style="margin-left:${depth * 18}px">
       <div class="item-top">
+        <input type="checkbox" class="tree-candidate-checkbox" data-candidate-id="${candidate.id}" data-recommendation-id="${candidate.recommendation_id || ''}" aria-label="选择${candidate.name}" style="margin-right:8px;flex-shrink:0;" />
         <div>
           <div class="item-title"><span>${escapeHtml(candidate.name || '未命名候选人')}</span></div>
           <div class="item-meta">${escapeHtml(meta)}</div>
+        </div>
+        <div class="table-actions">
+          <button class="btn-sm" data-action="edit-candidate-tree" data-id="${candidate.id}">编辑</button>
+          <button class="btn-sm" data-action="delete-candidate-tree" data-id="${candidate.id}" data-recommendation-id="${candidate.recommendation_id || ''}">删除</button>
         </div>
         <span class="chip ${isLocked ? 'warning' : 'neutral'}">${isLocked ? '已锁定' : escapeHtml(candidate.status || '未锁定')}</span>
       </div>
@@ -2318,6 +2323,54 @@ async function handleGlobalButton(button) {
     const modal = document.querySelector('[data-recommend-modal]');
     if (modal) modal.style.display = 'none';
     return;
+  if (button.dataset.action === "edit-candidate-tree") {
+    const id = Number(button.dataset.id || 0);
+    if (!id) throw new Error('候选人 ID 缺失');
+    const candidate = await window.hrApi.candidate(String(id));
+    if (!candidate) throw new Error('候选人不存在');
+    const fakeBtn = {
+      dataset: { action: 'edit-candidate', id: id },
+      textContent: ''
+    };
+    return handleGlobalButton(fakeBtn);
+  }
+  if (button.dataset.action === "delete-candidate-tree") {
+    const recommendationId = Number(button.dataset.recommendationId || 0);
+    const candidateId = Number(button.dataset.id || 0);
+    if (!recommendationId) throw new Error('推荐记录 ID 缺失');
+    if (!confirm('确定将该候选人从此岗位移除并解除锁定吗？')) return;
+    await window.hrApi.deleteRecommendation(recommendationId);
+    showToast('候选人已移除并解除锁定');
+    // Refresh the tree - clear expanded positions cache
+    treeState.candidatesByPosition.clear();
+    const page = location.pathname.split("/").pop() || "";
+    if (page === "customers.html") await renderCustomerTreeFromState();
+    else if (page === "projects.html") await renderProjectTreeFromState();
+    else if (page === "positions.html") await renderPositionTreeFromState();
+    return;
+  }
+  if (button.dataset.action === "batch-delete-candidates-tree") {
+    const checkboxes = document.querySelectorAll('.tree-candidate-checkbox:checked');
+    if (!checkboxes.length) throw new Error('请先选择要移除的候选人');
+    const items = Array.from(checkboxes).map(cb => ({
+      recommendationId: Number(cb.dataset.recommendationId || 0),
+      candidateId: Number(cb.dataset.candidateId || 0),
+    })).filter(item => item.recommendationId > 0);
+    if (!items.length) throw new Error('没有可移除的推荐记录');
+    if (!confirm(`确定批量移除 ${items.length} 名候选人并解除锁定吗？`)) return;
+    const ids = items.map(item => item.recommendationId);
+    const result = await window.hrApi.batchDeleteRecommendations(ids);
+    showToast(`已移除 ${result.deleted} 名候选人`);
+    treeState.candidatesByPosition.clear();
+    checkboxes.forEach(cb => cb.checked = false);
+    document.querySelectorAll('[data-batch-delete-candidates-btn]').forEach(btn => btn.style.display = 'none');
+    const page = location.pathname.split("/").pop() || "";
+    if (page === "customers.html") await renderCustomerTreeFromState();
+    else if (page === "projects.html") await renderProjectTreeFromState();
+    else if (page === "positions.html") await renderPositionTreeFromState();
+    return;
+  }
+
   }
   if (button.dataset.action === "confirm-recommend") {
     const modal = document.querySelector('[data-recommend-modal]');
@@ -2349,6 +2402,9 @@ async function handleGlobalButton(button) {
     if (modal) modal.dataset.recordKeys = JSON.stringify(remainingKeys);
     if (!remainingItems.length) {
       if (modal) modal.style.display = 'none';
+      if (window.candidatesPageState) {
+        await window.candidatesPageState.applyFilters();
+      }
       showToast(`批量推荐完成：成功 ${result.succeeded} 人`);
       return;
     }
@@ -2369,6 +2425,9 @@ async function handleGlobalButton(button) {
             <span class="chip ${item.result === 'skipped' ? 'warning' : 'danger'}">${item.result === 'skipped' ? '已跳过' : '失败'}</span>
           </div>
         </div>`).join('')}</div>`;
+    }
+    if (window.candidatesPageState) {
+      await window.candidatesPageState.applyFilters();
     }
     showToast(`批量推荐：成功 ${result.succeeded}，跳过 ${result.skipped}，失败 ${result.failed}`);
     return;
@@ -4640,6 +4699,20 @@ document.addEventListener("click", (event) => {
   if (btn.dataset.bound === "true") return;
   event.preventDefault();
   withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));
+
+// Sync batch delete button visibility when tree checkboxes change
+document.addEventListener("change", (event) => {
+  const target = event.target;
+  if (target.classList.contains("tree-candidate-checkbox")) {
+    const checkboxes = document.querySelectorAll('.tree-candidate-checkbox:checked');
+    const count = checkboxes.length;
+    document.querySelectorAll('[data-batch-delete-candidates-btn]').forEach(btn => {
+      btn.style.display = count > 0 ? '' : 'none';
+      btn.textContent = count > 0 ? `批量移除候选人（${count}）` : '批量移除候选人';
+    });
+  }
+});
+
 });
 
 document.addEventListener("focusout", (event) => {

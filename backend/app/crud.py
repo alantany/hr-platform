@@ -580,6 +580,9 @@ def ensure_local_candidate(db: Session, candidate_id: int | str) -> Candidate | 
 def update_candidate(db: Session, candidate: Candidate, payload):
     for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(candidate, key, value)
+    # 当 status 明确设为"锁定"时，同步锁定候选人
+    if 'status' in payload.model_dump(exclude_unset=True) and candidate.status == "锁定":
+        candidate.locked = True
     return candidate
 
 
