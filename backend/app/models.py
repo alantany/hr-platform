@@ -288,6 +288,14 @@ class EmploymentRecord(Base, TimestampMixin):
 
     candidate = relationship("Candidate", back_populates="employment_records")
 
+    @property
+    def candidate_name(self) -> str:
+        return self.candidate.name if self.candidate else ""
+
+    @property
+    def candidate_phone(self) -> str:
+        return self.candidate.phone if self.candidate else ""
+
 
 class CandidateFollowUpRecord(Base, TimestampMixin):
     __tablename__ = "candidate_follow_up_records"

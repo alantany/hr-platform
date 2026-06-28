@@ -703,7 +703,8 @@ def update_employment_record(db: Session, record: EmploymentRecord, payload):
 
 
 def list_employment_records(db: Session, candidate_id: int | None = None):
-    query = db.query(EmploymentRecord)
+    from sqlalchemy.orm import joinedload
+    query = db.query(EmploymentRecord).options(joinedload(EmploymentRecord.candidate))
     if candidate_id is not None:
       query = query.filter(EmploymentRecord.candidate_id == candidate_id)
     return query.order_by(EmploymentRecord.created_at.desc()).all()

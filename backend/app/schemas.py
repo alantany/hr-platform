@@ -330,6 +330,10 @@ class EmploymentRecordCreate(BaseModel):
 class EmploymentRecordOut(EmploymentRecordCreate):
     id: int
     created_at: datetime
+    candidate_name: str = ""
+    candidate_phone: str = ""
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CandidateFollowUpRecordCreate(BaseModel):

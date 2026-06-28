@@ -90,6 +90,12 @@ def test_employment_onboarding_and_warranty():
     res_cand_detail = client.get("/api/candidates", headers=headers).json()
     updated_cand = [c for c in res_cand_detail if c["id"] == candidate_id][0]
     assert updated_cand["status"] == "已录用"
+
+    # c. 验证获取入职记录列表包含 candidate_name 和 candidate_phone 字段
+    res_emp_records = client.get("/api/employment-records", headers=headers).json()
+    my_record = [r for r in res_emp_records if r["candidate_id"] == candidate_id][0]
+    assert my_record["candidate_name"] == f"入职测试候选人-{suffix}"
+    assert my_record["candidate_phone"] == f"1377777{suffix[:4]}"
     
     # 7. 模拟“未入职”数据保存（修改状态为未入职）
     not_onboard_payload = {
