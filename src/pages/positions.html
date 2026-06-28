@@ -69,9 +69,9 @@
             <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
               <div class="list">
                 <div class="list-item">
-                  <div class="item-top"><div><div class="item-title">所属项目</div></div></div>
-                  <select class="input" data-position-edit-project></select>
-                  <div class="item-meta" data-position-edit-company-display>所属公司：请选择项目后自动显示</div>
+                  <div class="item-top"><div><div class="item-title">所属关系</div></div></div>
+                  <div class="input" style="display:flex;align-items:center;min-height:42px;background:#f8fafc;color:#334155;" data-position-edit-company-display>客户名称 · 项目名称</div>
+                  <input type="hidden" data-position-edit-project />
                 </div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">岗位名称</div></div></div><input class="input" data-position-edit-name /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">紧急程度</div></div></div><select class="input" data-position-edit-urgency><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
@@ -98,7 +98,6 @@
         document.querySelector('[data-position-projects]').textContent = String(new Set(positions.map(p => p.project_id)).size);
         const projectOptions = projects.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
         document.querySelector('[data-position-project]').innerHTML = `<option value="">请选择项目</option>${projectOptions}`;
-        document.querySelector('[data-position-edit-project]').innerHTML = `<option value="">请选择项目</option>${projectOptions}`;
         const updateCompanyDisplay = (projectSelect, displayNode) => {
           if (!displayNode) return;
           const projectId = Number(projectSelect?.value || 0);
@@ -109,15 +108,9 @@
         };
         const createProjectSelect = document.querySelector('[data-position-project]');
         const createCompanyDisplay = document.querySelector('[data-position-company-display]');
-        const editProjectSelect = document.querySelector('[data-position-edit-project]');
-        const editCompanyDisplay = document.querySelector('[data-position-edit-company-display]');
         if (createProjectSelect) {
           createProjectSelect.addEventListener('change', () => updateCompanyDisplay(createProjectSelect, createCompanyDisplay));
           updateCompanyDisplay(createProjectSelect, createCompanyDisplay);
-        }
-        if (editProjectSelect) {
-          editProjectSelect.addEventListener('change', () => updateCompanyDisplay(editProjectSelect, editCompanyDisplay));
-          updateCompanyDisplay(editProjectSelect, editCompanyDisplay);
         }
         const list = document.querySelector('[data-position-list]');
         if (list) {
@@ -179,9 +172,12 @@
         const [positions, projects] = await Promise.all([window.hrApi.positions(), window.hrApi.projects()]);
         const item = positions.find(p => p.id === Number(btn.dataset.id));
         if (!item) throw new Error('未找到岗位');
+        const project = projects.find(p => p.id === Number(item.project_id));
         const modal = document.querySelector('[data-position-edit-modal]');
-        document.querySelector('[data-position-edit-project]').innerHTML = `<option value="">请选择项目</option>${projects.map((p) => `<option value="${p.id}">${p.name}</option>`).join('')}`;
         document.querySelector('[data-position-edit-project]').value = String(item.project_id || '');
+        document.querySelector('[data-position-edit-company-display]').textContent = project
+          ? `${project.company_name || '未知客户'} · ${project.name}`
+          : `未知客户 · 项目 ${item.project_id || '未知'}`;
         document.querySelector('[data-position-edit-name]').value = item.name || '';
         document.querySelector('[data-position-edit-urgency]').value = item.urgency || '中';
         document.querySelector('[data-position-edit-count]').value = String(item.hiring_count || 1);
@@ -189,7 +185,6 @@
         document.querySelector('[data-position-edit-salary-max]').value = item.salary_max || '';
         document.querySelector('[data-position-edit-location]').value = item.location || '';
         document.querySelector('[data-position-edit-status]').value = item.status || '待招';
-        document.querySelector('[data-position-edit-project]')?.dispatchEvent(new Event('change'));
         modal.dataset.target = JSON.stringify({ id: item.id });
         modal.style.display = 'block';
       }

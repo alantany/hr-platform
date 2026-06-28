@@ -1782,3 +1782,6 @@
 - Task finalized by Codex hook (unknown) at 2026-06-28 10:38:16
 - 2026-06-28：修复客户管理和项目管理树形箭头无法展开的问题。移除树按钮内联 `onclick` 及 `handleGlobalButton` 内的重复树切换分支，统一使用 document 级事件委托；`bindActionButtons` 跳过动态树按钮，并为箭头补充 `aria-expanded`、加载禁用状态。
 - 2026-06-28：完成真实浏览器回归。客户页展开后显示 1 个项目，再展开显示 1 个岗位，随后项目和客户均可正常折叠；项目管理页展开后显示 1 个岗位；`node --check app.js`、`git diff --check` 通过，浏览器控制台无错误。
+- Task finalized by Codex hook (unknown) at 2026-06-28 10:45:05
+- 2026-06-28：岗位管理页“编辑岗位”已移除所属项目下拉框，改为只读显示“客户名称 · 项目名称”，并保留隐藏 `project_id` 供保存接口使用；同时清理编辑下拉选项初始化和 change 监听。
+- 2026-06-28：真实浏览器验证岗位编辑弹窗：显示 `Oracle · 北区`，编辑项目下拉框数量为 0，隐藏项目 ID 正常回填为 `41`，控制台无错误；`git diff --check` 通过。

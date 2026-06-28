@@ -1483,3 +1483,4 @@
 - **Recruit 岗位管理集成边界确认**：HR-plateform 现在承担 Recruit 岗位发布、岗位列表、每日任务三个 UI 入口，数据源统一走 PostgreSQL `recruit` schema；不复制 `Recruit/jobs` 的 Next.js/SQLite 访问层，也不读取 `Recruit/jobs/data/app.db`。由于“岗位发布”需要写入 `recruit.job_postings` 并按 HR 登录用户映射或创建 `recruit.employees` 发布人，这一功能要求交付端数据库账号对 `recruit.employees` 与 `recruit.job_postings` 具备必要写权限，已经从早期“只读探针”边界升级为“岗位配置可写”边界。
 - 2026-06-28：客户树和项目树箭头“点不动”的根因不是接口或数据缺失，而是树按钮同时使用内联 `onclick` 和 document 级事件委托；一次点击先展开、随后又被第二条路径折叠，因此界面看起来没有变化。树节点会在切换后重渲染，标准方案是只保留 document 级事件委托，并让 `bindActionButtons` 明确跳过树按钮。
 - 2026-06-28：树按钮补充 `aria-expanded` 后，浏览器可直接断言层级状态；实测客户页可按“客户 -> 项目 -> 岗位”展开并逐级折叠，项目管理页也可展开岗位，且控制台无新增错误。
+- 2026-06-28：岗位管理页维护了独立于客户树、项目树的岗位编辑弹窗和事件处理，因此上级所属关系的只读化需要同步修改 `src/pages/positions.html`；编辑态应以隐藏 `project_id` 保存关联，只向用户展示“客户名称 · 项目名称”。
