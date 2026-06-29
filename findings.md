@@ -1546,3 +1546,10 @@
 - 现有 `TagDictionary` 只有 `category / name / color / enabled` 这类扁平字段，无法直接承载截图里的“标签维度 -> 多个标签项”结构，以及评价体系里的“等级 / 分值 / 说明”表格。
 - 本次标签管理页先实现为页面内独立原型状态，并使用 `localStorage` 保存三类字典：求职者标签、客户需求标签、评价体系等级。这样能完整对齐截图结构，又不会提前把业务字段设计锁死。
 - 后续若要正式接入后端，至少需要把标签字典拆成维度表、标签项表，以及独立的评价等级结构；否则现有单表只适合承载零散的扁平标签词条。
+
+## 2026-06-29（Git 推送环境差异）
+
+- 当前 Codex 默认调用的 `git` 来自运行时目录 `~/.cache/codex-runtimes/.../bin/git`，不是 macOS 系统自带的 `/usr/bin/git`。
+- 这套 runtime Git 的配置里没有 `credential.helper=osxkeychain`，且本机也找不到 `git-credential-osxkeychain` 可执行文件，因此它无法走 macOS 钥匙串里的 GitHub HTTPS 凭证链。
+- 系统自带的 `/usr/bin/git` 会读取 `/Library/Developer/CommandLineTools/usr/share/git-core/gitconfig`，其中包含 `credential.helper=osxkeychain`，因此可以复用用户钥匙串里的 GitHub 凭证完成 `git push`。
+- 这解释了“用户手工推送成功，但 Codex 有时推送失败”的现象：是否成功取决于执行时用的是哪一套 Git。后续凡是需要代用户推送远端，应优先显式使用 `/usr/bin/git`。

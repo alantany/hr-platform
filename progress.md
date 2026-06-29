@@ -2053,3 +2053,9 @@
 
 - 已移除 [src/pages/dictionary.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/dictionary.html) 页面内部重复的“标签字典管理”说明块，保留系统壳层自带的“系统设置 / 标签字典”标题区，避免首屏头部信息重复。
 - 已在 [styles.css](/Users/huaiyuan/Desktop/workspace/hr-plateform/styles.css) 下调标签胶囊的字号、字重、内边距和高度，让求职者/客户需求/评价体系中的标签显示更紧凑。
+
+## 2026-06-29（完成 - 记录 Git 推送环境修复结论）
+
+- 已确认 Codex 默认命中的 `git` 是 runtime 自带版本，而不是 macOS 系统自带的 `/usr/bin/git`；前者缺少 `osxkeychain` 凭证链，因此会在 HTTPS 推送时出现 `could not read Username for 'https://github.com'`。
+- 已验证改用 `/usr/bin/git push origin main` 后可正常走用户 macOS Keychain 凭证，返回 `Everything up-to-date`。
+- 后续如需由 Codex 代推远端，应优先显式使用系统 Git，避免再次因为 runtime Git 缺少 `git-credential-osxkeychain` 而误判为仓库或 GitHub 凭证异常。
