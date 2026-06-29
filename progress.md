@@ -2029,3 +2029,8 @@
 - 浏览器验证：
   - 桌面端首页可正常渲染新布局，5 张卡片、推荐日历和月度看板均出现，控制台无 warn/error。
   - 390px 窄屏下页面级 `scrollWidth === clientWidth === 390`，无页面级横向溢出；首页内容可在侧栏下继续阅读，按钮与看板卡片仍可见。
+
+## 2026-06-29（完成 - 移除首页头部工作台块）
+
+- 已从 [src/pages/dashboard.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/dashboard.html) 移除“首页工作台 · 数据看板”头部说明与 3 个快捷按钮，让首页首屏直接从 5 个数据卡开始。
+- 已同步清理 [styles.css](/Users/huaiyuan/Desktop/workspace/hr-plateform/styles.css) 中对应的 `dashboard-workbench*` 样式和相关响应式规则，避免残留无用代码。
