@@ -2034,3 +2034,17 @@
 
 - 已从 [src/pages/dashboard.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/dashboard.html) 移除“首页工作台 · 数据看板”头部说明与 3 个快捷按钮，让首页首屏直接从 5 个数据卡开始。
 - 已同步清理 [styles.css](/Users/huaiyuan/Desktop/workspace/hr-plateform/styles.css) 中对应的 `dashboard-workbench*` 样式和相关响应式规则，避免残留无用代码。
+
+## 2026-06-29（完成 - 标签字典页重做为三分类原型）
+
+- 已将 [src/pages/dictionary.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/dictionary.html) 从旧版简单标签列表重做为三分类标签字典页，包含“求职者标签字典 / 客户需求标签字典 / 评价体系标签字典”三个页签。
+- 求职者标签页已按截图补齐年龄规则、学历规则、工作经验规则、院校规格、求职状态、期望薪酬范围、工作意向、到岗时间、性别等维度与标签项；客户需求页补齐紧急程度、项目等级、自定义需求标签；评价体系页补齐 1-5 级评价等级、分值和说明。
+- 已补充本页独立的新增/编辑弹窗交互：
+  - 求职者与客户需求页可编辑“标签维度 + 标签项”，并显示实时预览；
+  - 评价体系页可新增、编辑、删除评价等级。
+- 当前三类标签数据保存在页面 `localStorage` 中，仅服务原型展示，不与业务对象关联，也不依赖后端标签表结构。
+- 浏览器验证：
+  - 三个页签都能正常切换；
+  - 客户需求页能看到“紧急程度 / 项目等级 / 自定义需求标签”；
+  - 评价体系页能看到“优秀 / 良好 / 一般 / 较差 / 不合格”；
+  - 评价等级编辑弹窗可正常打开，控制台无 warn/error。
