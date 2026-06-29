@@ -10,6 +10,14 @@ from . import security
 from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, User, WarrantyRule
 
 
+TAG_OBJECT_LABELS = {
+    "candidate": "候选人",
+    "position": "岗位",
+    "project": "项目",
+    "company": "客户",
+}
+
+
 def _created_at_score(value) -> float:
     if not value:
         return 0.0
@@ -824,14 +832,41 @@ def list_evaluation_levels(db: Session):
 
 
 def create_tag(db: Session, payload):
-    obj = TagDictionary(**payload.model_dump())
+    data = payload.model_dump()
+    object_type = str(data.get("object_type") or "candidate").strip() or "candidate"
+    field_key = str(data.get("field_key") or "").strip()
+    field_label = str(data.get("field_label") or data.get("name") or field_key).strip()
+    style_key = str(data.get("style_key") or data.get("color") or "neutral").strip() or "neutral"
+    sort_order = int(data.get("sort_order") or 0)
+    data.update({
+        "object_type": object_type,
+        "field_key": field_key,
+        "field_label": field_label,
+        "style_key": style_key,
+        "sort_order": sort_order,
+        "category": TAG_OBJECT_LABELS.get(object_type, "标签字段"),
+        "name": field_label,
+        "color": style_key,
+    })
+    obj = TagDictionary(**data)
     db.add(obj)
     return obj
 
 
 def update_tag(db: Session, tag: TagDictionary, payload):
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    needs_normalize = any(key in changes for key in {"object_type", "field_key", "field_label", "style_key", "sort_order", "category", "name", "color"})
+    for key, value in changes.items():
         setattr(tag, key, value)
+    if needs_normalize:
+        tag.object_type = str(tag.object_type or "candidate").strip() or "candidate"
+        tag.field_key = str(tag.field_key or "").strip()
+        tag.field_label = str(tag.field_label or tag.name or tag.field_key).strip()
+        tag.style_key = str(tag.style_key or tag.color or "neutral").strip() or "neutral"
+        tag.sort_order = int(tag.sort_order or 0)
+        tag.category = TAG_OBJECT_LABELS.get(tag.object_type, "标签字段")
+        tag.name = tag.field_label
+        tag.color = tag.style_key
     return tag
 
 
@@ -841,7 +876,7 @@ def delete_tag(db: Session, tag: TagDictionary):
 
 
 def list_tags(db: Session):
-    return db.query(TagDictionary).order_by(TagDictionary.category.asc(), TagDictionary.name.asc()).all()
+    return db.query(TagDictionary).filter(TagDictionary.field_key != "").order_by(TagDictionary.object_type.asc(), TagDictionary.sort_order.asc(), TagDictionary.id.asc()).all()
 
 
 def create_notification(db: Session, payload):

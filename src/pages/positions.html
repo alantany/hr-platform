@@ -6,7 +6,7 @@
   <title>岗位管理</title>
   <link rel="stylesheet" href="../../styles.css" />
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js"></script>
+  <script defer src="../../app.js?v=20260629-tag-fields"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -88,7 +88,11 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
       try {
-        const [positions, projects] = await Promise.all([window.hrApi.positions(), window.hrApi.projects()]);
+        const [positions, projects, tagConfigs] = await Promise.all([
+          window.hrApi.positions(),
+          window.hrApi.projects(),
+          window.hrTagSystem?.fetchConfigs?.() || Promise.resolve([]),
+        ]);
         const projectMap = new Map(projects.map((project) => [project.id, project]));
         document.querySelector('[data-position-total]').textContent = String(positions.length);
         document.querySelector('[data-position-open]').textContent = String(positions.reduce((sum, position) => sum + (position.hiring_count || 0), 0));
@@ -113,7 +117,7 @@
         const list = document.querySelector('[data-position-list]');
         if (list) {
           list.innerHTML = window.hrRenderPositionList
-            ? window.hrRenderPositionList(positions, projectMap)
+            ? window.hrRenderPositionList(positions, projectMap, tagConfigs)
             : '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
         }
       } catch (err) {

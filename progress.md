@@ -1,5 +1,16 @@
 # Progress
 
+## 2026-06-29（已完成 - 全对象字段值标签系统首版）
+
+- 后端 `tag_dictionaries` 已升级为字段配置模型：新增 `object_type / field_key / field_label / style_key / sort_order`，并通过 `ensure_schema()` 自动补列；旧 `category/name/color` 继续由新字段自动回填，避免旧兼容逻辑立即失效。
+- `/api/tags` 已改为真实“标签字段配置”接口，默认种子与测试收尾逻辑会恢复候选人、岗位、项目、客户四类对象的首版字段池配置。
+- 前端新增共享标签系统：`app.js` 统一负责拉取标签配置、按字段提取非空值、映射统一样式并渲染标签；候选人列表/详情、岗位列表、项目列表、客户列表、岗位候选人列表都已接入同一套逻辑。
+- `dictionary.html` 已从本地 `localStorage` 原型页重构为真实标签字段管理页，支持按对象分页查看、筛选、创建、编辑、启停用、删除与样式预览。
+- 候选人详情页现在区分“系统标签”和“手工标签”；系统标签来自字段配置，手工 `tags` 字符串仅作为兼容附加展示。
+- 为避免浏览器继续命中旧版共享脚本缓存，候选人、客户、项目、岗位、标签管理和岗位候选人页的 `app.js` 引用已统一追加 `20260629-tag-fields` 版本参数。
+- 静态校验通过：`python3 -m py_compile backend/app/models.py backend/app/schemas.py backend/app/crud.py backend/app/main.py backend/seed.py backend/test_cleanup.py`、`node --check app.js`。
+- 浏览器回归已确认：标签管理页可正常显示真实字段配置；候选人列表/详情与项目列表已显示系统字段标签；客户页和岗位页的首屏初始化挂接点已补齐到同一渲染入口。
+
 ## 2026-06-29（已完成 - users / roles 管理页视觉收口）
 
 - users.html 已按截图重排为更接近 v0 模板的管理表格：补齐“联系方式 / 邮箱”列位、统一表头和行高、缩小按钮与标签圆角，并保留现有新增 / 编辑 / 重置密码 / 启停用功能。

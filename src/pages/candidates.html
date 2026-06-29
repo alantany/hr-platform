@@ -26,7 +26,7 @@
     }
   </style>
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=1"></script>
+  <script defer src="../../app.js?v=20260629-tag-fields"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -980,6 +980,7 @@
       window.candidatesPageState = {
         list: [],
         rawList: [],
+        tagConfigs: [],
         selectedCandidates: new Map(),
         visiblePageItems: [],
         currentPage: 1,
@@ -1173,6 +1174,10 @@
                 i.education,
                 i.experience_years ? i.experience_years + '年' : ''
               ].filter(Boolean).join(' / ') || '--';
+              const candidateFieldTags = window.hrTagSystem?.extractTags?.('candidate', i, this.tagConfigs) || [];
+              const candidateTagsHtml = candidateFieldTags.length
+                ? window.hrTagSystem.renderTags(candidateFieldTags, { className: 'field-tag-list is-compact' })
+                : '';
 
               return `
                 <div class="table-row-wrapper" style="border-bottom: 1px solid #f1f5f9;">
@@ -1184,6 +1189,7 @@
                         <div class="avatar-sm" style="display:flex; align-items:center; justify-content:center; background:#f3f4f6;">${i.status === '锁定' ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#f59e0b;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#15803D;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>'}</div>
                         <div>
                           <strong>${i.name || ''}</strong>
+                          ${candidateTagsHtml}
                         </div>
                       </div>
                     </div>
@@ -1244,7 +1250,12 @@
       };
 
       try {
-        window.candidatesPageState.rawList = await window.hrApi.candidates();
+        const [candidates, tagConfigs] = await Promise.all([
+          window.hrApi.candidates(),
+          window.hrTagSystem?.fetchConfigs?.() || Promise.resolve([]),
+        ]);
+        window.candidatesPageState.rawList = candidates;
+        window.candidatesPageState.tagConfigs = tagConfigs;
         window.candidatesPageState.render();
       } catch (err) { console.warn(err); }
 

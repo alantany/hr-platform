@@ -154,7 +154,103 @@ const icons = {
 
 const navItems = navGroups.flatMap((group) => group.items);
 
-const renderPositionListMarkup = (positions = [], projectsById = new Map()) => {
+const TAG_STYLE_CLASS_MAP = {
+  neutral: "tag-slate",
+  "primary-soft": "tag-blue",
+  "subtle-outline": "tag-outline",
+  muted: "tag-muted",
+};
+
+let tagConfigCachePromise = null;
+
+function getObjectFieldValue(record, fieldKey) {
+  const value = record?.[fieldKey];
+  if (value === null || value === undefined) return "";
+  if (Array.isArray(value)) return value.map((item) => String(item || "").trim()).filter(Boolean).join(" / ");
+  return String(value).trim();
+}
+
+function extractManualTags(rawValue) {
+  return String(rawValue || "")
+    .split(/[\n,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((text, index) => ({
+      key: `manual-${index}-${text}`,
+      text,
+      styleKey: "muted",
+      source: "manual",
+    }));
+}
+
+window.hrTagSystem = {
+  invalidate() {
+    tagConfigCachePromise = null;
+  },
+  async fetchConfigs(force = false) {
+    if (force || !tagConfigCachePromise) {
+      tagConfigCachePromise = window.hrApi?.tags?.().catch((error) => {
+        console.warn("标签字段配置加载失败", error);
+        return [];
+      });
+    }
+    return tagConfigCachePromise;
+  },
+  extractTags(objectType, record, configs = []) {
+    return (configs || [])
+      .filter((item) => item?.enabled && item?.object_type === objectType)
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      .map((item) => {
+        const text = getObjectFieldValue(record, item.field_key);
+        if (!text) return null;
+        return {
+          key: `${objectType}-${item.field_key}`,
+          text,
+          fieldKey: item.field_key,
+          fieldLabel: item.field_label,
+          styleKey: item.style_key || "neutral",
+          source: "system",
+        };
+      })
+      .filter(Boolean);
+  },
+  renderTags(tags = [], options = {}) {
+    const className = options.className || "field-tag-list";
+    return `<div class="${className}">${tags.map((tag) => {
+      const tone = TAG_STYLE_CLASS_MAP[tag.styleKey] || TAG_STYLE_CLASS_MAP.neutral;
+      const dataAttr = tag.fieldKey ? ` data-field-key="${escapeHtml(tag.fieldKey)}"` : "";
+      return `<span class="tag ${tone}"${dataAttr}>${escapeHtml(tag.text)}</span>`;
+    }).join("")}</div>`;
+  },
+  renderTagGroup(objectType, record, options = {}) {
+    const configs = options.configs || [];
+    const systemTags = this.extractTags(objectType, record, configs);
+    const manualTags = options.includeManual ? extractManualTags(record?.tags) : [];
+    const sections = [];
+    if (systemTags.length) {
+      sections.push(`
+        <div class="field-tag-group">
+          <span class="field-tag-caption">系统标签</span>
+          ${this.renderTags(systemTags, { className: "field-tag-list" })}
+        </div>
+      `);
+    }
+    if (manualTags.length) {
+      sections.push(`
+        <div class="field-tag-group">
+          <span class="field-tag-caption">手工标签</span>
+          ${this.renderTags(manualTags, { className: "field-tag-list" })}
+        </div>
+      `);
+    }
+    if (!sections.length) {
+      return `<span class="item-meta">${escapeHtml(options.emptyText || "--")}</span>`;
+    }
+    return `<div class="field-tag-stack">${sections.join("")}</div>`;
+  },
+};
+
+const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagConfigs = []) => {
   if (!positions.length) return '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
   return positions.map((position) => {
     const project = projectsById.get(position.project_id) || {};
@@ -162,15 +258,14 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map()) => {
     const urgencyBg = position.urgency === '高'
       ? 'background: #fee2e2; color: #ef4444; border: 1px solid #fecaca;'
       : (position.urgency === '中' ? 'background: #ffedd5; color: #f97316; border: 1px solid #fed7aa;' : 'background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;');
-    const tagHtml = position.urgency === '高'
-      ? '<span class="chip" style="background:#fee2e2;color:#ef4444;border:1px solid #fecaca;margin-left:4px;padding:2px 6px;font-size:10px;font-weight:600;border-radius:4px;white-space:nowrap;">紧急</span>'
-      : '';
+    const fieldTags = window.hrTagSystem.extractTags("position", position, tagConfigs);
+    const tagHtml = fieldTags.length ? window.hrTagSystem.renderTags(fieldTags, { className: "field-tag-list is-compact" }) : "";
     return `
       <div class="list-item" data-id="${position.id}" data-project-id="${position.project_id}">
         <div class="item-top" style="display:grid;grid-template-columns:1.2fr 1.5fr 1.8fr 0.8fr 0.8fr 1fr 1.2fr 2.5fr 180px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;">
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.company_name || '未知公司')}">${escapeHtml(project.company_name || '未知公司')}</div>
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.name || '')}">${escapeHtml(project.name || '--')}</div>
-          <div class="item-title" style="display:flex;align-items:center;gap:4px;min-width:0;margin-right:0;"><button type="button" data-action="show-position-candidates" data-position-id="${position.id}" style="font-weight:600;color:#0f172a;font-size:13px;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;">${escapeHtml(position.name)}</button>${tagHtml}</div>
+          <div class="item-title" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;margin-right:0;"><button type="button" data-action="show-position-candidates" data-position-id="${position.id}" style="font-weight:600;color:#0f172a;font-size:13px;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;">${escapeHtml(position.name)}</button>${tagHtml}</div>
           <div style="text-align:center;"><span class="chip" style="${urgencyBg}width:48px;text-align:center;display:inline-block;font-weight:600;">${position.urgency || '中'}</span></div>
           <div style="color:#475569;font-size:13px;text-align:center;">${position.hiring_count || 1}人</div>
           <div style="color:#475569;font-size:13px;text-align:center;">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
@@ -182,7 +277,7 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map()) => {
   }).join('');
 };
 
-const renderProjectListMarkup = (projects = []) => {
+const renderProjectListMarkup = (projects = [], tagConfigs = []) => {
   if (!projects.length) return '<div class="list-item"><div class="item-meta">当前暂无项目列表。</div></div>';
   return projects.map((project) => {
     const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
@@ -199,13 +294,16 @@ const renderProjectListMarkup = (projects = []) => {
       : (isLevelMedium ? 'background: #ffedd5; color: #f97316; border: 1px solid #fed7aa;' : 'background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;');
     const levelText = isLevelHigh ? '高' : (isLevelMedium ? '中' : '低');
     const levelBadge = `<span class="chip" style="${levelBg} width: 48px; text-align: center; display: inline-block; font-weight: 600;">${levelText}</span>`;
+    const fieldTags = window.hrTagSystem.extractTags("project", project, tagConfigs);
+    const tagHtml = fieldTags.length ? window.hrTagSystem.renderTags(fieldTags, { className: "field-tag-list is-compact" }) : "";
 
     return `
       <div class="list-item" data-id="${project.id}" data-company-id="${project.company_id}">
         <div class="item-top" style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 0.8fr 0.8fr 1.2fr 0.8fr 1.2fr 180px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
           <button class="project-company-link" type="button" style="color:#2563EB;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;" title="${escapeHtml(project.company_name || '未知公司')}" onclick="location.href='./customers.html'">${escapeHtml(project.company_name || '未知公司')}</button>
-          <div class="item-title" style="display: flex; align-items: center; gap: 6px; min-width: 0; margin-right: 0;">
+          <div class="item-title" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; margin-right: 0;">
             <button class="project-name-link" type="button" style="font-weight:600;color:#0f172a;font-size:13px;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;" data-action="view-project-positions" data-project-id="${project.id}">${escapeHtml(project.name)}</button>
+            ${tagHtml}
           </div>
           <div style="text-align: center;">
             <span class="chip ${chipClass}" style="width: 80px; text-align: center; display: inline-block; margin: 0 auto;">${project.status}</span>
@@ -273,7 +371,7 @@ const renderCustomerProjectPreview = (projects = [], positionsByProject = new Ma
   }).join('');
 };
 
-const renderCompanyTableMarkup = (companies = [], projects = [], positions = []) => {
+const renderCompanyTableMarkup = (companies = [], projects = [], positions = [], tagConfigs = []) => {
   if (!companies.length) return '<div class="list-item"><div class="item-meta">暂无客户列表。</div></div>';
   const projectsByCompany = new Map();
   projects.forEach((project) => {
@@ -291,11 +389,14 @@ const renderCompanyTableMarkup = (companies = [], projects = [], positions = [])
     const computedStatus = company.status || '未招聘';
     const chipClass = computedStatus === '未招聘' ? 'neutral' : 'success';
     const companyProjects = projectsByCompany.get(company.id) || [];
+    const fieldTags = window.hrTagSystem.extractTags("company", company, tagConfigs);
+    const tagHtml = fieldTags.length ? window.hrTagSystem.renderTags(fieldTags, { className: "field-tag-list is-compact" }) : "";
     return `
     <div class="list-item" data-id="${company.id}">
       <div class="item-top" style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 0.8fr 0.8fr 1.2fr 100px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-        <div class="item-title customer-name-preview" style="display: flex; align-items: center; gap: 6px; min-width: 0; margin-right: 0;">
+        <div class="item-title customer-name-preview" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; margin-right: 0;">
           <button class="customer-name-trigger" type="button" aria-haspopup="dialog">${escapeHtml(company.name)}</button>
+          ${tagHtml}
           <div class="customer-project-popover" role="dialog" aria-label="${escapeHtml(company.name)}项目需求列表">
             <div class="customer-project-popover-title">项目需求列表</div>
             <div class="customer-project-popover-body">${renderCustomerProjectPreview(companyProjects, positionsByProject)}</div>
@@ -332,18 +433,22 @@ window.hrRenderPositionList = renderPositionListMarkup;
 async function refreshCustomerList() {
   const list = document.querySelector('[data-company-list]');
   if (!list) return;
-  const [companies, projects, positions] = await Promise.all([
+  const [companies, projects, positions, tagConfigs] = await Promise.all([
     window.hrApi.companies(),
     window.hrApi.projects(),
     window.hrApi.positions(),
+    window.hrTagSystem.fetchConfigs(),
   ]);
-  list.innerHTML = renderCompanyTableMarkup(companies, projects, positions);
+  list.innerHTML = renderCompanyTableMarkup(companies, projects, positions, tagConfigs);
 }
 
 async function renderProjectListFromState() {
   const projectList = document.querySelector('[data-project-list]');
   if (!projectList) return;
-  const projects = await window.hrApi.projects();
+  const [projects, tagConfigs] = await Promise.all([
+    window.hrApi.projects(),
+    window.hrTagSystem.fetchConfigs(),
+  ]);
 
   let filteredProjects = projects;
   if (window.projectFilters) {
@@ -367,16 +472,17 @@ async function renderProjectListFromState() {
     projectTitle.textContent = `项目列表 (共 ${filteredProjects.length} 个)`;
   }
 
-  projectList.innerHTML = renderProjectListMarkup(filteredProjects);
+  projectList.innerHTML = renderProjectListMarkup(filteredProjects, tagConfigs);
 }
 
 async function renderPositionListFromState() {
   const positionList = document.querySelector('[data-position-list]');
   if (!positionList) return;
-  const [positions, projects, recommendations] = await Promise.all([
+  const [positions, projects, recommendations, tagConfigs] = await Promise.all([
     window.hrApi.positions(),
     window.hrApi.projects(),
     window.hrApi.recommendations(),
+    window.hrTagSystem.fetchConfigs(),
   ]);
 
   // Compute funnel stats globally
@@ -434,7 +540,7 @@ async function renderPositionListFromState() {
   }
 
   const projectsById = new Map(projects.map((project) => [project.id, project]));
-  positionList.innerHTML = renderPositionListMarkup(filteredPositions, projectsById);
+  positionList.innerHTML = renderPositionListMarkup(filteredPositions, projectsById, tagConfigs);
 }
 
 window.refreshManagementPage = async () => {
@@ -1515,7 +1621,14 @@ async function handleGlobalButton(button) {
     set('[data-candidate-detail-status]', item?.locked ? '已锁定' : (item?.status || '激活'));
     set('[data-candidate-detail-source]', item?.source);
     set('[data-candidate-detail-idnumber]', item?.id_number);
-    set('[data-candidate-detail-tags]', item?.tags);
+    const candidateTagHost = document.querySelector('[data-candidate-detail-tags]');
+    if (candidateTagHost) {
+      const tagConfigs = await window.hrTagSystem.fetchConfigs();
+      candidateTagHost.innerHTML = window.hrTagSystem.renderTagGroup('candidate', item, {
+        configs: tagConfigs,
+        includeManual: true,
+      });
+    }
     if (modal) modal.dataset.candidateId = resolvedId;
     const editBtn = document.querySelector('[data-candidate-detail-modal] [data-action="edit-candidate"]');
     if (editBtn) {

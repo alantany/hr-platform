@@ -42,6 +42,43 @@ DEFAULT_ROLE_PERMISSIONS = [
     ("OPERATOR", "page:ai-center", "menu", "AI能力中心"),
 ]
 
+TAG_OBJECT_LABELS = {
+    "candidate": "候选人",
+    "position": "岗位",
+    "project": "项目",
+    "company": "客户",
+}
+
+DEFAULT_TAG_FIELD_CONFIGS = [
+    {"object_type": "candidate", "field_key": "education", "field_label": "学历", "style_key": "primary-soft", "sort_order": 10, "enabled": True},
+    {"object_type": "candidate", "field_key": "job_status", "field_label": "求职状态", "style_key": "muted", "sort_order": 20, "enabled": True},
+    {"object_type": "candidate", "field_key": "experience_years", "field_label": "工作年限", "style_key": "neutral", "sort_order": 30, "enabled": True},
+    {"object_type": "candidate", "field_key": "expected_salary", "field_label": "期望薪资", "style_key": "subtle-outline", "sort_order": 40, "enabled": True},
+    {"object_type": "candidate", "field_key": "onboard_cycle", "field_label": "到岗周期", "style_key": "muted", "sort_order": 50, "enabled": True},
+    {"object_type": "candidate", "field_key": "gender", "field_label": "性别", "style_key": "neutral", "sort_order": 60, "enabled": False},
+    {"object_type": "candidate", "field_key": "city", "field_label": "所在城市", "style_key": "subtle-outline", "sort_order": 70, "enabled": False},
+    {"object_type": "position", "field_key": "urgency", "field_label": "紧急程度", "style_key": "primary-soft", "sort_order": 10, "enabled": True},
+    {"object_type": "position", "field_key": "location", "field_label": "工作地点", "style_key": "subtle-outline", "sort_order": 20, "enabled": True},
+    {"object_type": "position", "field_key": "education_requirement", "field_label": "学历要求", "style_key": "muted", "sort_order": 30, "enabled": True},
+    {"object_type": "position", "field_key": "experience_requirement", "field_label": "经验要求", "style_key": "neutral", "sort_order": 40, "enabled": True},
+    {"object_type": "position", "field_key": "age_requirement", "field_label": "年龄要求", "style_key": "subtle-outline", "sort_order": 50, "enabled": False},
+    {"object_type": "project", "field_key": "status", "field_label": "项目状态", "style_key": "primary-soft", "sort_order": 10, "enabled": True},
+    {"object_type": "project", "field_key": "level", "field_label": "项目等级", "style_key": "muted", "sort_order": 20, "enabled": True},
+    {"object_type": "project", "field_key": "work_location", "field_label": "工作地点", "style_key": "subtle-outline", "sort_order": 30, "enabled": True},
+    {"object_type": "project", "field_key": "project_period", "field_label": "项目周期", "style_key": "neutral", "sort_order": 40, "enabled": False},
+    {"object_type": "company", "field_key": "status", "field_label": "客户状态", "style_key": "primary-soft", "sort_order": 10, "enabled": True},
+    {"object_type": "company", "field_key": "cooperation_period", "field_label": "合作周期", "style_key": "subtle-outline", "sort_order": 20, "enabled": True},
+]
+
+
+def build_tag_config_payload(item: dict) -> dict:
+    payload = dict(item)
+    payload["style_key"] = payload.get("style_key", "neutral")
+    payload["category"] = TAG_OBJECT_LABELS.get(payload["object_type"], "标签字段")
+    payload["name"] = payload["field_label"]
+    payload["color"] = payload["style_key"]
+    return payload
+
 
 def seed() -> None:
     db: Session = SessionLocal()
@@ -87,13 +124,25 @@ def seed() -> None:
         if not db.query(DataPermission).count():
             db.add(DataPermission(user_id=1, scope_type="company", scope_id="1", scope_name="科技有限公司A", granted_by="system", active=True))
 
-        if not db.query(TagDictionary).count():
-            db.add_all([
-                TagDictionary(category="求职者标签", name="Java", enabled=True),
-                TagDictionary(category="求职者标签", name="前端", enabled=True),
-                TagDictionary(category="客户需求标签", name="急招", enabled=True),
-                TagDictionary(category="评价体系标签", name="优秀", enabled=True),
-            ])
+        existing_tag_configs = {
+            (item.object_type, item.field_key): item
+            for item in db.query(TagDictionary).filter(TagDictionary.field_key != "").all()
+        }
+        if not existing_tag_configs:
+            db.query(TagDictionary).delete(synchronize_session=False)
+        for config in DEFAULT_TAG_FIELD_CONFIGS:
+            payload = build_tag_config_payload(config)
+            existing = existing_tag_configs.get((payload["object_type"], payload["field_key"]))
+            if existing:
+                existing.category = payload["category"]
+                existing.name = payload["name"]
+                existing.color = payload["color"]
+                existing.field_label = payload["field_label"]
+                existing.style_key = payload["style_key"]
+                existing.sort_order = payload["sort_order"]
+                existing.enabled = payload["enabled"]
+            else:
+                db.add(TagDictionary(**payload))
         warranty_defaults = {
             "简历": (3, 10, True),
             "客户": (6, 7, True),

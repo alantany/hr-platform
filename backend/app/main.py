@@ -133,6 +133,33 @@ def ensure_schema() -> None:
             if column not in level_cols:
                 conn.execute(text(ddl))
 
+        # tag_dictionaries
+        tag_cols = {col['name'] for col in inspector.get_columns("tag_dictionaries")} if "tag_dictionaries" in inspector.get_table_names() else set()
+        for column, ddl in {
+            "object_type": "ALTER TABLE tag_dictionaries ADD COLUMN object_type TEXT NOT NULL DEFAULT 'candidate'",
+            "field_key": "ALTER TABLE tag_dictionaries ADD COLUMN field_key TEXT NOT NULL DEFAULT ''",
+            "field_label": "ALTER TABLE tag_dictionaries ADD COLUMN field_label TEXT NOT NULL DEFAULT ''",
+            "style_key": "ALTER TABLE tag_dictionaries ADD COLUMN style_key TEXT NOT NULL DEFAULT 'neutral'",
+            "sort_order": "ALTER TABLE tag_dictionaries ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
+        }.items():
+            if column not in tag_cols:
+                conn.execute(text(ddl))
+        if tag_cols or "tag_dictionaries" in inspector.get_table_names():
+            conn.execute(text("UPDATE tag_dictionaries SET field_label = name WHERE field_label = ''"))
+            conn.execute(text("UPDATE tag_dictionaries SET style_key = CASE WHEN color = '' THEN 'neutral' ELSE color END WHERE style_key = ''"))
+            conn.execute(text("UPDATE tag_dictionaries SET sort_order = 0 WHERE sort_order IS NULL"))
+            conn.execute(text("""
+                UPDATE tag_dictionaries
+                SET category = CASE object_type
+                    WHEN 'candidate' THEN '候选人'
+                    WHEN 'position' THEN '岗位'
+                    WHEN 'project' THEN '项目'
+                    WHEN 'company' THEN '客户'
+                    ELSE CASE WHEN category = '' THEN '标签字段' ELSE category END
+                END
+            """))
+            conn.execute(text("UPDATE tag_dictionaries SET name = field_label WHERE name = ''"))
+
         # candidates
         cand_cols = {col['name'] for col in inspector.get_columns("candidates")}
         for column, ddl in {
@@ -1579,7 +1606,7 @@ def get_tags(db: Session = Depends(get_db), user: User = Depends(require_user)):
 def add_tag(payload: schemas.TagCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
     security.require_admin(user)
     obj = crud.create_tag(db, payload)
-    crud.add_audit(db, user.username, "标签字典", "新增标签", "tag", "new", detail=payload.name)
+    crud.add_audit(db, user.username, "标签字典", "新增标签字段", "tag", "new", detail=f"{payload.object_type}:{payload.field_key}")
     db.commit()
     db.refresh(obj)
     return obj
@@ -1592,7 +1619,7 @@ def edit_tag(tag_id: int, payload: schemas.TagUpdate, db: Session = Depends(get_
     if not obj:
         raise HTTPException(status_code=404, detail="标签不存在")
     crud.update_tag(db, obj, payload)
-    crud.add_audit(db, user.username, "标签字典", "更新标签", "tag", str(tag_id), detail=obj.name)
+    crud.add_audit(db, user.username, "标签字典", "更新标签字段", "tag", str(tag_id), detail=f"{obj.object_type}:{obj.field_key}")
     db.commit()
     db.refresh(obj)
     return obj
@@ -1605,7 +1632,7 @@ def remove_tag(tag_id: int, db: Session = Depends(get_db), user: User = Depends(
     if not obj:
         raise HTTPException(status_code=404, detail="标签不存在")
     crud.delete_tag(db, obj)
-    crud.add_audit(db, user.username, "标签字典", "删除标签", "tag", str(tag_id), detail=obj.name)
+    crud.add_audit(db, user.username, "标签字典", "删除标签字段", "tag", str(tag_id), detail=f"{obj.object_type}:{obj.field_key}")
     db.commit()
     return {"ok": True}
 
@@ -1754,7 +1781,7 @@ def analytics_summary(db: Session = Depends(get_db), user: User = Depends(requir
         **summary,
         "evaluation_count": db.query(Evaluation).count(),
         "notification_count": db.query(Notification).count(),
-        "tag_count": db.query(TagDictionary).count(),
+        "tag_count": db.query(TagDictionary).filter(TagDictionary.field_key != "").count(),
         "warranty_rule_count": db.query(WarrantyRule).count(),
         "team_rankings": team_rankings,
         "customer_rankings": customer_rankings,

@@ -1057,6 +1057,56 @@ button, input, select { font: inherit; }
   gap: 10px;
 }
 
+.tag-dictionary-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.tag-dictionary-config-table {
+  border-top: 1px solid rgba(236, 240, 244, 0.95);
+}
+
+.tag-dictionary-config-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr .8fr .5fr 1fr .6fr .9fr;
+  align-items: center;
+  gap: 18px;
+  min-height: 76px;
+  padding: 0 24px;
+  border-top: 1px solid rgba(236, 240, 244, 0.95);
+  background: #fff;
+}
+
+.tag-dictionary-config-row.is-head {
+  min-height: 64px;
+  border-top: 0;
+  background: #f7f8fa;
+  color: #2563EB;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.tag-dictionary-config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.tag-dictionary-config-empty {
+  padding: 24px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.tag-config-preview-card {
+  margin-top: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: none;
+}
+
 .tag-dimension-chip,
 .tag-level-badge {
   display: inline-flex;
@@ -1110,18 +1160,21 @@ button, input, select { font: inherit; }
 
 @media (max-width: 1100px) {
   .tag-dictionary-row,
-  .tag-dictionary-level-row {
+  .tag-dictionary-level-row,
+  .tag-dictionary-config-row {
     grid-template-columns: 1fr;
     padding: 18px 20px;
   }
 
   .tag-dictionary-row.is-head,
-  .tag-dictionary-level-row.is-head {
+  .tag-dictionary-level-row.is-head,
+  .tag-dictionary-config-row.is-head {
     display: none;
   }
 
   .tag-dictionary-row-actions,
-  .tag-dictionary-level-actions {
+  .tag-dictionary-level-actions,
+  .tag-dictionary-config-actions {
     align-items: flex-start;
     flex-direction: row;
     flex-wrap: wrap;
@@ -1143,6 +1196,10 @@ button, input, select { font: inherit; }
     gap: 8px;
     overflow-x: auto;
     padding-bottom: 2px;
+  }
+
+  .tag-dictionary-toolbar {
+    grid-template-columns: 1fr;
   }
 
   .tag-dictionary-tab {
@@ -2134,6 +2191,8 @@ input[type="radio"],
 .tag-slate,
 .tone-slate,
 .tag.gray { background: var(--tag-slate-bg) !important; color: var(--tag-slate-fg) !important; border-color: transparent !important; }
+.tag-outline { background: #fff !important; color: var(--tag-slate-fg) !important; border: 1px solid var(--border) !important; }
+.tag-muted { background: #f3f4f6 !important; color: #4b5563 !important; border-color: transparent !important; }
 
 .chip.primary,
 .state.new { background: var(--tag-blue-bg) !important; color: var(--tag-blue-fg) !important; }
@@ -2144,6 +2203,14 @@ input[type="radio"],
 .chip.danger { background: var(--danger-soft) !important; color: var(--danger) !important; }
 .chip.neutral,
 .state.locked { background: var(--tag-slate-bg) !important; color: var(--tag-slate-fg) !important; }
+
+.field-tag-stack { display: grid; gap: 8px; }
+.field-tag-group { display: grid; gap: 6px; }
+.field-tag-caption { font-size: 12px; line-height: 1.4; color: var(--muted-foreground); }
+.field-tag-list { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.field-tag-list.is-compact { gap: 6px; }
+.field-tag-list.is-compact .tag { min-height: 22px; padding: 2px 8px; font-size: 12px; }
+.field-tag-meta { font-size: 12px; color: var(--muted-foreground); }
 
 .ui-kit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .ui-kit-standalone { min-height: 100vh; padding: 32px; background: var(--background); }

@@ -581,17 +581,28 @@ class EvaluationLevelOut(EvaluationLevelCreate):
 
 
 class TagCreate(BaseModel):
-    category: str
-    name: str
-    color: str = ""
+    object_type: Literal["candidate", "position", "project", "company"]
+    field_key: str
+    field_label: str
+    style_key: Literal["neutral", "primary-soft", "subtle-outline", "muted"] = "neutral"
+    sort_order: int = 0
     enabled: bool = True
+    category: str = ""
+    name: str = ""
+    color: str = ""
 
 
 class TagOut(TagCreate):
     id: int
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TagUpdate(BaseModel):
+    object_type: Literal["candidate", "position", "project", "company"] | None = None
+    field_key: str | None = None
+    field_label: str | None = None
+    style_key: Literal["neutral", "primary-soft", "subtle-outline", "muted"] | None = None
+    sort_order: int | None = None
     category: str | None = None
     name: str | None = None
     color: str | None = None

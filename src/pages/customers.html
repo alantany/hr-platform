@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>客户管理</title><link rel="stylesheet" href="../../styles.css?v=20260628-customer-preview" /><script defer src="../../frontend-api.js"></script><script defer src="../../app.js"></script></head><body><div id="app"></div><script>
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>客户管理</title><link rel="stylesheet" href="../../styles.css?v=20260628-customer-preview" /><script defer src="../../frontend-api.js"></script><script defer src="../../app.js?v=20260629-tag-fields"></script></head><body><div id="app"></div><script>
 window.__PAGE_BODY__ = `
   <section class="metrics">
     <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户公司数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-company-total>0</div><div class="metric-label">当前在库客户</div></div>
@@ -150,11 +150,12 @@ window.__PAGE_BODY__ = `
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
       try {
-        const [companies, projects, positions, deliveries] = await Promise.all([
+        const [companies, projects, positions, deliveries, tagConfigs] = await Promise.all([
           window.hrApi.companies(),
           window.hrApi.projects(),
           window.hrApi.positions(),
           window.hrApi.deliveries(),
+          window.hrTagSystem?.fetchConfigs?.() || Promise.resolve([]),
         ]);
         document.querySelector('[data-company-total]').textContent = String(companies.length);
         document.querySelector('[data-company-projects]').textContent = String(projects.filter(project => project.status === '招聘中').length);
@@ -162,7 +163,7 @@ window.__PAGE_BODY__ = `
         document.querySelector('[data-company-positions]').textContent = String(companies.reduce((sum, company) => sum + (company.position_count || 0), 0));
         const list = document.querySelector('[data-company-list]');
         if (list) {
-          list.innerHTML = window.hrRenderCompanyList ? window.hrRenderCompanyList(companies, projects, positions) : '';
+          list.innerHTML = window.hrRenderCompanyList ? window.hrRenderCompanyList(companies, projects, positions, tagConfigs) : '';
         }
       } catch (err) {
         console.warn(err);

@@ -6,7 +6,7 @@
   <title>标签字典</title>
   <link rel="stylesheet" href="../../styles.css" />
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js"></script>
+  <script defer src="../../app.js?v=20260629-tag-fields"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -15,228 +15,184 @@
       <section class="tag-dictionary-page">
         <section class="tag-dictionary-warning">
           <span>⚠</span>
-          <div>此模块仅超级管理员可访问，修改将影响全系统所有岗位筛选和简历匹配规则。</div>
+          <div>标签管理现在维护的是“对象字段 -> 标签展示”配置。对象命中字段值后，会在候选人、岗位、项目和客户页面实时显示对应标签。</div>
         </section>
 
         <nav class="tag-dictionary-tabs" data-tag-tabs></nav>
 
-        <section class="tag-dictionary-panel panel" data-tag-panel></section>
+        <section class="tag-dictionary-panel panel">
+          <div class="tag-dictionary-card-head">
+            <div>
+              <h3 data-tag-panel-title>候选人字段标签</h3>
+              <div class="section-sub">启用后，字段值会按排序实时显示为标签；标签样式来自这里的统一配置。</div>
+            </div>
+            <button class="tag-dictionary-add-btn" type="button" data-action="open-tag-config-modal">新增字段配置</button>
+          </div>
+          <div class="tag-dictionary-toolbar">
+            <div class="field-group">
+              <label>筛选字段</label>
+              <input class="input" data-tag-filter-keyword placeholder="搜索字段名 / 展示名..." />
+            </div>
+            <div class="field-group">
+              <label>状态</label>
+              <select class="input" data-tag-filter-enabled>
+                <option value="">全部状态</option>
+                <option value="true">仅启用</option>
+                <option value="false">仅停用</option>
+              </select>
+            </div>
+          </div>
+          <div class="tag-dictionary-config-table">
+            <div class="tag-dictionary-config-row is-head">
+              <div>字段展示名</div>
+              <div>数据库字段</div>
+              <div>样式</div>
+              <div>排序</div>
+              <div>预览</div>
+              <div>状态</div>
+              <div>操作</div>
+            </div>
+            <div data-tag-config-list></div>
+          </div>
+        </section>
       </section>
 
-      <div class="modal" data-tag-dimension-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:820px; margin:8vh auto 0; background:#fff;">
+      <div class="modal" data-tag-config-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:860px; margin:8vh auto 0; background:#fff;">
           <div class="section-head">
             <div>
-              <h3 data-tag-dimension-modal-title>编辑标签维度</h3>
-              <div class="section-sub">维护维度名称和标签项，当前只影响标签管理页面原型展示。</div>
+              <h3 data-tag-config-modal-title>新增字段标签配置</h3>
+              <div class="section-sub">只允许从预设字段池中选择字段；标签文案直接显示字段值本身。</div>
             </div>
-            <div class="hero-actions" style="margin-top:0">
-              <button class="btn" type="button" data-tag-dimension-cancel>取消</button>
-              <button class="btn primary" type="button" data-tag-dimension-save>确认保存</button>
+            <div class="hero-actions" style="margin-top:0;">
+              <button class="btn" type="button" data-action="close-tag-config-modal">取消</button>
+              <button class="btn primary" type="button" data-action="save-tag-config">保存配置</button>
             </div>
           </div>
           <div class="grid-2">
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <div class="list">
-                <div class="list-item">
-                  <div class="item-top">
-                    <div>
-                      <div class="item-title">标签维度</div>
-                      <div class="item-meta">例如 年龄规则、项目等级、到岗时间</div>
-                    </div>
+            <div class="list">
+              <div class="list-item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">对象类型</div>
+                    <div class="item-meta">标签所属业务对象</div>
                   </div>
-                  <input class="input" data-tag-dimension-name />
                 </div>
-                <div class="list-item">
-                  <div class="item-top">
-                    <div>
-                      <div class="item-title">标签项</div>
-                      <div class="item-meta">用中文逗号、英文逗号或换行分隔多个标签项</div>
-                    </div>
+                <select class="input" data-tag-object-type></select>
+              </div>
+              <div class="list-item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">字段</div>
+                    <div class="item-meta">从当前对象允许的字段池中选择</div>
                   </div>
-                  <textarea class="input" rows="8" style="height:auto; padding:12px;" data-tag-dimension-items></textarea>
                 </div>
+                <select class="input" data-tag-field-key></select>
+              </div>
+              <div class="list-item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">后台展示名</div>
+                    <div class="item-meta">用于标签管理页识别字段维度</div>
+                  </div>
+                </div>
+                <input class="input" data-tag-field-label />
               </div>
             </div>
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <h3>预览</h3>
-              <div class="list">
-                <div class="list-item">
-                  <div class="item-top">
-                    <div>
-                      <div class="item-title" data-tag-dimension-preview-name>标签维度预览</div>
-                      <div class="item-meta">标签项会以卡片标签形式显示</div>
-                    </div>
+            <div class="list">
+              <div class="list-item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">样式键</div>
+                    <div class="item-meta">仅允许统一蓝灰体系内的受控样式</div>
                   </div>
-                  <div class="tag-dimension-chips" data-tag-dimension-preview-items></div>
                 </div>
+                <select class="input" data-tag-style-key></select>
+              </div>
+              <div class="list-item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">排序</div>
+                    <div class="item-meta">数值越小越靠前</div>
+                  </div>
+                </div>
+                <input class="input" data-tag-sort-order type="number" min="0" step="10" />
+              </div>
+              <div class="list-item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">启用状态</div>
+                    <div class="item-meta">关闭后全站不再显示该字段标签</div>
+                  </div>
+                </div>
+                <select class="input" data-tag-enabled>
+                  <option value="true">启用</option>
+                  <option value="false">停用</option>
+                </select>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="modal" data-tag-level-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:760px; margin:10vh auto 0; background:#fff;">
-          <div class="section-head">
-            <div>
-              <h3 data-tag-level-modal-title>编辑评价等级</h3>
-              <div class="section-sub">维护等级名称、分值和等级说明。</div>
-            </div>
-            <div class="hero-actions" style="margin-top:0">
-              <button class="btn" type="button" data-tag-level-cancel>取消</button>
-              <button class="btn primary" type="button" data-tag-level-save>确认保存</button>
-            </div>
-          </div>
-          <div class="list">
-            <div class="list-item">
-              <div class="item-top">
-                <div>
-                  <div class="item-title">等级</div>
-                  <div class="item-meta">顺序号，例如 1、2、3</div>
-                </div>
+          <div class="panel tag-config-preview-card">
+            <div class="section-head" style="margin-bottom:12px;">
+              <div>
+                <h3>样式预览</h3>
+                <div class="section-sub">预览只展示样式，不影响标签文案直接取字段值的规则。</div>
               </div>
-              <input class="input" data-tag-level-rank />
             </div>
-            <div class="list-item">
-              <div class="item-top">
-                <div>
-                  <div class="item-title">等级名称</div>
-                  <div class="item-meta">例如 优秀、良好、一般</div>
-                </div>
-              </div>
-              <input class="input" data-tag-level-name />
-            </div>
-            <div class="list-item">
-              <div class="item-top">
-                <div>
-                  <div class="item-title">分值</div>
-                  <div class="item-meta">用于原型中的分值表达</div>
-                </div>
-              </div>
-              <input class="input" data-tag-level-score />
-            </div>
-            <div class="list-item">
-              <div class="item-top">
-                <div>
-                  <div class="item-title">说明</div>
-                  <div class="item-meta">例如 完全符合要求，强烈推荐</div>
-                </div>
-              </div>
-              <textarea class="input" rows="4" style="height:auto; padding:12px;" data-tag-level-desc></textarea>
-            </div>
+            <div data-tag-config-preview></div>
           </div>
         </div>
       </div>
     `;
 
-    const TAG_DICTIONARY_STORAGE_KEY = 'hr_dictionary_prototype_v2';
-
-    const TAG_DICTIONARY_DEFAULTS = {
-      activeTab: 'seeker',
-      categories: {
-        seeker: {
-          key: 'seeker',
-          title: '求职者标签字典',
-          tabLabel: '求职者标签字典',
-          buttonLabel: '+ 添加标签',
-          mode: 'dimensions',
-          dimensions: [
-            { id: 'age_rule', name: '年龄规则', tags: ['20-25', '26-30', '31-35', '36-40', '41+'] },
-            { id: 'degree_rule', name: '学历规则', tags: ['高中/中专', '大专', '本科', '硕士', '博士'] },
-            { id: 'experience_rule', name: '工作经验规则', tags: ['应届生', '1年以下', '1-3年', '3-5年', '5-10年', '10年以上'] },
-            { id: 'school_rule', name: '院校规格', tags: ['985', '211', '双一流', '本科', '大专', '其他'] },
-            { id: 'job_status', name: '求职状态', tags: ['在职-考虑机会', '在职-暂不考虑', '离职-快速到岗', '离职-慢慢看'] },
-            { id: 'salary_expectation', name: '期望薪酬范围', tags: ['5K以下', '5-10K', '10-15K', '15-20K', '20K以上'] },
-            { id: 'job_intention', name: '工作意向', tags: ['全职', '兼职', '实习', '自由职业'] },
-            { id: 'arrival_time', name: '到岗时间', tags: ['随时', '1周内', '2周内', '1个月内', '协商'] },
-            { id: 'gender', name: '性别', tags: ['男', '女'] },
-          ],
-        },
-        customer: {
-          key: 'customer',
-          title: '客户需求标签字典',
-          tabLabel: '客户需求标签字典',
-          buttonLabel: '+ 添加标签',
-          mode: 'dimensions',
-          dimensions: [
-            { id: 'urgency', name: '紧急程度', tags: ['紧急', '常规'] },
-            { id: 'project_level', name: '项目等级', tags: ['高', '中', '普'] },
-            { id: 'custom_requirement', name: '自定义需求标签', tags: ['急招', '核心岗位', '外包', '正式编制'] },
-          ],
-        },
-        evaluation: {
-          key: 'evaluation',
-          title: '评价体系标签字典',
-          tabLabel: '评价体系标签字典',
-          buttonLabel: '+ 添加评价等级',
-          mode: 'levels',
-          levels: [
-            { id: 'level_1', rank: 1, name: '优秀', score: 5, desc: '完全符合要求，强烈推荐' },
-            { id: 'level_2', rank: 2, name: '良好', score: 4, desc: '基本符合要求，推荐' },
-            { id: 'level_3', rank: 3, name: '一般', score: 3, desc: '部分符合，需进一步沟通' },
-            { id: 'level_4', rank: 4, name: '较差', score: 2, desc: '不符合要求' },
-            { id: 'level_5', rank: 5, name: '不合格', score: 1, desc: '完全不符合' },
-          ],
-        },
-      },
-    };
-
-    const state = {
-      activeTab: 'seeker',
-      categories: {},
-      modal: null,
-    };
-
-    const TAG_TONES = [
-      'tag-blue',
-      'tag-teal',
-      'tag-green',
-      'tag-amber',
-      'tag-rose',
-      'tag-slate',
+    const OBJECT_TYPES = [
+      { key: 'candidate', label: '候选人' },
+      { key: 'position', label: '岗位' },
+      { key: 'project', label: '项目' },
+      { key: 'company', label: '客户' },
     ];
 
-    const TAG_TONE_BY_DIMENSION = {
-      age_rule: 'tag-blue',
-      degree_rule: 'tag-teal',
-      experience_rule: 'tag-green',
-      school_rule: 'tag-amber',
-      job_status: 'tag-rose',
-      salary_expectation: 'tag-blue',
-      job_intention: 'tag-teal',
-      arrival_time: 'tag-green',
-      gender: 'tag-slate',
-      urgency: 'tag-rose',
-      project_level: 'tag-amber',
-      custom_requirement: 'tag-blue',
+    const FIELD_OPTIONS = {
+      candidate: [
+        { key: 'education', label: '学历' },
+        { key: 'job_status', label: '求职状态' },
+        { key: 'experience_years', label: '工作年限' },
+        { key: 'expected_salary', label: '期望薪资' },
+        { key: 'onboard_cycle', label: '到岗周期' },
+        { key: 'gender', label: '性别' },
+        { key: 'city', label: '所在城市' },
+      ],
+      position: [
+        { key: 'urgency', label: '紧急程度' },
+        { key: 'location', label: '工作地点' },
+        { key: 'education_requirement', label: '学历要求' },
+        { key: 'experience_requirement', label: '经验要求' },
+        { key: 'age_requirement', label: '年龄要求' },
+      ],
+      project: [
+        { key: 'status', label: '项目状态' },
+        { key: 'level', label: '项目等级' },
+        { key: 'work_location', label: '工作地点' },
+        { key: 'project_period', label: '项目周期' },
+      ],
+      company: [
+        { key: 'status', label: '客户状态' },
+        { key: 'cooperation_period', label: '合作周期' },
+      ],
     };
 
-    function cloneDefaults() {
-      return JSON.parse(JSON.stringify(TAG_DICTIONARY_DEFAULTS));
-    }
+    const STYLE_OPTIONS = [
+      { key: 'neutral', label: '默认灰', sample: '本科' },
+      { key: 'primary-soft', label: '浅蓝强调', sample: '招聘中' },
+      { key: 'subtle-outline', label: '浅边框', sample: '上海' },
+      { key: 'muted', label: '柔和灰', sample: '1周内' },
+    ];
 
-    function loadState() {
-      const fallback = cloneDefaults();
-      try {
-        const raw = localStorage.getItem(TAG_DICTIONARY_STORAGE_KEY);
-        if (!raw) return fallback;
-        const parsed = JSON.parse(raw);
-        return {
-          activeTab: parsed.activeTab || fallback.activeTab,
-          categories: parsed.categories || fallback.categories,
-        };
-      } catch (error) {
-        return fallback;
-      }
-    }
-
-    function persistState() {
-      localStorage.setItem(TAG_DICTIONARY_STORAGE_KEY, JSON.stringify({
-        activeTab: state.activeTab,
-        categories: state.categories,
-      }));
-    }
+    const state = {
+      activeTab: 'candidate',
+      rows: [],
+      editingId: null,
+    };
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -247,293 +203,291 @@
         .replaceAll("'", '&#39;');
     }
 
-    function getDimensionTone(dimensionId) {
-      if (TAG_TONE_BY_DIMENSION[dimensionId]) return TAG_TONE_BY_DIMENSION[dimensionId];
-      const stableIndex = [...String(dimensionId || '')].reduce((sum, char) => sum + char.charCodeAt(0), 0) % TAG_TONES.length;
-      return TAG_TONES[stableIndex];
+    function getObjectLabel(objectType) {
+      return OBJECT_TYPES.find((item) => item.key === objectType)?.label || objectType;
     }
 
-    function getEvaluationTone(score) {
-      if (Number(score) >= 5) return 'tag-green';
-      if (Number(score) === 4) return 'tag-teal';
-      if (Number(score) === 3) return 'tag-amber';
-      if (Number(score) === 2) return 'tag-rose';
-      return 'tag-slate';
+    function getFieldOptions(objectType) {
+      return FIELD_OPTIONS[objectType] || [];
     }
 
-    function parseTagItems(value) {
-      return String(value || '')
-        .split(/[\n,，]/)
-        .map((item) => item.trim())
-        .filter(Boolean);
+    function getFieldLabel(objectType, fieldKey) {
+      return getFieldOptions(objectType).find((item) => item.key === fieldKey)?.label || fieldKey;
+    }
+
+    function renderPreviewTag(styleKey, text) {
+      const toneMap = {
+        neutral: 'tag-slate',
+        'primary-soft': 'tag-blue',
+        'subtle-outline': 'tag-outline',
+        muted: 'tag-muted',
+      };
+      return `<span class="tag ${toneMap[styleKey] || 'tag-slate'}">${escapeHtml(text)}</span>`;
+    }
+
+    function getFilteredRows() {
+      const keyword = document.querySelector('[data-tag-filter-keyword]')?.value?.trim().toLowerCase() || '';
+      const enabled = document.querySelector('[data-tag-filter-enabled]')?.value || '';
+      return state.rows
+        .filter((row) => row.object_type === state.activeTab)
+        .filter((row) => {
+          if (!keyword) return true;
+          return [row.field_label, row.field_key].join(' ').toLowerCase().includes(keyword);
+        })
+        .filter((row) => {
+          if (enabled === '') return true;
+          return String(Boolean(row.enabled)) === enabled;
+        })
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.id - b.id);
     }
 
     function renderTabs() {
-      const tabContainer = document.querySelector('[data-tag-tabs]');
-      if (!tabContainer) return;
-      const order = ['seeker', 'customer', 'evaluation'];
-      tabContainer.innerHTML = order.map((key) => {
-        const category = state.categories[key];
-        return `
-          <button
-            type="button"
-            class="tag-dictionary-tab${state.activeTab === key ? ' is-active' : ''}"
-            data-dict-tab="${key}"
-          >
-            ${escapeHtml(category.tabLabel)}
-          </button>
-        `;
-      }).join('');
+      const host = document.querySelector('[data-tag-tabs]');
+      if (!host) return;
+      host.innerHTML = OBJECT_TYPES.map((item) => `
+        <button type="button" class="tag-dictionary-tab${state.activeTab === item.key ? ' is-active' : ''}" data-tag-tab="${item.key}">
+          ${escapeHtml(item.label)}字段标签
+        </button>
+      `).join('');
     }
 
-    function renderDimensionRows(category) {
-      return `
-        <div class="tag-dictionary-card-head">
-          <h3>${escapeHtml(category.title)}</h3>
-          <button class="tag-dictionary-add-btn" type="button" data-dict-add="${category.key}">${escapeHtml(category.buttonLabel)}</button>
-        </div>
-        <div class="tag-dictionary-table">
-          <div class="tag-dictionary-row is-head">
-            <div>标签维度</div>
-            <div>标签项</div>
-            <div>操作</div>
+    function renderRows() {
+      const title = document.querySelector('[data-tag-panel-title]');
+      const list = document.querySelector('[data-tag-config-list]');
+      if (title) {
+        title.textContent = `${getObjectLabel(state.activeTab)}字段标签`;
+      }
+      if (!list) return;
+      const rows = getFilteredRows();
+      if (!rows.length) {
+        list.innerHTML = '<div class="tag-dictionary-config-empty">当前筛选下暂无字段配置。</div>';
+        return;
+      }
+      list.innerHTML = rows.map((row) => `
+        <div class="tag-dictionary-config-row">
+          <div>
+            <div class="tag-dictionary-dimension-name">${escapeHtml(row.field_label)}</div>
+            <div class="item-meta">${escapeHtml(getObjectLabel(row.object_type))}</div>
           </div>
-          ${category.dimensions.map((dimension) => `
-            <div class="tag-dictionary-row">
-              <div class="tag-dictionary-dimension-name">${escapeHtml(dimension.name)}</div>
-              <div class="tag-dimension-chips">
-                ${dimension.tags.map((tag) => `<span class="tag-dimension-chip ${getDimensionTone(dimension.id)}">${escapeHtml(tag)}</span>`).join('')}
-              </div>
-              <div class="tag-dictionary-row-actions">
-                <button type="button" class="tag-dictionary-link" data-dict-edit-dimension="${dimension.id}">编辑</button>
-              </div>
-            </div>
-          `).join('')}
+          <div class="field-tag-meta mono">${escapeHtml(row.field_key)}</div>
+          <div>${escapeHtml(STYLE_OPTIONS.find((item) => item.key === row.style_key)?.label || row.style_key)}</div>
+          <div>${escapeHtml(row.sort_order)}</div>
+          <div>${renderPreviewTag(row.style_key, STYLE_OPTIONS.find((item) => item.key === row.style_key)?.sample || row.field_label)}</div>
+          <div><span class="chip ${row.enabled ? 'success' : 'neutral'}">${row.enabled ? '启用' : '停用'}</span></div>
+          <div class="tag-dictionary-config-actions">
+            <button type="button" class="tag-dictionary-link" data-tag-edit="${row.id}">编辑</button>
+            <button type="button" class="tag-dictionary-link" data-tag-toggle="${row.id}">${row.enabled ? '停用' : '启用'}</button>
+            <button type="button" class="tag-dictionary-link is-danger" data-tag-delete="${row.id}">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderAll() {
+      renderTabs();
+      renderRows();
+    }
+
+    function fillObjectTypeOptions() {
+      const select = document.querySelector('[data-tag-object-type]');
+      if (!select) return;
+      select.innerHTML = OBJECT_TYPES.map((item) => `<option value="${item.key}">${escapeHtml(item.label)}</option>`).join('');
+    }
+
+    function fillStyleOptions() {
+      const select = document.querySelector('[data-tag-style-key]');
+      if (!select) return;
+      select.innerHTML = STYLE_OPTIONS.map((item) => `<option value="${item.key}">${escapeHtml(item.label)}</option>`).join('');
+    }
+
+    function syncFieldOptions(preferredFieldKey = '') {
+      const objectType = document.querySelector('[data-tag-object-type]')?.value || 'candidate';
+      const select = document.querySelector('[data-tag-field-key]');
+      if (!select) return;
+      const options = getFieldOptions(objectType);
+      select.innerHTML = options.map((item) => `<option value="${item.key}">${escapeHtml(item.label)}（${escapeHtml(item.key)}）</option>`).join('');
+      select.value = preferredFieldKey && options.some((item) => item.key === preferredFieldKey) ? preferredFieldKey : (options[0]?.key || '');
+      syncFieldLabel();
+    }
+
+    function syncFieldLabel(force = false) {
+      const objectType = document.querySelector('[data-tag-object-type]')?.value || 'candidate';
+      const fieldKey = document.querySelector('[data-tag-field-key]')?.value || '';
+      const input = document.querySelector('[data-tag-field-label]');
+      if (!input) return;
+      if (force || !input.value.trim()) {
+        input.value = getFieldLabel(objectType, fieldKey);
+      }
+      renderModalPreview();
+    }
+
+    function renderModalPreview() {
+      const preview = document.querySelector('[data-tag-config-preview]');
+      if (!preview) return;
+      const styleKey = document.querySelector('[data-tag-style-key]')?.value || 'neutral';
+      const fieldLabel = document.querySelector('[data-tag-field-label]')?.value?.trim() || '字段标签';
+      preview.innerHTML = `
+        <div class="field-tag-stack">
+          <div class="field-tag-group">
+            <span class="field-tag-caption">${escapeHtml(fieldLabel)} 命中后的展示效果</span>
+            <div class="field-tag-list">${renderPreviewTag(styleKey, STYLE_OPTIONS.find((item) => item.key === styleKey)?.sample || fieldLabel)}</div>
+          </div>
         </div>
       `;
     }
 
-    function renderEvaluationRows(category) {
-      return `
-        <div class="tag-dictionary-card-head">
-          <h3>${escapeHtml(category.title)}</h3>
-          <button class="tag-dictionary-add-btn" type="button" data-dict-add-level="${category.key}">${escapeHtml(category.buttonLabel)}</button>
-        </div>
-        <div class="tag-dictionary-level-table">
-          <div class="tag-dictionary-level-row is-head">
-            <div>等级</div>
-            <div>等级名称</div>
-            <div>分值</div>
-            <div>说明</div>
-            <div>操作</div>
-          </div>
-          ${category.levels.map((level, index) => `
-            <div class="tag-dictionary-level-row">
-              <div>
-                <span class="tag-level-badge ${getEvaluationTone(level.score)}">${escapeHtml(level.rank)}</span>
-              </div>
-              <div class="tag-dictionary-dimension-name">${escapeHtml(level.name)}</div>
-              <div>${escapeHtml(level.score)}</div>
-              <div>${escapeHtml(level.desc)}</div>
-              <div class="tag-dictionary-level-actions">
-                <button type="button" class="tag-dictionary-link" data-dict-edit-level="${level.id}">编辑</button>
-                <button type="button" class="tag-dictionary-link is-danger" data-dict-delete-level="${level.id}">删除</button>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
-
-    function renderPanel() {
-      const panel = document.querySelector('[data-tag-panel]');
-      if (!panel) return;
-      const category = state.categories[state.activeTab];
-      panel.innerHTML = category.mode === 'levels' ? renderEvaluationRows(category) : renderDimensionRows(category);
-    }
-
-    function renderPreview() {
-      const previewName = document.querySelector('[data-tag-dimension-preview-name]');
-      const previewItems = document.querySelector('[data-tag-dimension-preview-items]');
-      const nameInput = document.querySelector('[data-tag-dimension-name]');
-      const itemInput = document.querySelector('[data-tag-dimension-items]');
-      if (!previewName || !previewItems || !nameInput || !itemInput) return;
-      const name = nameInput.value.trim() || '标签维度预览';
-      const tags = parseTagItems(itemInput.value);
-      previewName.textContent = name;
-      previewItems.innerHTML = tags.length
-        ? tags.map((tag) => `<span class="tag-dimension-chip ${getDimensionTone(state.modal?.dimensionId || name)}">${escapeHtml(tag)}</span>`).join('')
-        : '<span class="tag-dimension-chip tag-slate">暂无标签项</span>';
-    }
-
-    function openDimensionModal(categoryKey, dimensionId = null) {
-      const modal = document.querySelector('[data-tag-dimension-modal]');
-      const title = document.querySelector('[data-tag-dimension-modal-title]');
-      const nameInput = document.querySelector('[data-tag-dimension-name]');
-      const itemsInput = document.querySelector('[data-tag-dimension-items]');
-      const category = state.categories[categoryKey];
-      const dimension = category.dimensions.find((item) => item.id === dimensionId);
-      state.modal = { type: 'dimension', categoryKey, dimensionId };
-      if (title) title.textContent = dimension ? '编辑标签维度' : '新增标签维度';
-      if (nameInput) nameInput.value = dimension?.name || '';
-      if (itemsInput) itemsInput.value = dimension?.tags?.join('，') || '';
-      if (modal) modal.style.display = 'block';
-      renderPreview();
-    }
-
-    function openLevelModal(levelId = null) {
-      const modal = document.querySelector('[data-tag-level-modal]');
-      const title = document.querySelector('[data-tag-level-modal-title]');
-      const category = state.categories.evaluation;
-      const level = category.levels.find((item) => item.id === levelId);
-      state.modal = { type: 'level', categoryKey: 'evaluation', levelId };
-      if (title) title.textContent = level ? '编辑评价等级' : '新增评价等级';
-      document.querySelector('[data-tag-level-rank]').value = level?.rank ?? '';
-      document.querySelector('[data-tag-level-name]').value = level?.name ?? '';
-      document.querySelector('[data-tag-level-score]').value = level?.score ?? '';
-      document.querySelector('[data-tag-level-desc]').value = level?.desc ?? '';
+    function openModal(row = null) {
+      state.editingId = row?.id || null;
+      const modal = document.querySelector('[data-tag-config-modal]');
+      const title = document.querySelector('[data-tag-config-modal-title]');
+      if (title) title.textContent = row ? '编辑字段标签配置' : '新增字段标签配置';
+      fillObjectTypeOptions();
+      fillStyleOptions();
+      document.querySelector('[data-tag-object-type]').value = row?.object_type || state.activeTab;
+      syncFieldOptions(row?.field_key || '');
+      document.querySelector('[data-tag-field-label]').value = row?.field_label || getFieldLabel(row?.object_type || state.activeTab, row?.field_key || getFieldOptions(state.activeTab)[0]?.key || '');
+      document.querySelector('[data-tag-style-key]').value = row?.style_key || 'neutral';
+      document.querySelector('[data-tag-sort-order]').value = String(row?.sort_order ?? 0);
+      document.querySelector('[data-tag-enabled]').value = String(row?.enabled ?? true);
+      renderModalPreview();
       if (modal) modal.style.display = 'block';
     }
 
-    function closeModals() {
-      const dimensionModal = document.querySelector('[data-tag-dimension-modal]');
-      const levelModal = document.querySelector('[data-tag-level-modal]');
-      if (dimensionModal) dimensionModal.style.display = 'none';
-      if (levelModal) levelModal.style.display = 'none';
-      state.modal = null;
+    function closeModal() {
+      state.editingId = null;
+      const modal = document.querySelector('[data-tag-config-modal]');
+      if (modal) modal.style.display = 'none';
     }
 
-    function saveDimensionModal() {
-      if (!state.modal || state.modal.type !== 'dimension') return;
-      const name = document.querySelector('[data-tag-dimension-name]').value.trim();
-      const tags = parseTagItems(document.querySelector('[data-tag-dimension-items]').value);
-      if (!name || !tags.length) throw new Error('请先填写标签维度和至少一个标签项');
-      const category = state.categories[state.modal.categoryKey];
-      const row = {
-        id: state.modal.dimensionId || `dimension_${Date.now()}`,
-        name,
-        tags,
-      };
-      if (state.modal.dimensionId) {
-        category.dimensions = category.dimensions.map((item) => item.id === state.modal.dimensionId ? row : item);
-      } else {
-        category.dimensions.push(row);
+    async function loadRows() {
+      state.rows = await window.hrApi.tags();
+      renderAll();
+    }
+
+    async function saveConfig() {
+      const objectType = document.querySelector('[data-tag-object-type]')?.value || 'candidate';
+      const fieldKey = document.querySelector('[data-tag-field-key]')?.value || '';
+      const fieldLabel = document.querySelector('[data-tag-field-label]')?.value?.trim() || '';
+      const styleKey = document.querySelector('[data-tag-style-key]')?.value || 'neutral';
+      const sortOrder = Number(document.querySelector('[data-tag-sort-order]')?.value || 0);
+      const enabled = document.querySelector('[data-tag-enabled]')?.value !== 'false';
+
+      if (!fieldKey || !fieldLabel) {
+        throw new Error('请先选择字段并填写展示名');
       }
-      persistState();
-      closeModals();
-      renderPanel();
-      showToast(`已保存标签维度：${name}`);
-    }
 
-    function saveLevelModal() {
-      if (!state.modal || state.modal.type !== 'level') return;
-      const rank = Number(document.querySelector('[data-tag-level-rank]').value || 0);
-      const name = document.querySelector('[data-tag-level-name]').value.trim();
-      const score = Number(document.querySelector('[data-tag-level-score]').value || 0);
-      const desc = document.querySelector('[data-tag-level-desc]').value.trim();
-      if (!rank || !name || !score || !desc) throw new Error('请先填写完整的等级信息');
-      const category = state.categories.evaluation;
-      const row = {
-        id: state.modal.levelId || `level_${Date.now()}`,
-        rank,
-        name,
-        score,
-        desc,
-      };
-      if (state.modal.levelId) {
-        category.levels = category.levels.map((item) => item.id === state.modal.levelId ? row : item);
-      } else {
-        category.levels.push(row);
+      const duplicated = state.rows.find((item) => item.object_type === objectType && item.field_key === fieldKey && item.id !== state.editingId);
+      if (duplicated) {
+        throw new Error('同一对象下的字段配置不能重复');
       }
-      category.levels.sort((left, right) => left.rank - right.rank);
-      persistState();
-      closeModals();
-      renderPanel();
-      showToast(`已保存评价等级：${name}`);
+
+      const payload = {
+        object_type: objectType,
+        field_key: fieldKey,
+        field_label: fieldLabel,
+        style_key: styleKey,
+        sort_order: sortOrder,
+        enabled,
+      };
+
+      if (state.editingId) {
+        await window.hrApi.updateTag(state.editingId, payload);
+      } else {
+        await window.hrApi.createTag(payload);
+      }
+      window.hrTagSystem?.invalidate?.();
+      closeModal();
+      await loadRows();
     }
 
-    function deleteLevel(levelId) {
-      const category = state.categories.evaluation;
-      const level = category.levels.find((item) => item.id === levelId);
-      if (!level) return;
-      if (!confirm(`确认删除评价等级「${level.name}」吗？`)) return;
-      category.levels = category.levels.filter((item) => item.id !== levelId);
-      persistState();
-      renderPanel();
-      showToast(`已删除评价等级：${level.name}`);
-    }
-
-    function bindPageEvents() {
-      document.addEventListener('click', (event) => {
-        const tabButton = event.target.closest('[data-dict-tab]');
-        if (tabButton) {
-          state.activeTab = tabButton.dataset.dictTab;
-          persistState();
-          renderTabs();
-          renderPanel();
-          return;
+    document.addEventListener('click', async (event) => {
+      const tab = event.target.closest('[data-tag-tab]');
+      if (tab) {
+        state.activeTab = tab.dataset.tagTab;
+        renderAll();
+        return;
+      }
+      if (event.target.closest('[data-action="open-tag-config-modal"]')) {
+        openModal();
+        return;
+      }
+      if (event.target.closest('[data-action="close-tag-config-modal"]')) {
+        closeModal();
+        return;
+      }
+      if (event.target.closest('[data-action="save-tag-config"]')) {
+        try {
+          await saveConfig();
+          window.showToast?.('标签字段配置已保存');
+        } catch (error) {
+          window.showToast?.(error.message || '保存失败');
         }
+        return;
+      }
+      const editBtn = event.target.closest('[data-tag-edit]');
+      if (editBtn) {
+        const row = state.rows.find((item) => item.id === Number(editBtn.dataset.tagEdit));
+        openModal(row);
+        return;
+      }
+      const toggleBtn = event.target.closest('[data-tag-toggle]');
+      if (toggleBtn) {
+        const row = state.rows.find((item) => item.id === Number(toggleBtn.dataset.tagToggle));
+        if (!row) return;
+        await window.hrApi.updateTag(row.id, { enabled: !row.enabled });
+        window.hrTagSystem?.invalidate?.();
+        await loadRows();
+        window.showToast?.(`已${row.enabled ? '停用' : '启用'}字段标签`);
+        return;
+      }
+      const deleteBtn = event.target.closest('[data-tag-delete]');
+      if (deleteBtn) {
+        const row = state.rows.find((item) => item.id === Number(deleteBtn.dataset.tagDelete));
+        if (!row) return;
+        if (!window.confirm(`确认删除字段标签配置「${row.field_label}」吗？`)) return;
+        await window.hrApi.deleteTag(row.id);
+        window.hrTagSystem?.invalidate?.();
+        await loadRows();
+        window.showToast?.('字段标签配置已删除');
+      }
+    });
 
-        const addDimensionButton = event.target.closest('[data-dict-add]');
-        if (addDimensionButton) {
-          openDimensionModal(addDimensionButton.dataset.dictAdd);
-          return;
-        }
+    document.addEventListener('input', (event) => {
+      if (event.target.matches('[data-tag-filter-keyword], [data-tag-filter-enabled]')) {
+        renderRows();
+        return;
+      }
+      if (event.target.matches('[data-tag-field-label], [data-tag-style-key], [data-tag-sort-order]')) {
+        renderModalPreview();
+      }
+    });
 
-        const editDimensionButton = event.target.closest('[data-dict-edit-dimension]');
-        if (editDimensionButton) {
-          openDimensionModal(state.activeTab, editDimensionButton.dataset.dictEditDimension);
-          return;
-        }
-
-        const addLevelButton = event.target.closest('[data-dict-add-level]');
-        if (addLevelButton) {
-          openLevelModal();
-          return;
-        }
-
-        const editLevelButton = event.target.closest('[data-dict-edit-level]');
-        if (editLevelButton) {
-          openLevelModal(editLevelButton.dataset.dictEditLevel);
-          return;
-        }
-
-        const deleteLevelButton = event.target.closest('[data-dict-delete-level]');
-        if (deleteLevelButton) {
-          deleteLevel(deleteLevelButton.dataset.dictDeleteLevel);
-          return;
-        }
-
-        if (event.target.closest('[data-tag-dimension-cancel]') || event.target.closest('[data-tag-level-cancel]')) {
-          closeModals();
-          return;
-        }
-
-        if (event.target.closest('[data-tag-dimension-save]')) {
-          saveDimensionModal();
-          return;
-        }
-
-        if (event.target.closest('[data-tag-level-save]')) {
-          saveLevelModal();
-        }
-      });
-
-      document.addEventListener('input', (event) => {
-        if (event.target.matches('[data-tag-dimension-name], [data-tag-dimension-items]')) {
-          renderPreview();
-        }
-      });
-    }
+    document.addEventListener('change', (event) => {
+      if (event.target.matches('[data-tag-object-type]')) {
+        syncFieldOptions();
+        return;
+      }
+      if (event.target.matches('[data-tag-field-key]')) {
+        syncFieldLabel(true);
+      }
+      if (event.target.matches('[data-tag-style-key], [data-tag-enabled]')) {
+        renderModalPreview();
+      }
+    });
 
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
-      const loaded = loadState();
-      state.activeTab = loaded.activeTab || 'seeker';
-      state.categories = loaded.categories || cloneDefaults().categories;
-      renderTabs();
-      renderPanel();
-      bindPageEvents();
+      try {
+        fillObjectTypeOptions();
+        fillStyleOptions();
+        await loadRows();
+      } catch (error) {
+        console.warn(error);
+        const list = document.querySelector('[data-tag-config-list]');
+        if (list) {
+          list.innerHTML = `<div class="tag-dictionary-config-empty">加载失败：${escapeHtml(error.message || '未知错误')}</div>`;
+        }
+      }
     });
   </script>
 </body>

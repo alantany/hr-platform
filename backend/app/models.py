@@ -431,6 +431,11 @@ class TagDictionary(Base, TimestampMixin):
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     color: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    object_type: Mapped[str] = mapped_column(String(32), default="candidate", nullable=False)
+    field_key: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    field_label: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    style_key: Mapped[str] = mapped_column(String(32), default="neutral", nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 

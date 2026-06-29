@@ -42,6 +42,7 @@ from backend.app.models import (
     User,
     WarrantyRule,
 )
+from backend.seed import DEFAULT_TAG_FIELD_CONFIGS, build_tag_config_payload
 
 
 def cleanup_models() -> list[type]:
@@ -188,6 +189,9 @@ def reset_seed_rows(db: Session) -> None:
         SystemConfig(key="log_retention_days", value="90", description="日志保留天数"),
         SystemConfig(key="responsive_breakpoint", value="1280", description="响应式断点"),
     ])
+
+    db.query(TagDictionary).delete(synchronize_session=False)
+    db.add_all([TagDictionary(**build_tag_config_payload(item)) for item in DEFAULT_TAG_FIELD_CONFIGS])
 
     db.query(EmailConfig).delete(synchronize_session=False)
     db.add(EmailConfig(host="smtp.example.com", port=25, sender="noreply@example.com", username="", password="", use_tls=False, enabled=False))
