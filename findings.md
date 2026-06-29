@@ -1,5 +1,13 @@
 # Findings
 
+## 2026-06-29（标签字典可选字段范围大范围扩充）
+
+- **多对象可选特征扩充**：分析了底层 `candidates`、`positions`、`projects`、`companies` 表模型定义，从“最大程度赋予用户标签自定义选择权”原则出发，补充并打通了多达十几个可作为标签呈现的特征字段：
+  - **候选人 (Candidate)**：新增了当前职位 (current_title)、锁定状态 (status)、来源 (source)、户口所在地 (hukou_location)、家庭情况 (family_status)、出生日期 (birth_date) 以及证书 (certificates) 的下拉选择；
+  - **岗位 (Position)**：新增了岗位状态 (status)、招聘人数 (hiring_count)；
+  - **项目 (Project)**：新增了招聘人数 (hiring_count)；
+  - **客户 (Company)**：新增了详细地址 (address)。
+
 ## 2026-06-29（候选人行展开折叠交互 Bug 与数据字段加载逻辑）
 
 - **求职者跟踪数据源绑定**：展开候选人折叠行时，此前在前端渲染 `trackingList` 时直接错误地绑定并渲染了随访记录（`followUps`），且缺少向后端拉取真实跟踪记录的 API 调用。修复后，已成功接入 `candidateTrackingEvents`，能够在折叠项的“候选人跟踪”板块中正确展示候选人的日常跟踪事件。
