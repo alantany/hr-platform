@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-06-29（已完成 - 修复候选人列表行展开折叠跟踪与薪资未同步显示 Bug）
+
+- 修复了求职者数据池列表页中候选人展开行错用随访记录填充“候选人跟踪”的问题，改为从 API 获取真实的 `candidateTrackingEvents` 并渲染。
+- 修复了薪资记录在折叠行中因仅读取 `expected_salary` / `offered_salary` 而无法显示详情页新增数据的 Bug。现在若有“约定薪资 (agreed_salary)”则优先显示，且状态 Badge 支持显示“候选人：接受/不接受”以对齐详情页的录入形态。
+- 验证通过：`node --check app.js`。
+
 ## 2026-06-29（已完成 - 全对象字段值标签系统首版）
 
 - 后端 `tag_dictionaries` 已升级为字段配置模型：新增 `object_type / field_key / field_label / style_key / sort_order`，并通过 `ensure_schema()` 自动补列；旧 `category/name/color` 继续由新字段自动回填，避免旧兼容逻辑立即失效。

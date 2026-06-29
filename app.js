@@ -4667,6 +4667,7 @@ window.renderApp = render;
 
 window.fetchCandidatePanels = async function(candidateId, container) {
   try {
+    const tracking = await window.hrApi.candidateTrackingEvents({ candidate_id: candidateId });
     const interview = await window.hrApi.interviewRecords({ candidate_id: candidateId });
     const salary = await window.hrApi.salaryRecords({ candidate_id: candidateId });
     const employment = await window.hrApi.employmentRecords({ candidate_id: candidateId });
@@ -4678,7 +4679,12 @@ window.fetchCandidatePanels = async function(candidateId, container) {
     if (lifecycleList) {
       const items = [];
       if (interview[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${interview[0].round_name}</div><div class="item-meta">${interview[0].result} · ${interview[0].interviewer}</div></div><span class="chip success">面试</span></div></div>`);
-      if (salary[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">薪资</div><div class="item-meta">${salary[0].expected_salary} / ${salary[0].offered_salary}</div></div><span class="chip warning">${salary[0].service_status}</span></div></div>`);
+      if (salary[0]) {
+        const salaryShow = salary[0].agreed_salary || `${salary[0].expected_salary || '--'} / ${salary[0].offered_salary || '--'}`;
+        const acceptStatus = salary[0].candidate_accepted ? `候选人：${salary[0].candidate_accepted}` : salary[0].service_status;
+        const chipClass = salary[0].candidate_accepted === '接受' ? 'success' : (salary[0].candidate_accepted === '不接受' ? 'neutral' : 'warning');
+        items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">薪资</div><div class="item-meta">${salaryShow}</div></div><span class="chip ${chipClass}">${acceptStatus}</span></div></div>`);
+      }
       if (employment[0]) {
         if (employment[0].status === '已入职') {
           items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${employment[0].company_name}</div><div class="item-meta">${employment[0].position_name} · 已入职</div></div><span class="chip success">入职</span></div></div>`);
@@ -4691,14 +4697,15 @@ window.fetchCandidatePanels = async function(candidateId, container) {
     }
 
     if (trackingList) {
-      trackingList.innerHTML = followUps.map(item => `
+      trackingList.innerHTML = tracking.map(item => `
         <div class="list-item">
           <div class="item-top">
             <div>
-              <div class="item-title">${item.follow_up_time || item.created_at}</div>
-              <div class="item-meta">${item.content}</div>
+              <div class="item-title">${item.event_type}</div>
+              <div class="item-meta">${item.summary || ''}</div>
+              ${item.created_at ? `<div class="item-meta mono" style="font-size: 11px; margin-top: 4px;">${item.created_at}</div>` : ''}
             </div>
-            <span class="chip primary">${item.status}</span>
+            <span class="chip primary">${item.status || '事件'}</span>
           </div>
         </div>
       `).join('') || '<div class="list-item"><div class="item-meta">暂无跟踪事件记录</div></div>';
