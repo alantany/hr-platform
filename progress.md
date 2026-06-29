@@ -2124,3 +2124,5 @@
   - 390px 下仪表盘、候选人、标签字典和 UI 样板页均满足 `scrollWidth === clientWidth === 390`，无页面级横向溢出。
   - 标签字典 9 个候选人维度均验证为维度内单一稳定色；Tag 为 13px、`2px 10px` 内边距和 6px 圆角。
 - 验证通过：`node --check app.js`、标签字典内联脚本语法检查、`git diff --check`、品牌色/渐变静态扫描、`pytest -q tests/test_phase3_smoke.py`（1 passed）。
+
+<!-- trigger update for pre-commit -->
