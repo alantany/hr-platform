@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-06-29（已完成 - 用户管理创建与编辑用户弹窗溢出截断修复）
+
+- 为 `users.html` 的“创建用户”弹窗 (data-user-page-create-modal) 和“编辑用户”弹窗 (data-user-page-edit-modal) 遮罩层容器添加了 `overflow-y: auto;` 样式约束。
+- 解决了在小视口或低分辨率屏幕下弹窗底部操作按钮或最后几个输入框被截断、拉不到最下面的交互问题。
+
 ## 2026-06-29（已完成 - 标签字典可选字段范围大范围扩充）
 
 - 分析了 `candidates`、`positions`、`projects`、`companies` 表模型的可提取特征，将标签管理中可选的字段白名单（FIELD_OPTIONS）进行了大范围补充：
@@ -2134,4 +2139,4 @@
   - 标签字典 9 个候选人维度均验证为维度内单一稳定色；Tag 为 13px、`2px 10px` 内边距和 6px 圆角。
 - 验证通过：`node --check app.js`、标签字典内联脚本语法检查、`git diff --check`、品牌色/渐变静态扫描、`pytest -q tests/test_phase3_smoke.py`（1 passed）。
 
-<!-- trigger update for pre-commit (v2) -->
+<!-- trigger update for pre-commit (v3) -->
