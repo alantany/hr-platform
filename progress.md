@@ -2084,3 +2084,19 @@
   - `customers.html / projects.html / candidates.html / dictionary.html / permissions.html / warranty.html` 六个代表页面均读取真实数据并继承同一组件样式，渲染态紫色元素数量为 0，页面无横向溢出。
   - 窄屏首次验收发现侧栏过长后已补充横向滚动导航规则；静态断点检查确认 390px 下页面宽度、正文内边距和组件间距均由统一移动端规则接管。
 - 代码校验：`node --check app.js`、`git diff --check` 通过；前端源文件已无历史紫色色值和实际渐变声明。
+
+## 2026-06-29（完成 - 基于 v0 模板切换全站企业蓝 UI）
+
+- 已以 `ui-redesign-suggestions/app/globals.css` 和按钮组件为唯一视觉来源，将生产样式转译到 [styles.css](/Users/huaiyuan/Desktop/workspace/hr-plateform/styles.css)，未引入 Next.js、Tailwind、shadcn 或新的运行依赖。
+- 全站品牌色由墨绿切换为企业蓝 `#2563EB`，hover 使用 `#1D4ED8`，浅色强调背景使用 `#EFF6FF`；侧边栏统一为深蓝灰 `#1E293B` / `#334155`。
+- 新增主按钮、描边、次级、幽灵、危险、链接、图标及尺寸变体，统一 active、focus、disabled 状态；输入框、Tab、复选框和链接同步使用蓝色焦点与选中态。
+- 新增 `tag-blue / tag-teal / tag-green / tag-amber / tag-rose / tag-slate` 六色柔和 Tag 模板，旧 `tone-*` 类保留为兼容别名。
+- [src/pages/dictionary.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/dictionary.html) 已由随机/按序号配色改为按业务维度稳定映射；同一维度内所有标签保持同色，评价等级按分值使用语义化柔和色。
+- 新增 [src/pages/ui-kit.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/ui-kit.html) 内部样板页，集中展示生产令牌、按钮、表单、Tab、六色标签、状态标签和表格组件，并在开发工具导航中提供入口。
+- 已将 [outputs/后台系统统一UI视觉规范.md](/Users/huaiyuan/Desktop/workspace/hr-plateform/outputs/后台系统统一UI视觉规范.md) 更新为 v0 蓝色有效版本，并明确参考目录与生产实现边界。
+- 浏览器验收：
+  - 1280px 桌面端确认主色、深蓝灰侧栏、24px 标题、28px 统计数字、24px 卡片内边距和 12px 卡片圆角正确生效。
+  - 登录页、仪表盘及 22 个后台页面均完成真实打开检查，未检测到墨绿/紫色品牌色，页面级横向溢出为 0；权限受限页面继续遵循既有回退逻辑。
+  - 390px 下仪表盘、候选人、标签字典和 UI 样板页均满足 `scrollWidth === clientWidth === 390`，无页面级横向溢出。
+  - 标签字典 9 个候选人维度均验证为维度内单一稳定色；Tag 为 13px、`2px 10px` 内边距和 6px 圆角。
+- 验证通过：`node --check app.js`、标签字典内联脚本语法检查、`git diff --check`、品牌色/渐变静态扫描、`pytest -q tests/test_phase3_smoke.py`（1 passed）。

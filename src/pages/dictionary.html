@@ -188,14 +188,29 @@
       modal: null,
     };
 
-    const CHIP_TONES = [
-      'tone-violet',
-      'tone-softviolet',
-      'tone-pink',
-      'tone-orange',
-      'tone-green',
-      'tone-slate',
+    const TAG_TONES = [
+      'tag-blue',
+      'tag-teal',
+      'tag-green',
+      'tag-amber',
+      'tag-rose',
+      'tag-slate',
     ];
+
+    const TAG_TONE_BY_DIMENSION = {
+      age_rule: 'tag-blue',
+      degree_rule: 'tag-teal',
+      experience_rule: 'tag-green',
+      school_rule: 'tag-amber',
+      job_status: 'tag-rose',
+      salary_expectation: 'tag-blue',
+      job_intention: 'tag-teal',
+      arrival_time: 'tag-green',
+      gender: 'tag-slate',
+      urgency: 'tag-rose',
+      project_level: 'tag-amber',
+      custom_requirement: 'tag-blue',
+    };
 
     function cloneDefaults() {
       return JSON.parse(JSON.stringify(TAG_DICTIONARY_DEFAULTS));
@@ -232,12 +247,18 @@
         .replaceAll("'", '&#39;');
     }
 
-    function getChipTone(label, index) {
-      if (label.includes('优秀') || label.includes('随时') || label.includes('在职-考虑机会') || label.includes('正式编制')) return 'tone-green';
-      if (label.includes('紧急') || label === '女' || label === '985') return 'tone-pink';
-      if (label.includes('高') || label.includes('1个月内') || label.includes('在职-暂不考虑')) return 'tone-orange';
-      if (label.includes('常规') || label.includes('普') || label.includes('其他') || label.includes('协商') || label.includes('离职-慢慢看')) return 'tone-slate';
-      return CHIP_TONES[index % CHIP_TONES.length];
+    function getDimensionTone(dimensionId) {
+      if (TAG_TONE_BY_DIMENSION[dimensionId]) return TAG_TONE_BY_DIMENSION[dimensionId];
+      const stableIndex = [...String(dimensionId || '')].reduce((sum, char) => sum + char.charCodeAt(0), 0) % TAG_TONES.length;
+      return TAG_TONES[stableIndex];
+    }
+
+    function getEvaluationTone(score) {
+      if (Number(score) >= 5) return 'tag-green';
+      if (Number(score) === 4) return 'tag-teal';
+      if (Number(score) === 3) return 'tag-amber';
+      if (Number(score) === 2) return 'tag-rose';
+      return 'tag-slate';
     }
 
     function parseTagItems(value) {
@@ -281,7 +302,7 @@
             <div class="tag-dictionary-row">
               <div class="tag-dictionary-dimension-name">${escapeHtml(dimension.name)}</div>
               <div class="tag-dimension-chips">
-                ${dimension.tags.map((tag, index) => `<span class="tag-dimension-chip ${getChipTone(tag, index)}">${escapeHtml(tag)}</span>`).join('')}
+                ${dimension.tags.map((tag) => `<span class="tag-dimension-chip ${getDimensionTone(dimension.id)}">${escapeHtml(tag)}</span>`).join('')}
               </div>
               <div class="tag-dictionary-row-actions">
                 <button type="button" class="tag-dictionary-link" data-dict-edit-dimension="${dimension.id}">编辑</button>
@@ -309,7 +330,7 @@
           ${category.levels.map((level, index) => `
             <div class="tag-dictionary-level-row">
               <div>
-                <span class="tag-level-badge ${getChipTone(level.name, index)}">${escapeHtml(level.rank)}</span>
+                <span class="tag-level-badge ${getEvaluationTone(level.score)}">${escapeHtml(level.rank)}</span>
               </div>
               <div class="tag-dictionary-dimension-name">${escapeHtml(level.name)}</div>
               <div>${escapeHtml(level.score)}</div>
@@ -341,8 +362,8 @@
       const tags = parseTagItems(itemInput.value);
       previewName.textContent = name;
       previewItems.innerHTML = tags.length
-        ? tags.map((tag, index) => `<span class="tag-dimension-chip ${getChipTone(tag, index)}">${escapeHtml(tag)}</span>`).join('')
-        : '<span class="tag-dimension-chip tone-slate">暂无标签项</span>';
+        ? tags.map((tag) => `<span class="tag-dimension-chip ${getDimensionTone(state.modal?.dimensionId || name)}">${escapeHtml(tag)}</span>`).join('')
+        : '<span class="tag-dimension-chip tag-slate">暂无标签项</span>';
     }
 
     function openDimensionModal(categoryKey, dimensionId = null) {

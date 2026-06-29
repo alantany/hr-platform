@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>统一 UI 样板</title>
+  <link rel="stylesheet" href="../../styles.css?v=v0-blue" />
+</head>
+<body>
+  <main class="ui-kit-standalone">
+    <header class="ui-kit-page-head">
+      <div><div class="crumbs">开发工具 / UI 样板</div><h1 class="page-title">统一 UI 样板</h1><p class="page-lede">集中展示 v0 蓝色设计令牌、组件状态和标签色板，作为新增页面的视觉验收基准。</p></div>
+      <a class="btn outline" href="./dashboard.html">返回后台</a>
+    </header>
+      <section class="ui-kit-grid">
+        <section class="panel ui-kit-section is-wide">
+          <div class="section-head">
+            <div><h3>设计令牌</h3><div class="section-sub">生产样式由 styles.css 提供，v0 目录仅作为视觉来源。</div></div>
+          </div>
+          <div class="ui-kit-swatch-grid">
+            <div class="ui-kit-swatch" style="--swatch:#2563EB;--swatch-text:#fff"><strong>Primary</strong><span>#2563EB</span></div>
+            <div class="ui-kit-swatch" style="--swatch:#1E293B;--swatch-text:#fff"><strong>Sidebar</strong><span>#1E293B</span></div>
+            <div class="ui-kit-swatch" style="--swatch:#F7F8FA"><strong>Background</strong><span>#F7F8FA</span></div>
+            <div class="ui-kit-swatch" style="--swatch:#FFFFFF"><strong>Card</strong><span>#FFFFFF</span></div>
+            <div class="ui-kit-swatch" style="--swatch:#E5E7EB"><strong>Border</strong><span>#E5E7EB</span></div>
+          </div>
+        </section>
+
+        <section class="panel ui-kit-section">
+          <div class="section-head"><div><h3>按钮</h3><div class="section-sub">主次、危险、链接、尺寸和禁用状态。</div></div></div>
+          <div class="ui-kit-stack">
+            <div class="ui-kit-row">
+              <button class="btn primary">主按钮</button>
+              <button class="btn outline">描边按钮</button>
+              <button class="btn secondary">次级按钮</button>
+              <button class="btn ghost">幽灵按钮</button>
+              <button class="btn danger">危险按钮</button>
+              <button class="btn link">链接按钮</button>
+            </div>
+            <div class="ui-kit-row">
+              <button class="btn primary xs">XS</button>
+              <button class="btn primary sm">SM</button>
+              <button class="btn primary">默认</button>
+              <button class="btn primary lg">LG</button>
+              <button class="btn primary icon" aria-label="添加">＋</button>
+              <button class="btn primary" disabled>禁用</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel ui-kit-section">
+          <div class="section-head"><div><h3>表单与 Tab</h3><div class="section-sub">统一输入、选中、焦点和禁用状态。</div></div></div>
+          <div class="ui-kit-stack">
+            <div class="ui-kit-row">
+              <input class="input" value="默认输入框" aria-label="默认输入框" />
+              <select class="select" aria-label="示例选择"><option>默认选项</option></select>
+              <input class="input" value="禁用输入框" disabled aria-label="禁用输入框" />
+            </div>
+            <div class="tabs">
+              <button class="tab active" type="button">选中 Tab</button>
+              <button class="tab" type="button">普通 Tab</button>
+              <button class="tab" type="button" disabled>禁用 Tab</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel ui-kit-section is-wide">
+          <div class="section-head"><div><h3>标签色板</h3><div class="section-sub">分类色按业务维度固定映射；状态色只表达业务语义。</div></div></div>
+          <div class="ui-kit-stack">
+            <div class="ui-kit-row">
+              <span class="tag tag-blue">蓝色分类</span>
+              <span class="tag tag-teal">青色分类</span>
+              <span class="tag tag-green">绿色分类</span>
+              <span class="tag tag-amber">琥珀分类</span>
+              <span class="tag tag-rose">玫红分类</span>
+              <span class="tag tag-slate">灰色分类</span>
+              <span class="tag tag-blue tag-active">选中标签</span>
+            </div>
+            <div class="ui-kit-row">
+              <span class="chip primary">信息</span>
+              <span class="chip success">成功</span>
+              <span class="chip warning">警告</span>
+              <span class="chip danger">错误</span>
+              <span class="chip neutral">中性</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel ui-kit-section is-wide">
+          <div class="section-head"><div><h3>表格</h3><div class="section-sub">浅灰表头、统一行高、hover 和操作按钮。</div></div></div>
+          <div class="ui-kit-demo-table">
+            <div class="table-head"><div>候选人</div><div>岗位</div><div>状态</div><div>操作</div></div>
+            <div class="table-row"><div class="item-title">示例候选人</div><div>高级产品经理</div><div><span class="chip success">推荐中</span></div><div class="table-actions"><button class="btn-sm">查看</button><button class="btn-sm primary">推进</button></div></div>
+            <div class="table-row"><div class="item-title">另一位候选人</div><div>数据分析师</div><div><span class="chip neutral">未锁定</span></div><div class="table-actions"><button class="btn-sm">查看</button><button class="btn-sm primary">推进</button></div></div>
+          </div>
+        </section>
+      </section>
+  </main>
+</body>
+</html>

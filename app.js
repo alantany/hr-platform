@@ -36,6 +36,7 @@ const navGroups = [
     title: "开发工具",
     items: [
       { href: "db-explorer.html", label: "数据探针", badge: "探针", icon: "settings" },
+      { href: "ui-kit.html", label: "UI 样板", badge: "规范", icon: "star" },
     ],
   },
 ];
@@ -130,6 +131,11 @@ const pages = {
     title: "数据库资源探针",
     desc: "直接读取与呈现系统底层的 PostgreSQL 物理表数据，用于开发辅助及状态查验。"
   },
+  "ui-kit": {
+    crumbs: "开发工具 / UI 样板",
+    title: "统一 UI 样板",
+    desc: "集中展示 v0 蓝色设计令牌、组件状态和标签色板，作为新增页面的视觉验收基准。"
+  },
 };
 
 const icons = {
@@ -169,7 +175,7 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map()) => {
           <div style="color:#475569;font-size:13px;text-align:center;">${position.hiring_count || 1}人</div>
           <div style="color:#475569;font-size:13px;text-align:center;">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(position.location || '')}">${escapeHtml(position.location || '--')}</div>
-          <div style="display:flex;gap:8px;font-size:12px;font-weight:600;white-space:nowrap;"><span>候选人 <strong style="color:#0F5132;">${stats.total}</strong></span><span>选中 <strong style="color:#15803D;">${stats.selected}</strong></span><span>未选 <strong>${stats.unselected}</strong></span><span>淘汰 <strong style="color:#ef4444;">${stats.rejected}</strong></span></div>
+          <div style="display:flex;gap:8px;font-size:12px;font-weight:600;white-space:nowrap;"><span>候选人 <strong style="color:#2563EB;">${stats.total}</strong></span><span>选中 <strong style="color:#15803D;">${stats.selected}</strong></span><span>未选 <strong>${stats.unselected}</strong></span><span>淘汰 <strong style="color:#ef4444;">${stats.rejected}</strong></span></div>
           <div class="table-actions" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;"><button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button><button class="btn-sm" data-action="noop" data-title="分配权限">分配权限</button><button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button></div>
         </div>
       </div>`;
@@ -197,7 +203,7 @@ const renderProjectListMarkup = (projects = []) => {
     return `
       <div class="list-item" data-id="${project.id}" data-company-id="${project.company_id}">
         <div class="item-top" style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 0.8fr 0.8fr 1.2fr 0.8fr 1.2fr 180px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-          <button class="project-company-link" type="button" style="color:#0F5132;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;" title="${escapeHtml(project.company_name || '未知公司')}" onclick="location.href='./customers.html'">${escapeHtml(project.company_name || '未知公司')}</button>
+          <button class="project-company-link" type="button" style="color:#2563EB;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;" title="${escapeHtml(project.company_name || '未知公司')}" onclick="location.href='./customers.html'">${escapeHtml(project.company_name || '未知公司')}</button>
           <div class="item-title" style="display: flex; align-items: center; gap: 6px; min-width: 0; margin-right: 0;">
             <button class="project-name-link" type="button" style="font-weight:600;color:#0f172a;font-size:13px;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;" data-action="view-project-positions" data-project-id="${project.id}">${escapeHtml(project.name)}</button>
           </div>
@@ -813,7 +819,7 @@ function renderExportCard(c) {
   return `<div style="background:#fff;border:1px solid rgba(15,23,42,.09);border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);">
     <!-- \u5019\u9009\u4eba\u4fe1\u606f\u884c -->
     <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border-bottom:1px solid rgba(15,23,42,.06);">
-      <div style="width:32px;height:32px;border-radius:50%;background:#0F5132;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">${(c.name||'?').charAt(0)}</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:#2563EB;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">${(c.name||'?').charAt(0)}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:600;color:#1e293b;line-height:1.3;">${c.name || '--'}</div>
         <div style="font-size:11px;color:#64748b;line-height:1.3;">${c.current_title || '\u672a\u77e5\u804c\u4f4d'}${c.city ? ' \u00b7 ' + c.city : ''}</div>
@@ -1634,7 +1640,7 @@ async function handleGlobalButton(button) {
                 // 面试轮次圆形微标
                 const roundName = evt.interview_round || '面试';
                 const roundShort = roundName.includes('初筛') ? '初筛' : roundName.replace('第', '').replace('轮', '') + '轮';
-                const roundHtml = `<div style="background:#EEF5F1; color:#0F5132; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; margin:0 auto; white-space:nowrap;">${roundShort}</div>`;
+                const roundHtml = `<div style="background:#EFF6FF; color:#2563EB; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; margin:0 auto; white-space:nowrap;">${roundShort}</div>`;
 
                 // 初筛结果徽标
                 let screeningHtml = '-';
@@ -1733,14 +1739,14 @@ async function handleGlobalButton(button) {
 
                 // 关联面试轮次徽标
                 const roundName = rec.interview_round || '-';
-                const roundHtml = roundName !== '-' ? `<span style="background-color:#EEF5F1; color:#0F5132; border-radius:12px; padding:2px 8px; font-size:11px; font-weight:600; white-space:nowrap;">${roundName}</span>` : '-';
+                const roundHtml = roundName !== '-' ? `<span style="background-color:#EFF6FF; color:#2563EB; border-radius:12px; padding:2px 8px; font-size:11px; font-weight:600; white-space:nowrap;">${roundName}</span>` : '-';
 
                 return `
                   <tr style="border-bottom:1px solid #f1f5f9; hover:background-color:#fafafa;">
                     <td style="padding:10px 8px; text-align:center;">${roundHtml}</td>
                     <td style="padding:10px 8px; white-space:nowrap;">${rec.position_name || '-'}</td>
                     <td style="padding:10px 8px; white-space:nowrap;">${rec.company_name || '-'}</td>
-                    <td style="padding:10px 8px; color:#0F5132; font-weight:600;">${rec.agreed_salary || '-'}</td>
+                    <td style="padding:10px 8px; color:#2563EB; font-weight:600;">${rec.agreed_salary || '-'}</td>
                     <td style="padding:10px 8px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${rec.welfare_desc || ''}">${rec.welfare_desc || '-'}</td>
                     <td style="padding:10px 8px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${rec.onboard_cond || ''}">${rec.onboard_cond || '-'}</td>
                     <td style="padding:10px 8px; text-align:center;">${acceptHtml}</td>
@@ -1806,8 +1812,8 @@ async function handleGlobalButton(button) {
                 if (onboardCard) onboardCard.style.display = 'block';
               } else {
                 if (ball) ball.style.transform = 'translateX(0)';
-                if (label) label.style.background = '#0F5132';
-                if (txtLeft) { txtLeft.style.color = '#0F5132'; }
+                if (label) label.style.background = '#2563EB';
+                if (txtLeft) { txtLeft.style.color = '#2563EB'; }
                 if (txtRight) { txtRight.style.color = '#94a3b8'; }
                 if (notOnboardCard) notOnboardCard.style.display = 'block';
                 if (onboardCard) onboardCard.style.display = 'none';
