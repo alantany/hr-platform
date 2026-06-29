@@ -888,21 +888,7 @@ button, input, select { font: inherit; }
 
 .tag-dictionary-page {
   display: grid;
-  gap: 18px;
-}
-
-.tag-dictionary-intro h3 {
-  margin: 0;
-  font-size: 28px;
-  line-height: 1.1;
-  color: #29353d;
-}
-
-.tag-dictionary-intro p {
-  margin: 10px 0 0;
-  color: #b1bcc5;
-  font-size: 14px;
-  font-weight: 600;
+  gap: 16px;
 }
 
 .tag-dictionary-warning {
@@ -1059,17 +1045,17 @@ button, input, select { font: inherit; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 34px;
-  padding: 6px 18px;
+  min-height: 30px;
+  padding: 5px 14px;
   border-radius: 999px;
   color: #fff;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 700;
   line-height: 1;
 }
 
 .tag-level-badge {
-  min-width: 48px;
+  min-width: 42px;
   padding-left: 0;
   padding-right: 0;
 }

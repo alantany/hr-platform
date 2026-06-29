@@ -2048,3 +2048,8 @@
   - 客户需求页能看到“紧急程度 / 项目等级 / 自定义需求标签”；
   - 评价体系页能看到“优秀 / 良好 / 一般 / 较差 / 不合格”；
   - 评价等级编辑弹窗可正常打开，控制台无 warn/error。
+
+## 2026-06-29（完成 - 标签字典页去重与标签字号微调）
+
+- 已移除 [src/pages/dictionary.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/dictionary.html) 页面内部重复的“标签字典管理”说明块，保留系统壳层自带的“系统设置 / 标签字典”标题区，避免首屏头部信息重复。
+- 已在 [styles.css](/Users/huaiyuan/Desktop/workspace/hr-plateform/styles.css) 下调标签胶囊的字号、字重、内边距和高度，让求职者/客户需求/评价体系中的标签显示更紧凑。
