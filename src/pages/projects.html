@@ -21,7 +21,7 @@ window.__PAGE_BODY__ = `
 
   <!-- 子标签页导航 -->
   <div class="tabs-container" style="margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; display: flex; gap: 24px; padding-bottom: 0;">
-    <div class="sub-tab active" data-subtab="project-tab" style="padding: 10px 4px; font-weight: 600; font-size: 14px; color: #8b5cf6; border-bottom: 2px solid #8b5cf6; cursor: pointer; transition: all 0.2s;">项目列表</div>
+    <div class="sub-tab active" data-subtab="project-tab" style="padding: 10px 4px; font-weight: 600; font-size: 14px; color: #0F5132; border-bottom: 2px solid #0F5132; cursor: pointer; transition: all 0.2s;">项目列表</div>
     <div class="sub-tab" data-subtab="position-tab" style="padding: 10px 4px; font-weight: 600; font-size: 14px; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s;">岗位列表</div>
   </div>
 
@@ -56,8 +56,8 @@ window.__PAGE_BODY__ = `
       </select>
     </div>
     <div style="display: flex; gap: 8px;">
-      <button class="btn primary" id="btn-project-search" style="height: 38px; border-radius: 19px; background: #8b5cf6; border-color: #8b5cf6; padding: 0 20px; font-size: 13px; font-weight: 600; color: #fff;">搜索</button>
-      <button class="btn" id="btn-project-reset" style="height: 38px; border-radius: 19px; border-color: #8b5cf6; color: #8b5cf6; background: #fff; padding: 0 20px; font-size: 13px; font-weight: 600;">重置</button>
+      <button class="btn primary" id="btn-project-search" style="height: 38px; border-radius: 19px; background: #0F5132; border-color: #0F5132; padding: 0 20px; font-size: 13px; font-weight: 600; color: #fff;">搜索</button>
+      <button class="btn" id="btn-project-reset" style="height: 38px; border-radius: 19px; border-color: #0F5132; color: #0F5132; background: #fff; padding: 0 20px; font-size: 13px; font-weight: 600;">重置</button>
     </div>
   </div>
 
@@ -100,8 +100,8 @@ window.__PAGE_BODY__ = `
       </select>
     </div>
     <div style="display: flex; gap: 8px;">
-      <button class="btn primary" id="btn-position-search" style="height: 38px; border-radius: 19px; background: #8b5cf6; border-color: #8b5cf6; padding: 0 20px; font-size: 13px; font-weight: 600; color: #fff;">搜索</button>
-      <button class="btn" id="btn-position-reset" style="height: 38px; border-radius: 19px; border-color: #8b5cf6; color: #8b5cf6; background: #fff; padding: 0 20px; font-size: 13px; font-weight: 600;">重置</button>
+      <button class="btn primary" id="btn-position-search" style="height: 38px; border-radius: 19px; background: #0F5132; border-color: #0F5132; padding: 0 20px; font-size: 13px; font-weight: 600; color: #fff;">搜索</button>
+      <button class="btn" id="btn-position-reset" style="height: 38px; border-radius: 19px; border-color: #0F5132; color: #0F5132; background: #fff; padding: 0 20px; font-size: 13px; font-weight: 600;">重置</button>
     </div>
   </div>
 
@@ -136,7 +136,7 @@ window.__PAGE_BODY__ = `
     <div class="section-head">
     <div><h3 id="position-list-title">岗位列表</h3><div class="section-sub">按项目统一管理岗位需求、紧急程度和薪资范围。</div></div>
       <div class="hero-actions" style="margin-top:0">
-        <button class="btn primary" style="background-color: #00c497; border-color: #00c497;" data-action="noop" data-title="JD单生成岗位">📎 JD单生成岗位</button>
+        <button class="btn primary" style="background-color: #15803D; border-color: #15803D;" data-action="noop" data-title="JD单生成岗位">📎 JD单生成岗位</button>
         <button class="btn primary" data-action="open-position-modal">新建岗位</button>
         <button class="btn" data-action="refresh-page">刷新列表</button>
       </div>
@@ -352,8 +352,8 @@ window.addEventListener('DOMContentLoaded', async () => {
           t.style.borderBottomColor = 'transparent';
         });
         tab.classList.add('active');
-        tab.style.color = '#8b5cf6';
-        tab.style.borderBottomColor = '#8b5cf6';
+        tab.style.color = '#0F5132';
+        tab.style.borderBottomColor = '#0F5132';
 
         const mode = tab.dataset.subtab;
         if (mode === 'project-tab') {

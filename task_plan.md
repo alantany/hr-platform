@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-Completed search toolbar clean-up, province-city cascading dropdown implementation, and checkbox-based export logic.
+全站后台 UI 视觉系统统一已完成：仅收口颜色、字体、字号、间距、圆角、阴影和边框，未调整功能、文案或数据结构。
 
 ## Phases
 
@@ -212,6 +212,16 @@ Completed search toolbar clean-up, province-city cascading dropdown implementati
 - [x] 修改 `POST /api/export-records` 将物理 PDF 存储至 `exports/` 目录，回填相对路径并支持覆盖兼容
 - [x] 修改前端 `app.js` 的导出保存动作，API 返回成功后如果是 PDF 格式，自动触发浏览器下载
 - [x] 编写 `tests/test_pdf_export.py` 自动化测试并通过 pytest 全量回归验证
+- **Status:** complete
+
+### Phase 18 - 全站统一 UI 视觉优化（已完成）
+
+- [x] 保存用户提供的 UI 视觉规范作为长期设计基线
+- [x] 盘点共享样式、页面内联样式和动态 HTML 中的历史色值
+- [x] 建立统一设计令牌和页面组件模板
+- [x] 清理紫色、渐变和彩虹标签等冲突视觉
+- [x] 核对后台主要页面、登录页及窄屏表现
+- [x] 更新任务记录并提交、推送
 - **Status:** complete
 
 ### Customer Management - 删除链路与页面收口（已完成）

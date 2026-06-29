@@ -2071,3 +2071,16 @@
   - `users.html / roles.html / permissions.html / data-permissions.html` 均可打开，未出现页面头部重复；
   - 用户页、角色页、权限页和数据权限页都能读到真实数据库记录；
   - 数据权限页的组长/操作员两个分页都能切换，显示内容来自真实数据聚合，不是写死静态块。
+
+## 2026-06-29（完成 - 全站后台 UI 视觉系统统一）
+
+- 已将用户提供的完整视觉规范保存到 [outputs/后台系统统一UI视觉规范.md](/Users/huaiyuan/Desktop/workspace/hr-plateform/outputs/后台系统统一UI视觉规范.md)，作为后续页面维护和新增页面的长期基线。
+- 已在 [styles.css](/Users/huaiyuan/Desktop/workspace/hr-plateform/styles.css) 建立统一设计令牌和共享组件模板：品牌主色统一为 `#0F5132`，并统一页头、侧栏、卡片、统计数字、按钮、输入框、表格、Tab、Tag、弹窗、hover、focus、disabled 等视觉状态。
+- 全站字体层级收口为 24px 页面标题、16px 卡片标题、14px 正文、13px 辅助文字和 28px 统计数字；卡片统一 24px 内边距、12px 圆角、`#E5E7EB` 边框与 `0 1px 3px rgba(0,0,0,.06)` 轻阴影。
+- 已清理 [app.js](/Users/huaiyuan/Desktop/workspace/hr-plateform/app.js)、登录页、项目页、岗位候选人页、候选人页和质保页中动态或内联的紫色、青色及渐变主色，统一到品牌色与语义状态色；标签统一为 13px、2px 8px 内边距、6px 小圆角。
+- 已将 1200px 以下侧栏改为紧凑的横向滚动导航，避免窄屏时长侧栏把正文推到首屏之外；手机宽度下正文使用 16px 页面和卡片内边距。
+- 浏览器验证：
+  - 登录后仪表盘真实渲染正常，页面背景、墨绿侧栏、24px 标题、28px 统计数字、12px 卡片圆角、24px 卡片内边距和轻阴影均符合规范，页面无横向溢出。
+  - `customers.html / projects.html / candidates.html / dictionary.html / permissions.html / warranty.html` 六个代表页面均读取真实数据并继承同一组件样式，渲染态紫色元素数量为 0，页面无横向溢出。
+  - 窄屏首次验收发现侧栏过长后已补充横向滚动导航规则；静态断点检查确认 390px 下页面宽度、正文内边距和组件间距均由统一移动端规则接管。
+- 代码校验：`node --check app.js`、`git diff --check` 通过；前端源文件已无历史紫色色值和实际渐变声明。
