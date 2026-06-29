@@ -88,8 +88,13 @@ def ensure_schema() -> None:
 
         # users
         user_cols = {col['name'] for col in inspector.get_columns("users")}
-        if "manager_user_id" not in user_cols:
-            conn.execute(text("ALTER TABLE users ADD COLUMN manager_user_id INTEGER"))
+        for column, ddl in {
+            "phone": "ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''",
+            "email": "ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT ''",
+            "manager_user_id": "ALTER TABLE users ADD COLUMN manager_user_id INTEGER",
+        }.items():
+            if column not in user_cols:
+                conn.execute(text(ddl))
 
         # candidate_mail_records
         mail_cols = {col['name'] for col in inspector.get_columns("candidate_mail_records")}

@@ -47,23 +47,29 @@ def seed() -> None:
     db: Session = SessionLocal()
     try:
         if not db.query(User).filter(User.username == "admin").first():
-            db.add(User(username="admin", full_name="系统管理员", password_hash=hash_password("admin123"), role="超级管理员", is_active=True))
+            db.add(User(username="admin", full_name="系统管理员", phone="", email="", password_hash=hash_password("admin123"), role="超级管理员", is_active=True))
         else:
             admin = db.query(User).filter(User.username == "admin").first()
             if admin.password_hash == "dev":
                 admin.password_hash = hash_password("admin123")
+            admin.phone = admin.phone or ""
+            admin.email = admin.email or ""
         if not db.query(User).filter(User.username == "leader").first():
-            db.add(User(username="leader", full_name="团队组长", password_hash=hash_password("leader123"), role="组长", is_active=True))
+            db.add(User(username="leader", full_name="团队组长", phone="", email="", password_hash=hash_password("leader123"), role="组长", is_active=True))
         else:
             leader = db.query(User).filter(User.username == "leader").first()
             if leader.password_hash == "dev":
                 leader.password_hash = hash_password("leader123")
+            leader.phone = leader.phone or ""
+            leader.email = leader.email or ""
         if not db.query(User).filter(User.username == "operator").first():
-            db.add(User(username="operator", full_name="一线操作员", password_hash=hash_password("operator123"), role="操作员", is_active=True))
+            db.add(User(username="operator", full_name="一线操作员", phone="", email="", password_hash=hash_password("operator123"), role="操作员", is_active=True))
         else:
             operator = db.query(User).filter(User.username == "operator").first()
             if operator.password_hash == "dev":
                 operator.password_hash = hash_password("operator123")
+            operator.phone = operator.phone or ""
+            operator.email = operator.email or ""
         if not db.query(Role).count():
             db.add_all([
                 Role(code="ADMIN", name="超级管理员", description="全局管理"),

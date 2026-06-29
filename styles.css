@@ -1161,25 +1161,25 @@ button, input, select { font: inherit; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .admin-primary-btn {
-  min-height: 56px;
-  padding: 0 34px;
-  border: 0;
-  border-radius: 999px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--primary);
+  border-radius: 8px;
   background: var(--primary);
   color: #fff;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 18px 30px rgba(111, 99, 239, 0.18);
+  box-shadow: none;
 }
 
 .admin-primary-btn--small {
-  min-height: 48px;
-  padding: 0 28px;
+  min-height: 36px;
+  padding: 0 12px;
   font-size: 14px;
 }
 
@@ -1193,30 +1193,32 @@ button, input, select { font: inherit; }
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  padding: 26px 30px;
+  padding: 24px 24px 20px;
 }
 
 .admin-panel-head h3 {
   margin: 0;
   font-size: 24px;
-  color: #2f3a43;
+  color: var(--foreground);
 }
 
 .admin-filter-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 10px;
   align-items: center;
 }
 
 .admin-filter-input,
 .admin-filter-select {
-  min-width: 200px;
-  min-height: 52px;
-  border-radius: 16px;
-  border-color: rgba(222, 228, 237, 0.95);
+  min-width: 180px;
+  min-height: 40px;
+  border-radius: 8px;
+  border-color: var(--input);
   background: #fff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  box-shadow: none;
+  color: var(--foreground);
+  font-size: 14px;
 }
 
 .admin-filter-input {
@@ -1282,30 +1284,30 @@ button, input, select { font: inherit; }
   display: grid;
   gap: 18px;
   align-items: center;
-  padding: 0 26px;
+  padding: 0 24px;
 }
 
 .admin-table-head {
-  min-height: 70px;
-  color: #2563EB;
-  font-size: 14px;
-  font-weight: 800;
+  min-height: 56px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .admin-table-row {
-  min-height: 88px;
+  min-height: 72px;
   border-top: 1px solid rgba(236, 240, 244, 0.96);
   background: #fff;
-  color: #65737d;
-  font-size: 16px;
+  color: var(--foreground);
+  font-size: 14px;
 }
 
 .admin-user-grid {
-  grid-template-columns: 54px 1.15fr 1fr .95fr 1.2fr .7fr .9fr 1.15fr;
+  grid-template-columns: 54px 1.05fr 1fr .9fr 1fr 1fr .68fr .9fr 1.1fr;
 }
 
 .admin-role-grid {
-  grid-template-columns: 1fr 1fr .55fr 1.9fr .8fr .9fr;
+  grid-template-columns: 1fr 1fr .58fr 1.9fr .85fr .95fr;
 }
 
 .admin-permission-grid {
@@ -1325,9 +1327,14 @@ button, input, select { font: inherit; }
 }
 
 .admin-row-strong {
-  font-size: 18px;
-  font-weight: 700;
-  color: #5b6771;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.admin-row-muted {
+  color: var(--muted-foreground);
+  font-size: 14px;
 }
 
 .admin-pill,
@@ -1335,21 +1342,23 @@ button, input, select { font: inherit; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 34px;
-  padding: 6px 18px;
-  border-radius: 999px;
-  color: #fff;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: #4b5563;
   font-size: 13px;
-  font-weight: 800;
-  line-height: 1;
+  font-weight: 400;
+  line-height: 1.4;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
 }
 
 .admin-mini-chip {
-  min-height: 30px;
-  padding: 5px 14px;
+  min-height: 24px;
+  padding: 2px 8px;
   margin: 2px 8px 2px 0;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .admin-pill.tone-pink,
@@ -1385,7 +1394,7 @@ button, input, select { font: inherit; }
 
 .admin-inline-actions {
   display: flex;
-  gap: 18px;
+  gap: 16px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -1395,7 +1404,7 @@ button, input, select { font: inherit; }
   background: transparent;
   color: #2563EB;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   cursor: pointer;
   text-decoration: none;
 }
@@ -1405,8 +1414,8 @@ button, input, select { font: inherit; }
 }
 
 .admin-checkbox {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   accent-color: #2563EB;
 }
 
@@ -1429,7 +1438,7 @@ button, input, select { font: inherit; }
 
 .admin-edit-card {
   box-shadow: none;
-  border: 1px solid rgba(15, 23, 42, .08);
+  border: 1px solid var(--border);
 }
 
 @media (max-width: 1220px) {

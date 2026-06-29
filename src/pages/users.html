@@ -38,7 +38,8 @@
               <div>用户名</div>
               <div>姓名</div>
               <div>角色</div>
-              <div>直属关系</div>
+              <div>联系方式</div>
+              <div>邮箱</div>
               <div>状态</div>
               <div>最后登录</div>
               <div>操作</div>
@@ -51,7 +52,7 @@
       <div class="modal" data-user-page-create-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
         <div class="panel admin-edit-modal">
           <div class="section-head">
-            <div><h3>创建用户</h3><div class="section-sub">填写账号、姓名和角色后保存到数据库。</div></div>
+            <div><h3>创建用户</h3><div class="section-sub">填写账号、姓名、联系方式和角色后保存到数据库。</div></div>
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" type="button" data-user-page-close-create>取消</button>
               <button class="btn primary" type="button" data-user-page-save-create>确认保存</button>
@@ -62,6 +63,8 @@
               <div class="list">
                 <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">登录账号</div></div></div><input class="input" data-user-form-username /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">系统展示名称</div></div></div><input class="input" data-user-form-fullname /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">手机号</div><div class="item-meta">用户联系方式</div></div></div><input class="input" data-user-form-phone placeholder="13800000000" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta">用户登录邮箱</div></div></div><input class="input" data-user-form-email placeholder="user@example.com" /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">角色</div><div class="item-meta">决定可见菜单与权限</div></div></div><select class="input" data-user-form-role></select></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">直属组长</div><div class="item-meta">操作员可选所属组长</div></div></div><select class="input" data-user-form-manager><option value="">无</option></select></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">初始密码</div><div class="item-meta">默认 dev</div></div></div><input class="input" type="password" data-user-form-password value="dev" /></div>
@@ -80,7 +83,7 @@
       <div class="modal" data-user-page-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
         <div class="panel admin-edit-modal">
           <div class="section-head">
-            <div><h3>编辑用户</h3><div class="section-sub">修改后会同步刷新当前列表。</div></div>
+            <div><h3>编辑用户</h3><div class="section-sub">修改后会同步刷新当前列表，联系方式也会一起保存。</div></div>
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" type="button" data-user-page-close-edit>取消</button>
               <button class="btn primary" type="button" data-user-page-save-edit>确认保存</button>
@@ -91,6 +94,8 @@
               <div class="list">
                 <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">账号不可修改</div></div></div><input class="input" data-user-edit-username readonly /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">显示在导航与列表中</div></div></div><input class="input" data-user-edit-fullname /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">手机号</div><div class="item-meta">用户联系方式</div></div></div><input class="input" data-user-edit-phone placeholder="13800000000" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta">用户登录邮箱</div></div></div><input class="input" data-user-edit-email placeholder="user@example.com" /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">角色</div><div class="item-meta">切换角色会影响权限范围</div></div></div><select class="input" data-user-edit-role></select></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">直属组长</div><div class="item-meta">用于操作员归属</div></div></div><select class="input" data-user-edit-manager><option value="">无</option></select></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">启用后允许登录</div></div></div><select class="input" data-user-edit-active><option value="true">启用</option><option value="false">停用</option></select></div>
@@ -172,6 +177,14 @@
       return manager ? `${manager.full_name} / ${manager.username}` : `直属组长ID ${user.manager_user_id}`;
     }
 
+    function getUserContact(user) {
+      return user.phone || '—';
+    }
+
+    function getUserEmail(user) {
+      return user.email || '—';
+    }
+
     function getLastLoginMap() {
       const map = new Map();
       userPageState.loginLogs
@@ -235,7 +248,8 @@
           <div class="admin-row-strong">${escapeHtml(user.username)}</div>
           <div>${escapeHtml(user.full_name)}</div>
           <div><span class="admin-pill ${getRoleTone(user.role)}">${escapeHtml(user.role)}</span></div>
-          <div>${escapeHtml(getManagerName(user))}</div>
+          <div><span class="admin-row-muted">${escapeHtml(getUserContact(user))}</span></div>
+          <div><span class="admin-row-muted">${escapeHtml(getUserEmail(user))}</span></div>
           <div><span class="admin-pill ${user.is_active ? 'tone-green' : 'tone-slate'}">${user.is_active ? '启用' : '停用'}</span></div>
           <div>${escapeHtml(formatDateTime(lastLoginMap.get(user.id)))}</div>
           <div class="admin-inline-actions">
@@ -251,6 +265,8 @@
     function resetCreateModal() {
       document.querySelector('[data-user-form-username]').value = '';
       document.querySelector('[data-user-form-fullname]').value = '';
+      document.querySelector('[data-user-form-phone]').value = '';
+      document.querySelector('[data-user-form-email]').value = '';
       document.querySelector('[data-user-form-role]').value = userPageState.roles[0]?.name || '操作员';
       document.querySelector('[data-user-form-manager]').value = '';
       document.querySelector('[data-user-form-password]').value = 'dev';
@@ -284,6 +300,8 @@
       const payload = {
         username: document.querySelector('[data-user-form-username]').value.trim(),
         full_name: document.querySelector('[data-user-form-fullname]').value.trim(),
+        phone: document.querySelector('[data-user-form-phone]').value.trim(),
+        email: document.querySelector('[data-user-form-email]').value.trim(),
         role: document.querySelector('[data-user-form-role]').value,
         manager_user_id: Number(document.querySelector('[data-user-form-manager]').value || 0) || null,
         password_hash: document.querySelector('[data-user-form-password]').value || 'dev',
@@ -301,6 +319,8 @@
       userPageState.editingId = user.id;
       document.querySelector('[data-user-edit-username]').value = user.username || '';
       document.querySelector('[data-user-edit-fullname]').value = user.full_name || '';
+      document.querySelector('[data-user-edit-phone]').value = user.phone || '';
+      document.querySelector('[data-user-edit-email]').value = user.email || '';
       document.querySelector('[data-user-edit-role]').value = user.role || '';
       document.querySelector('[data-user-edit-manager]').value = user.manager_user_id ? String(user.manager_user_id) : '';
       document.querySelector('[data-user-edit-active]').value = String(Boolean(user.is_active));
@@ -311,6 +331,8 @@
       if (!userPageState.editingId) return;
       const payload = {
         full_name: document.querySelector('[data-user-edit-fullname]').value.trim(),
+        phone: document.querySelector('[data-user-edit-phone]').value.trim(),
+        email: document.querySelector('[data-user-edit-email]').value.trim(),
         role: document.querySelector('[data-user-edit-role]').value,
         manager_user_id: Number(document.querySelector('[data-user-edit-manager]').value || 0) || null,
         is_active: document.querySelector('[data-user-edit-active]').value === 'true',

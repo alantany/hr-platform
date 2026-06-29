@@ -28,6 +28,8 @@ class CurrentUser(BaseModel):
 class UserCreate(BaseModel):
     username: str
     full_name: str
+    phone: str = ""
+    email: str = ""
     password_hash: str = "admin123"
     role: str = "操作员"
     is_active: bool = True
@@ -40,6 +42,8 @@ class UserOut(UserCreate):
 
 class UserUpdate(BaseModel):
     full_name: str | None = None
+    phone: str | None = None
+    email: str | None = None
     password_hash: str | None = None
     role: str | None = None
     is_active: bool | None = None
