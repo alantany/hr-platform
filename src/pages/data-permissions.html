@@ -12,70 +12,432 @@
   <div id="app"></div>
   <script>
     window.__PAGE_BODY__ = `
-      <section class="metrics">
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">岗位范围</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-metric="team">0</div><div class="metric-label">可见岗位数</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">项目范围</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-metric="project">0</div><div class="metric-label">可见项目数</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户范围</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-metric="company">0</div><div class="metric-label">可见客户数</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">授权记录</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-metric="personal">0</div><div class="metric-label">公司/项目/岗位</div></div>
-      </section>
-      <section class="panel">
-        <div class="section-head"><div><h3>数据权限</h3><div class="section-sub">按客户公司、项目、岗位控制可见范围。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-data-permission-modal">新增范围</button><button class="btn" data-action="refresh-page">刷新范围</button></div></div>
-        <p class="panel-sub">按客户公司、项目、岗位控制可见范围。</p>
-        <div class="list" data-data-permission-list><div class="list-item"><div class="item-top"><div><div class="item-title">暂无数据权限</div><div class="item-meta">数据权限记录来自数据库。</div></div><span class="chip primary">权限</span></div></div></div>
+      <section class="admin-manage-page">
+        <nav class="admin-tabbar" data-data-scope-tabs>
+          <button type="button" class="admin-tabbar-btn is-active" data-scope-tab="leader">组长数据权限</button>
+          <button type="button" class="admin-tabbar-btn" data-scope-tab="operator">操作员数据权限</button>
+        </nav>
+
+        <section class="admin-table-panel panel">
+          <div class="admin-panel-head">
+            <h3 data-data-scope-title>组长数据权限分配</h3>
+            <button class="admin-primary-btn admin-primary-btn--small" type="button" data-data-scope-open-modal>+ 分配权限</button>
+          </div>
+
+          <div class="admin-table-shell" data-data-scope-leader-shell>
+            <div class="admin-table-head admin-scope-leader-grid">
+              <div>组长</div>
+              <div>可访问公司</div>
+              <div>项目数</div>
+              <div>岗位数</div>
+              <div>分配人</div>
+              <div>操作</div>
+            </div>
+            <div data-data-scope-leader-body></div>
+          </div>
+
+          <div class="admin-table-shell" data-data-scope-operator-shell style="display:none;">
+            <div class="admin-table-head admin-scope-operator-grid">
+              <div>操作员</div>
+              <div>所属组长</div>
+              <div>权限粒度</div>
+              <div>可操作范围</div>
+              <div>分配人</div>
+              <div>操作</div>
+            </div>
+            <div data-data-scope-operator-body></div>
+          </div>
+        </section>
       </section>
 
-      <div class="modal" data-data-permission-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+      <div class="modal" data-data-scope-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel admin-edit-modal">
           <div class="section-head">
-            <div>
-              <h3>新增数据权限</h3>
-              <div class="section-sub">选择用户和可见范围，确认后写入数据库。</div>
-            </div>
+            <div><h3>分配数据权限</h3><div class="section-sub">保存后写入真实 data_permissions 表。</div></div>
             <div class="hero-actions" style="margin-top:0">
-              <button class="btn" data-action="close-data-permission-modal">取消</button>
-              <button class="btn primary" data-action="confirm-data-permission-upload">确认保存</button>
+              <button class="btn" type="button" data-data-scope-close-modal>取消</button>
+              <button class="btn primary" type="button" data-data-scope-save-modal>确认保存</button>
             </div>
           </div>
           <div class="grid-2">
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="panel admin-edit-card">
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">用户 ID</div><div class="item-meta">绑定到具体操作人</div></div></div><input class="input" type="number" min="1" data-data-permission-user /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">范围类型</div><div class="item-meta">company / project / position</div></div></div><select class="input" data-data-permission-scope><option value="company">company</option><option value="project">project</option><option value="position">position</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">范围 ID</div><div class="item-meta">对应客户、项目或团队标识</div></div></div><input class="input" data-data-permission-scope-id /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">范围名称</div><div class="item-meta">用于列表展示</div></div></div><input class="input" data-data-permission-scope-name /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">授权人</div><div class="item-meta">默认 admin</div></div></div><input class="input" data-data-permission-granted-by value="admin" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">目标用户</div><div class="item-meta">按当前页签选择组长或操作员</div></div></div><select class="input" data-data-scope-user></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">范围类型</div><div class="item-meta">公司 / 项目 / 岗位</div></div></div><select class="input" data-data-scope-type><option value="company">公司</option><option value="project">项目</option><option value="position">岗位</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">具体范围</div><div class="item-meta">数据来自真实数据库</div></div></div><select class="input" data-data-scope-target></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">分配人</div><div class="item-meta">默认当前登录用户</div></div></div><input class="input" data-data-scope-granted-by /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">启用状态</div><div class="item-meta">停用后仍保留记录</div></div></div><select class="input" data-data-scope-active><option value="true">启用</option><option value="false">停用</option></select></div>
               </div>
             </div>
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <h3>保存后结果</h3>
-              <div class="list" data-data-permission-preview>
-                <div class="list-item"><div class="item-meta">确认后会刷新当前数据权限列表。</div></div>
-              </div>
+            <div class="panel admin-edit-card">
+              <h3>当前用户已有范围</h3>
+              <div class="list" data-data-scope-preview></div>
             </div>
           </div>
         </div>
       </div>
+
+      <div class="modal" data-data-scope-confirm-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:560px; margin:14vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>移除权限</h3><div class="section-sub">当前操作会停用该用户所有激活中的数据权限记录。</div></div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" type="button" data-data-scope-close-confirm>取消</button>
+              <button class="btn primary" type="button" data-data-scope-run-confirm>确认执行</button>
+            </div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-data-scope-confirm-title>确认移除</div><div class="item-meta" data-data-scope-confirm-desc>确认后执行停用。</div></div><span class="chip warning">确认</span></div></div>
+          </div>
+        </div>
+      </div>
     `;
+
+    const dataScopeState = {
+      tab: 'leader',
+      users: [],
+      dataPermissions: [],
+      companies: [],
+      projects: [],
+      positions: [],
+      me: null,
+      confirmUserId: null,
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    function isLeader(user) {
+      return String(user?.role || '').includes('组长') || String(user?.role || '').includes('主管');
+    }
+
+    function isOperator(user) {
+      return String(user?.role || '').includes('操作员');
+    }
+
+    function getUserName(userId) {
+      const user = dataScopeState.users.find((item) => item.id === Number(userId));
+      return user ? user.full_name : `用户${userId}`;
+    }
+
+    function getUserById(userId) {
+      return dataScopeState.users.find((item) => item.id === Number(userId)) || null;
+    }
+
+    function getScopeRecordsForUser(userId) {
+      return dataScopeState.dataPermissions.filter((item) => item.user_id === Number(userId) && item.active);
+    }
+
+    function resolveEntity(scopeType, scopeId) {
+      const targetId = String(scopeId);
+      if (scopeType === 'company') {
+        return dataScopeState.companies.find((item) => String(item.id) === targetId) || null;
+      }
+      if (scopeType === 'project') {
+        return dataScopeState.projects.find((item) => String(item.id) === targetId) || null;
+      }
+      return dataScopeState.positions.find((item) => String(item.id) === targetId) || null;
+    }
+
+    function resolveScopeLabel(record) {
+      const entity = resolveEntity(record.scope_type, record.scope_id);
+      return entity?.name || record.scope_name || `${record.scope_type}:${record.scope_id}`;
+    }
+
+    function deriveAccessibleProjects(records) {
+      const ids = new Set();
+      records.forEach((record) => {
+        if (record.scope_type === 'company') {
+          dataScopeState.projects.filter((project) => String(project.company_id) === String(record.scope_id)).forEach((project) => ids.add(project.id));
+        } else if (record.scope_type === 'project') {
+          const entity = resolveEntity('project', record.scope_id);
+          if (entity) ids.add(entity.id);
+        } else if (record.scope_type === 'position') {
+          const entity = resolveEntity('position', record.scope_id);
+          if (entity) ids.add(entity.project_id);
+        }
+      });
+      return Array.from(ids);
+    }
+
+    function deriveAccessiblePositions(records) {
+      const ids = new Set();
+      records.forEach((record) => {
+        if (record.scope_type === 'company') {
+          const projectIds = dataScopeState.projects.filter((project) => String(project.company_id) === String(record.scope_id)).map((project) => project.id);
+          dataScopeState.positions.filter((position) => projectIds.includes(position.project_id)).forEach((position) => ids.add(position.id));
+        } else if (record.scope_type === 'project') {
+          dataScopeState.positions.filter((position) => String(position.project_id) === String(record.scope_id)).forEach((position) => ids.add(position.id));
+        } else if (record.scope_type === 'position') {
+          const entity = resolveEntity('position', record.scope_id);
+          if (entity) ids.add(entity.id);
+        }
+      });
+      return Array.from(ids);
+    }
+
+    function deriveAccessibleCompanies(records) {
+      const names = new Set();
+      records.forEach((record) => {
+        if (record.scope_type === 'company') {
+          const entity = resolveEntity('company', record.scope_id);
+          names.add(entity?.name || record.scope_name || record.scope_id);
+        }
+        if (record.scope_type === 'project') {
+          const project = resolveEntity('project', record.scope_id);
+          if (project) {
+            const company = dataScopeState.companies.find((item) => item.id === project.company_id);
+            if (company) names.add(company.name);
+          }
+        }
+        if (record.scope_type === 'position') {
+          const position = resolveEntity('position', record.scope_id);
+          const project = position ? dataScopeState.projects.find((item) => item.id === position.project_id) : null;
+          const company = project ? dataScopeState.companies.find((item) => item.id === project.company_id) : null;
+          if (company) names.add(company.name);
+        }
+      });
+      return Array.from(names);
+    }
+
+    function getGrantedByLabel(records, fallbackUser) {
+      const values = Array.from(new Set(records.map((item) => item.granted_by).filter(Boolean)));
+      if (values.length) return values.map((value) => {
+        const matched = dataScopeState.users.find((user) => user.username === value || user.full_name === value);
+        return matched?.full_name || value;
+      }).join('、');
+      return fallbackUser?.manager_user_id ? getUserName(fallbackUser.manager_user_id) : '—';
+    }
+
+    function getScopeGranularity(records) {
+      const scopes = Array.from(new Set(records.map((item) => item.scope_type)));
+      if (!scopes.length) return '未配置';
+      const map = { company: '公司级', project: '项目级', position: '岗位级' };
+      if (scopes.length === 1) return map[scopes[0]] || scopes[0];
+      return scopes.map((scope) => map[scope] || scope).join(' / ');
+    }
+
+    function renderDataScopeRows() {
+      const leaderBody = document.querySelector('[data-data-scope-leader-body]');
+      const operatorBody = document.querySelector('[data-data-scope-operator-body]');
+      const leaders = dataScopeState.users.filter(isLeader);
+      const operators = dataScopeState.users.filter(isOperator);
+
+      if (leaderBody) {
+        leaderBody.innerHTML = leaders.map((leader) => {
+          const records = getScopeRecordsForUser(leader.id);
+          const companies = deriveAccessibleCompanies(records);
+          const projectCount = deriveAccessibleProjects(records).length;
+          const positionCount = deriveAccessiblePositions(records).length;
+          return `
+            <div class="admin-table-row admin-scope-leader-grid">
+              <div class="admin-row-strong">${escapeHtml(leader.full_name)}</div>
+              <div>${companies.length ? companies.map((name) => `<span class="admin-mini-chip tone-violet">${escapeHtml(name)}</span>`).join(' ') : '<span class="admin-empty-inline">暂无授权</span>'}</div>
+              <div>${projectCount}</div>
+              <div>${positionCount}</div>
+              <div>${escapeHtml(getGrantedByLabel(records, leader))}</div>
+              <div class="admin-inline-actions">
+                <button type="button" class="admin-text-link" data-data-scope-edit="${leader.id}">编辑</button>
+                <button type="button" class="admin-text-link danger" data-data-scope-remove="${leader.id}">移除</button>
+              </div>
+            </div>
+          `;
+        }).join('') || '<div class="admin-empty-state">暂无组长数据权限。</div>';
+      }
+
+      if (operatorBody) {
+        operatorBody.innerHTML = operators.map((operator) => {
+          const records = getScopeRecordsForUser(operator.id);
+          const manager = getUserById(operator.manager_user_id);
+          return `
+            <div class="admin-table-row admin-scope-operator-grid">
+              <div class="admin-row-strong">${escapeHtml(operator.full_name)}</div>
+              <div>${escapeHtml(manager?.full_name || '—')}</div>
+              <div><span class="admin-pill ${records.some((item) => item.scope_type === 'company') ? 'tone-green' : records.some((item) => item.scope_type === 'project') ? 'tone-softviolet' : 'tone-orange'}">${escapeHtml(getScopeGranularity(records))}</span></div>
+              <div>${records.length ? records.map((item) => `<span class="admin-mini-chip tone-violet">${escapeHtml(resolveScopeLabel(item))}</span>`).join(' ') : '<span class="admin-empty-inline">暂无授权</span>'}</div>
+              <div>${escapeHtml(getGrantedByLabel(records, operator))}</div>
+              <div class="admin-inline-actions">
+                <button type="button" class="admin-text-link" data-data-scope-edit="${operator.id}">编辑</button>
+                <button type="button" class="admin-text-link danger" data-data-scope-remove="${operator.id}">移除</button>
+              </div>
+            </div>
+          `;
+        }).join('') || '<div class="admin-empty-state">暂无操作员数据权限。</div>';
+      }
+    }
+
+    function updateScopeTargetOptions() {
+      const type = document.querySelector('[data-data-scope-type]').value;
+      const select = document.querySelector('[data-data-scope-target]');
+      if (!select) return;
+      let list = [];
+      if (type === 'company') list = dataScopeState.companies;
+      if (type === 'project') list = dataScopeState.projects;
+      if (type === 'position') list = dataScopeState.positions;
+      select.innerHTML = list.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
+      refreshPreview();
+    }
+
+    function updateScopeUserOptions(selectedUserId = '') {
+      const select = document.querySelector('[data-data-scope-user]');
+      if (!select) return;
+      const source = dataScopeState.tab === 'leader' ? dataScopeState.users.filter(isLeader) : dataScopeState.users.filter(isOperator);
+      select.innerHTML = source.map((user) => `<option value="${user.id}">${escapeHtml(user.full_name)} / ${escapeHtml(user.username)}</option>`).join('');
+      select.value = selectedUserId ? String(selectedUserId) : source[0]?.id ? String(source[0].id) : '';
+      refreshPreview();
+    }
+
+    function refreshPreview() {
+      const userId = Number(document.querySelector('[data-data-scope-user]')?.value || 0);
+      const preview = document.querySelector('[data-data-scope-preview]');
+      if (!preview || !userId) return;
+      const records = getScopeRecordsForUser(userId);
+      preview.innerHTML = records.length
+        ? records.map((item) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${escapeHtml(resolveScopeLabel(item))}</div><div class="item-meta">${escapeHtml(item.scope_type)} · ${escapeHtml(item.granted_by || '—')}</div></div><span class="chip ${item.active ? 'primary' : 'neutral'}">${item.active ? '启用' : '停用'}</span></div></div>`).join('')
+        : '<div class="list-item"><div class="item-meta">当前用户暂无激活的数据权限记录。</div></div>';
+    }
+
+    function openScopeModal(userId = '') {
+      document.querySelector('[data-data-scope-granted-by]').value = dataScopeState.me?.full_name || dataScopeState.me?.username || 'admin';
+      document.querySelector('[data-data-scope-active]').value = 'true';
+      document.querySelector('[data-data-scope-type]').value = 'company';
+      updateScopeUserOptions(userId);
+      updateScopeTargetOptions();
+      document.querySelector('[data-data-scope-modal]').style.display = 'block';
+    }
+
+    function closeScopeModal() {
+      document.querySelector('[data-data-scope-modal]').style.display = 'none';
+    }
+
+    async function saveScopePermission() {
+      const userId = Number(document.querySelector('[data-data-scope-user]').value || 0);
+      const scopeType = document.querySelector('[data-data-scope-type]').value;
+      const scopeId = document.querySelector('[data-data-scope-target]').value;
+      const target = resolveEntity(scopeType, scopeId);
+      const grantedBy = document.querySelector('[data-data-scope-granted-by]').value.trim();
+      const active = document.querySelector('[data-data-scope-active]').value === 'true';
+      if (!userId || !scopeType || !scopeId) throw new Error('请先选择目标用户和数据范围');
+      await window.hrApi.saveDataPermission({
+        user_id: userId,
+        scope_type: scopeType,
+        scope_id: String(scopeId),
+        scope_name: target?.name || '',
+        granted_by: grantedBy,
+        active,
+      });
+      closeScopeModal();
+      await loadDataScopeData();
+      showToast('数据权限已保存');
+    }
+
+    function switchScopeTab(tab) {
+      dataScopeState.tab = tab;
+      document.querySelectorAll('[data-data-scope-tabs] .admin-tabbar-btn').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.scopeTab === tab);
+      });
+      document.querySelector('[data-data-scope-title]').textContent = tab === 'leader' ? '组长数据权限分配' : '操作员数据权限分配';
+      document.querySelector('[data-data-scope-leader-shell]').style.display = tab === 'leader' ? '' : 'none';
+      document.querySelector('[data-data-scope-operator-shell]').style.display = tab === 'operator' ? '' : 'none';
+    }
+
+    function openConfirm(userId) {
+      dataScopeState.confirmUserId = Number(userId);
+      const user = getUserById(userId);
+      document.querySelector('[data-data-scope-confirm-title]').textContent = `移除 ${user?.full_name || '该用户'} 的数据权限`;
+      document.querySelector('[data-data-scope-confirm-desc]').textContent = '该操作会将当前用户所有激活中的数据权限记录批量停用，但不会删除数据库记录。';
+      document.querySelector('[data-data-scope-confirm-modal]').style.display = 'block';
+    }
+
+    function closeConfirm() {
+      document.querySelector('[data-data-scope-confirm-modal]').style.display = 'none';
+    }
+
+    async function removeUserPermissions() {
+      if (!dataScopeState.confirmUserId) return;
+      const records = getScopeRecordsForUser(dataScopeState.confirmUserId);
+      await Promise.all(records.map((record) => window.hrApi.saveDataPermission({
+        user_id: record.user_id,
+        scope_type: record.scope_type,
+        scope_id: record.scope_id,
+        scope_name: record.scope_name,
+        granted_by: record.granted_by,
+        active: false,
+      })));
+      closeConfirm();
+      await loadDataScopeData();
+      showToast('已移除该用户的数据权限');
+    }
+
+    async function loadDataScopeData() {
+      const [users, dataPermissions, companies, projects, positions, me] = await Promise.all([
+        window.hrApi.users(),
+        window.hrApi.dataPermissions(),
+        window.hrApi.companies(),
+        window.hrApi.projects(),
+        window.hrApi.positions(),
+        window.hrApi.me().catch(() => null),
+      ]);
+      dataScopeState.users = users;
+      dataScopeState.dataPermissions = dataPermissions;
+      dataScopeState.companies = companies;
+      dataScopeState.projects = projects;
+      dataScopeState.positions = positions;
+      dataScopeState.me = me;
+      renderDataScopeRows();
+    }
+
+    function bindDataScopeEvents() {
+      document.addEventListener('click', async (event) => {
+        const tabButton = event.target.closest('[data-scope-tab]');
+        if (tabButton) {
+          switchScopeTab(tabButton.dataset.scopeTab);
+          return;
+        }
+        if (event.target.closest('[data-data-scope-open-modal]')) {
+          openScopeModal();
+          return;
+        }
+        if (event.target.closest('[data-data-scope-close-modal]')) {
+          closeScopeModal();
+          return;
+        }
+        if (event.target.closest('[data-data-scope-save-modal]')) {
+          try { await saveScopePermission(); } catch (error) { showToast(error.message || '保存失败'); }
+          return;
+        }
+        if (event.target.closest('[data-data-scope-close-confirm]')) {
+          closeConfirm();
+          return;
+        }
+        if (event.target.closest('[data-data-scope-run-confirm]')) {
+          try { await removeUserPermissions(); } catch (error) { showToast(error.message || '移除失败'); }
+          return;
+        }
+        const editButton = event.target.closest('[data-data-scope-edit]');
+        if (editButton) {
+          openScopeModal(editButton.dataset.dataScopeEdit);
+          return;
+        }
+        const removeButton = event.target.closest('[data-data-scope-remove]');
+        if (removeButton) {
+          openConfirm(removeButton.dataset.dataScopeRemove);
+        }
+      });
+
+      document.querySelector('[data-data-scope-type]')?.addEventListener('change', updateScopeTargetOptions);
+      document.querySelector('[data-data-scope-user]')?.addEventListener('change', refreshPreview);
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
+      bindDataScopeEvents();
       try {
-        const list = await window.hrApi.dataPermissions();
-        const counts = { position: 0, project: 0, company: 0 };
-        list.forEach(item => {
-          if (item.scope_type === 'project') counts.project += 1;
-          if (item.scope_type === 'company') counts.company += 1;
-          if (item.scope_type === 'position') counts.position += 1;
-        });
-        document.querySelector('[data-metric="team"]').textContent = String(counts.position);
-        document.querySelector('[data-metric="project"]').textContent = String(counts.project);
-        document.querySelector('[data-metric="company"]').textContent = String(counts.company);
-        document.querySelector('[data-metric="personal"]').textContent = String(list.length);
-        const host = document.querySelector('[data-data-permission-list]');
-        if (host) {
-          host.innerHTML = list.slice(0, 8).map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.scope_name || item.scope_type}</div><div class="item-meta">${item.scope_type} · ${item.granted_by} · ${item.active ? '已启用' : '已停用'}</div></div><div class="table-actions"><button class="btn-sm" data-action="toggle-data-permission" data-user-id="${item.user_id}" data-scope-type="${item.scope_type}" data-scope-id="${item.scope_id}" data-scope-name="${item.scope_name}" data-granted-by="${item.granted_by}" data-active="${item.active}">${item.active ? '停用' : '启用'}</button></div><span class="chip ${item.active ? 'primary' : 'neutral'}">${item.scope_type}</span></div></div>`).join('') || '<div class="list-item"><div class="item-top"><div><div class="item-title">暂无数据权限</div><div class="item-meta">数据权限记录来自数据库。</div></div><span class="chip neutral">空</span></div></div>';
-        }
-      } catch (err) {
-        console.warn(err);
+        await loadDataScopeData();
+      } catch (error) {
+        console.warn(error);
+        showToast('数据权限页面加载失败');
       }
     });
   </script>

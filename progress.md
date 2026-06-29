@@ -2059,3 +2059,15 @@
 - 已确认 Codex 默认命中的 `git` 是 runtime 自带版本，而不是 macOS 系统自带的 `/usr/bin/git`；前者缺少 `osxkeychain` 凭证链，因此会在 HTTPS 推送时出现 `could not read Username for 'https://github.com'`。
 - 已验证改用 `/usr/bin/git push origin main` 后可正常走用户 macOS Keychain 凭证，返回 `Everything up-to-date`。
 - 后续如需由 Codex 代推远端，应优先显式使用系统 Git，避免再次因为 runtime Git 缺少 `git-credential-osxkeychain` 而误判为仓库或 GitHub 凭证异常。
+
+## 2026-06-29（完成 - 用户与权限管理四页按新样式重做）
+
+- 已重做 [src/pages/users.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/users.html)：去掉页面内重复标题区，改成“创建用户 + 筛选 + 表格”结构；列表继续读取真实用户表，并用审计日志反推出“最后登录”列；保留创建、编辑、重置密码、启停用真实操作。
+- 已重做 [src/pages/roles.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/roles.html)：改成截图风格的角色表格，用户数由真实用户表统计，权限摘要由 `role_permissions` 聚合；新增编辑角色弹窗，并补上 [frontend-api.js](/Users/huaiyuan/Desktop/workspace/hr-plateform/frontend-api.js) 的 `updateRole` 调用。
+- 已重做 [src/pages/permissions.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/permissions.html)：改成“功能权限 / 数据权限”双标签页，功能权限矩阵读取真实 `role_permissions`，数据权限规则按真实角色、用户和数据权限记录汇总展示。
+- 已重做 [src/pages/data-permissions.html](/Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/data-permissions.html)：改成“组长数据权限 / 操作员数据权限”双分页，继续读取真实 `data_permissions`，并联动真实用户、客户、项目、岗位数据推导可访问公司、项目数、岗位数和权限粒度；新增分配权限与批量停用交互。
+- 已在 [styles.css](/Users/huaiyuan/Desktop/workspace/hr-plateform/styles.css) 补充一套统一的后台管理表格样式（页签、提示条、筛选条、表头、胶囊标签、行操作、响应式规则），保证这四页视觉与标签字典页同风格。
+- 浏览器验证：
+  - `users.html / roles.html / permissions.html / data-permissions.html` 均可打开，未出现页面头部重复；
+  - 用户页、角色页、权限页和数据权限页都能读到真实数据库记录；
+  - 数据权限页的组长/操作员两个分页都能切换，显示内容来自真实数据聚合，不是写死静态块。

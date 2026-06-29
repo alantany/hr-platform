@@ -12,58 +12,198 @@
   <div id="app"></div>
   <script>
     window.__PAGE_BODY__ = `
-      <section class="panel">
-        <div class="section-head">
-          <div><h3>角色管理</h3><div class="section-sub">定义管理员、组长、组员等角色及基础说明。</div></div>
-          <div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-role-modal">新增角色</button><button class="btn" data-action="refresh-page">刷新</button></div>
+      <section class="admin-manage-page">
+        <div class="admin-page-toolbar">
+          <div></div>
+          <button class="admin-primary-btn" type="button" data-role-page-open-create>+ 创建角色</button>
         </div>
-        <div class="list" data-role-list>
-          <div class="list-item"><div class="item-meta">角色记录来自数据库。</div></div>
-        </div>
+
+        <section class="admin-table-panel panel">
+          <div class="admin-panel-head">
+            <h3>角色列表</h3>
+          </div>
+
+          <div class="admin-table-shell">
+            <div class="admin-table-head admin-role-grid">
+              <div>角色名称</div>
+              <div>标识</div>
+              <div>用户数</div>
+              <div>功能权限</div>
+              <div>创建时间</div>
+              <div>操作</div>
+            </div>
+            <div data-role-table-body></div>
+          </div>
+        </section>
       </section>
 
-      <div class="modal" data-role-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+      <div class="modal" data-role-page-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel admin-edit-modal">
           <div class="section-head">
-            <div><h3>新增角色</h3><div class="section-sub">填写角色编码、名称和说明后确认保存。</div></div>
-            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-role-modal">取消</button><button class="btn primary" data-action="confirm-role-upload">确认保存</button></div>
+            <div><h3 data-role-page-modal-title>创建角色</h3><div class="section-sub">管理系统角色以及其功能权限模板。</div></div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" type="button" data-role-page-close-modal>取消</button>
+              <button class="btn primary" type="button" data-role-page-save-modal>确认保存</button>
+            </div>
           </div>
           <div class="grid-2">
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="panel admin-edit-card">
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">角色编码</div><div class="item-meta">如 ADMIN</div></div></div><input class="input" data-role-code /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">角色名称</div><div class="item-meta">如 管理员</div></div></div><input class="input" data-role-name /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">说明</div><div class="item-meta">角色职责说明</div></div></div><input class="input" data-role-desc /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">角色编码</div><div class="item-meta">例如 ADMIN / TEAM_LEADER</div></div></div><input class="input" data-role-form-code /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">角色名称</div><div class="item-meta">例如 超级管理员 / 组长</div></div></div><input class="input" data-role-form-name /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">说明</div><div class="item-meta">用于角色职责展示</div></div></div><textarea class="input" rows="4" style="height:auto; padding:12px;" data-role-form-desc></textarea></div>
               </div>
             </div>
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <h3>保存说明</h3>
-              <div class="list"><div class="list-item"><div class="item-meta">确认后会写入角色表并刷新列表。</div></div></div>
+            <div class="panel admin-edit-card">
+              <h3>提示</h3>
+              <div class="list">
+                <div class="list-item"><div class="item-meta">角色创建或修改后，当前页面会重新统计其绑定用户数和权限摘要。</div></div>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal" data-role-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:620px; margin:12vh auto 0; background:#fff;">
-          <div class="section-head">
-            <div><h3>角色操作确认</h3><div class="section-sub">确认后才会执行角色处理。</div></div>
-            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-role-action-modal">取消</button><button class="btn primary" data-action="confirm-role-action">确认执行</button></div>
-          </div>
-          <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title" data-role-action-title>角色操作确认</div><div class="item-meta" data-role-action-desc>点击列表按钮后会在这里显示角色名称与动作。</div></div><span class="chip warning">确认</span></div></div>
           </div>
         </div>
       </div>
     `;
+
+    const rolePageState = {
+      roles: [],
+      users: [],
+      permissions: [],
+      logs: [],
+      editingId: null,
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '—';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '—';
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function getRoleTone(code, name) {
+      const text = `${code || ''} ${name || ''}`;
+      if (text.includes('ADMIN') || text.includes('超级')) return 'tone-pink';
+      if (text.includes('LEADER') || text.includes('组长')) return 'tone-orange';
+      return 'tone-violet';
+    }
+
+    function getUserCount(role) {
+      return rolePageState.users.filter((user) => user.role === role.name).length;
+    }
+
+    function getPermissionSummary(role) {
+      const modules = rolePageState.permissions
+        .filter((item) => item.role_code === role.code && item.enabled)
+        .map((item) => item.module || item.permission_key)
+        .filter(Boolean);
+      if (!modules.length) return '暂无功能权限';
+      const unique = Array.from(new Set(modules));
+      return unique.slice(0, 3).join('、') + (unique.length > 3 ? ` 等 ${unique.length} 项` : '');
+    }
+
+    function getRoleCreatedAt(role) {
+      const match = rolePageState.logs.find((item) => item.module === '角色管理' && item.action === '新增角色' && String(item.entity_id) === String(role.id));
+      return match?.created_at || null;
+    }
+
+    function openModal(isEdit, role = null) {
+      rolePageState.editingId = role?.id || null;
+      document.querySelector('[data-role-page-modal-title]').textContent = isEdit ? '编辑角色' : '创建角色';
+      document.querySelector('[data-role-form-code]').value = role?.code || '';
+      document.querySelector('[data-role-form-name]').value = role?.name || '';
+      document.querySelector('[data-role-form-desc]').value = role?.description || '';
+      document.querySelector('[data-role-form-code]').readOnly = Boolean(isEdit);
+      const modal = document.querySelector('[data-role-page-modal]');
+      if (modal) modal.style.display = 'block';
+    }
+
+    function closeModal() {
+      const modal = document.querySelector('[data-role-page-modal]');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function renderRolesTable() {
+      const body = document.querySelector('[data-role-table-body]');
+      if (!body) return;
+      body.innerHTML = rolePageState.roles.map((role) => `
+        <div class="admin-table-row admin-role-grid">
+          <div class="admin-row-strong">${escapeHtml(role.name)}</div>
+          <div><span class="admin-pill ${getRoleTone(role.code, role.name)}">${escapeHtml(role.code)}</span></div>
+          <div>${getUserCount(role)}</div>
+          <div>${escapeHtml(getPermissionSummary(role))}</div>
+          <div>${escapeHtml(formatDateTime(getRoleCreatedAt(role)))}</div>
+          <div class="admin-inline-actions">
+            <a class="admin-text-link" href="./permissions.html?role_code=${encodeURIComponent(role.code)}">配置权限</a>
+            <button type="button" class="admin-text-link" data-role-page-edit="${role.id}">编辑</button>
+          </div>
+        </div>
+      `).join('') || '<div class="admin-empty-state">暂无角色记录。</div>';
+    }
+
+    async function loadRolePageData() {
+      const [roles, users, permissions, logs] = await Promise.all([
+        window.hrApi.roles(),
+        window.hrApi.users(),
+        window.hrApi.rolePermissions(),
+        window.hrApi.auditLogs({ module: '角色管理' }).catch(() => []),
+      ]);
+      rolePageState.roles = roles;
+      rolePageState.users = users;
+      rolePageState.permissions = permissions;
+      rolePageState.logs = Array.isArray(logs) ? logs : [];
+      renderRolesTable();
+    }
+
+    async function saveRole() {
+      const code = document.querySelector('[data-role-form-code]').value.trim().toUpperCase();
+      const name = document.querySelector('[data-role-form-name]').value.trim();
+      const description = document.querySelector('[data-role-form-desc]').value.trim();
+      if (!code || !name) throw new Error('请先填写角色编码和角色名称');
+      if (rolePageState.editingId) {
+        await window.hrApi.updateRole(rolePageState.editingId, { name, description });
+        showToast('角色已更新');
+      } else {
+        await window.hrApi.createRole({ code, name, description });
+        showToast('角色已创建');
+      }
+      closeModal();
+      await loadRolePageData();
+    }
+
+    function bindRolePageEvents() {
+      document.addEventListener('click', async (event) => {
+        if (event.target.closest('[data-role-page-open-create]')) {
+          openModal(false);
+          return;
+        }
+        if (event.target.closest('[data-role-page-close-modal]')) {
+          closeModal();
+          return;
+        }
+        if (event.target.closest('[data-role-page-save-modal]')) {
+          try { await saveRole(); } catch (error) { showToast(error.message || '保存失败'); }
+          return;
+        }
+        const editButton = event.target.closest('[data-role-page-edit]');
+        if (editButton) {
+          const role = rolePageState.roles.find((item) => item.id === Number(editButton.dataset.rolePageEdit));
+          openModal(true, role);
+        }
+      });
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
+      bindRolePageEvents();
       try {
-        const items = await window.hrApi.roles();
-        const list = document.querySelector('[data-role-list]');
-        if (list) list.innerHTML = items.map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">${r.name}</div><div class="item-meta">${r.code} · ${r.description}</div></div><div class="table-actions"><button class="btn-sm" data-action="toggle-role" data-id="${r.id}">状态</button><button class="btn-sm" data-action="delete-role" data-id="${r.id}">删除</button></div><span class="chip primary">角色</span></div></div>`).join('');
-      } catch (err) {
-        console.warn(err);
+        await loadRolePageData();
+      } catch (error) {
+        console.warn(error);
+        showToast('角色列表加载失败');
       }
     });
   </script>

@@ -1553,3 +1553,10 @@
 - 这套 runtime Git 的配置里没有 `credential.helper=osxkeychain`，且本机也找不到 `git-credential-osxkeychain` 可执行文件，因此它无法走 macOS 钥匙串里的 GitHub HTTPS 凭证链。
 - 系统自带的 `/usr/bin/git` 会读取 `/Library/Developer/CommandLineTools/usr/share/git-core/gitconfig`，其中包含 `credential.helper=osxkeychain`，因此可以复用用户钥匙串里的 GitHub 凭证完成 `git push`。
 - 这解释了“用户手工推送成功，但 Codex 有时推送失败”的现象：是否成功取决于执行时用的是哪一套 Git。后续凡是需要代用户推送远端，应优先显式使用 `/usr/bin/git`。
+
+## 2026-06-29（用户与权限管理页改版）
+
+- `users.html / roles.html / permissions.html / data-permissions.html` 这四页都应继续复用真实接口，不再写死演示列表；页面只是改展示结构，不改其后端边界。
+- 当前真实模型里，`User` 只有账号、姓名、角色、启停状态、直属组长等字段，没有手机号、邮箱、最后登录时间这类独立列；因此“最后登录”需要从审计日志里的“认证登录 / 用户登录”记录反推，联系方式不能伪造为数据库字段。
+- `Role` 与 `RolePermission` 的真实关系足够支撑“角色列表 + 功能权限矩阵”页面：角色页的“用户数”可由用户表按 `role=name` 统计，功能权限页则直接读取 `role_permissions` 表。
+- `DataPermission` 只有 `user_id / scope_type / scope_id / scope_name / granted_by / active` 这些原子记录，组长/操作员数据权限页需要在前端基于真实 `users / companies / projects / positions / data_permissions` 联合推导出“可访问公司、项目数、岗位数、权限粒度”等聚合展示，而不能写死静态看板数据。

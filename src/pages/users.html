@@ -12,95 +12,410 @@
   <div id="app"></div>
   <script>
     window.__PAGE_BODY__ = `
-      <section class="metrics">
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">用户总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-user-total>0</div><div class="metric-label">系统账号</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">在线用户</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-user-active>0</div><div class="metric-label">当前活跃</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">待审批</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-user-pending>0</div><div class="metric-label">待激活账号</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">组长数</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-user-leader>0</div><div class="metric-label">团队管理者</div></div>
-      </section>
-      <section class="panel">
-        <div class="section-head">
-          <div><h3>用户管理</h3><div class="section-sub">系统内部账号、角色和组织归属。</div></div>
-          <div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-user-modal">新增用户</button><button class="btn" data-action="refresh-page">刷新</button></div>
+      <section class="admin-manage-page">
+        <div class="admin-page-toolbar">
+          <div></div>
+          <button class="admin-primary-btn" type="button" data-user-page-open-create>+ 创建用户</button>
         </div>
-        <div class="list" data-user-list>
-          <div class="list-item"><div class="item-meta">用户账号来自数据库。</div></div>
-        </div>
+
+        <section class="admin-table-panel panel">
+          <div class="admin-panel-head">
+            <h3>用户列表</h3>
+            <div class="admin-filter-row">
+              <input class="input admin-filter-input" data-user-search placeholder="搜索用户名/姓名..." />
+              <select class="input admin-filter-select" data-user-role-filter></select>
+              <select class="input admin-filter-select" data-user-status-filter>
+                <option value="">全部状态</option>
+                <option value="active">启用</option>
+                <option value="inactive">停用</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="admin-table-shell">
+            <div class="admin-table-head admin-user-grid">
+              <div><input type="checkbox" class="admin-checkbox" disabled /></div>
+              <div>用户名</div>
+              <div>姓名</div>
+              <div>角色</div>
+              <div>直属关系</div>
+              <div>状态</div>
+              <div>最后登录</div>
+              <div>操作</div>
+            </div>
+            <div data-user-table-body></div>
+          </div>
+        </section>
       </section>
 
-      <div class="modal" data-user-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+      <div class="modal" data-user-page-create-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel admin-edit-modal">
           <div class="section-head">
-            <div><h3>新增用户</h3><div class="section-sub">填写账号、姓名和角色后确认保存。</div></div>
-            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-user-modal">取消</button><button class="btn primary" data-action="confirm-user-upload">确认保存</button></div>
+            <div><h3>创建用户</h3><div class="section-sub">填写账号、姓名和角色后保存到数据库。</div></div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" type="button" data-user-page-close-create>取消</button>
+              <button class="btn primary" type="button" data-user-page-save-create>确认保存</button>
+            </div>
           </div>
           <div class="grid-2">
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="panel admin-edit-card">
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">登录账号</div></div></div><input class="input" data-user-username /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">真实姓名</div></div></div><input class="input" data-user-fullname /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">角色</div><div class="item-meta">默认操作员</div></div></div><input class="input" data-user-role value="操作员" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">直属组长ID</div><div class="item-meta">操作员填写所属组长用户ID</div></div></div><input class="input" data-user-manager-id placeholder="例如 2" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">密码</div><div class="item-meta">默认 dev</div></div></div><input class="input" type="password" data-user-password value="dev" /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">登录账号</div></div></div><input class="input" data-user-form-username /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">系统展示名称</div></div></div><input class="input" data-user-form-fullname /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">角色</div><div class="item-meta">决定可见菜单与权限</div></div></div><select class="input" data-user-form-role></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">直属组长</div><div class="item-meta">操作员可选所属组长</div></div></div><select class="input" data-user-form-manager><option value="">无</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">初始密码</div><div class="item-meta">默认 dev</div></div></div><input class="input" type="password" data-user-form-password value="dev" /></div>
               </div>
             </div>
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="panel admin-edit-card">
               <h3>保存说明</h3>
-              <div class="list"><div class="list-item"><div class="item-meta">确认后会写入用户表并刷新列表。</div></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal" data-user-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
-          <div class="section-head">
-            <div><h3>编辑用户</h3><div class="section-sub">用户名不可修改，保存后会同步到数据库并重新计算角色归属。</div></div>
-            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-user-edit-modal">取消</button><button class="btn primary" data-action="confirm-user-edit">确认保存</button></div>
-          </div>
-          <div class="grid-2">
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">登录账号，不支持修改</div></div></div><input class="input" data-user-edit-username readonly /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">展示在系统右上角和列表中</div></div></div><input class="input" data-user-edit-fullname /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">角色</div><div class="item-meta">修改后会影响菜单和权限范围</div></div></div><input class="input" data-user-edit-role /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">直属组长ID</div><div class="item-meta">为空表示不属于任何组长</div></div></div><input class="input" data-user-edit-manager-id /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">启用后允许登录</div></div></div><input class="input" data-user-edit-active /></div>
+                <div class="list-item"><div class="item-meta">创建后立即出现在用户列表中，并沿用真实角色权限体系。</div></div>
               </div>
             </div>
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <h3>编辑说明</h3>
-              <div class="list"><div class="list-item"><div class="item-meta">保存后会刷新用户列表和统计，并留下审计日志。</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-user-page-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel admin-edit-modal">
+          <div class="section-head">
+            <div><h3>编辑用户</h3><div class="section-sub">修改后会同步刷新当前列表。</div></div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" type="button" data-user-page-close-edit>取消</button>
+              <button class="btn primary" type="button" data-user-page-save-edit>确认保存</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="panel admin-edit-card">
+              <div class="list">
+                <div class="list-item"><div class="item-top"><div><div class="item-title">用户名</div><div class="item-meta">账号不可修改</div></div></div><input class="input" data-user-edit-username readonly /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">显示在导航与列表中</div></div></div><input class="input" data-user-edit-fullname /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">角色</div><div class="item-meta">切换角色会影响权限范围</div></div></div><select class="input" data-user-edit-role></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">直属组长</div><div class="item-meta">用于操作员归属</div></div></div><select class="input" data-user-edit-manager><option value="">无</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">状态</div><div class="item-meta">启用后允许登录</div></div></div><select class="input" data-user-edit-active><option value="true">启用</option><option value="false">停用</option></select></div>
+              </div>
+            </div>
+            <div class="panel admin-edit-card">
+              <h3>提示</h3>
+              <div class="list">
+                <div class="list-item"><div class="item-meta">当前页面仍然读取真实用户表，不额外写死演示数据。</div></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="modal" data-user-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:620px; margin:12vh auto 0; background:#fff;">
+      <div class="modal" data-user-page-password-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:560px; margin:14vh auto 0; background:#fff;">
           <div class="section-head">
-            <div><h3>用户状态确认</h3><div class="section-sub">确认后才会启用或停用该账号。</div></div>
-            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-user-action-modal">取消</button><button class="btn primary" data-action="confirm-user-action">确认执行</button></div>
+            <div><h3>重置密码</h3><div class="section-sub">为当前用户设置新的登录密码。</div></div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" type="button" data-user-page-close-password>取消</button>
+              <button class="btn primary" type="button" data-user-page-save-password>确认保存</button>
+            </div>
           </div>
           <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title" data-user-action-title>用户状态确认</div><div class="item-meta" data-user-action-desc>点击列表按钮后会在这里显示用户名称与动作。</div></div><span class="chip warning">确认</span></div></div>
+            <div class="list-item"><div class="item-top"><div><div class="item-title">新密码</div><div class="item-meta">默认 dev</div></div></div><input class="input" type="password" data-user-password-value value="dev" /></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" data-user-page-confirm-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:560px; margin:14vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div><h3>操作确认</h3><div class="section-sub">确认后会立即写入数据库。</div></div>
+            <div class="hero-actions" style="margin-top:0">
+              <button class="btn" type="button" data-user-page-close-confirm>取消</button>
+              <button class="btn primary" type="button" data-user-page-run-confirm>确认执行</button>
+            </div>
+          </div>
+          <div class="list">
+            <div class="list-item"><div class="item-top"><div><div class="item-title" data-user-confirm-title>状态确认</div><div class="item-meta" data-user-confirm-desc>确认后执行对应动作。</div></div><span class="chip warning">确认</span></div></div>
           </div>
         </div>
       </div>
     `;
+
+    const userPageState = {
+      users: [],
+      roles: [],
+      loginLogs: [],
+      search: '',
+      roleFilter: '',
+      statusFilter: '',
+      editingId: null,
+      passwordUserId: null,
+      confirmAction: null,
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '—';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '—';
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function getRoleTone(role) {
+      if (String(role).includes('超级') || String(role).toUpperCase().includes('ADMIN')) return 'tone-pink';
+      if (String(role).includes('组长') || String(role).toUpperCase().includes('LEADER')) return 'tone-orange';
+      return 'tone-violet';
+    }
+
+    function getManagerName(user) {
+      if (!user.manager_user_id) return '—';
+      const manager = userPageState.users.find((item) => item.id === Number(user.manager_user_id));
+      return manager ? `${manager.full_name} / ${manager.username}` : `直属组长ID ${user.manager_user_id}`;
+    }
+
+    function getLastLoginMap() {
+      const map = new Map();
+      userPageState.loginLogs
+        .filter((item) => item.module === '认证登录' && item.action === '用户登录')
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+        .forEach((item) => {
+          const userId = Number(item.entity_id || 0);
+          if (userId && !map.has(userId)) map.set(userId, item.created_at);
+        });
+      return map;
+    }
+
+    function getFilteredUsers() {
+      return userPageState.users.filter((user) => {
+        const keyword = userPageState.search.trim().toLowerCase();
+        if (keyword) {
+          const hit = [user.username, user.full_name].some((field) => String(field || '').toLowerCase().includes(keyword));
+          if (!hit) return false;
+        }
+        if (userPageState.roleFilter && user.role !== userPageState.roleFilter) return false;
+        if (userPageState.statusFilter === 'active' && !user.is_active) return false;
+        if (userPageState.statusFilter === 'inactive' && user.is_active) return false;
+        return true;
+      });
+    }
+
+    function renderUserRoleOptions() {
+      const options = ['<option value="">全部角色</option>']
+        .concat(userPageState.roles.map((role) => `<option value="${escapeHtml(role.name)}">${escapeHtml(role.name)}</option>`))
+        .join('');
+      const filter = document.querySelector('[data-user-role-filter]');
+      if (filter) {
+        filter.innerHTML = options;
+        filter.value = userPageState.roleFilter;
+      }
+      const roleOptions = userPageState.roles.map((role) => `<option value="${escapeHtml(role.name)}">${escapeHtml(role.name)}</option>`).join('');
+      ['[data-user-form-role]', '[data-user-edit-role]'].forEach((selector) => {
+        const select = document.querySelector(selector);
+        if (select) select.innerHTML = roleOptions;
+      });
+    }
+
+    function renderManagerOptions() {
+      const leaders = userPageState.users.filter((item) => String(item.role).includes('组长') || String(item.role).includes('主管'));
+      const options = ['<option value="">无</option>']
+        .concat(leaders.map((item) => `<option value="${item.id}">${escapeHtml(item.full_name)} / ${escapeHtml(item.username)}</option>`))
+        .join('');
+      ['[data-user-form-manager]', '[data-user-edit-manager]'].forEach((selector) => {
+        const select = document.querySelector(selector);
+        if (select) select.innerHTML = options;
+      });
+    }
+
+    function renderUsersTable() {
+      const body = document.querySelector('[data-user-table-body]');
+      if (!body) return;
+      const lastLoginMap = getLastLoginMap();
+      const rows = getFilteredUsers().map((user) => `
+        <div class="admin-table-row admin-user-grid">
+          <div><input type="checkbox" class="admin-checkbox" /></div>
+          <div class="admin-row-strong">${escapeHtml(user.username)}</div>
+          <div>${escapeHtml(user.full_name)}</div>
+          <div><span class="admin-pill ${getRoleTone(user.role)}">${escapeHtml(user.role)}</span></div>
+          <div>${escapeHtml(getManagerName(user))}</div>
+          <div><span class="admin-pill ${user.is_active ? 'tone-green' : 'tone-slate'}">${user.is_active ? '启用' : '停用'}</span></div>
+          <div>${escapeHtml(formatDateTime(lastLoginMap.get(user.id)))}</div>
+          <div class="admin-inline-actions">
+            <button type="button" class="admin-text-link" data-user-page-edit="${user.id}">编辑</button>
+            <button type="button" class="admin-text-link" data-user-page-password="${user.id}">重置密码</button>
+            <button type="button" class="admin-text-link ${user.is_active ? 'danger' : ''}" data-user-page-toggle="${user.id}">${user.is_active ? '禁用' : '启用'}</button>
+          </div>
+        </div>
+      `).join('');
+      body.innerHTML = rows || '<div class="admin-empty-state">暂无符合条件的用户。</div>';
+    }
+
+    function resetCreateModal() {
+      document.querySelector('[data-user-form-username]').value = '';
+      document.querySelector('[data-user-form-fullname]').value = '';
+      document.querySelector('[data-user-form-role]').value = userPageState.roles[0]?.name || '操作员';
+      document.querySelector('[data-user-form-manager]').value = '';
+      document.querySelector('[data-user-form-password]').value = 'dev';
+    }
+
+    function openModal(selector) {
+      const modal = document.querySelector(selector);
+      if (modal) modal.style.display = 'block';
+    }
+
+    function closeModal(selector) {
+      const modal = document.querySelector(selector);
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function loadUserPageData() {
+      const [users, roles, logs] = await Promise.all([
+        window.hrApi.users(),
+        window.hrApi.roles(),
+        window.hrApi.auditLogs({ module: '认证登录' }).catch(() => []),
+      ]);
+      userPageState.users = users;
+      userPageState.roles = roles;
+      userPageState.loginLogs = Array.isArray(logs) ? logs : [];
+      renderUserRoleOptions();
+      renderManagerOptions();
+      renderUsersTable();
+    }
+
+    async function handleCreateUser() {
+      const payload = {
+        username: document.querySelector('[data-user-form-username]').value.trim(),
+        full_name: document.querySelector('[data-user-form-fullname]').value.trim(),
+        role: document.querySelector('[data-user-form-role]').value,
+        manager_user_id: Number(document.querySelector('[data-user-form-manager]').value || 0) || null,
+        password_hash: document.querySelector('[data-user-form-password]').value || 'dev',
+      };
+      if (!payload.username || !payload.full_name) throw new Error('请先填写用户名和姓名');
+      await window.hrApi.createUser(payload);
+      closeModal('[data-user-page-create-modal]');
+      await loadUserPageData();
+      showToast('用户已创建');
+    }
+
+    function openEditModal(userId) {
+      const user = userPageState.users.find((item) => item.id === Number(userId));
+      if (!user) return;
+      userPageState.editingId = user.id;
+      document.querySelector('[data-user-edit-username]').value = user.username || '';
+      document.querySelector('[data-user-edit-fullname]').value = user.full_name || '';
+      document.querySelector('[data-user-edit-role]').value = user.role || '';
+      document.querySelector('[data-user-edit-manager]').value = user.manager_user_id ? String(user.manager_user_id) : '';
+      document.querySelector('[data-user-edit-active]').value = String(Boolean(user.is_active));
+      openModal('[data-user-page-edit-modal]');
+    }
+
+    async function handleEditUser() {
+      if (!userPageState.editingId) return;
+      const payload = {
+        full_name: document.querySelector('[data-user-edit-fullname]').value.trim(),
+        role: document.querySelector('[data-user-edit-role]').value,
+        manager_user_id: Number(document.querySelector('[data-user-edit-manager]').value || 0) || null,
+        is_active: document.querySelector('[data-user-edit-active]').value === 'true',
+      };
+      if (!payload.full_name) throw new Error('请先填写姓名');
+      await window.hrApi.updateUser(userPageState.editingId, payload);
+      closeModal('[data-user-page-edit-modal]');
+      await loadUserPageData();
+      showToast('用户已更新');
+    }
+
+    function openPasswordModal(userId) {
+      userPageState.passwordUserId = Number(userId);
+      document.querySelector('[data-user-password-value]').value = 'dev';
+      openModal('[data-user-page-password-modal]');
+    }
+
+    async function handleResetPassword() {
+      if (!userPageState.passwordUserId) return;
+      const password = document.querySelector('[data-user-password-value]').value || 'dev';
+      await window.hrApi.resetUserPassword(userPageState.passwordUserId, { password_hash: password });
+      closeModal('[data-user-page-password-modal]');
+      showToast('密码已重置');
+    }
+
+    function openConfirmModal(userId) {
+      const user = userPageState.users.find((item) => item.id === Number(userId));
+      if (!user) return;
+      userPageState.confirmAction = { type: 'toggle', userId: user.id };
+      document.querySelector('[data-user-confirm-title]').textContent = `${user.is_active ? '禁用' : '启用'}用户`;
+      document.querySelector('[data-user-confirm-desc]').textContent = `确认后会${user.is_active ? '禁用' : '启用'}账号 ${user.full_name} / ${user.username}。`;
+      openModal('[data-user-page-confirm-modal]');
+    }
+
+    async function runConfirmAction() {
+      if (!userPageState.confirmAction) return;
+      if (userPageState.confirmAction.type === 'toggle') {
+        await window.hrApi.toggleUser(userPageState.confirmAction.userId);
+        await loadUserPageData();
+        showToast('用户状态已更新');
+      }
+      closeModal('[data-user-page-confirm-modal]');
+      userPageState.confirmAction = null;
+    }
+
+    function bindUserPageEvents() {
+      document.querySelector('[data-user-search]')?.addEventListener('input', (event) => {
+        userPageState.search = event.target.value || '';
+        renderUsersTable();
+      });
+      document.querySelector('[data-user-role-filter]')?.addEventListener('change', (event) => {
+        userPageState.roleFilter = event.target.value || '';
+        renderUsersTable();
+      });
+      document.querySelector('[data-user-status-filter]')?.addEventListener('change', (event) => {
+        userPageState.statusFilter = event.target.value || '';
+        renderUsersTable();
+      });
+
+      document.addEventListener('click', async (event) => {
+        const createButton = event.target.closest('[data-user-page-open-create]');
+        if (createButton) {
+          resetCreateModal();
+          openModal('[data-user-page-create-modal]');
+          return;
+        }
+        if (event.target.closest('[data-user-page-close-create]')) return closeModal('[data-user-page-create-modal]');
+        if (event.target.closest('[data-user-page-close-edit]')) return closeModal('[data-user-page-edit-modal]');
+        if (event.target.closest('[data-user-page-close-password]')) return closeModal('[data-user-page-password-modal]');
+        if (event.target.closest('[data-user-page-close-confirm]')) return closeModal('[data-user-page-confirm-modal]');
+
+        if (event.target.closest('[data-user-page-save-create]')) {
+          try { await handleCreateUser(); } catch (error) { showToast(error.message || '创建失败'); }
+          return;
+        }
+        if (event.target.closest('[data-user-page-save-edit]')) {
+          try { await handleEditUser(); } catch (error) { showToast(error.message || '保存失败'); }
+          return;
+        }
+        if (event.target.closest('[data-user-page-save-password]')) {
+          try { await handleResetPassword(); } catch (error) { showToast(error.message || '重置失败'); }
+          return;
+        }
+        if (event.target.closest('[data-user-page-run-confirm]')) {
+          try { await runConfirmAction(); } catch (error) { showToast(error.message || '操作失败'); }
+          return;
+        }
+
+        const editButton = event.target.closest('[data-user-page-edit]');
+        if (editButton) return openEditModal(editButton.dataset.userPageEdit);
+        const passwordButton = event.target.closest('[data-user-page-password]');
+        if (passwordButton) return openPasswordModal(passwordButton.dataset.userPagePassword);
+        const toggleButton = event.target.closest('[data-user-page-toggle]');
+        if (toggleButton) return openConfirmModal(toggleButton.dataset.userPageToggle);
+      });
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
+      bindUserPageEvents();
       try {
-        const items = await window.hrApi.users();
-        const total = document.querySelector('[data-user-total]');
-        const list = document.querySelector('[data-user-list]');
-        if (total) total.textContent = String(items.length);
-        document.querySelector('[data-user-active]').textContent = String(items.filter(u => u.is_active).length);
-        document.querySelector('[data-user-pending]').textContent = String(items.filter(u => !u.is_active).length);
-        document.querySelector('[data-user-leader]').textContent = String(items.filter(u => String(u.role).includes('组长') || String(u.role).includes('主管')).length);
-        if (list) list.innerHTML = items.map(u => `<div class="list-item"><div class="item-top"><div><div class="item-title">${u.username}</div><div class="item-meta">${u.full_name} · ${u.role}${u.manager_user_id ? ' · 直属组长ID ' + u.manager_user_id : ''}</div></div><div class="table-actions"><button class="btn-sm" data-action="edit-user" data-id="${u.id}">编辑</button><button class="btn-sm" data-action="toggle-user" data-id="${u.id}">${u.is_active ? '停用' : '启用'}</button><button class="btn-sm" data-action="reset-user-password" data-id="${u.id}">重置密码</button></div><span class="chip ${u.is_active ? 'success' : 'neutral'}">${u.is_active ? '启用' : '停用'}</span></div></div>`).join('');
-      } catch (err) {
-        console.warn(err);
+        await loadUserPageData();
+      } catch (error) {
+        console.warn(error);
+        showToast('用户列表加载失败');
       }
     });
   </script>

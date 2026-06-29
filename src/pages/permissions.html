@@ -12,73 +12,297 @@
   <div id="app"></div>
   <script>
     window.__PAGE_BODY__ = `
-      <section class="metrics">
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">功能权限</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-permission-total>0</div><div class="metric-label">角色权限记录</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">数据权限</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-permission-data>0</div><div class="metric-label">真实范围记录</div></div>
-      </section>
-      <section class="grid-2">
-        <div class="panel">
-          <div class="section-head">
-            <div><h3>功能权限</h3><div class="section-sub">菜单、按钮和操作权限。</div></div>
-            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="open-role-permission-modal">保存权限</button></div>
+      <section class="admin-manage-page">
+        <section class="admin-note-banner">
+          <span>📍</span>
+          <div>权限控制模型：用户 → 角色 → 功能权限（菜单/操作按钮）｜数据权限（公司 → 项目 → 岗位）</div>
+        </section>
+
+        <nav class="admin-tabbar" data-permission-page-tabs>
+          <button type="button" class="admin-tabbar-btn is-active" data-permission-tab="function">功能权限</button>
+          <button type="button" class="admin-tabbar-btn" data-permission-tab="data">数据权限</button>
+        </nav>
+
+        <section class="admin-table-panel panel" data-permission-function-panel>
+          <div class="admin-panel-head">
+            <h3>功能权限矩阵</h3>
+            <button class="admin-primary-btn admin-primary-btn--small" type="button" data-permission-page-open-modal>+ 添加权限</button>
           </div>
-          <div class="list" data-role-permission-list>
-            <div class="list-item"><div class="item-meta">角色权限记录来自数据库。</div></div>
+          <div class="admin-table-shell">
+            <div class="admin-table-head admin-permission-grid">
+              <div>权限名称</div>
+              <div>类型</div>
+              <div>所属模块</div>
+              <div>关联角色</div>
+              <div>操作</div>
+            </div>
+            <div data-permission-function-body></div>
           </div>
-        </div>
-        <div class="panel">
-          <h3>数据权限</h3>
-          <div class="list" data-data-permission-list>
-            <div class="list-item"><div class="item-meta">数据权限记录来自数据库。</div></div>
+        </section>
+
+        <section class="admin-table-panel panel" data-permission-data-panel style="display:none;">
+          <div class="admin-panel-head">
+            <h3>数据权限规则</h3>
           </div>
-        </div>
+          <div class="admin-table-shell">
+            <div class="admin-table-head admin-permission-data-grid">
+              <div>角色</div>
+              <div>数据范围</div>
+              <div>粒度</div>
+              <div>说明</div>
+            </div>
+            <div data-permission-data-body></div>
+          </div>
+        </section>
       </section>
 
-      <div class="modal" data-role-permission-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
-        <div class="panel" style="max-width:760px; margin:6vh auto 0; background:#fff;">
+      <div class="modal" data-permission-page-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel admin-edit-modal">
           <div class="section-head">
-            <div>
-              <h3>保存功能权限</h3>
-              <div class="section-sub">填写角色和权限信息后确认保存。</div>
-            </div>
+            <div><h3>保存功能权限</h3><div class="section-sub">保存到真实角色权限表。</div></div>
             <div class="hero-actions" style="margin-top:0">
-              <button class="btn" data-action="close-role-permission-modal">取消</button>
-              <button class="btn primary" data-action="confirm-role-permission-upload">确认保存</button>
+              <button class="btn" type="button" data-permission-page-close-modal>取消</button>
+              <button class="btn primary" type="button" data-permission-page-save-modal>确认保存</button>
             </div>
           </div>
           <div class="grid-2">
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
+            <div class="panel admin-edit-card">
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">角色编码</div><div class="item-meta">例如 ADMIN</div></div></div><input class="input" data-role-permission-role value="ADMIN" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">权限标识</div><div class="item-meta">例如 page:permissions</div></div></div><input class="input" data-role-permission-key value="page:permissions" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">权限类型</div><div class="item-meta">菜单、按钮或操作</div></div></div><select class="input" data-role-permission-type><option value="menu">menu</option><option value="button">button</option><option value="action">action</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">模块名称</div><div class="item-meta">用于页面展示</div></div></div><input class="input" data-role-permission-module value="权限管理" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">启用状态</div><div class="item-meta">默认启用</div></div></div><select class="input" data-role-permission-enabled><option value="true">启用</option><option value="false">停用</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">关联角色</div><div class="item-meta">选择要保存权限的角色</div></div></div><select class="input" data-permission-form-role></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">权限标识</div><div class="item-meta">例如 page:permissions / action:create-company</div></div></div><input class="input" data-permission-form-key /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">权限类型</div><div class="item-meta">菜单、按钮或操作</div></div></div><select class="input" data-permission-form-type><option value="menu">菜单</option><option value="button">按钮</option><option value="action">操作</option></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">所属模块</div><div class="item-meta">例如 系统设置 / 求职者 / 客户管理</div></div></div><input class="input" data-permission-form-module /></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">启用状态</div><div class="item-meta">控制当前权限是否生效</div></div></div><select class="input" data-permission-form-enabled><option value="true">启用</option><option value="false">停用</option></select></div>
               </div>
             </div>
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <h3>保存说明</h3>
-              <div class="list"><div class="list-item"><div class="item-meta">确认后会写入角色权限表并刷新列表。</div></div></div>
+            <div class="panel admin-edit-card">
+              <h3>当前说明</h3>
+              <div class="list">
+                <div class="list-item"><div class="item-meta">功能权限页展示的数据全部来自 role_permissions 表，并按角色真实关联显示。</div></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     `;
+
+    const permissionPageState = {
+      tab: 'function',
+      roles: [],
+      permissions: [],
+      users: [],
+      dataPermissions: [],
+      editingPermission: null,
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    function getRoleName(roleCode) {
+      return permissionPageState.roles.find((item) => item.code === roleCode)?.name || roleCode;
+    }
+
+    function getRoleTone(roleCodeOrName) {
+      const text = String(roleCodeOrName || '');
+      if (text.includes('ADMIN') || text.includes('超级')) return 'tone-pink';
+      if (text.includes('LEADER') || text.includes('组长')) return 'tone-orange';
+      return 'tone-violet';
+    }
+
+    function getPermissionTone(type) {
+      if (type === 'menu') return 'tone-violet';
+      if (type === 'button') return 'tone-softviolet';
+      return 'tone-orange';
+    }
+
+    function formatPermissionType(type) {
+      return ({ menu: '菜单', button: '按钮', action: '操作' }[type] || type || '—');
+    }
+
+    function prettyPermissionName(key) {
+      if (!key) return '未命名权限';
+      const nameMap = {
+        'page:dashboard': '查看数据看板',
+        'page:candidates': '查看求职者数据池',
+        'page:dictionary': '标签字典管理',
+        'page:users': '用户管理',
+        'page:roles': '角色管理',
+        'page:permissions': '权限管理',
+        'page:data-permissions': '数据权限',
+        'action:create-company': '创建客户公司',
+        'action:assign-operator': '分配操作员权限',
+      };
+      if (nameMap[key]) return nameMap[key];
+      const raw = key.split(':').slice(1).join(':') || key;
+      return raw.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    function renderPermissionRoleOptions(selectedRoleCode = '') {
+      const select = document.querySelector('[data-permission-form-role]');
+      if (!select) return;
+      select.innerHTML = permissionPageState.roles.map((role) => `<option value="${escapeHtml(role.code)}">${escapeHtml(role.name)} / ${escapeHtml(role.code)}</option>`).join('');
+      select.value = selectedRoleCode || permissionPageState.roles[0]?.code || '';
+    }
+
+    function openPermissionModal(permission = null) {
+      permissionPageState.editingPermission = permission;
+      renderPermissionRoleOptions(permission?.role_code || new URLSearchParams(location.search).get('role_code') || '');
+      document.querySelector('[data-permission-form-key]').value = permission?.permission_key || '';
+      document.querySelector('[data-permission-form-type]').value = permission?.permission_type || 'menu';
+      document.querySelector('[data-permission-form-module]').value = permission?.module || '';
+      document.querySelector('[data-permission-form-enabled]').value = String(permission?.enabled ?? true);
+      document.querySelector('[data-permission-page-modal]').style.display = 'block';
+    }
+
+    function closePermissionModal() {
+      document.querySelector('[data-permission-page-modal]').style.display = 'none';
+    }
+
+    function aggregatePermissionRows() {
+      const grouped = new Map();
+      permissionPageState.permissions.forEach((item) => {
+        const key = `${item.permission_key}__${item.permission_type}__${item.module}`;
+        if (!grouped.has(key)) grouped.set(key, { ...item, roles: [] });
+        grouped.get(key).roles.push(item.role_code);
+      });
+      return Array.from(grouped.values()).sort((a, b) => String(a.module || a.permission_key).localeCompare(String(b.module || b.permission_key), 'zh-CN'));
+    }
+
+    function renderFunctionPermissions() {
+      const body = document.querySelector('[data-permission-function-body]');
+      if (!body) return;
+      body.innerHTML = aggregatePermissionRows().map((item) => `
+        <div class="admin-table-row admin-permission-grid">
+          <div>${escapeHtml(prettyPermissionName(item.permission_key))}</div>
+          <div><span class="admin-pill ${getPermissionTone(item.permission_type)}">${escapeHtml(formatPermissionType(item.permission_type))}</span></div>
+          <div>${escapeHtml(item.module || '未分组')}</div>
+          <div>${item.roles.map((roleCode) => `<span class="admin-mini-chip ${getRoleTone(roleCode)}">${escapeHtml(getRoleName(roleCode))}</span>`).join(' ')}</div>
+          <div class="admin-inline-actions"><button type="button" class="admin-text-link" data-permission-page-edit="${escapeHtml(item.permission_key)}" data-permission-page-module="${escapeHtml(item.module || '')}" data-permission-page-type="${escapeHtml(item.permission_type || '')}">编辑</button></div>
+        </div>
+      `).join('') || '<div class="admin-empty-state">暂无功能权限记录。</div>';
+    }
+
+    function getRoleRuleRows() {
+      return permissionPageState.roles.map((role) => {
+        const roleUsers = permissionPageState.users.filter((user) => user.role === role.name);
+        const userIds = new Set(roleUsers.map((user) => user.id));
+        const activePermissions = permissionPageState.dataPermissions.filter((item) => item.active && userIds.has(item.user_id));
+        if (role.code === 'ADMIN' || role.name.includes('超级')) {
+          return {
+            role,
+            range: '全部数据',
+            granularity: '无限制',
+            desc: '管理员角色默认可访问全量数据，无需额外数据范围限制。',
+          };
+        }
+        const scopes = Array.from(new Set(activePermissions.map((item) => item.scope_type)));
+        const scopeLabelMap = { company: '授权公司', project: '授权项目', position: '授权岗位' };
+        const granularityMap = { company: '公司级', project: '项目级', position: '岗位级' };
+        return {
+          role,
+          range: scopes.length ? scopes.map((scope) => scopeLabelMap[scope] || scope).join(' / ') : '暂无授权',
+          granularity: scopes.length ? Array.from(new Set(scopes.map((scope) => granularityMap[scope] || scope))).join(' / ') : '未配置',
+          desc: activePermissions.length
+            ? `${activePermissions.length} 条有效数据权限记录，覆盖 ${activePermissions.map((item) => item.scope_name || item.scope_id).filter(Boolean).slice(0, 3).join('、')}${activePermissions.length > 3 ? ' 等范围' : ''}。`
+            : '当前角色尚未配置可见范围。',
+        };
+      });
+    }
+
+    function renderDataRules() {
+      const body = document.querySelector('[data-permission-data-body]');
+      if (!body) return;
+      body.innerHTML = getRoleRuleRows().map((item) => `
+        <div class="admin-table-row admin-permission-data-grid">
+          <div><span class="admin-pill ${getRoleTone(item.role.code || item.role.name)}">${escapeHtml(item.role.name)}</span></div>
+          <div>${escapeHtml(item.range)}</div>
+          <div>${escapeHtml(item.granularity)}</div>
+          <div>${escapeHtml(item.desc)}</div>
+        </div>
+      `).join('') || '<div class="admin-empty-state">暂无数据权限规则。</div>';
+    }
+
+    async function loadPermissionPageData() {
+      const [roles, permissions, users, dataPermissions] = await Promise.all([
+        window.hrApi.roles(),
+        window.hrApi.rolePermissions(),
+        window.hrApi.users(),
+        window.hrApi.dataPermissions(),
+      ]);
+      permissionPageState.roles = roles;
+      permissionPageState.permissions = permissions;
+      permissionPageState.users = users;
+      permissionPageState.dataPermissions = dataPermissions;
+      renderFunctionPermissions();
+      renderDataRules();
+    }
+
+    function switchPermissionTab(tab) {
+      permissionPageState.tab = tab;
+      document.querySelectorAll('[data-permission-page-tabs] .admin-tabbar-btn').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.permissionTab === tab);
+      });
+      document.querySelector('[data-permission-function-panel]').style.display = tab === 'function' ? '' : 'none';
+      document.querySelector('[data-permission-data-panel]').style.display = tab === 'data' ? '' : 'none';
+    }
+
+    async function savePermission() {
+      const payload = {
+        role_code: document.querySelector('[data-permission-form-role]').value,
+        permission_key: document.querySelector('[data-permission-form-key]').value.trim(),
+        permission_type: document.querySelector('[data-permission-form-type]').value,
+        module: document.querySelector('[data-permission-form-module]').value.trim(),
+        enabled: document.querySelector('[data-permission-form-enabled]').value === 'true',
+      };
+      if (!payload.role_code || !payload.permission_key || !payload.module) throw new Error('请先填写完整的权限信息');
+      await window.hrApi.saveRolePermission(payload);
+      closePermissionModal();
+      await loadPermissionPageData();
+      showToast('功能权限已保存');
+    }
+
+    function bindPermissionPageEvents() {
+      document.addEventListener('click', async (event) => {
+        const tabButton = event.target.closest('[data-permission-tab]');
+        if (tabButton) {
+          switchPermissionTab(tabButton.dataset.permissionTab);
+          return;
+        }
+        if (event.target.closest('[data-permission-page-open-modal]')) {
+          openPermissionModal();
+          return;
+        }
+        if (event.target.closest('[data-permission-page-close-modal]')) {
+          closePermissionModal();
+          return;
+        }
+        if (event.target.closest('[data-permission-page-save-modal]')) {
+          try { await savePermission(); } catch (error) { showToast(error.message || '保存失败'); }
+          return;
+        }
+        const editButton = event.target.closest('[data-permission-page-edit]');
+        if (editButton) {
+          const permission = permissionPageState.permissions.find((item) =>
+            item.permission_key === editButton.dataset.permissionPageEdit &&
+            (item.module || '') === editButton.dataset.permissionPageModule &&
+            (item.permission_type || '') === editButton.dataset.permissionPageType
+          );
+          openPermissionModal(permission || null);
+        }
+      });
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
+      bindPermissionPageEvents();
       try {
-        const perms = await window.hrApi.rolePermissions();
-        const data = await window.hrApi.dataPermissions();
-        const total = document.querySelector('[data-permission-total]');
-        const dataTotal = document.querySelector('[data-permission-data]');
-        const roleList = document.querySelector('[data-role-permission-list]');
-        const dataList = document.querySelector('[data-data-permission-list]');
-        if (total) total.textContent = String(perms.length);
-        if (dataTotal) dataTotal.textContent = String(data.length);
-        if (roleList) roleList.innerHTML = perms.slice(0, 8).map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.module || item.permission_key}</div><div class="item-meta">${item.role_code} · ${item.permission_type} · ${item.enabled ? '已启用' : '已停用'}</div></div><div class="table-actions"><button class="btn-sm" data-action="toggle-role-permission" data-role-code="${item.role_code}" data-key="${item.permission_key}" data-enabled="${item.enabled}">${item.enabled ? '停用' : '启用'}</button></div><span class="chip ${item.enabled ? 'primary' : 'neutral'}">${item.permission_type}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">角色权限明细来自数据库。</div></div>';
-        if (dataList) dataList.innerHTML = data.slice(0, 8).map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.scope_name || item.scope_type}</div><div class="item-meta">${item.scope_type} · ${item.granted_by}</div></div><div class="table-actions"><button class="btn-sm" data-action="toggle-data-permission" data-user-id="${item.user_id}" data-scope-type="${item.scope_type}" data-scope-id="${item.scope_id}" data-scope-name="${item.scope_name}" data-granted-by="${item.granted_by}" data-active="${item.active}">${item.active ? '停用' : '启用'}</button></div><span class="chip ${item.active ? 'success' : 'neutral'}">${item.active ? '启用' : '停用'}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">数据权限明细来自数据库。</div></div>';
-      } catch (err) {
-        console.warn(err);
+        await loadPermissionPageData();
+        const roleCode = new URLSearchParams(location.search).get('role_code');
+        if (roleCode) renderPermissionRoleOptions(roleCode);
+      } catch (error) {
+        console.warn(error);
+        showToast('权限页面加载失败');
       }
     });
   </script>

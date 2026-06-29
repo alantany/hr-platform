@@ -56,6 +56,9 @@ window.hrApi = {
   createRole(payload) {
     return this.request("/roles", { method: "POST", body: JSON.stringify(payload) });
   },
+  updateRole(id, payload) {
+    return this.request(`/roles/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  },
   toggleRole(id) {
     return this.request(`/roles/${id}/toggle`, { method: "POST" });
   },
