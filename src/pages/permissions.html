@@ -123,13 +123,22 @@
     function prettyPermissionName(key) {
       if (!key) return '未命名权限';
       const nameMap = {
-        'page:dashboard': '查看数据看板',
-        'page:candidates': '查看求职者数据池',
-        'page:dictionary': '标签字典管理',
+        'page:dashboard': '首页',
+        'page:candidates': '求职者数据池',
+        'page:import': '简历导入',
+        'page:customers': '客户管理',
+        'page:projects': '项目管理',
+        'page:positions': '岗位管理',
+        'page:evaluations': '评价体系',
+        'page:statistics': '统计管理',
+        'page:dictionary': '标签字典',
         'page:users': '用户管理',
         'page:roles': '角色管理',
         'page:permissions': '权限管理',
         'page:data-permissions': '数据权限',
+        'page:warranty': '质保期管理',
+        'page:logs': '操作日志',
+        'page:ai-center': 'AI能力中心',
         'action:create-company': '创建客户公司',
         'action:assign-operator': '分配操作员权限',
       };
