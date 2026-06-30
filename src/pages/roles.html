@@ -224,7 +224,7 @@
     }
 
     async function saveRole() {
-      const code = document.querySelector('[data-role-form-code]').value.trim().toUpperCase();
+      const code = document.querySelector('[data-role-form-code]').value.trim().toLowerCase();
       const name = document.querySelector('[data-role-form-name]').value.trim();
       const description = document.querySelector('[data-role-form-desc]').value.trim();
       if (!code || !name) throw new Error('请先填写角色编码和角色名称');
