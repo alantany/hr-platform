@@ -54,16 +54,70 @@
                 <div class="list-item"><div class="item-top"><div><div class="item-title">说明</div><div class="item-meta">用于角色职责展示</div></div></div><textarea class="input" rows="4" style="height:auto; padding:12px;" data-role-form-desc></textarea></div>
               </div>
             </div>
-            <div class="panel admin-edit-card">
-              <h3>提示</h3>
-              <div class="list">
-                <div class="list-item"><div class="item-meta">角色创建或修改后，当前页面会重新统计其绑定用户数和权限摘要。</div></div>
+            <div class="panel admin-edit-card" style="max-height:480px; overflow-y:auto;">
+              <h3>功能权限分配</h3>
+              <div class="list" data-role-permissions-container style="display:flex; flex-direction:column; gap:16px; margin-top:12px;">
               </div>
             </div>
           </div>
         </div>
       </div>
     `;
+
+    const ALL_PRESET_PERMISSIONS = [
+      { key: 'page:dashboard', name: '首页', module: '主要功能' },
+      { key: 'page:candidates', name: '求职者数据池', module: '主要功能' },
+      { key: 'page:import', name: '简历导入', module: '主要功能' },
+      { key: 'page:customers', name: '客户管理', module: '主要功能' },
+      { key: 'page:projects', name: '项目管理', module: '主要功能' },
+      { key: 'page:positions', name: '岗位管理', module: '主要功能' },
+      { key: 'page:evaluations', name: '评价体系', module: '主要功能' },
+      { key: 'page:statistics', name: '统计管理', module: '主要功能' },
+      { key: 'page:notifications', name: '通知提醒', module: '主要功能' },
+      { key: 'page:dictionary', name: '标签字典', module: '系统设置' },
+      { key: 'page:users', name: '用户管理', module: '系统设置' },
+      { key: 'page:roles', name: '角色管理', module: '系统设置' },
+      { key: 'page:permissions', name: '权限管理', module: '系统设置' },
+      { key: 'page:data-permissions', name: '数据权限', module: '系统设置' },
+      { key: 'page:warranty', name: '质保期管理', module: '系统设置' },
+      { key: 'page:logs', name: '操作日志', module: '系统设置' },
+      { key: 'page:ui-kit', name: 'UI 样板', module: '开发工具' },
+      { key: 'all', name: '全部功能', module: '系统' },
+      { key: 'action:create-company', name: '创建客户公司', module: '客户管理' },
+      { key: 'action:assign-operator', name: '分配操作员权限', module: '系统设置' }
+    ];
+
+    function renderPermissionsSelection(activePermissionKeys = []) {
+      const container = document.querySelector('[data-role-permissions-container]');
+      if (!container) return;
+      
+      const groups = {};
+      ALL_PRESET_PERMISSIONS.forEach((item) => {
+        if (!groups[item.module]) groups[item.module] = [];
+        groups[item.module].push(item);
+      });
+
+      container.innerHTML = Object.keys(groups).map((module) => {
+        const inputsHtml = groups[module].map((item) => {
+          const isChecked = activePermissionKeys.includes(item.key) ? 'checked' : '';
+          return `
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; margin-bottom:4px;">
+              <input type="checkbox" name="role_permission_keys" value="${escapeHtml(item.key)}" data-module="${escapeHtml(item.module)}" ${isChecked} style="width:15px; height:15px; margin:0;" />
+              <span>${escapeHtml(item.name)}</span>
+            </label>
+          `;
+        }).join('');
+
+        return `
+          <div style="border-bottom:1px solid rgba(0,0,0,0.06); padding-bottom:8px; margin-bottom:8px;">
+            <strong style="font-size:13px; color:#2563eb; display:block; margin-bottom:8px;">${escapeHtml(module)}</strong>
+            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px 12px;">
+              ${inputsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
 
     const rolePageState = {
       roles: [],
@@ -117,6 +171,15 @@
       document.querySelector('[data-role-form-name]').value = role?.name || '';
       document.querySelector('[data-role-form-desc]').value = role?.description || '';
       document.querySelector('[data-role-form-code]').readOnly = Boolean(isEdit);
+      
+      let activeKeys = [];
+      if (role) {
+        activeKeys = rolePageState.permissions
+          .filter((item) => item.role_code === role.code && item.enabled)
+          .map((item) => item.permission_key);
+      }
+      renderPermissionsSelection(activeKeys);
+
       const modal = document.querySelector('[data-role-page-modal]');
       if (modal) modal.style.display = 'block';
     }
@@ -163,13 +226,55 @@
       const name = document.querySelector('[data-role-form-name]').value.trim();
       const description = document.querySelector('[data-role-form-desc]').value.trim();
       if (!code || !name) throw new Error('请先填写角色编码和角色名称');
+      
       if (rolePageState.editingId) {
         await window.hrApi.updateRole(rolePageState.editingId, { name, description });
-        showToast('角色已更新');
       } else {
         await window.hrApi.createRole({ code, name, description });
-        showToast('角色已创建');
       }
+
+      const selectedKeys = Array.from(document.querySelectorAll('input[name="role_permission_keys"]:checked')).map((input) => input.value);
+      
+      let originalKeys = [];
+      if (rolePageState.editingId) {
+        originalKeys = rolePageState.permissions
+          .filter((item) => item.role_code === code && item.enabled)
+          .map((item) => item.permission_key);
+      }
+
+      const toAdd = selectedKeys.filter((k) => !originalKeys.includes(k));
+      const toDelete = originalKeys.filter((k) => !selectedKeys.includes(k));
+
+      const promises = [];
+      toAdd.forEach((permission_key) => {
+        const preset = ALL_PRESET_PERMISSIONS.find((p) => p.key === permission_key);
+        const module = preset ? preset.module : '主要功能';
+        const type = permission_key.startsWith('action:') ? 'action' : 'menu';
+        
+        promises.push(
+          window.hrApi.saveRolePermission({
+            role_code: code,
+            permission_key,
+            permission_type: type,
+            module,
+            enabled: true,
+          })
+        );
+      });
+
+      toDelete.forEach((permission_key) => {
+        const preset = ALL_PRESET_PERMISSIONS.find((p) => p.key === permission_key);
+        const module = preset ? preset.module : '主要功能';
+        const type = permission_key.startsWith('action:') ? 'action' : 'menu';
+        
+        promises.push(
+          window.hrApi.deleteRolePermission(code, permission_key, type, module)
+        );
+      });
+
+      await Promise.all(promises);
+
+      showToast(rolePageState.editingId ? '角色已更新' : '角色已创建');
       closeModal();
       await loadRolePageData();
     }
