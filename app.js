@@ -4831,8 +4831,44 @@ async function loadPage(url, push = true) {
 
     doc.querySelectorAll("script").forEach((script) => {
       if (script.src) return;
+      
+      const wrappedCode = `
+        (function() {
+          const originalAddEventListener = window.addEventListener;
+          const originalDocumentAddEventListener = document.addEventListener;
+          
+          const mockAddEventListener = function(event, cb, opts) {
+            if (event === 'DOMContentLoaded') {
+              try { cb(); } catch(e) { console.error("DOMContentLoaded Mock 执行异常:", e); }
+            } else {
+              originalAddEventListener.call(window, event, cb, opts);
+            }
+          };
+          
+          const mockDocumentAddEventListener = function(event, cb, opts) {
+            if (event === 'DOMContentLoaded') {
+              try { cb(); } catch(e) { console.error("DOMContentLoaded Document Mock 执行异常:", e); }
+            } else {
+              originalDocumentAddEventListener.call(document, event, cb, opts);
+            }
+          };
+          
+          const addEventListener = mockAddEventListener;
+          const windowMock = { addEventListener: mockAddEventListener };
+          document.addEventListener = mockDocumentAddEventListener;
+          
+          try {
+            ${script.textContent}
+          } catch(err) {
+            console.error("SPA页面脚本内部执行失败:", err);
+          } finally {
+            document.addEventListener = originalDocumentAddEventListener;
+          }
+        })();
+      `;
+      
       const newScript = document.createElement("script");
-      newScript.textContent = script.textContent;
+      newScript.textContent = wrappedCode;
       document.body.appendChild(newScript);
       newScript.remove();
     });
