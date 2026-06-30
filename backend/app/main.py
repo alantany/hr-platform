@@ -1936,6 +1936,24 @@ def upsert_role_permission(payload: schemas.RolePermissionCreate, db: Session = 
     return obj
 
 
+@app.delete("/api/role-permissions")
+def delete_role_permission(
+    role_code: str,
+    permission_key: str,
+    permission_type: str = "menu",
+    module: str = "",
+    db: Session = Depends(get_db),
+    user: User = Depends(require_admin_user)
+):
+    db.query(RolePermission).filter(
+        RolePermission.role_code == role_code,
+        RolePermission.permission_key == permission_key
+    ).delete()
+    crud.add_audit(db, user.username, "权限管理", "移除功能权限", "role_permission", role_code, detail=permission_key)
+    db.commit()
+    return {"ok": True}
+
+
 @app.get("/api/data-permissions", response_model=list[schemas.DataPermissionOut])
 def get_data_permissions(user_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     return crud.list_data_permissions(db, user_id=user_id)
