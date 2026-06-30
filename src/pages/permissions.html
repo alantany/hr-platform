@@ -69,7 +69,33 @@
             <div class="panel admin-edit-card">
               <div class="list">
                 <div class="list-item"><div class="item-top"><div><div class="item-title">关联角色</div><div class="item-meta">勾选拥有该权限的角色</div></div></div><div class="admin-checkbox-group" data-permission-form-roles-container style="display:flex; flex-direction:column; gap:8px; margin-top:8px; padding-left:4px;"></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">权限标识</div><div class="item-meta">例如 page:permissions / action:create-company</div></div></div><input class="input" data-permission-form-key /></div>
+                <div class="list-item">
+                  <div class="item-top"><div><div class="item-title">功能权限选项</div><div class="item-meta">选择系统内置功能，或选择自定义输入</div></div></div>
+                  <select class="input" data-permission-form-key-select>
+                    <option value="page:dashboard" data-type="menu" data-module="主要功能">首页 (page:dashboard)</option>
+                    <option value="page:candidates" data-type="menu" data-module="主要功能">求职者数据池 (page:candidates)</option>
+                    <option value="page:import" data-type="menu" data-module="主要功能">简历导入 (page:import)</option>
+                    <option value="page:customers" data-type="menu" data-module="主要功能">客户管理 (page:customers)</option>
+                    <option value="page:projects" data-type="menu" data-module="主要功能">项目管理 (page:projects)</option>
+                    <option value="page:positions" data-type="menu" data-module="主要功能">岗位管理 (page:positions)</option>
+                    <option value="page:evaluations" data-type="menu" data-module="主要功能">评价体系 (page:evaluations)</option>
+                    <option value="page:statistics" data-type="menu" data-module="主要功能">统计管理 (page:statistics)</option>
+                    <option value="page:dictionary" data-type="menu" data-module="系统设置">标签字典 (page:dictionary)</option>
+                    <option value="page:users" data-type="menu" data-module="系统设置">用户管理 (page:users)</option>
+                    <option value="page:roles" data-type="menu" data-module="系统设置">角色管理 (page:roles)</option>
+                    <option value="page:permissions" data-type="menu" data-module="系统设置">权限管理 (page:permissions)</option>
+                    <option value="page:data-permissions" data-type="menu" data-module="系统设置">数据权限 (page:data-permissions)</option>
+                    <option value="page:warranty" data-type="menu" data-module="系统设置">质保期管理 (page:warranty)</option>
+                    <option value="page:logs" data-type="menu" data-module="系统设置">操作日志 (page:logs)</option>
+                    <option value="page:ui-kit" data-type="menu" data-module="开发工具">UI 样板 (page:ui-kit)</option>
+                    <option value="page:notifications" data-type="menu" data-module="主要功能">通知提醒 (page:notifications)</option>
+                    <option value="all" data-type="menu" data-module="系统">全部功能 (all)</option>
+                    <option value="action:create-company" data-type="action" data-module="客户管理">创建客户公司 (action:create-company)</option>
+                    <option value="action:assign-operator" data-type="action" data-module="系统设置">分配操作员权限 (action:assign-operator)</option>
+                    <option value="custom" data-type="" data-module="">✏️ 自定义手动输入...</option>
+                  </select>
+                  <input class="input" data-permission-form-key style="display:none; margin-top:8px;" placeholder="请输入自定义权限标识，如 action:test" />
+                </div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">权限类型</div><div class="item-meta">菜单、按钮或操作</div></div></div><select class="input" data-permission-form-type><option value="menu">菜单</option><option value="button">按钮</option><option value="action">操作</option></select></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">所属模块</div><div class="item-meta">例如 系统设置 / 求职者 / 客户管理</div></div></div><input class="input" data-permission-form-module /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">启用状态</div><div class="item-meta">控制当前权限是否生效</div></div></div><select class="input" data-permission-form-enabled><option value="true">启用</option><option value="false">停用</option></select></div>
@@ -180,9 +206,41 @@
         if (defaultRole) activeRoles.push(defaultRole);
       }
       renderPermissionRoleCheckboxes(activeRoles);
-      document.querySelector('[data-permission-form-key]').value = permission?.permission_key || '';
-      document.querySelector('[data-permission-form-type]').value = permission?.permission_type || 'menu';
-      document.querySelector('[data-permission-form-module]').value = permission?.module || '';
+      
+      const key = permission?.permission_key || '';
+      const select = document.querySelector('[data-permission-form-key-select]');
+      const input = document.querySelector('[data-permission-form-key]');
+      
+      let hasOption = false;
+      if (select) {
+        for (let option of select.options) {
+          if (option.value === key) {
+            hasOption = true;
+            break;
+          }
+        }
+        if (key && hasOption) {
+          select.value = key;
+          input.value = key;
+          input.style.display = 'none';
+        } else if (!key) {
+          select.value = select.options[0]?.value || '';
+          input.value = select.value;
+          input.style.display = 'none';
+          const opt = select.options[select.selectedIndex];
+          if (opt && opt.value !== 'custom') {
+            document.querySelector('[data-permission-form-type]').value = opt.dataset.type || 'menu';
+            document.querySelector('[data-permission-form-module]').value = opt.dataset.module || '';
+          }
+        } else {
+          select.value = 'custom';
+          input.value = key;
+          input.style.display = 'block';
+        }
+      }
+
+      document.querySelector('[data-permission-form-type]').value = permission?.permission_type || (select && select.value !== 'custom' ? select.options[select.selectedIndex]?.dataset.type : 'menu') || 'menu';
+      document.querySelector('[data-permission-form-module]').value = permission?.module || (select && select.value !== 'custom' ? select.options[select.selectedIndex]?.dataset.module : '') || '';
       document.querySelector('[data-permission-form-enabled]').value = String(permission?.enabled ?? true);
       document.querySelector('[data-permission-page-modal]').style.display = 'block';
     }
@@ -330,6 +388,27 @@
     }
 
     function bindPermissionPageEvents() {
+      const select = document.querySelector('[data-permission-form-key-select]');
+      const input = document.querySelector('[data-permission-form-key]');
+      if (select && input) {
+        select.addEventListener('change', () => {
+          const opt = select.options[select.selectedIndex];
+          if (select.value === 'custom') {
+            input.style.display = 'block';
+            input.value = '';
+            document.querySelector('[data-permission-form-type]').value = 'menu';
+            document.querySelector('[data-permission-form-module]').value = '';
+          } else {
+            input.style.display = 'none';
+            input.value = select.value;
+            if (opt) {
+              document.querySelector('[data-permission-form-type]').value = opt.dataset.type || 'menu';
+              document.querySelector('[data-permission-form-module]').value = opt.dataset.module || '';
+            }
+          }
+        });
+      }
+
       document.addEventListener('click', async (event) => {
         const tabButton = event.target.closest('[data-permission-tab]');
         if (tabButton) {
