@@ -558,7 +558,7 @@ window.refreshManagementPage = async () => {
 function getNavVisibility(role, permissions = null) {
   const permissionSet = permissions ? new Set(permissions) : null;
   // Detail pages accessible from other pages, not in sidebar
-  const detailPages = new Set(["position-candidates.html"]);
+  const detailPages = new Set(["position-candidates.html", "notifications.html"]);
   if (permissionSet?.has("all")) {
     const result = new Set(navItems.map(({ href }) => href));
     detailPages.forEach(p => result.add(p));

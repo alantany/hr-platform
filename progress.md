@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-06-30（已完成 - 修复超级管理员访问 notifications.html 权限缺失拦截 Bug）
+
+- 修复了此前在收口侧边栏导航后，`notifications.html` 从导航项 (navItems) 移除，导致具有超级管理员/“all”权限的用户在点击消息数字进入该页面时，被错误判定为无权限并拦截的 Bug。
+- 将 `notifications.html` 添加到了 `detailPages` 隐藏可访问白名单集合中。
+- 验证通过：`node --check app.js`。
+
 ## 2026-06-29（已完成 - 用户管理创建与编辑用户弹窗溢出截断修复）
 
 - 为 `users.html` 的“创建用户”弹窗 (data-user-page-create-modal) 和“编辑用户”弹窗 (data-user-page-edit-modal) 遮罩层容器添加了 `overflow-y: auto;` 样式约束。
@@ -2139,4 +2145,4 @@
   - 标签字典 9 个候选人维度均验证为维度内单一稳定色；Tag 为 13px、`2px 10px` 内边距和 6px 圆角。
 - 验证通过：`node --check app.js`、标签字典内联脚本语法检查、`git diff --check`、品牌色/渐变静态扫描、`pytest -q tests/test_phase3_smoke.py`（1 passed）。
 
-<!-- trigger update for pre-commit (v3) -->
+<!-- trigger update for pre-commit (v4) -->
