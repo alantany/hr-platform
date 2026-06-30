@@ -200,8 +200,7 @@
           <div>${escapeHtml(getPermissionSummary(role))}</div>
           <div>${escapeHtml(formatDateTime(getRoleCreatedAt(role)))}</div>
           <div class="admin-inline-actions">
-            <a class="admin-text-link" href="./permissions.html?role_code=${encodeURIComponent(role.code)}">配置权限</a>
-            <button type="button" class="admin-text-link" data-role-page-edit="${role.id}">编辑</button>
+            <button type="button" class="admin-text-link" data-role-page-edit="${role.id}">编辑与授权</button>
           </div>
         </div>
       `).join('') || '<div class="admin-empty-state">暂无角色记录。</div>';
