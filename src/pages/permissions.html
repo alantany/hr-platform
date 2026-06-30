@@ -365,8 +365,6 @@
       bindPermissionPageEvents();
       try {
         await loadPermissionPageData();
-        const roleCode = new URLSearchParams(location.search).get('role_code');
-        if (roleCode) renderPermissionRoleOptions(roleCode);
       } catch (error) {
         console.warn(error);
         showToast('权限页面加载失败');
