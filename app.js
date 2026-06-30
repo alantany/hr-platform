@@ -4856,6 +4856,7 @@ async function loadPage(url, push = true) {
           const addEventListener = mockAddEventListener;
           const windowMock = { addEventListener: mockAddEventListener };
           document.addEventListener = mockDocumentAddEventListener;
+          const renderApp = window.renderApp;
           
           try {
             ${script.textContent}
