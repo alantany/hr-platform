@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>登录</title>
   <link rel="stylesheet" href="../../styles.css" />
-  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../frontend-api.js?v=20260630"></script>
   <style>
     :root {
       --login-ink: #142033;
@@ -310,6 +310,9 @@
   <script>
     const message = document.querySelector('[data-login-message]');
     const submit = async () => {
+      if (window.hrApi) {
+        window.hrApi.baseUrl = (location.protocol === "file:" || location.port !== "8000") ? "http://127.0.0.1:8000/api" : "/api";
+      }
       const username = document.querySelector('[data-login-username]').value.trim();
       const password = document.querySelector('[data-login-password]').value;
       try {
