@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-06-30（已完成 - 项目管理看板统计卡片支持跳转岗位与就地状态过滤）
+
+- 为 `projects.html` 顶部的“紧急岗位”卡片绑定了点击直接跳转岗位管理页 (`positions.html`) 的行为。
+- 为“项目总数”卡片绑定了点击清空过滤条件的交互；并为“招聘中”与“招聘完毕”卡片配置了点击就地过滤的功能，点击后会将搜索栏的“项目状态”下拉框自动设为对应值，并就地异步刷新渲染匹配的项目列表。
+
 ## 2026-06-30（已完成 - 岗位管理看板统计卡片支持页面跳转与实时属性过滤）
 
 - 为 `positions.html` 顶部的“项目数”卡片绑定了点击直接跳转项目管理页 (`projects.html`) 的行为。
@@ -2160,4 +2165,4 @@
   - 标签字典 9 个候选人维度均验证为维度内单一稳定色；Tag 为 13px、`2px 10px` 内边距和 6px 圆角。
 - 验证通过：`node --check app.js`、标签字典内联脚本语法检查、`git diff --check`、品牌色/渐变静态扫描、`pytest -q tests/test_phase3_smoke.py`（1 passed）。
 
-<!-- trigger update for pre-commit (v7) -->
+<!-- trigger update for pre-commit (v8) -->

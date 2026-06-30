@@ -13,10 +13,10 @@
 <script>
 window.__PAGE_BODY__ = `
   <section class="metrics">
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">项目总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-project-total>0</div><div class="metric-label">客户招聘包</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">招聘中</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-project-active>0</div><div class="metric-label">持续推进中</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">招聘完毕</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-project-finished>0</div><div class="metric-label">已完成交付</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-project-urgent>0</div><div class="metric-label">需要优先匹配</div></div>
+    <div class="metric-card" onclick="filterProjectsByStatus(null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">项目总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-project-total>0</div><div class="metric-label">客户招聘包</div></div>
+    <div class="metric-card" onclick="filterProjectsByStatus('招聘中')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">招聘中</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-project-active>0</div><div class="metric-label">持续推进中</div></div>
+    <div class="metric-card" onclick="filterProjectsByStatus('招聘完毕')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">招聘完毕</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-project-finished>0</div><div class="metric-label">已完成交付</div></div>
+    <a href="./positions.html" class="metric-card" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-project-urgent>0</div><div class="metric-label">需要优先匹配</div></a>
   </section>
 
   <!-- 子标签页导航 -->
@@ -417,6 +417,18 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.warn(err);
   }
 });
+
+window.filterProjectsByStatus = function(status) {
+  const statusSelect = document.querySelector('#search-project-status');
+  if (statusSelect) {
+    statusSelect.value = status || '';
+  }
+  window.projectFilters = window.projectFilters || {};
+  window.projectFilters.status = status || '';
+  if (window.refreshManagementPage) {
+    window.refreshManagementPage();
+  }
+};
 </script>
 </body>
 </html>
