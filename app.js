@@ -625,7 +625,6 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
           <a class="nav-item ${active(href) ? "active" : ""}" href="./${href}">
             <span class="nav-icon">${icons[icon] || icons.settings}</span>
             <span>${label}</span>
-            <span class="nav-badge">${badge}</span>
           </a>`).join("")}
       </div>`;
   }).join("");
@@ -4762,4 +4761,78 @@ document.addEventListener("change", async (event) => {
       if (positionSelect) positionSelect.innerHTML = '<option value="">加载失败</option>';
     }
   }
+});
+
+// ----------------------------------------------------
+// 局部加载/SPA 单页路由控制
+// ----------------------------------------------------
+async function loadPage(url, push = true) {
+  try {
+    const pageName = url.split("/").pop() || "dashboard.html";
+    if (pageName.includes("login.html")) {
+      location.href = `./${pageName}`;
+      return;
+    }
+    
+    const res = await fetch(`./${pageName}`);
+    if (!res.ok) throw new Error(`加载页面失败: ${res.status}`);
+    const htmlText = await res.text();
+    
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, "text/html");
+    
+    const newContent = doc.querySelector(".content");
+    const currentContent = document.querySelector(".content");
+    if (!newContent || !currentContent) {
+      location.href = `./${pageName}`;
+      return;
+    }
+    
+    currentContent.innerHTML = newContent.innerHTML;
+    
+    if (push) {
+      history.pushState(null, "", `./${pageName}`);
+    }
+    
+    document.querySelectorAll(".nav-item").forEach((item) => {
+      const itemHref = item.getAttribute("href").split("/").pop() || "";
+      item.classList.toggle("active", itemHref === pageName);
+    });
+
+    doc.querySelectorAll("script").forEach((script) => {
+      if (script.src) return;
+      const newScript = document.createElement("script");
+      newScript.textContent = script.textContent;
+      document.body.appendChild(newScript);
+      newScript.remove();
+    });
+    
+    if (typeof bindActionButtons === "function") {
+      bindActionButtons();
+    }
+    
+    window.scrollTo(0, 0);
+  } catch (err) {
+    console.error("SPA路由加载失败，降级整页跳转:", err);
+    location.href = `./${url.split("/").pop()}`;
+  }
+}
+
+document.addEventListener("click", (event) => {
+  const a = event.target.closest("a");
+  if (a) {
+    const href = a.getAttribute("href");
+    if (href && !href.startsWith("http") && !href.startsWith("javascript:") && href.endsWith(".html") && a.target !== "_blank") {
+      if (href.includes("login.html") || location.pathname.includes("login.html")) {
+        return;
+      }
+      event.preventDefault();
+      loadPage(href);
+    }
+  }
+});
+
+window.addEventListener("popstate", () => {
+  const page = location.pathname.split("/").pop() || "dashboard.html";
+  loadPage(page, false);
 });
