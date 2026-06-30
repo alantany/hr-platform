@@ -334,6 +334,10 @@ window.hrApi = {
   saveRolePermission(payload) {
     return this.request("/role-permissions", { method: "POST", body: JSON.stringify(payload) });
   },
+  deleteRolePermission(role_code, permission_key, permission_type = "menu", module = "") {
+    const qs = new URLSearchParams({ role_code, permission_key, permission_type, module }).toString();
+    return this.request(`/role-permissions?${qs}`, { method: "DELETE" });
+  },
   dataPermissions(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/data-permissions${qs ? `?${qs}` : ""}`);

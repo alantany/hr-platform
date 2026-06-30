@@ -68,7 +68,7 @@
           <div class="grid-2">
             <div class="panel admin-edit-card">
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">关联角色</div><div class="item-meta">选择要保存权限的角色</div></div></div><select class="input" data-permission-form-role></select></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">关联角色</div><div class="item-meta">勾选拥有该权限的角色</div></div></div><div class="admin-checkbox-group" data-permission-form-roles-container style="display:flex; flex-direction:column; gap:8px; margin-top:8px; padding-left:4px;"></div></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">权限标识</div><div class="item-meta">例如 page:permissions / action:create-company</div></div></div><input class="input" data-permission-form-key /></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">权限类型</div><div class="item-meta">菜单、按钮或操作</div></div></div><select class="input" data-permission-form-type><option value="menu">菜单</option><option value="button">按钮</option><option value="action">操作</option></select></div>
                 <div class="list-item"><div class="item-top"><div><div class="item-title">所属模块</div><div class="item-meta">例如 系统设置 / 求职者 / 客户管理</div></div></div><input class="input" data-permission-form-module /></div>
@@ -150,16 +150,36 @@
       return raw.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
     }
 
-    function renderPermissionRoleOptions(selectedRoleCode = '') {
-      const select = document.querySelector('[data-permission-form-role]');
-      if (!select) return;
-      select.innerHTML = permissionPageState.roles.map((role) => `<option value="${escapeHtml(role.code)}">${escapeHtml(role.name)} / ${escapeHtml(role.code)}</option>`).join('');
-      select.value = selectedRoleCode || permissionPageState.roles[0]?.code || '';
+    function renderPermissionRoleCheckboxes(activeRoles = []) {
+      const container = document.querySelector('[data-permission-form-roles-container]');
+      if (!container) return;
+      container.innerHTML = permissionPageState.roles.map((role) => {
+        const isChecked = activeRoles.includes(role.code) ? 'checked' : '';
+        return `
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" name="role_codes" value="${escapeHtml(role.code)}" ${isChecked} style="width:16px; height:16px; margin:0;" />
+            <span>${escapeHtml(role.name)} / ${escapeHtml(role.code)}</span>
+          </label>
+        `;
+      }).join('');
     }
 
     function openPermissionModal(permission = null) {
       permissionPageState.editingPermission = permission;
-      renderPermissionRoleOptions(permission?.role_code || new URLSearchParams(location.search).get('role_code') || '');
+      let activeRoles = [];
+      if (permission) {
+        activeRoles = permissionPageState.permissions
+          .filter((item) =>
+            item.permission_key === permission.permission_key &&
+            (item.module || '') === (permission.module || '') &&
+            (item.permission_type || '') === (permission.permission_type || '')
+          )
+          .map((item) => item.role_code);
+      } else {
+        const defaultRole = new URLSearchParams(location.search).get('role_code');
+        if (defaultRole) activeRoles.push(defaultRole);
+      }
+      renderPermissionRoleCheckboxes(activeRoles);
       document.querySelector('[data-permission-form-key]').value = permission?.permission_key || '';
       document.querySelector('[data-permission-form-type]').value = permission?.permission_type || 'menu';
       document.querySelector('[data-permission-form-module]').value = permission?.module || '';
@@ -260,15 +280,50 @@
     }
 
     async function savePermission() {
-      const payload = {
-        role_code: document.querySelector('[data-permission-form-role]').value,
-        permission_key: document.querySelector('[data-permission-form-key]').value.trim(),
-        permission_type: document.querySelector('[data-permission-form-type]').value,
-        module: document.querySelector('[data-permission-form-module]').value.trim(),
-        enabled: document.querySelector('[data-permission-form-enabled]').value === 'true',
-      };
-      if (!payload.role_code || !payload.permission_key || !payload.module) throw new Error('请先填写完整的权限信息');
-      await window.hrApi.saveRolePermission(payload);
+      const permission_key = document.querySelector('[data-permission-form-key]').value.trim();
+      const permission_type = document.querySelector('[data-permission-form-type]').value;
+      const module = document.querySelector('[data-permission-form-module]').value.trim();
+      const enabled = document.querySelector('[data-permission-form-enabled]').value === 'true';
+
+      if (!permission_key || !module) throw new Error('请先填写完整的权限信息');
+
+      const selectedRoles = Array.from(document.querySelectorAll('input[name="role_codes"]:checked')).map((input) => input.value);
+
+      let originalRoles = [];
+      const oldPerm = permissionPageState.editingPermission;
+      if (oldPerm) {
+        originalRoles = permissionPageState.permissions
+          .filter((item) =>
+            item.permission_key === oldPerm.permission_key &&
+            (item.module || '') === (oldPerm.module || '') &&
+            (item.permission_type || '') === (oldPerm.permission_type || '')
+          )
+          .map((item) => item.role_code);
+      }
+
+      const toAdd = selectedRoles.filter((role) => !originalRoles.includes(role));
+      const toDelete = originalRoles.filter((role) => !selectedRoles.includes(role));
+
+      const promises = [];
+      toAdd.forEach((role_code) => {
+        promises.push(
+          window.hrApi.saveRolePermission({
+            role_code,
+            permission_key,
+            permission_type,
+            module,
+            enabled,
+          })
+        );
+      });
+      toDelete.forEach((role_code) => {
+        promises.push(
+          window.hrApi.deleteRolePermission(role_code, permission_key, permission_type, module)
+        );
+      });
+
+      await Promise.all(promises);
+
       closePermissionModal();
       await loadPermissionPageData();
       showToast('功能权限已保存');
