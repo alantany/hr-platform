@@ -100,7 +100,7 @@ def test_operator_only_sees_candidates_for_authorized_position():
     assert client.get(f"/api/candidates/{allowed['id']}", headers=user_headers("operator")).status_code == 200
     peer_detail = client.get(f"/api/candidates/{blocked['id']}", headers=user_headers("operator"))
     assert peer_detail.status_code == 200
-    assert "****" in peer_detail.json()["phone"] or peer_detail.json()["phone"] == ""
+    assert peer_detail.json()["phone"] == blocked["phone"]
 
 
 def test_operator_can_export_candidate_created_by_self():

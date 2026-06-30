@@ -66,11 +66,11 @@ def test_data_permission_sharing_and_isolation():
         assert f"共享候选人A-{suffix}" in names
         assert f"共享候选人B-{suffix}" in names
 
-        # 4. 验证查看脱敏 ── A 看到 B 的候选人 B，手机和邮箱应脱敏
+        # 4. 验证查看明文共享 ── A 看到 B 的候选人 B，手机和邮箱为完整明文
         resp_peer = client.get(f"/api/candidates/{cand_b.id}", headers=headers_a)
         assert resp_peer.status_code == 200
-        assert "****" in resp_peer.json()["phone"]
-        assert "***" in resp_peer.json()["email"]
+        assert resp_peer.json()["phone"] == "13987654321"
+        assert resp_peer.json()["email"] == "candidateb@example.com"
 
         # 5. 顾问 A 和 B 的推荐
         rec_a = Recommendation(candidate_id=cand_a.id, position_id=pos.id, status="待推荐", recommender=user_a.username, recommender_user_id=user_a.id)

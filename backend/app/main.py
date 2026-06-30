@@ -827,22 +827,7 @@ def list_candidates(
     user: User = Depends(require_user),
 ):
     items = crud.list_candidates(db, keyword=keyword, city=city, status=status)
-    if security.is_admin(user):
-        return items
-    filtered = []
-    owner_ids = security.visible_owner_user_ids(db, user)
-    for item in items:
-        # 候选人公共池共享，对所有人可见，但非归属人/下属的候选人脱敏
-        candidate_owner = item.get("owner_user_id")
-        if candidate_owner not in owner_ids:
-            p = (item.get("phone") or "").strip()
-            item["phone"] = p[:3] + "****" + p[-4:] if len(p) >= 11 else (p[:-4] + "****" if len(p) > 4 else p)
-            e = (item.get("email") or "").strip()
-            if "@" in e:
-                parts = e.split("@")
-                item["email"] = (parts[0][:2] + "***" if len(parts[0]) > 2 else parts[0] + "***") + "@" + parts[1]
-        filtered.append(item)
-    return filtered
+    return items
 
 
 @app.post("/api/candidates", response_model=schemas.CandidateOut)
@@ -861,17 +846,7 @@ def get_candidate(candidate_id: str, db: Session = Depends(get_db), user: User =
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
     
-    out = schemas.CandidateOut.model_validate(candidate, from_attributes=True)
-    if not security.is_admin(user):
-        owner_ids = security.visible_owner_user_ids(db, user)
-        if out.owner_user_id not in owner_ids:
-            p = (out.phone or "").strip()
-            out.phone = p[:3] + "****" + p[-4:] if len(p) >= 11 else (p[:-4] + "****" if len(p) > 4 else p)
-            e = (out.email or "").strip()
-            if "@" in e:
-                parts = e.split("@")
-                out.email = (parts[0][:2] + "***" if len(parts[0]) > 2 else parts[0] + "***") + "@" + parts[1]
-    return out
+    return schemas.CandidateOut.model_validate(candidate, from_attributes=True)
 
 
 @app.post("/api/candidates/ai-search", response_model=schemas.CandidateAiSearchOut)
