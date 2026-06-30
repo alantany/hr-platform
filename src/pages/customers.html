@@ -1,10 +1,10 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>客户管理</title><link rel="stylesheet" href="../../styles.css?v=20260628-customer-preview" /><script defer src="../../frontend-api.js"></script><script defer src="../../app.js?v=20260629-tag-fields"></script></head><body><div id="app"></div><script>
 window.__PAGE_BODY__ = `
   <section class="metrics">
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">客户公司数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-company-total>0</div><div class="metric-label">当前在库客户</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">进行中项目</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-company-projects>0</div><div class="metric-label">持续推进中的招聘包</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">累计交付人数</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-company-delivery>0</div><div class="metric-label">基于全部交付记录统计</div></div>
-    <div class="metric-card"><div class="metric-top"><div><div class="section-sub">岗位总数</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-company-positions>0</div><div class="metric-label">当前客户全部岗位</div></div>
+    <a href="./customers.html" class="metric-card" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">客户公司数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-company-total>0</div><div class="metric-label">当前在库客户</div></a>
+    <a href="./projects.html" class="metric-card" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">进行中项目</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-company-projects>0</div><div class="metric-label">持续推进中的招聘包</div></a>
+    <a href="./warranty.html" class="metric-card" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">累计交付人数</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-company-delivery>0</div><div class="metric-label">基于全部交付记录统计</div></a>
+    <a href="./positions.html" class="metric-card" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">岗位总数</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-company-positions>0</div><div class="metric-label">当前客户全部岗位</div></a>
   </section>
   <section class="panel">
     <div class="section-head"><div><h3>客户公司</h3><div class="section-sub">甲方公司及其项目推进概览。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-company-modal">新建客户</button><button class="btn" data-action="refresh-page">刷新列表</button></div></div>

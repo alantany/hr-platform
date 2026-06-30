@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-06-30（已完成 - 客户管理看板统计卡片新增跳转链接与交互微动）
+
+- 为 `customers.html` 顶部的四大统计卡片（进行中项目、累计交付人数、岗位总数）绑定了对应功能模块的页面链接，支持点击跳转至项目管理、质保管理与岗位管理。
+- 为 `.metric-card` 在 `styles.css` 中补齐了 transition 动画，并配置了精致的 hover 浮起 2px 及阴影反馈体验，提供直观的交互体验。
+
 ## 2026-06-30（已完成 - 首页看板统计卡片新增跳转链接与交互微动）
 
 - 为 `dashboard.html` 顶部的五大看板数据统计卡片（求职者总数、客户公司数、总推荐数、待处理需求、总操作员数）绑定了对应功能模块的页面路由链接，支持点击直接下钻跳转。
@@ -2150,4 +2155,4 @@
   - 标签字典 9 个候选人维度均验证为维度内单一稳定色；Tag 为 13px、`2px 10px` 内边距和 6px 圆角。
 - 验证通过：`node --check app.js`、标签字典内联脚本语法检查、`git diff --check`、品牌色/渐变静态扫描、`pytest -q tests/test_phase3_smoke.py`（1 passed）。
 
-<!-- trigger update for pre-commit (v5) -->
+<!-- trigger update for pre-commit (v6) -->
