@@ -1775,6 +1775,10 @@ button.customer-preview-position:focus-visible { outline: 2px solid rgba(102, 87
   align-items: center;
   grid-template-columns: 1.1fr 1.3fr .9fr .8fr 1fr .9fr .7fr .9fr;
 }
+.candidate-table-card .table-head,
+.candidate-table-card .table-row {
+  grid-template-columns: 40px 2.2fr 1fr 1fr 1fr 1fr 0.8fr 1.2fr;
+}
 .table-head {
   padding: 12px 14px;
   background: #f4f6f9;
