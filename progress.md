@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-06-30（已完成 - 修复客户管理页面中“累计交付人数”与质保监控列表数据未对齐显示为 0 的 Bug）
+
+- 排查定位出此前“累计交付人数”指标统计逻辑中错误地绑定了已经废弃的空数据表 `deliveries`。
+- 将 `customers.html` 页面以及 `app.js` 的 `refreshCompanyMetrics` 统计查询对齐为真实的入职监控接口 `window.hrApi.employmentRecords()`，从而使指标与 [质保期管理](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/warranty.html) 页的 4 条交付记录实现完全对齐展示。
+
 ## 2026-06-30（已完成 - 修复求职者数据池已锁定与今日新增指标卡片过滤无效的 Bug）
 
 - 修复了“已锁定候选人”指标卡片点击后传值参数错误（由非法的 `'only_locked'` 修正为数据库支持的 `'locked'`)。
@@ -2179,4 +2184,4 @@
   - 标签字典 9 个候选人维度均验证为维度内单一稳定色；Tag 为 13px、`2px 10px` 内边距和 6px 圆角。
 - 验证通过：`node --check app.js`、标签字典内联脚本语法检查、`git diff --check`、品牌色/渐变静态扫描、`pytest -q tests/test_phase3_smoke.py`（1 passed）。
 
-<!-- trigger update for pre-commit (v10) -->
+<!-- trigger update for pre-commit (v11) -->

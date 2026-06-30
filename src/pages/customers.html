@@ -150,16 +150,16 @@ window.__PAGE_BODY__ = `
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
       try {
-        const [companies, projects, positions, deliveries, tagConfigs] = await Promise.all([
+        const [companies, projects, positions, employmentRecords, tagConfigs] = await Promise.all([
           window.hrApi.companies(),
           window.hrApi.projects(),
           window.hrApi.positions(),
-          window.hrApi.deliveries(),
+          window.hrApi.employmentRecords(),
           window.hrTagSystem?.fetchConfigs?.() || Promise.resolve([]),
         ]);
         document.querySelector('[data-company-total]').textContent = String(companies.length);
         document.querySelector('[data-company-projects]').textContent = String(projects.filter(project => project.status === '招聘中').length);
-        document.querySelector('[data-company-delivery]').textContent = String(deliveries.length);
+        document.querySelector('[data-company-delivery]').textContent = String(employmentRecords.length);
         document.querySelector('[data-company-positions]').textContent = String(companies.reduce((sum, company) => sum + (company.position_count || 0), 0));
         const list = document.querySelector('[data-company-list]');
         if (list) {

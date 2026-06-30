@@ -993,14 +993,14 @@ async function handleGlobalButton(button) {
     if (list) list.innerHTML = roles.map(r => `<div class="list-item"><div class="item-top"><div><div class="item-title">${r.name}</div><div class="item-meta">${r.code} · ${r.description}</div></div><div class="table-actions"><button class="btn-sm" data-action="toggle-role" data-id="${r.id}">操作</button></div><span class="chip primary">角色</span></div></div>`).join('');
   };
   const refreshCompanyMetrics = async () => {
-    const [companies, projects, deliveries] = await Promise.all([window.hrApi.companies(), window.hrApi.projects(), window.hrApi.deliveries()]);
+    const [companies, projects, employmentRecords] = await Promise.all([window.hrApi.companies(), window.hrApi.projects(), window.hrApi.employmentRecords()]);
     const total = document.querySelector('[data-company-total]');
     const project = document.querySelector('[data-company-projects]');
     const delivery = document.querySelector('[data-company-delivery]');
     const position = document.querySelector('[data-company-positions]');
     if (total) total.textContent = String(companies.length);
     if (project) project.textContent = String(projects.filter(item => item.status === '招聘中').length);
-    if (delivery) delivery.textContent = String(deliveries.length);
+    if (delivery) delivery.textContent = String(employmentRecords.length);
     if (position) position.textContent = String(companies.reduce((sum, company) => sum + (company.position_count || 0), 0));
   };
   const refreshProjectMetrics = async () => {
