@@ -61,8 +61,8 @@
 
     window.__PAGE_BODY__ = `
       <section class="metrics">
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">通知总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-notice-total>0</div><div class="metric-label">当前筛选结果</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">未读通知</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-notice-unread>0</div><div class="metric-label">需要处理的消息</div></div>
+        <div class="metric-card" onclick="filterNotices('', null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">通知总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-notice-total>0</div><div class="metric-label">当前筛选结果</div></div>
+        <div class="metric-card" onclick="filterNotices('false', null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">未读通知</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-notice-unread>0</div><div class="metric-label">需要处理的消息</div></div>
         <div class="metric-card"><div class="metric-top"><div><div class="section-sub">通知类型</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-notice-types>0</div><div class="metric-label">导入 / 项目 / 评价 / 质保 / 系统</div></div>
         <div class="metric-card"><div class="metric-top"><div><div class="section-sub">跳转目标</div></div><div class="metric-icon">◌</div></div><div class="metric-value">直达</div><div class="metric-label">点击可回到业务页面</div></div>
       </section>
@@ -146,6 +146,20 @@
       clearTimeout(timer);
       timer = setTimeout(() => loadNotifications().catch((err) => console.warn(err)), 250);
     });
+
+    window.filterNotices = function(read, type) {
+      const readSelect = document.querySelector('[data-notice-read]');
+      if (readSelect) {
+        readSelect.value = read !== null && read !== undefined ? String(read) : '';
+      }
+      const typeInput = document.querySelector('[data-notice-type]');
+      if (typeInput) {
+        typeInput.value = type || '';
+      }
+      if (window.loadNotifications) {
+        window.loadNotifications().catch((err) => console.warn(err));
+      }
+    };
   </script>
 </body>
 </html>

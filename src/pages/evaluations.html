@@ -13,10 +13,10 @@
   <script>
     window.__PAGE_BODY__ = `
       <section class="metrics">
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">评价总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-eval-total>0</div><div class="metric-label">过程留痕</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">优秀</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-eval-excellent>0</div><div class="metric-label">高质量评价</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">良好</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-eval-good>0</div><div class="metric-label">正常推进</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">待复盘</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-eval-review>0</div><div class="metric-label">需要再次确认</div></div>
+        <div class="metric-card" onclick="filterEvaluations(null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">评价总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-eval-total>0</div><div class="metric-label">过程留痕</div></div>
+        <div class="metric-card" onclick="filterEvaluations('优秀')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">优秀</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-eval-excellent>0</div><div class="metric-label">高质量评价</div></div>
+        <div class="metric-card" onclick="filterEvaluations('良好')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">良好</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-eval-good>0</div><div class="metric-label">正常推进</div></div>
+        <div class="metric-card" onclick="filterEvaluations('待复盘')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">待复盘</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-eval-review>0</div><div class="metric-label">需要再次确认</div></div>
       </section>
       <section class="grid-2 page-section">
         <div class="panel">
@@ -116,38 +116,59 @@
         const positions = await window.hrApi.positions();
         const items = await window.hrApi.evaluations();
         const levels = await window.hrApi.evaluationLevels();
-        document.querySelector('[data-eval-total]').textContent = String(items.length);
-        document.querySelector('[data-eval-excellent]').textContent = String(items.filter(i => i.grade === '优秀').length);
-        document.querySelector('[data-eval-good]').textContent = String(items.filter(i => i.grade === '良好').length);
-        document.querySelector('[data-eval-review]').textContent = String(items.filter(i => i.grade !== '优秀' && i.grade !== '良好').length);
-        const gradeSummary = document.querySelector('[data-eval-grade-summary]');
-        if (gradeSummary) {
-          const grades = ['优秀', '良好', '一般', '较差', '不合格'];
-          gradeSummary.innerHTML = grades.map(grade => {
-            const count = items.filter(item => item.grade === grade).length;
-            return `<div class="list-item"><div class="item-top"><div><div class="item-title">${grade}</div><div class="item-meta">${count} 条评价</div></div><span class="chip ${grade === '优秀' ? 'success' : grade === '良好' ? 'primary' : grade === '一般' ? 'warning' : 'neutral'}">${count}</span></div></div>`;
-          }).join('');
-        }
-        const historySummary = document.querySelector('[data-eval-history-summary]');
-        if (historySummary) {
-          historySummary.innerHTML = items.slice(0, 3).map(item => {
-            const candidate = candidates.find(c => c.id === item.candidate_id);
-            const position = positions.find(p => p.id === item.position_id);
-            return `<div class="list-item"><div class="item-top"><div><div class="item-title">${candidate?.name || `候选人 ${item.candidate_id}`}</div><div class="item-meta">${position?.name || `岗位 ${item.position_id || '--'}`} · ${item.round_name}</div></div><span class="chip success">${item.grade} · ${item.score} 分</span></div><div class="item-meta">${item.content}</div></div>`;
-          }).join('') || '<div class="list-item"><div class="item-meta">评价历史来自数据库。</div></div>';
-        }
-        const list = document.querySelector('[data-evaluation-list]');
-        if (list) {
-          list.innerHTML = items.slice(0, 3).map(i => {
-            const candidate = candidates.find(c => c.id === i.candidate_id);
-            const position = positions.find(p => p.id === i.position_id);
-            return `<div class="list-item"><div class="item-top"><div><div class="item-title">${candidate?.name || `候选人 ${i.candidate_id}`}</div><div class="item-meta">${position?.name || `岗位 ${i.position_id || '--'}`} · ${i.evaluator} · ${i.round_name}</div></div><span class="chip success">${i.grade} · ${i.score} 分</span></div><div class="item-meta">${i.content}</div></div>`;
-          }).join('');
-        }
-        const levelList = document.querySelector('[data-level-list]');
-        if (levelList) {
-          levelList.innerHTML = levels.map(level => `<div class="list-item"><div class="item-top"><div><div class="item-title">${level.name}</div><div class="item-meta">分值 ${level.score} · ${level.description || '无说明'}</div></div><span class="chip ${level.enabled ? 'success' : 'neutral'}">${level.color || 'default'}</span></div></div>`).join('');
-        }
+        
+        window.evaluationData = { candidates, positions, items, levels };
+        
+        window.renderEvaluationList = function() {
+          const { candidates, positions, items, levels } = window.evaluationData;
+          document.querySelector('[data-eval-total]').textContent = String(items.length);
+          document.querySelector('[data-eval-excellent]').textContent = String(items.filter(i => i.grade === '优秀').length);
+          document.querySelector('[data-eval-good]').textContent = String(items.filter(i => i.grade === '良好').length);
+          document.querySelector('[data-eval-review]').textContent = String(items.filter(i => i.grade !== '优秀' && i.grade !== '良好').length);
+          
+          const gradeSummary = document.querySelector('[data-eval-grade-summary]');
+          if (gradeSummary) {
+            const grades = ['优秀', '良好', '一般', '较差', '不合格'];
+            gradeSummary.innerHTML = grades.map(grade => {
+              const count = items.filter(item => item.grade === grade).length;
+              return `<div class="list-item"><div class="item-top"><div><div class="item-title">${grade}</div><div class="item-meta">${count} 条评价</div></div><span class="chip ${grade === '优秀' ? 'success' : grade === '良好' ? 'primary' : grade === '一般' ? 'warning' : 'neutral'}">${count}</span></div></div>`;
+            }).join('');
+          }
+          const historySummary = document.querySelector('[data-eval-history-summary]');
+          if (historySummary) {
+            historySummary.innerHTML = items.slice(0, 3).map(item => {
+              const candidate = candidates.find(c => c.id === item.candidate_id);
+              const position = positions.find(p => p.id === item.position_id);
+              return `<div class="list-item"><div class="item-top"><div><div class="item-title">${candidate?.name || `候选人 ${item.candidate_id}`}</div><div class="item-meta">${position?.name || `岗位 ${item.position_id || '--'}`} · ${item.round_name}</div></div><span class="chip success">${item.grade} · ${item.score} 分</span></div><div class="item-meta">${item.content}</div></div>`;
+            }).join('') || '<div class="list-item"><div class="item-meta">评价历史来自数据库。</div></div>';
+          }
+          
+          let displayItems = [...items];
+          if (window.evaluationFilters && window.evaluationFilters.grade) {
+            const g = window.evaluationFilters.grade;
+            if (g === '待复盘') {
+              displayItems = displayItems.filter(i => i.grade !== '优秀' && i.grade !== '良好');
+            } else {
+              displayItems = displayItems.filter(i => i.grade === g);
+            }
+          }
+          
+          const list = document.querySelector('[data-evaluation-list]');
+          if (list) {
+            list.innerHTML = displayItems.map(i => {
+              const candidate = candidates.find(c => c.id === i.candidate_id);
+              const position = positions.find(p => p.id === i.position_id);
+              return `<div class="list-item"><div class="item-top"><div><div class="item-title">${candidate?.name || `候选人 ${i.candidate_id}`}</div><div class="item-meta">${position?.name || `岗位 ${i.position_id || '--'}`} · ${i.evaluator} · ${i.round_name}</div></div><span class="chip success">${i.grade} · ${i.score} 分</span></div><div class="item-meta">${i.content}</div></div>`;
+            }).join('');
+          }
+          const levelList = document.querySelector('[data-level-list]');
+          if (levelList) {
+            levelList.innerHTML = levels.map(level => `<div class="list-item"><div class="item-top"><div><div class="item-title">${level.name}</div><div class="item-meta">分值 ${level.score} · ${level.description || '无说明'}</div></div><span class="chip ${level.enabled ? 'success' : 'neutral'}">${level.color || 'default'}</span></div></div>`).join('');
+          }
+        };
+        
+        window.renderEvaluationList();
+        
         document.addEventListener('click', async (event) => {
           const btn = event.target.closest('[data-action]');
           if (!btn) return;
@@ -176,6 +197,14 @@
         console.warn(err);
       }
     });
+
+    window.filterEvaluations = function(grade) {
+      window.evaluationFilters = window.evaluationFilters || {};
+      window.evaluationFilters.grade = grade;
+      if (window.renderEvaluationList) {
+        window.renderEvaluationList();
+      }
+    };
   </script>
 </body>
 </html>

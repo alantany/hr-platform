@@ -17,9 +17,9 @@
 
     window.__PAGE_BODY__ = `
       <section class="metrics">
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">岗位总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-recruit-total>0</div><div class="metric-label">Recruit 岗位库</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">有效岗位</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-recruit-valid>0</div><div class="metric-label">后台会处理</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">跳过岗位</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-recruit-invalid>0</div><div class="metric-label">is_valid=N</div></div>
+        <div class="metric-card" onclick="filterRecruitJobs('')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">岗位总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-recruit-total>0</div><div class="metric-label">Recruit 岗位库</div></div>
+        <div class="metric-card" onclick="filterRecruitJobs('Y')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">有效岗位</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-recruit-valid>0</div><div class="metric-label">后台会处理</div></div>
+        <div class="metric-card" onclick="filterRecruitJobs('N')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">跳过岗位</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-recruit-invalid>0</div><div class="metric-label">is_valid=N</div></div>
         <div class="metric-card"><div class="metric-top"><div><div class="section-sub">发布人</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-recruit-publishers>0</div><div class="metric-label">关联员工数</div></div>
       </section>
 
@@ -141,6 +141,14 @@
 
     window.addEventListener("DOMContentLoaded", async () => {
       await renderApp();
+      const urlParams = new URLSearchParams(location.search);
+      const validParam = urlParams.get("valid");
+      if (validParam) {
+        const validSelect = document.querySelector('[data-recruit-filter-valid]');
+        if (validSelect) {
+          validSelect.value = validParam;
+        }
+      }
       await loadJobs().catch((err) => showToast(err.message || String(err)));
       document.addEventListener("input", (event) => {
         if (event.target.matches("[data-recruit-filter-keyword]")) renderRows();
@@ -203,6 +211,16 @@
         }
       });
     });
+
+    window.filterRecruitJobs = function(validStatus) {
+      const validSelect = document.querySelector('[data-recruit-filter-valid]');
+      if (validSelect) {
+        validSelect.value = validStatus || '';
+      }
+      if (window.renderRows) {
+        window.renderRows();
+      }
+    };
   </script>
 </body>
 </html>

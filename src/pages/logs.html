@@ -13,10 +13,10 @@
   <script>
     window.__PAGE_BODY__ = `
       <section class="metrics">
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">操作总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-audit-total>0</div><div class="metric-label">当前筛选结果</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">导入日志</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-audit-import>0</div><div class="metric-label">简历导入相关</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">推荐日志</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-audit-recommend>0</div><div class="metric-label">推荐与面试流转</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">权限变更</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-audit-permission>0</div><div class="metric-label">组织管理操作</div></div>
+        <div class="metric-card" onclick="filterLogsByModule(null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">操作总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-audit-total>0</div><div class="metric-label">当前筛选结果</div></div>
+        <div class="metric-card" onclick="filterLogsByModule('导入')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">导入日志</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-audit-import>0</div><div class="metric-label">简历导入相关</div></div>
+        <div class="metric-card" onclick="filterLogsByModule('推荐')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">推荐日志</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-audit-recommend>0</div><div class="metric-label">推荐与面试流转</div></div>
+        <div class="metric-card" onclick="filterLogsByModule('权限')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">权限变更</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-audit-permission>0</div><div class="metric-label">组织管理操作</div></div>
       </section>
       <section class="panel">
         <div class="section-head">
@@ -203,6 +203,16 @@
         loadLogs().catch((err) => console.warn(err));
       }, 350);
     });
+
+    window.filterLogsByModule = function(moduleName) {
+      const moduleInput = document.querySelector('[data-audit-filter-module]');
+      if (moduleInput) {
+        moduleInput.value = moduleName || '';
+      }
+      if (window.loadLogs) {
+        window.loadLogs().catch((err) => console.warn(err));
+      }
+    };
   </script>
 </body>
 </html>

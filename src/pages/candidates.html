@@ -33,17 +33,17 @@
   <script>
     window.__PAGE_BODY__ = `
       <section class="metrics" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-        <div class="metric-card">
+        <div class="metric-card" onclick="filterCandidatesByExclude('')" style="cursor: pointer;">
           <div class="metric-top"><div><div class="section-sub">候选人总数</div></div><div class="metric-icon">○</div></div>
           <div class="metric-value" data-candidate-total>0</div>
           <div class="metric-label">覆盖全部简历资源</div>
         </div>
-        <div class="metric-card">
+        <div class="metric-card" onclick="filterCandidatesByExclude('')" style="cursor: pointer;">
           <div class="metric-top"><div><div class="section-sub">今日新增</div></div><div class="metric-icon">△</div></div>
           <div class="metric-value" data-candidate-new>0</div>
           <div class="metric-label">比昨日增加 3.2%</div>
         </div>
-        <div class="metric-card">
+        <div class="metric-card" onclick="filterCandidatesByExclude('only_locked')" style="cursor: pointer;">
           <div class="metric-top"><div><div class="section-sub">已锁定候选人</div></div><div class="metric-icon">◌</div></div>
           <div class="metric-value" data-candidate-locked>0</div>
           <div class="metric-label">当前被项目占用</div>
@@ -1839,6 +1839,16 @@
         cascadeViewSel: '.editcity-cascade-view'
       });
     });
+
+    window.filterCandidatesByExclude = function(val) {
+      const excludeSelect = document.querySelector('[data-filter-exclude]');
+      if (excludeSelect) {
+        excludeSelect.value = val || '';
+      }
+      if (window.candidatesPageState) {
+        window.candidatesPageState.applyFilters();
+      }
+    };
   </script>
 </body>
 </html>

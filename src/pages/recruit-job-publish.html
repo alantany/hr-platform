@@ -30,9 +30,9 @@
 
     window.__PAGE_BODY__ = `
       <section class="metrics" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">Recruit 岗位</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-recruit-job-total>0</div><div class="metric-label">当前岗位库总量</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">有效岗位</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-recruit-job-valid>0</div><div class="metric-label">抓取后台可读取</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">今日任务</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-recruit-task-today>0</div><div class="metric-label">今日统计行数</div></div>
+        <a href="./recruit-job-list.html" class="metric-card" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">Recruit 岗位</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-recruit-job-total>0</div><div class="metric-label">当前岗位库总量</div></a>
+        <a href="./recruit-job-list.html?valid=Y" class="metric-card" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">有效岗位</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-recruit-job-valid>0</div><div class="metric-label">抓取后台可读取</div></a>
+        <a href="./recruit-daily-tasks.html" class="metric-card" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">今日任务</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-recruit-task-today>0</div><div class="metric-label">今日统计行数</div></a>
       </section>
 
       <section class="grid-2">
