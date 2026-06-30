@@ -1,5 +1,5 @@
 window.hrApi = {
-  baseUrl: "/api",
+  baseUrl: (location.protocol === "file:" || location.port !== "8000") ? "http://127.0.0.1:8000/api" : "/api",
   token: localStorage.getItem("hr_token") || "",
   async request(path, options = {}) {
     const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
