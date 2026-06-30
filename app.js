@@ -688,17 +688,47 @@ async function render() {
   }
   const visible = getNavVisibility(currentUser?.role || currentUser?.role_name || "超级管理员", currentUser?.permissions);
   if (!visible.has(page) && page !== "dashboard.html") {
-    el.innerHTML = shell("dashboard", `
+    const errorBody = `
       <section class="panel">
         <h3>当前角色无访问权限</h3>
         <p class="panel-sub">当前登录角色暂未开放 ${page} 对应页面，请联系管理员开通权限。</p>
         <div class="list"><div class="list-item"><div class="item-meta">权限矩阵已在页面菜单上收口，直接访问该页面也会被拦截。</div></div></div>
       </section>
-    `, currentUser, unreadCount);
+    `;
+    const existingSidebar = el.querySelector(".sidebar");
+    if (existingSidebar) {
+      const currentContent = el.querySelector(".content");
+      if (currentContent) {
+        const temp = document.createElement("div");
+        temp.innerHTML = shell("dashboard", errorBody, currentUser, unreadCount);
+        const newContent = temp.querySelector(".content");
+        if (newContent) currentContent.innerHTML = newContent.innerHTML;
+      }
+    } else {
+      el.innerHTML = shell("dashboard", errorBody, currentUser, unreadCount);
+    }
     bindActionButtons();
     return;
   }
-  el.innerHTML = shell(key, window.__PAGE_BODY__ || "", currentUser, unreadCount);
+  
+  const existingSidebar = el.querySelector(".sidebar");
+  if (existingSidebar) {
+    const currentContent = el.querySelector(".content");
+    if (currentContent) {
+      const temp = document.createElement("div");
+      temp.innerHTML = shell(key, window.__PAGE_BODY__ || "", currentUser, unreadCount);
+      const newContent = temp.querySelector(".content");
+      if (newContent) {
+        currentContent.innerHTML = newContent.innerHTML;
+      }
+    }
+    el.querySelectorAll(".nav-item").forEach((item) => {
+      const itemHref = item.getAttribute("href").split("/").pop() || "";
+      item.classList.toggle("active", itemHref === page);
+    });
+  } else {
+    el.innerHTML = shell(key, window.__PAGE_BODY__ || "", currentUser, unreadCount);
+  }
   bindActionButtons();
 }
 
