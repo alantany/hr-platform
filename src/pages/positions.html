@@ -13,10 +13,10 @@
   <script>
     window.__PAGE_BODY__ = `
       <section class="metrics">
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">岗位总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-position-total>0</div><div class="metric-label">全部岗位</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">招聘人数</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-position-open>0</div><div class="metric-label">所有岗位需求合计</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-position-urgent>0</div><div class="metric-label">需要优先处理</div></div>
-        <div class="metric-card"><div class="metric-top"><div><div class="section-sub">项目数</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-position-projects>0</div><div class="metric-label">关联项目</div></div>
+        <div class="metric-card" onclick="filterPositionsByUrgency(null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">岗位总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-position-total>0</div><div class="metric-label">全部岗位</div></div>
+        <div class="metric-card" onclick="filterPositionsByUrgency(null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">招聘人数</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-position-open>0</div><div class="metric-label">所有岗位需求合计</div></div>
+        <div class="metric-card" onclick="filterPositionsByUrgency('高')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-position-urgent>0</div><div class="metric-label">需要优先处理</div></div>
+        <a href="./projects.html" class="metric-card" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">项目数</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-position-projects>0</div><div class="metric-label">关联项目</div></a>
       </section>
 
       <section class="panel">
@@ -204,6 +204,14 @@
         location.reload();
       }
     });
+
+    window.filterPositionsByUrgency = function(urgency) {
+      window.positionFilters = window.positionFilters || {};
+      window.positionFilters.urgency = urgency;
+      if (window.renderPositionListFromState) {
+        window.renderPositionListFromState();
+      }
+    };
   </script>
 </body>
 </html>
