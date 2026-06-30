@@ -1592,7 +1592,7 @@ button, input, select { font: inherit; }
   background: #fff;
   box-shadow: 0 12px 36px rgba(50, 42, 105, .15);
 }
-.customer-project-popover::before { content: ""; position: absolute; inset: -10px 0 auto; height: 10px; }
+.customer-project-popover::before { content: ""; position: absolute; top: -16px; left: 0; right: 0; height: 20px; z-index: 10; }
 .customer-name-preview:hover .customer-project-popover,
 .customer-name-preview:focus-within .customer-project-popover {
   visibility: visible;
