@@ -369,7 +369,22 @@ def enforce_company_access(db: Session, user: User, company_id: int) -> None:
 
 
 def can_access_recommendation(db: Session, user: User, recommendation: Recommendation) -> bool:
-    return security.can_access_scope(db, user, "candidate", recommendation.candidate_id) or security.can_access_scope(db, user, "position", recommendation.position_id)
+    if security.is_admin(user):
+        return True
+    allowed_ids = security.visible_owner_user_ids(db, user)
+    is_recommender = (
+        recommendation.recommender_user_id in allowed_ids
+        or (recommendation.recommender_user_id is None and recommendation.recommender == user.username)
+    )
+    if is_recommender:
+        return True
+    position = recommendation.position
+    if position:
+        if position.owner_user_id in allowed_ids:
+            return True
+        if security.can_access_scope(db, user, "position", position.id):
+            return True
+    return False
 
 
 def enforce_recommendation_access(db: Session, user: User, recommendation: Recommendation) -> None:
@@ -814,20 +829,19 @@ def list_candidates(
     items = crud.list_candidates(db, keyword=keyword, city=city, status=status)
     if security.is_admin(user):
         return items
-    allowed_candidate_ids = set(security.accessible_candidate_ids(db, user))
     filtered = []
+    owner_ids = security.visible_owner_user_ids(db, user)
     for item in items:
-        item_id = int(item.get("id") or 0)
-        record_key = str(item.get("record_key") or "")
-        if record_key.startswith("candidate:") and item_id in allowed_candidate_ids:
-            filtered.append(item)
-            continue
-        if record_key.startswith("download:"):
-            candidate_agent_id = item.get("candidate_agent_id")
-            if candidate_agent_id:
-                candidate = db.query(Candidate).filter(Candidate.candidate_agent_id == candidate_agent_id).first()
-                if candidate and candidate.id in allowed_candidate_ids:
-                    filtered.append(item)
+        # 候选人公共池共享，对所有人可见，但非归属人/下属的候选人脱敏
+        candidate_owner = item.get("owner_user_id")
+        if candidate_owner not in owner_ids:
+            p = (item.get("phone") or "").strip()
+            item["phone"] = p[:3] + "****" + p[-4:] if len(p) >= 11 else (p[:-4] + "****" if len(p) > 4 else p)
+            e = (item.get("email") or "").strip()
+            if "@" in e:
+                parts = e.split("@")
+                item["email"] = (parts[0][:2] + "***" if len(parts[0]) > 2 else parts[0] + "***") + "@" + parts[1]
+        filtered.append(item)
     return filtered
 
 
@@ -846,8 +860,18 @@ def get_candidate(candidate_id: str, db: Session = Depends(get_db), user: User =
     candidate = crud.ensure_local_candidate(db, candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
-    enforce_candidate_access(db, user, candidate)
-    return candidate
+    
+    out = schemas.CandidateOut.model_validate(candidate, from_attributes=True)
+    if not security.is_admin(user):
+        owner_ids = security.visible_owner_user_ids(db, user)
+        if out.owner_user_id not in owner_ids:
+            p = (out.phone or "").strip()
+            out.phone = p[:3] + "****" + p[-4:] if len(p) >= 11 else (p[:-4] + "****" if len(p) > 4 else p)
+            e = (out.email or "").strip()
+            if "@" in e:
+                parts = e.split("@")
+                out.email = (parts[0][:2] + "***" if len(parts[0]) > 2 else parts[0] + "***") + "@" + parts[1]
+    return out
 
 
 @app.post("/api/candidates/ai-search", response_model=schemas.CandidateAiSearchOut)
@@ -1047,12 +1071,21 @@ def delete_candidate_tracking_event(event_id: int, db: Session = Depends(get_db)
 
 @app.get("/api/interview-records", response_model=list[schemas.InterviewRecordOut])
 def list_interview_records(candidate_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return crud.list_interview_records(db, candidate_id=candidate_id)
+    items = crud.list_interview_records(db, candidate_id=candidate_id)
+    if security.is_admin(user):
+        return items
+    allowed_ids = security.visible_owner_user_ids(db, user)
+    return [
+        i for i in items
+        if i.creator_user_id in allowed_ids
+        or (i.creator_user_id is None and (i.interviewer == user.username or i.interviewer == user.full_name))
+    ]
 
 
 @app.post("/api/interview-records", response_model=schemas.InterviewRecordOut)
 def add_interview_record(payload: schemas.InterviewRecordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
     obj = crud.create_interview_record(db, payload)
+    obj.creator_user_id = user.id
     crud.add_audit(db, user.username, "候选人跟踪", "新增面试记录", "interview_record", str(payload.candidate_id), detail=payload.round_name)
     db.commit()
     db.refresh(obj)
@@ -1061,7 +1094,15 @@ def add_interview_record(payload: schemas.InterviewRecordCreate, db: Session = D
 
 @app.get("/api/salary-records", response_model=list[schemas.SalaryRecordOut])
 def list_salary_records(candidate_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return crud.list_salary_records(db, candidate_id=candidate_id)
+    items = crud.list_salary_records(db, candidate_id=candidate_id)
+    if security.is_admin(user):
+        return items
+    allowed_ids = security.visible_owner_user_ids(db, user)
+    return [
+        s for s in items
+        if s.operator_user_id in allowed_ids
+        or (s.operator_user_id is None and (s.operator == user.username or s.operator == user.full_name))
+    ]
 
 
 @app.post("/api/salary-records", response_model=schemas.SalaryRecordOut)
@@ -1076,6 +1117,7 @@ def add_salary_record(payload: schemas.SalaryRecordCreate, db: Session = Depends
     
     # 支持添加多条薪资/福利/入职条件跟踪记录
     obj = crud.create_salary_record(db, payload)
+    obj.operator_user_id = user.id
     action = "新增薪资记录"
     
     crud.add_audit(db, user.username, "候选人跟踪", action, "salary_record", str(candidate.id), detail=payload.interview_round or "薪资记录")
@@ -1123,7 +1165,15 @@ def delete_salary_record(record_id: int, db: Session = Depends(get_db), user: Us
 
 @app.get("/api/employment-records", response_model=list[schemas.EmploymentRecordOut])
 def list_employment_records(candidate_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return crud.list_employment_records(db, candidate_id=candidate_id)
+    items = crud.list_employment_records(db, candidate_id=candidate_id)
+    if security.is_admin(user):
+        return items
+    allowed_ids = security.visible_owner_user_ids(db, user)
+    return [
+        e for e in items
+        if e.operator_user_id in allowed_ids
+        or (e.operator_user_id is None and e.candidate.owner_user_id in allowed_ids)
+    ]
 
 
 @app.post("/api/employment-records", response_model=schemas.EmploymentRecordOut)
@@ -1136,9 +1186,11 @@ def add_employment_record(payload: schemas.EmploymentRecordCreate, db: Session =
     existing = crud.list_employment_records(db, candidate_id=candidate.id)
     if existing:
         obj = crud.update_employment_record(db, existing[0], payload)
+        obj.operator_user_id = user.id
         action = "更新入职记录"
     else:
         obj = crud.create_employment_record(db, payload)
+        obj.operator_user_id = user.id
         action = "新增入职记录"
         
     # 联动更新候选人跟踪表（面试记录）的最新一条记录的入职状态
@@ -1247,6 +1299,7 @@ def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depe
     if candidate.locked:
         raise HTTPException(status_code=400, detail="候选人已锁定，无法重复推荐")
     obj = crud.create_recommendation(db, payload)
+    obj.recommender_user_id = user.id
     candidate.locked = True
     candidate.status = "锁定"
     crud.add_audit(db, user.username, "推荐交付", "创建推荐记录并锁定候选人", "recommendation", "new", detail=str(payload.candidate_id))
@@ -1330,6 +1383,7 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
                 feedback=payload.feedback,
             )
             recommendation = crud.create_recommendation(db, recommendation_payload)
+            recommendation.recommender_user_id = user.id
             candidate.locked = True
             candidate.status = "锁定"
             db.flush()

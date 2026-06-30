@@ -96,9 +96,11 @@ def test_operator_only_sees_candidates_for_authorized_position():
     names = {item["name"] for item in operator_candidates}
 
     assert allowed["name"] in names
-    assert blocked["name"] not in names
+    assert blocked["name"] in names
     assert client.get(f"/api/candidates/{allowed['id']}", headers=user_headers("operator")).status_code == 200
-    assert client.get(f"/api/candidates/{blocked['id']}", headers=user_headers("operator")).status_code == 403
+    peer_detail = client.get(f"/api/candidates/{blocked['id']}", headers=user_headers("operator"))
+    assert peer_detail.status_code == 200
+    assert "****" in peer_detail.json()["phone"] or peer_detail.json()["phone"] == ""
 
 
 def test_operator_can_export_candidate_created_by_self():

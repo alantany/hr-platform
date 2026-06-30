@@ -50,7 +50,19 @@ def is_leader(user: User) -> bool:
 def subordinate_user_ids(db: Session, user: User) -> set[int]:
     if not user.id:
         return set()
-    return {row[0] for row in db.query(User.id).filter(User.manager_user_id == user.id, User.is_active.is_(True)).all()}
+    from sqlalchemy import text
+    sql = text("""
+        WITH RECURSIVE sub_users AS (
+            SELECT id FROM users WHERE manager_user_id = :user_id AND is_active = true
+            UNION ALL
+            SELECT u.id FROM users u
+            INNER JOIN sub_users su ON u.manager_user_id = su.id
+            WHERE u.is_active = true
+        )
+        SELECT id FROM sub_users
+    """)
+    rows = db.execute(sql, {"user_id": user.id}).fetchall()
+    return {row[0] for row in rows}
 
 
 def visible_owner_user_ids(db: Session, user: User) -> set[int]:

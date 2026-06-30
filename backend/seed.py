@@ -83,6 +83,22 @@ def build_tag_config_payload(item: dict) -> dict:
 def seed() -> None:
     db: Session = SessionLocal()
     try:
+        # 物理表升级迁移
+        from sqlalchemy import text
+        migrations = [
+            ("recommendations", "recommender_user_id", "users(id)"),
+            ("interview_records", "creator_user_id", "users(id)"),
+            ("salary_records", "operator_user_id", "users(id)"),
+            ("employment_records", "operator_user_id", "users(id)")
+        ]
+        for tbl, col, ref in migrations:
+            try:
+                db.execute(text(f"ALTER TABLE {tbl} ADD COLUMN IF NOT EXISTS {col} INTEGER REFERENCES {ref}"))
+                db.commit()
+            except Exception as e:
+                db.rollback()
+                print(f"Migration error for {tbl}.{col}: {e}")
+
         if not db.query(User).filter(User.username == "admin").first():
             db.add(User(username="admin", full_name="系统管理员", phone="", email="", password_hash=hash_password("admin123"), role="超级管理员", is_active=True))
         else:

@@ -24,7 +24,7 @@ def test_support_modules_smoke():
         pos_id = positions[0]["id"] if positions else 1
         evaluation = client.post("/api/evaluations", json={"candidate_id": cand_id, "position_id": pos_id, "evaluator": "admin", "round_name": "第2轮", "grade": "良好", "score": 4, "content": "阶段性通过"}, headers=headers).json()
         recommendation_stats = client.get("/api/recommendation-stats?operator=admin", headers=headers).json()
-        tag = client.post("/api/tags", json={"category": "求职者标签", "name": "Python", "enabled": True}, headers=headers).json()
+        tag = client.post("/api/tags", json={"object_type": "candidate", "field_key": "custom_python", "field_label": "Python", "category": "求职者标签", "name": "Python", "enabled": True}, headers=headers).json()
         tag2 = client.patch(f"/api/tags/{tag['id']}", json={"enabled": False}, headers=headers).json()
         delete_resp = client.delete(f"/api/tags/{tag['id']}", headers=headers).json()
         notification = client.post("/api/notifications", json={"user": "admin", "title": "新通知", "type": "测试通知", "target_path": "/src/pages/logs.html"}, headers=headers).json()

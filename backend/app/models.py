@@ -190,6 +190,7 @@ class Recommendation(Base, TimestampMixin):
     candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id"), nullable=False)
     position_id: Mapped[int] = mapped_column(ForeignKey("positions.id"), nullable=False)
     recommender: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    recommender_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="待推荐", nullable=False)
     feedback: Mapped[str] = mapped_column(Text, default="", nullable=False)
     customer_comment: Mapped[str] = mapped_column(Text, default="", nullable=False)
@@ -247,6 +248,7 @@ class InterviewRecord(Base, TimestampMixin):
     round_name: Mapped[str] = mapped_column(String(32), default="第1轮", nullable=False)
     result: Mapped[str] = mapped_column(String(32), default="未进行", nullable=False)
     interviewer: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    creator_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     interview_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     note: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
@@ -273,6 +275,7 @@ class SalaryRecord(Base, TimestampMixin):
     onboard_cond: Mapped[str] = mapped_column(Text, default="", nullable=False)
     candidate_accepted: Mapped[str] = mapped_column(String(32), default="", nullable=False)
     operator: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    operator_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
 
     candidate = relationship("Candidate", back_populates="salary_records")
     position = relationship("Position")
@@ -288,6 +291,7 @@ class EmploymentRecord(Base, TimestampMixin):
     position_name: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     onboard_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    operator_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
 
     candidate = relationship("Candidate", back_populates="employment_records")
 
