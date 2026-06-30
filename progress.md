@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-06-30（已完成 - 修复求职者数据池已锁定与今日新增指标卡片过滤无效的 Bug）
+
+- 修复了“已锁定候选人”指标卡片点击后传值参数错误（由非法的 `'only_locked'` 修正为数据库支持的 `'locked'`)。
+- 扩展了 `applyFilters` 的前端数据过滤机制，增加了 `window.candidatesOnlyToday` 判断。当点击“今日新增”卡片时，会自动在前台动态对创建日期 (`created_at`) 匹配今日日期前缀进行过滤，成功打通了该指标的就地过滤。
+
 ## 2026-06-30（已完成 - 全局指标卡片交互与下钻跳转/就地过滤全面打通）
 
 - **求职者数据池 (`candidates.html`)**：为“已锁定候选人”卡片增加就地实时过滤，点击后自动过滤被项目占用的候选人列表，其余汇总项支持点击重置筛选条件。
@@ -2174,4 +2179,4 @@
   - 标签字典 9 个候选人维度均验证为维度内单一稳定色；Tag 为 13px、`2px 10px` 内边距和 6px 圆角。
 - 验证通过：`node --check app.js`、标签字典内联脚本语法检查、`git diff --check`、品牌色/渐变静态扫描、`pytest -q tests/test_phase3_smoke.py`（1 passed）。
 
-<!-- trigger update for pre-commit (v9) -->
+<!-- trigger update for pre-commit (v10) -->
