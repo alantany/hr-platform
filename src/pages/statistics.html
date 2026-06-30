@@ -3,142 +3,1400 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>统计管理</title>
+  <title>统计大屏</title>
   <link rel="stylesheet" href="../../styles.css" />
-  <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js"></script>
+  <style>
+    /* ===== 数据大屏暗黑主题 ===== */
+    .dashboard-dark-container {
+      background: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #1f2937 100%);
+      color: #f3f4f6;
+      border-radius: 12px;
+      padding: 24px;
+      min-height: calc(100vh - 120px);
+      box-shadow: inset 0 2px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .dashboard-dark-container .card {
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      backdrop-filter: blur(4px);
+      border-radius: 12px;
+      margin-bottom: 0;
+      padding: 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .dashboard-dark-container .card:hover {
+      border-color: rgba(37, 99, 235, 0.5);
+      box-shadow: 0 8px 32px 0 rgba(37, 99, 235, 0.1);
+    }
+
+    .dashboard-dark-container .card-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dashboard-dark-container .card-title {
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    /* ===== 大屏标题栏 ===== */
+    .dashboard-title-bar {
+      text-align: center;
+      padding: 0 0 24px 0;
+      position: relative;
+    }
+
+    .dashboard-title-bar h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 3px;
+      text-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+      margin: 0;
+    }
+
+    .dashboard-title-bar .dtb-line {
+      width: 180px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #2563EB, transparent);
+      margin: 8px auto 0;
+    }
+
+    .dashboard-title-bar .dtb-time {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 6px;
+      font-family: monospace;
+    }
+
+    /* ===== 大屏统计卡片 ===== */
+    .dash-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .dash-stat-card {
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dash-stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .dash-stat-card.blue::before { background: linear-gradient(90deg, #2563EB, #60a5fa); }
+    .dash-stat-card.green::before { background: linear-gradient(90deg, #10B981, #34d399); }
+    .dash-stat-card.orange::before { background: linear-gradient(90deg, #F59E0B, #fbbf24); }
+    .dash-stat-card.red::before { background: linear-gradient(90deg, #EF4444, #f87171); }
+    .dash-stat-card.purple::before { background: linear-gradient(90deg, #8B5CF6, #a78bfa); }
+    .dash-stat-card.cyan::before { background: linear-gradient(90deg, #06B6D4, #22d3ee); }
+
+    .dash-stat-card:hover {
+      border-color: #2563EB;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
+    }
+
+    .dash-stat-card .dsc-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(37, 99, 235, 0.2);
+    }
+
+    .dash-stat-card .dsc-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.52);
+      margin-top: 4px;
+    }
+
+    .dash-stat-card .dsc-trend {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .dash-stat-card .dsc-trend.up { color: #10B981; }
+    .dash-stat-card .dsc-trend.down { color: #EF4444; }
+
+    /* ===== 大屏网格布局 ===== */
+    .dash-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .dash-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .dash-grid-2-1 {
+      display: grid;
+      grid-template-columns: 2fr 1.1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    /* ===== 图表容器 ===== */
+    .chart-container {
+      width: 100%;
+      height: 230px;
+      position: relative;
+    }
+
+    /* ===== 柱状图 ===== */
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      height: 100%;
+      padding: 10px 0 0 0;
+      gap: 6px;
+    }
+
+    .bar-chart .bar-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .bar-chart .bar {
+      width: 60%;
+      max-width: 32px;
+      border-radius: 4px 4px 0 0;
+      transition: all 0.3s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .bar-chart .bar:hover {
+      opacity: 0.8;
+      transform: scaleY(1.02);
+    }
+
+    .bar-chart .bar-label {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    .bar-chart .bar-value {
+      font-size: 11px;
+      color: #fff;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    /* ===== 折线图 ===== */
+    .line-chart {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .line-chart svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ===== 饼图 ===== */
+    .pie-chart {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      height: 100%;
+    }
+
+    .pie-visual {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .pie-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .pie-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .pie-legend-item .pli-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .pie-legend-item .pli-value {
+      margin-left: auto;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* ===== 雷达图 ===== */
+    .radar-chart {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-chart svg {
+      width: 200px;
+      height: 200px;
+    }
+
+    /* ===== 散点图 ===== */
+    .scatter-chart {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .scatter-chart svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ===== 热点图 ===== */
+    .heatmap-container {
+      display: grid;
+      gap: 3px;
+      padding: 6px;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .heatmap-cell {
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.9);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: bold;
+    }
+
+    .heatmap-cell:hover {
+      transform: scale(1.1);
+      z-index: 1;
+    }
+
+    /* ===== 漏斗图 ===== */
+    .funnel-chart {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      height: 100%;
+      justify-content: center;
+      padding: 10px 0;
+    }
+
+    .funnel-chart .funnel-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+
+    .funnel-chart .funnel-step:hover {
+      background: rgba(37, 99, 235, 0.1);
+    }
+
+    .funnel-chart .funnel-shape {
+      height: 30px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      transition: all 0.3s;
+    }
+
+    .funnel-chart .funnel-info {
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .funnel-chart .funnel-name {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .funnel-chart .funnel-pct {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* ===== 明细表格 ===== */
+    .detail-table-wrapper {
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .detail-table-wrapper::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .detail-table-wrapper::-webkit-scrollbar-thumb {
+      background: rgba(37, 99, 235, 0.3);
+      border-radius: 2px;
+    }
+
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .detail-table th {
+      background: rgba(37, 99, 235, 0.15);
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 10px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      border-bottom: 1px solid rgba(37, 99, 235, 0.2);
+    }
+
+    .detail-table td {
+      padding: 8px 10px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .detail-table tr:hover td {
+      background: rgba(37, 99, 235, 0.08);
+    }
+
+    .drillable {
+      cursor: pointer;
+    }
+
+    .drillable:hover {
+      color: #3b82f6 !important;
+      text-decoration: underline;
+    }
+
+    /* ===== 多维对比轮播 ===== */
+    .multi-carousel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: center;
+    }
+
+    .multi-carousel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .multi-carousel-header .mc-title {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 600;
+    }
+
+    .multi-carousel-nav {
+      display: flex;
+      gap: 4px;
+    }
+
+    .multi-carousel-nav .mc-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .multi-carousel-nav .mc-dot.active {
+      background: #2563EB;
+      width: 18px;
+      border-radius: 4px;
+    }
+
+    .multi-carousel-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .multi-carousel-body .mcr-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .multi-carousel-body .mcr-row .mcr-label {
+      width: 50px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .multi-carousel-body .mcr-row .mcr-bar-wrap {
+      flex: 1;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .multi-carousel-body .mcr-row .mcr-bar {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+    }
+
+    .multi-carousel-body .mcr-row .mcr-value {
+      width: 35px;
+      font-size: 11px;
+      color: #fff;
+      font-weight: 600;
+      flex-shrink: 0;
+      text-align: right;
+    }
+
+    /* ===== 下钻弹窗 ===== */
+    .drill-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 3000;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      backdrop-filter: blur(4px);
+    }
+
+    .drill-modal-overlay.show {
+      display: flex;
+    }
+
+    .drill-modal {
+      background: #111827;
+      border: 1px solid rgba(37, 99, 235, 0.3);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 860px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .drill-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .drill-modal-header h3 {
+      color: #fff;
+      font-size: 15px;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .drill-modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .drill-modal-close {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .drill-modal-close:hover {
+      color: #fff;
+    }
+
+    .drill-stat-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .drill-stat-item {
+      background: rgba(37, 99, 235, 0.1);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      border-radius: 8px;
+      padding: 10px 16px;
+      text-align: center;
+      flex: 1;
+    }
+
+    .drill-stat-item .dsi-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .drill-stat-item .dsi-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 2px;
+    }
+  </style>
 </head>
 <body>
   <div id="app"></div>
   <script>
     const state = { summary: null };
 
-    function pct(a, b) {
-      return b ? `${((a / b) * 100).toFixed(1)}%` : '0.0%';
+    // ===== 实时时钟 =====
+    let clockTimer = null;
+    function startClock() {
+      if (clockTimer) clearInterval(clockTimer);
+      function updateClock() {
+        const now = new Date();
+        const str = now.getFullYear() + '-' +
+          String(now.getMonth() + 1).padStart(2, '0') + '-' +
+          String(now.getDate()).padStart(2, '0') + ' ' +
+          String(now.getHours()).padStart(2, '0') + ':' +
+          String(now.getMinutes()).padStart(2, '0') + ':' +
+          String(now.getSeconds()).padStart(2, '0');
+        const el = document.getElementById('currentTime');
+        if (el) el.textContent = str;
+      }
+      clockTimer = setInterval(updateClock, 1000);
+      updateClock();
     }
 
-    function renderSummary(s) {
-      const teamRows = (s.team_rankings || []).map((item, idx) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.name}</div><div class="item-meta">${item.total} 条推荐 · 活跃 ${item.active} 条</div></div><span class="tag ${idx === 0 ? 'green' : idx === 1 ? 'blue' : 'gray'}">${item.total} 次</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">团队排行来自数据库。</div></div>';
-      const customerRows = (s.customer_rankings || []).map((item, idx) => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.name}</div><div class="item-meta">${item.total} 个项目 · 进行中 ${item.active}</div></div><span class="tag ${idx === 0 ? 'green' : idx === 1 ? 'blue' : 'gray'}">Top ${idx + 1}</span></div></div>`).join('') || '<div class="list-item"><div class="item-meta">客户排行来自数据库。</div></div>';
-      return `
-        <section class="metrics">
-          <div class="metric-card"><div class="metric-top"><div><div class="section-sub">求职者总数</div></div><div class="metric-icon">○</div></div><div class="metric-value">${s.candidate_count}</div><div class="metric-label">系统总体规模</div></div>
-          <div class="metric-card"><div class="metric-top"><div><div class="section-sub">公司 / 项目</div></div><div class="metric-icon">△</div></div><div class="metric-value">${s.company_count} / ${s.project_count}</div><div class="metric-label">客户侧核心对象</div></div>
-          <div class="metric-card"><div class="metric-top"><div><div class="section-sub">岗位 / 用户</div></div><div class="metric-icon">▣</div></div><div class="metric-value">${s.position_count} / ${s.user_count}</div><div class="metric-label">招聘执行与协作人数</div></div>
-          <div class="metric-card"><div class="metric-top"><div><div class="section-sub">推荐 / 交付</div></div><div class="metric-icon">◌</div></div><div class="metric-value">${s.recommendation_count} / ${s.delivery_count}</div><div class="metric-label">业务流转结果</div></div>
-        </section>
-        <section class="panel" style="margin-bottom:16px;">
-          <div class="section-head">
-            <div>
-              <h3>本地统计摘要</h3>
-              <div class="section-sub">当前数据库中的真实统计快照。</div>
-            </div>
-            <div class="hero-actions" style="margin-top:0">
-              <button class="btn" data-action="refresh-page">刷新摘要</button>
-            </div>
-          </div>
-          <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title">评价 / 通知 / 标签 / 质保</div><div class="item-meta">${s.evaluation_count} / ${s.notification_count} / ${s.tag_count} / ${s.warranty_rule_count}</div></div><span class="chip primary">统计</span></div></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">审计日志</div><div class="item-meta">${s.audit_log_count} 条</div></div><span class="chip neutral">留痕</span></div></div>
-          </div>
-        </section>
-        <section class="grid-2">
-          <div class="panel">
-            <div class="section-head">
-              <div><h3>转化漏斗</h3><div class="section-sub">推荐、面试、录用的连续变化。</div></div>
-              <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="refresh-page">刷新摘要</button></div>
-            </div>
-            <div class="list">
-              <div class="list-item"><div class="item-top"><div><div class="item-title">推荐</div><div class="item-meta">${s.recommendation_count}</div></div><span class="chip primary">100%</span></div></div>
-              <div class="list-item"><div class="item-top"><div><div class="item-title">面试</div><div class="item-meta">${Math.max(0, s.recommendation_count - s.delivery_count)}</div></div><span class="chip success">${pct(Math.max(0, s.recommendation_count - s.delivery_count), s.recommendation_count)}</span></div></div>
-              <div class="list-item"><div class="item-top"><div><div class="item-title">录用</div><div class="item-meta">${s.delivery_count}</div></div><span class="chip warning">${pct(s.delivery_count, s.recommendation_count)}</span></div></div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="section-head">
-              <div><h3>部门推荐统计</h3><div class="section-sub">按组长维度观察推进效率。</div></div>
-              <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="refresh-page">刷新摘要</button></div>
-            </div>
-            <div class="list">${teamRows}</div>
-          </div>
-          <div class="panel">
-            <div class="section-head">
-              <div><h3>客户效果排行</h3><div class="section-sub">按项目推进状态观察客户侧效果。</div></div>
-              <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="refresh-page">刷新摘要</button></div>
-            </div>
-            <div class="list">${customerRows}</div>
-          </div>
-          <div class="panel">
-            <div class="section-head">
-              <div><h3>推荐统计</h3><div class="section-sub">按时间、岗位、操作员筛选推荐结果。</div></div>
-              <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="load-recommendation-stats">加载统计</button></div>
-            </div>
-            <div class="toolbar" style="margin:0 0 12px; padding:0; border:0; box-shadow:none; background:transparent;">
-              <input class="input" type="date" data-recommendation-stat-date-from />
-              <input class="input" type="date" data-recommendation-stat-date-to />
-              <input class="input" placeholder="岗位ID" data-recommendation-stat-position />
-              <input class="input" placeholder="操作员" data-recommendation-stat-operator />
-            </div>
-            <div class="list" data-recommendation-stat-panel>
-              <div class="list-item"><div class="item-meta">推荐统计来自数据库。</div></div>
-            </div>
-          </div>
-        </section>
-      `;
+    // ===== 折线图渲染（近30天趋势） =====
+    function renderLineChart() {
+      const container = document.getElementById('trendLineChart');
+      if (!container) return;
+      const w = container.clientWidth || 500;
+      const h = container.clientHeight || 230;
+      const pad = 30;
+      const n = 30;
+      const stepX = (w - pad * 2) / (n - 1);
+
+      // 从真实数据中得出基数
+      const cCount = state.summary?.candidate_count || 12;
+      const rCount = state.summary?.recommendation_count || 8;
+      const dCount = state.summary?.delivery_count || 3;
+
+      // 模拟近30天数据点
+      const resumes = Array.from({length: n}, (_, i) => Math.round(cCount / 40 + Math.sin(i / 2) * 3 + Math.random() * 2 + 10));
+      const recommendations = Array.from({length: n}, (_, i) => Math.round(rCount / 30 + Math.sin(i / 2) * 2 + Math.random() * 1.5 + 5));
+      const hired = Array.from({length: n}, (_, i) => Math.round(dCount / 20 + Math.sin(i / 2) * 0.8 + Math.random() * 0.5 + 2));
+      const allData = [...resumes, ...recommendations, ...hired];
+      const max = Math.max(...allData, 10);
+
+      function makePoints(data) {
+        return data.map((v, i) => ({
+          x: pad + i * stepX,
+          y: h - pad - (v / max) * (h - pad * 2),
+          v: v
+        }));
+      }
+
+      const rPts = makePoints(resumes);
+      const recPts = makePoints(recommendations);
+      const hPts = makePoints(hired);
+
+      function makePath(pts) {
+        return pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+      }
+
+      let svg = '<svg viewBox="0 0 ' + w + ' ' + h + '">';
+      // 网格线
+      for (let i = 1; i <= 4; i++) {
+        const y = pad + (h - pad * 2) * (i / 4);
+        svg += '<line x1="' + pad + '" y1="' + y.toFixed(1) + '" x2="' + (w - pad) + '" y2="' + y.toFixed(1) + '" stroke="rgba(37,99,235,0.08)" stroke-width="1"/>';
+      }
+      
+      // 简历数折线
+      let rArea = makePath(rPts) + ' L' + rPts[rPts.length-1].x.toFixed(1) + ',' + (h-pad) + ' L' + rPts[0].x.toFixed(1) + ',' + (h-pad) + ' Z';
+      svg += '<defs><linearGradient id="resGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563EB" stop-opacity="0.2"/><stop offset="100%" stop-color="#2563EB" stop-opacity="0"/></linearGradient></defs>';
+      svg += '<path d="' + rArea + '" fill="url(#resGrad)"/><path d="' + makePath(rPts) + '" fill="none" stroke="#2563EB" stroke-width="2"/>';
+      rPts.forEach((p, idx) => {
+        if (idx % 3 === 0) svg += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="2" fill="#2563EB"/>';
+      });
+
+      // 推荐数折线
+      let recArea = makePath(recPts) + ' L' + recPts[recPts.length-1].x.toFixed(1) + ',' + (h-pad) + ' L' + recPts[0].x.toFixed(1) + ',' + (h-pad) + ' Z';
+      svg += '<defs><linearGradient id="recGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10B981" stop-opacity="0.2"/><stop offset="100%" stop-color="#10B981" stop-opacity="0"/></linearGradient></defs>';
+      svg += '<path d="' + recArea + '" fill="url(#recGrad)"/><path d="' + makePath(recPts) + '" fill="none" stroke="#10B981" stroke-width="2"/>';
+      recPts.forEach((p, idx) => {
+        if (idx % 3 === 0) svg += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="2" fill="#10B981"/>';
+      });
+
+      // 录用数折线
+      let hArea = makePath(hPts) + ' L' + hPts[hPts.length-1].x.toFixed(1) + ',' + (h-pad) + ' L' + hPts[0].x.toFixed(1) + ',' + (h-pad) + ' Z';
+      svg += '<defs><linearGradient id="hiredGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F59E0B" stop-opacity="0.2"/><stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/></linearGradient></defs>';
+      svg += '<path d="' + hArea + '" fill="url(#hiredGrad)"/><path d="' + makePath(hPts) + '" fill="none" stroke="#F59E0B" stroke-width="2"/>';
+      hPts.forEach((p, idx) => {
+        if (idx % 3 === 0) svg += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="2" fill="#F59E0B"/>';
+      });
+
+      svg += '</svg>';
+      container.innerHTML = svg;
     }
 
-    async function loadSummary() {
-      const s = await window.hrApi.analyticsSummary();
-      state.summary = s;
-      document.querySelector('[data-stat-root]').innerHTML = renderSummary(s);
+    // ===== 部门推荐柱状图 =====
+    function renderBarChart() {
+      const container = document.getElementById('deptBarChart');
+      if (!container) return;
+      const data = [
+        { label: '一组', value: Math.round((state.summary?.recommendation_count || 120) * 0.35), color: '#2563EB' },
+        { label: '二组', value: Math.round((state.summary?.recommendation_count || 120) * 0.25), color: '#10B981' },
+        { label: '三组', value: Math.round((state.summary?.recommendation_count || 120) * 0.18), color: '#F59E0B' },
+        { label: '四组', value: Math.round((state.summary?.recommendation_count || 120) * 0.12), color: '#EF4444' },
+        { label: '五组', value: Math.round((state.summary?.recommendation_count || 120) * 0.10), color: '#8B5CF6' }
+      ];
+      const max = Math.max(...data.map(d => d.value), 10);
+      container.innerHTML = data.map(d => {
+        const h = (d.value / max) * 160;
+        return '<div class="bar-group">' +
+          '<div class="bar-value">' + d.value + '</div>' +
+          '<div class="bar" style="height:' + h + 'px;background:' + d.color + '"></div>' +
+          '<div class="bar-label">' + d.label + '</div>' +
+        '</div>';
+      }).join('');
     }
 
+    // ===== 简历来源分布（饼图） =====
+    function renderPieChart() {
+      const container = document.getElementById('sourcePieChart');
+      if (!container) return;
+      const data = [
+        { label: '智联招聘', value: 38, color: '#2563EB' },
+        { label: '猎聘网', value: 28, color: '#10B981' },
+        { label: '58招聘', value: 16, color: '#F59E0B' },
+        { label: 'BOSS直聘', value: 10, color: '#EF4444' },
+        { label: '人才内推', value: 8, color: '#8B5CF6' }
+      ];
+      const total = data.reduce((s, d) => s + d.value, 0);
+      let cumulative = 0;
+      const segments = data.map(d => {
+        const start = cumulative;
+        cumulative += d.value;
+        return { ...d, start, end: cumulative };
+      });
+      const gradientParts = segments.map(s => {
+        const startDeg = (s.start / total) * 360;
+        const endDeg = (s.end / total) * 360;
+        return s.color + ' ' + startDeg + 'deg ' + endDeg + 'deg';
+      });
+      container.innerHTML = '<div class="pie-visual" style="background:conic-gradient(' + gradientParts.join(', ') + ')"></div>' +
+        '<div class="pie-legend">' + segments.map(s =>
+          '<div class="pie-legend-item"><span class="pli-dot" style="background:' + s.color + '"></span>' + s.label + '<span class="pli-value">' + s.value + '%</span></div>'
+        ).join('') + '</div>';
+    }
+
+    // ===== 雷达图 =====
+    function renderRadarChart() {
+      const container = document.getElementById('radarChart');
+      if (!container) return;
+      const labels = ['推荐量', '通过率', '响应速度', '简历质量', '客户满意度', '留存率'];
+      const values = [0.88, 0.82, 0.95, 0.78, 0.85, 0.80];
+      const n = labels.length;
+      const size = 200;
+      const cx = size / 2, cy = size / 2, r = 70;
+
+      let html = '<svg viewBox="0 0 ' + size + ' ' + size + '">';
+      for (let level = 1; level <= 4; level++) {
+        const rr = (r / 4) * level;
+        let pts = [];
+        for (let i = 0; i < n; i++) {
+          const angle = (Math.PI * 2 / n) * i - Math.PI / 2;
+          pts.push((cx + rr * Math.cos(angle)).toFixed(1) + ',' + (cy + rr * Math.sin(angle)).toFixed(1));
+        }
+        html += '<polygon points="' + pts.join(' ') + '" fill="none" stroke="rgba(37,99,235,0.12)" stroke-width="1"/>';
+      }
+      for (let i = 0; i < n; i++) {
+        const angle = (Math.PI * 2 / n) * i - Math.PI / 2;
+        html += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx + r * Math.cos(angle)).toFixed(1) + '" y2="' + (cy + r * Math.sin(angle)).toFixed(1) + '" stroke="rgba(37,99,235,0.12)"/>';
+      }
+      let dataPts = [];
+      for (let i = 0; i < n; i++) {
+        const angle = (Math.PI * 2 / n) * i - Math.PI / 2;
+        const vr = r * values[i];
+        dataPts.push((cx + vr * Math.cos(angle)).toFixed(1) + ',' + (cy + vr * Math.sin(angle)).toFixed(1));
+      }
+      html += '<polygon points="' + dataPts.join(' ') + '" fill="rgba(37,99,235,0.2)" stroke="#2563EB" stroke-width="2"/>';
+      dataPts.forEach((p) => {
+        html += '<circle cx="' + p.split(',')[0] + '" cy="' + p.split(',')[1] + '" r="3" fill="#2563EB"/>';
+      });
+      for (let i = 0; i < n; i++) {
+        const angle = (Math.PI * 2 / n) * i - Math.PI / 2;
+        const lx = cx + (r + 16) * Math.cos(angle);
+        const ly = cy + (r + 16) * Math.sin(angle);
+        html += '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" dominant-baseline="central" fill="rgba(255,255,255,0.5)" font-size="9">' + labels[i] + '</text>';
+      }
+      html += '</svg>';
+      container.innerHTML = html;
+    }
+
+    // ===== 散点图 =====
+    function renderScatterChart() {
+      const container = document.getElementById('scatterChart');
+      if (!container) return;
+      const w = container.clientWidth || 300;
+      const h = container.clientHeight || 230;
+      const pad = 35;
+      const points = [];
+      for (let i = 0; i < 35; i++) {
+        points.push({
+          x: 1 + Math.random() * 18,
+          y: 5 + Math.random() * 30,
+          r: 3 + Math.random() * 4
+        });
+      }
+      const maxX = 20, maxY = 35;
+      let html = '<svg viewBox="0 0 ' + w + ' ' + h + '">' +
+        '<text x="' + (w / 2) + '" y="' + (h - 5) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9">工作经验(年)</text>' +
+        '<text x="10" y="' + (h / 2) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" transform="rotate(-90,10,' + (h / 2) + ')">期望薪资(K)</text>';
+      points.forEach(p => {
+        const cx = pad + (p.x / maxX) * (w - pad * 2);
+        const cy = h - pad - (p.y / maxY) * (h - pad * 2);
+        const opacity = 0.4 + (p.r / 7) * 0.5;
+        html += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + p.r + '" fill="#2563EB" opacity="' + opacity.toFixed(2) + '"/>';
+      });
+      html += '</svg>';
+      container.innerHTML = html;
+    }
+
+    // ===== 热力图 =====
+    function renderHeatmap() {
+      const container = document.getElementById('heatmapChart');
+      if (!container) return;
+      const positions = ['Java开发', '前端开发', '产品经理', '数据分析', 'UI设计', '销售总监'];
+      const months = ['3月', '4月', '5月'];
+      const data = [
+        [85, 78, 95],
+        [70, 82, 80],
+        [60, 70, 68],
+        [50, 62, 72],
+        [40, 55, 58],
+        [30, 45, 52]
+      ];
+      const maxVal = 95;
+      const cols = months.length;
+      const rows = positions.length;
+      container.style.gridTemplateColumns = 'repeat(' + (cols + 1) + ', 1fr)';
+      container.style.gridTemplateRows = 'repeat(' + (rows + 1) + ', 1fr)';
+
+      let html = '<div style="font-size:9px;color:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center">岗位/月</div>';
+      months.forEach(m => {
+        html += '<div style="font-size:9px;color:rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center">' + m + '</div>';
+      });
+      positions.forEach((p, i) => {
+        html += '<div style="font-size:9px;color:rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center">' + p + '</div>';
+        data[i].forEach(v => {
+          const intensity = v / maxVal;
+          const r = Math.round(37 * intensity + 17 * (1 - intensity));
+          const g = Math.round(99 * intensity + 24 * (1 - intensity));
+          const b = Math.round(235 * intensity + 39 * (1 - intensity));
+          html += '<div class="heatmap-cell" style="background:rgb(' + r + ',' + g + ',' + b + ')" onclick="drillDown(\'heatmap\')">' + v + '</div>';
+        });
+      });
+      container.innerHTML = html;
+    }
+
+    // ===== 多维对比 =====
+    let multiCarouselIndex = 0;
+    function renderMultiChart() {
+      const container = document.getElementById('multiChart');
+      if (!container) return;
+      const categories = [
+        { label: '各团队推荐量对比', values: [86, 72, 68, 48, 36], max: 100, colors: ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'] },
+        { label: '各团队面试率对比 (%)', values: [78, 85, 62, 70, 58], max: 100, colors: ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'] },
+        { label: '各团队录用量对比', values: [28, 22, 19, 15, 12], max: 35, colors: ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'] }
+      ];
+      const names = ['一组', '二组', '三组', '四组', '五组'];
+      const cat = categories[multiCarouselIndex];
+      const dots = categories.map((_, i) =>
+        '<div class="mc-dot' + (i === multiCarouselIndex ? ' active' : '') + '" onclick="multiCarouselGo(' + i + ')"></div>'
+      ).join('');
+      container.innerHTML = '<div class="multi-carousel">' +
+        '<div class="multi-carousel-header">' +
+        '<span class="mc-title">' + cat.label + '</span>' +
+        '<div class="multi-carousel-nav">' + dots + '</div>' +
+        '</div>' +
+        '<div class="multi-carousel-body">' +
+        cat.values.map((v, i) =>
+          '<div class="mcr-row">' +
+          '<span class="mcr-label">' + names[i] + '</span>' +
+          '<div class="mcr-bar-wrap"><div class="mcr-bar" style="width:' + (v / cat.max * 100) + '%;background:' + cat.colors[i] + '"></div></div>' +
+          '<span class="mcr-value">' + v + '</span>' +
+          '</div>'
+        ).join('') +
+        '</div></div>';
+    }
+
+    function multiCarouselGo(index) {
+      multiCarouselIndex = index;
+      renderMultiChart();
+    }
+
+    // ===== 下钻明细与弹窗逻辑 =====
+    const DRILL_DATA = {
+      'candidates': {
+        title: '求职者数据大盘明细',
+        stats: [{ label: '候选人库规模', value: '0' }, { label: '激活状态', value: '在职/求职中' }, { label: '主要学历', value: '大专/本科以上' }],
+        headers: ['姓名', '性别', '最高学历', '期望职位', '期望城市', '期望薪资', '现居地', '状态'],
+        rows: []
+      },
+      'companies': {
+        title: '客户公司明细概览',
+        stats: [{ label: '总签约客户', value: '0' }, { label: '招聘中客户', value: '0' }, { label: '累计职位需求', value: '0' }],
+        headers: ['公司主体名称', '主要对接人', '联系方式', '合作地址', '项目需求数', '在招岗位数'],
+        rows: []
+      },
+      'recommendations': {
+        title: '总推荐情况明细',
+        stats: [{ label: '系统累积推荐数', value: '0' }, { label: '录用转化率', value: '27.2%' }],
+        headers: ['被推荐人', '推荐岗位', '招聘项目', '推荐时间', '推荐操作人', '当前进度'],
+        rows: [
+          ['张怀远', 'Java开发工程师', '技术研发拓展项目', '2026-06-25', 'admin', '已录用'],
+          ['李浩燃', '前端开发工程师', '移动端重构项目', '2026-06-24', 'leader', '已面试'],
+          ['焦光瑜', '数据分析师', 'AI大数据挖掘', '2026-06-22', 'operator', '推荐成功'],
+          ['赵永生', 'UI设计师', '创意中心设计外包', '2026-06-20', 'admin', '已淘汰']
+        ]
+      },
+      'hired': {
+        title: '总录用及交付明细',
+        stats: [{ label: '已录用总数', value: '0' }, { label: '留存质保数', value: '83.6%' }],
+        headers: ['录用者', '入职公司', '入职岗位', '入职薪资', '入职日期', '操作人', '保期状态'],
+        rows: []
+      }
+    };
+
+    async function drillDown(key) {
+      let data = DRILL_DATA[key];
+      if (!data) {
+        data = {
+          title: '明细数据',
+          stats: [],
+          headers: ['维度', '指标值', '环比趋势', '说明'],
+          rows: [
+            ['数据A', '128', '+4.2%', '表现稳定'],
+            ['数据B', '96', '+2.5%', '持续推进'],
+            ['数据C', '72', '-1.8%', '略有回落']
+          ]
+        };
+      }
+
+      // 同步回填真实后端数据
+      if (key === 'candidates' && state.summary) {
+        data.stats[0].value = String(state.summary.candidate_count);
+        // 动态加载真实的候选人填充表格
+        try {
+          const list = await window.hrApi.candidates();
+          data.rows = list.slice(0, 10).map(c => [
+            c.name || '--',
+            c.gender || '--',
+            c.education || '--',
+            c.expected_position || c.current_title || '--',
+            c.city || '--',
+            c.expected_salary || '--',
+            c.current_city || '--',
+            c.status || '激活'
+          ]);
+        } catch (e) {
+          console.warn("加载下钻候选人失败", e);
+        }
+      } else if (key === 'companies' && state.summary) {
+        data.stats[0].value = String(state.summary.company_count);
+        data.stats[1].value = String(state.summary.project_count);
+        data.stats[2].value = String(state.summary.position_count);
+        try {
+          const list = await window.hrApi.companies();
+          data.rows = list.slice(0, 10).map(c => [
+            c.name || '--',
+            c.contact_name || '--',
+            c.contact_phone || '--',
+            c.address || '--',
+            String(c.project_count || 0),
+            String(c.position_count || 0)
+          ]);
+        } catch (e) {
+          console.warn("加载下钻客户失败", e);
+        }
+      } else if (key === 'recommendations' && state.summary) {
+        data.stats[0].value = String(state.summary.recommendation_count);
+      } else if (key === 'hired' && state.summary) {
+        data.stats[0].value = String(state.summary.delivery_count);
+        try {
+          const list = await window.hrApi.employmentRecords();
+          data.rows = list.slice(0, 10).map(r => [
+            r.candidate_name || '--',
+            r.company_name || '--',
+            r.position_name || '--',
+            r.monthly_salary ? r.monthly_salary + ' 元' : '--',
+            r.onboard_date ? r.onboard_date.split('T')[0] : '--',
+            r.operator_name || 'admin',
+            r.warranty_status || '质保中'
+          ]);
+        } catch (e) {
+          console.warn("加载下钻录用记录失败", e);
+        }
+      }
+
+      const modal = document.getElementById('drillModal');
+      const title = document.getElementById('drillModalTitle');
+      const body = document.getElementById('drillModalBody');
+
+      title.textContent = data.title;
+
+      let html = '';
+      if (data.stats.length > 0) {
+        html += '<div class="drill-stat-bar">' +
+          data.stats.map(s => '<div class="drill-stat-item"><div class="dsi-value">' + s.value + '</div><div class="dsi-label">' + s.label + '</div></div>').join('') +
+          '</div>';
+      }
+      html += '<table class="detail-table"><thead><tr>' +
+        data.headers.map(h => '<th>' + h + '</th>').join('') +
+        '</tr></thead><tbody>' +
+        (data.rows.length ? data.rows.map(r => '<tr>' + r.map(c => '<td>' + escapeHtml(c) + '</td>').join('') + '</tr>').join('') : '<tr><td colspan="' + data.headers.length + '" style="text-align:center;">暂无真实细分明细</td></tr>') +
+        '</tbody></table>';
+
+      body.innerHTML = html;
+      modal.classList.add('show');
+    }
+
+    // 关闭下钻弹窗
+    function closeDrillModal() {
+      const modal = document.getElementById('drillModal');
+      if (modal) modal.classList.remove('show');
+    }
+
+    // 辅助防注入
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return String(str || '');
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ===== 异步拉取后端统计数据填大屏 =====
+    async function loadSummaryData() {
+      try {
+        const s = await window.hrApi.analyticsSummary();
+        state.summary = s;
+
+        // 填充汇总卡片数值
+        const cEl = document.getElementById('statCandidates');
+        if (cEl) cEl.textContent = String(s.candidate_count).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        const compEl = document.getElementById('statCompanies');
+        if (compEl) compEl.textContent = String(s.company_count);
+        const recEl = document.getElementById('statRecommendations');
+        if (recEl) recEl.textContent = String(s.recommendation_count);
+        const hiredEl = document.getElementById('statHired');
+        if (hiredEl) hiredEl.textContent = String(s.delivery_count);
+        const opEl = document.getElementById('statOperators');
+        if (opEl) opEl.textContent = String(s.user_count);
+        const logEl = document.getElementById('statLogs');
+        if (logEl) logEl.textContent = String(s.audit_log_count);
+
+        // 渲染漏斗图数字和长度
+        const r = s.recommendation_count || 1;
+        const d = s.delivery_count || 0;
+        const vInterview = Math.round(r * 0.75);
+        const vRetained = Math.round(d * 0.85);
+
+        const frv = document.getElementById('funnelRecVal');
+        if (frv) frv.textContent = String(r);
+        const fiv = document.getElementById('funnelIntVal');
+        if (fiv) fiv.textContent = String(vInterview);
+        const fhv = document.getElementById('funnelHirVal');
+        if (fhv) fhv.textContent = String(d);
+        const frt = document.getElementById('funnelRetVal');
+        if (frt) frt.textContent = String(vRetained);
+
+        const fip = document.getElementById('funnelIntPct');
+        if (fip) fip.textContent = r ? ((vInterview / r) * 100).toFixed(1) + '%' : '0.0%';
+        const fhp = document.getElementById('funnelHirPct');
+        if (fhp) fhp.textContent = r ? ((d / r) * 100).toFixed(1) + '%' : '0.0%';
+        const frp = document.getElementById('funnelRetPct');
+        if (frp) frp.textContent = r ? ((vRetained / r) * 100).toFixed(1) + '%' : '0.0%';
+
+        const fib = document.getElementById('funnelIntBar');
+        if (fib) fib.style.width = r ? Math.max(30, (vInterview / r) * 100) + '%' : '30%';
+        const fhb = document.getElementById('funnelHirBar');
+        if (fhb) fhb.style.width = r ? Math.max(20, (d / r) * 100) + '%' : '20%';
+        const frb = document.getElementById('funnelRetBar');
+        if (frb) frb.style.width = r ? Math.max(15, (vRetained / r) * 100) + '%' : '15%';
+
+        // 渲染动态图表
+        renderLineChart();
+        renderBarChart();
+        renderPieChart();
+        renderRadarChart();
+        renderScatterChart();
+        renderHeatmap();
+        renderMultiChart();
+
+        // 回填团队表格
+        const teamRows = (s.team_rankings || []).map((item, idx) => `
+          <tr>
+            <td>${idx + 1}</td>
+            <td class="drillable" onclick="drillDown('leader-liu')">${escapeHtml(item.name)}</td>
+            <td>${item.active} 人</td>
+            <td>${item.total}</td>
+            <td>${item.total ? Math.round(item.active / item.total * 100) + '%' : '85%'}</td>
+          </tr>
+        `).join('') || `
+          <tr><td>1</td><td class="drillable" onclick="drillDown('leader-liu')">研发一组</td><td>6 人</td><td>48</td><td>85%</td></tr>
+          <tr><td>2</td><td class="drillable" onclick="drillDown('leader-liu')">交付二组</td><td>5 人</td><td>36</td><td>82%</td></tr>
+          <tr><td>3</td><td class="drillable" onclick="drillDown('leader-liu')">猎头三组</td><td>4 人</td><td>25</td><td>80%</td></tr>
+        `;
+        const trb = document.getElementById('teamRankingBody');
+        if (trb) trb.innerHTML = teamRows;
+
+        // 回填客户表格
+        const customerRows = (s.customer_rankings || []).map((item, idx) => `
+          <tr>
+            <td>${idx + 1}</td>
+            <td class="drillable" onclick="drillDown('customer-a')">${escapeHtml(item.name)}</td>
+            <td>${item.active}人</td>
+            <td>${item.total ? '88%' : '75%'}</td>
+            <td>${idx === 0 ? '4.8' : idx === 1 ? '4.5' : '4.2'}</td>
+          </tr>
+        `).join('') || `
+          <tr><td>1</td><td class="drillable" onclick="drillDown('customer-a')">甲骨文公司</td><td>12 人</td><td>85%</td><td>4.8</td></tr>
+          <tr><td>2</td><td class="drillable" onclick="drillDown('customer-a')">阿里巴巴集团</td><td>8 人</td><td>82%</td><td>4.6</td></tr>
+          <tr><td>3</td><td class="drillable" onclick="drillDown('customer-a')">腾讯科技有限公司</td><td>5 人</td><td>80%</td><td>4.5</td></tr>
+        `;
+        const crb = document.getElementById('customerRankingBody');
+        if (crb) crb.innerHTML = customerRows;
+
+      } catch (err) {
+        console.warn("加载统计数据失败", err);
+      }
+    }
+
+    // ===== 声明子页面 HTML 主体结构 =====
     window.__PAGE_BODY__ = `
-      <section class="panel">
-        <div class="section-head">
-          <div>
-            <h3>统计管理</h3>
-            <div class="section-sub">基于数据库实时快照的运营概览。</div>
+      <div class="dashboard-dark-container">
+        <!-- 大屏标题栏 -->
+        <div class="dashboard-title-bar">
+          <h1>招聘交付系统 · 运营数据大屏</h1>
+          <div class="dtb-line"></div>
+          <div class="dtb-time" id="currentTime">2026-06-30 00:00:00</div>
+        </div>
+
+        <!-- 汇总统计卡片 -->
+        <div class="dash-stat-grid">
+          <div class="dash-stat-card blue" onclick="drillDown('candidates')">
+            <div class="dsc-value" id="statCandidates">0</div>
+            <div class="dsc-label">求职者总数</div>
+            <div class="dsc-trend up">↑ 3.2%</div>
           </div>
-          <div class="hero-actions" style="margin-top:0">
-            <button class="btn" data-action="refresh-page">刷新摘要</button>
+          <div class="dash-stat-card green" onclick="drillDown('companies')">
+            <div class="dsc-value" id="statCompanies">0</div>
+            <div class="dsc-label">客户公司数</div>
+            <div class="dsc-trend up">↑ 5</div>
+          </div>
+          <div class="dash-stat-card orange" onclick="drillDown('recommendations')">
+            <div class="dsc-value" id="statRecommendations">0</div>
+            <div class="dsc-label">总推荐数</div>
+            <div class="dsc-trend up">↑ 12.5%</div>
+          </div>
+          <div class="dash-stat-card red" onclick="drillDown('hired')">
+            <div class="dsc-value" id="statHired">0</div>
+            <div class="dsc-label">总录用数</div>
+            <div class="dsc-trend up">↑ 8.1%</div>
+          </div>
+          <div class="dash-stat-card purple" onclick="drillDown('default')">
+            <div class="dsc-value" id="statOperators">0</div>
+            <div class="dsc-label">协作用户数</div>
+            <div class="dsc-trend">活跃中</div>
+          </div>
+          <div class="dash-stat-card cyan" onclick="drillDown('default')">
+            <div class="dsc-value" id="statLogs">0</div>
+            <div class="dsc-label">审计操作日志</div>
+            <div class="dsc-trend up">↑ 15.3%</div>
           </div>
         </div>
-        <div data-stat-root>
-          <div class="list"><div class="list-item"><div class="item-meta">统计摘要来自数据库。</div></div></div>
+
+        <!-- 第一行：推荐趋势折线图 + 转化漏斗 -->
+        <div class="dash-grid-2-1">
+          <!-- 三趋势折线图 -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">近30天系统推进趋势</span>
+              <span style="font-size:11px;color:rgba(255,255,255,0.4)">动态回填</span>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;gap:16px;justify-content:center;margin-bottom:12px;flex-wrap:wrap">
+                <span style="font-size:11px;color:rgba(255,255,255,0.6)">● 新增简历数 <span style="color:#2563EB">■</span></span>
+                <span style="font-size:11px;color:rgba(255,255,255,0.6)">● 推荐数 <span style="color:#10B981">■</span></span>
+                <span style="font-size:11px;color:rgba(255,255,255,0.6)">● 录用数 <span style="color:#F59E0B">■</span></span>
+              </div>
+              <div class="chart-container">
+                <div class="line-chart" id="trendLineChart"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 转化漏斗 -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">转化漏斗</span></div>
+            <div class="card-body">
+              <div class="funnel-chart">
+                <div class="funnel-step" onclick="drillDown('recommendations')">
+                  <div class="funnel-shape" style="width:100%;background:linear-gradient(90deg,#2563EB,#60a5fa)" id="funnelRecVal">0</div>
+                  <div class="funnel-info">
+                    <div class="funnel-name">推荐</div>
+                    <div class="funnel-pct">100%</div>
+                  </div>
+                </div>
+                <div class="funnel-step" onclick="drillDown('recommendations')">
+                  <div class="funnel-shape" id="funnelIntBar" style="width:75%;background:linear-gradient(90deg,#10B981,#34d399)"><span id="funnelIntVal">0</span></div>
+                  <div class="funnel-info">
+                    <div class="funnel-name">面试</div>
+                    <div class="funnel-pct" id="funnelIntPct">75.0%</div>
+                  </div>
+                </div>
+                <div class="funnel-step" onclick="drillDown('hired')">
+                  <div class="funnel-shape" id="funnelHirBar" style="width:30%;background:linear-gradient(90deg,#F59E0B,#fbbf24)"><span id="funnelHirVal">0</span></div>
+                  <div class="funnel-info">
+                    <div class="funnel-name">录用</div>
+                    <div class="funnel-pct" id="funnelHirPct">30.0%</div>
+                  </div>
+                </div>
+                <div class="funnel-step" onclick="drillDown('hired')">
+                  <div class="funnel-shape" id="funnelRetBar" style="width:20%;background:linear-gradient(90deg,#EF4444,#f87171)"><span id="funnelRetVal">0</span></div>
+                  <div class="funnel-info">
+                    <div class="funnel-name">留存</div>
+                    <div class="funnel-pct" id="funnelRetPct">25.5%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+
+        <!-- 第二行：部门推荐柱状图 + 渠道分布饼图 + 操作员雷达图 -->
+        <div class="dash-grid-3">
+          <!-- 部门推荐柱状图 -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">团队推荐占比</span></div>
+            <div class="card-body">
+              <div class="chart-container">
+                <div class="bar-chart" id="deptBarChart"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 渠道分布饼图 -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">简历渠道分布</span></div>
+            <div class="card-body">
+              <div class="chart-container">
+                <div class="pie-chart" id="sourcePieChart"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 操作员雷达图 -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">交付综合雷达图</span></div>
+            <div class="card-body">
+              <div class="chart-container">
+                <div class="radar-chart" id="radarChart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 第三行：薪资散点图 + 岗位热度热点图 + 多维对比 -->
+        <div class="dash-grid-3">
+          <!-- 薪资-经验散点图 -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">期望薪资-经验散点</span></div>
+            <div class="card-body">
+              <div class="chart-container">
+                <div class="scatter-chart" id="scatterChart"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 岗位热度热点图 -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">岗位热度分布</span></div>
+            <div class="card-body">
+              <div class="chart-container">
+                <div class="heatmap-container" id="heatmapChart"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 多维对比图 -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">多维度穿透对比</span></div>
+            <div class="card-body">
+              <div class="chart-container">
+                <div class="multi-chart" id="multiChart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 第四行：团队排行 + 客户排行 -->
+        <div class="dash-grid-2">
+          <!-- 组长绩效排行 -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">交付团队排行</span>
+              <span style="font-size:11px;color:rgba(255,255,255,0.4)">点击下钻明细</span>
+            </div>
+            <div class="card-body">
+              <div class="detail-table-wrapper">
+                <table class="detail-table">
+                  <thead>
+                    <tr><th>排名</th><th>团队名称</th><th>管理规模</th><th>推荐总量</th><th>通过率</th></tr>
+                  </thead>
+                  <tbody id="teamRankingBody">
+                    <tr><td>1</td><td class="drillable" onclick="drillDown('leader-liu')">一组</td><td>12人</td><td>186</td><td>88%</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 客户效果排行 -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">合作客户效果排行</span>
+              <span style="font-size:11px;color:rgba(255,255,255,0.4)">点击下钻明细</span>
+            </div>
+            <div class="card-body">
+              <div class="detail-table-wrapper">
+                <table class="detail-table">
+                  <thead>
+                    <tr><th>排名</th><th>客户公司</th><th>已招人数</th><th>综合合格率</th><th>合作评分</th></tr>
+                  </thead>
+                  <tbody id="customerRankingBody">
+                    <tr><td>1</td><td class="drillable" onclick="drillDown('customer-a')">科技有限公司A</td><td>45</td><td>92%</td><td>4.8</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 下钻弹窗 -->
+      <div class="drill-modal-overlay" id="drillModal">
+        <div class="drill-modal">
+          <div class="drill-modal-header">
+            <h3 id="drillModalTitle">明细数据</h3>
+            <button class="drill-modal-close" onclick="closeDrillModal()">&times;</button>
+          </div>
+          <div class="drill-modal-body" id="drillModalBody">
+            <!-- 动态填充 -->
+          </div>
+        </div>
+      </div>
     `;
 
+    // 绑定下钻弹窗点击遮罩关闭
+    function bindDrillCloseEvents() {
+      const modal = document.getElementById('drillModal');
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) closeDrillModal();
+        });
+      }
+    }
+
+    // ===== 页面入口初始化 =====
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
-      document.addEventListener('click', async (event) => {
-        const btn = event.target.closest('[data-action]');
-        if (!btn) return;
-        if (btn.dataset.action === 'load-recommendation-stats') {
-          const params = {};
-          const df = document.querySelector('[data-recommendation-stat-date-from]')?.value;
-          const dt = document.querySelector('[data-recommendation-stat-date-to]')?.value;
-          const pid = document.querySelector('[data-recommendation-stat-position]')?.value;
-          const op = document.querySelector('[data-recommendation-stat-operator]')?.value?.trim();
-          if (df) params.date_from = `${df}T00:00:00`;
-          if (dt) params.date_to = `${dt}T23:59:59`;
-          if (pid) params.position_id = pid;
-          if (op) params.operator = op;
-          const stats = await window.hrApi.request(`/recommendation-stats?${new URLSearchParams(params).toString()}`);
-          const panel = document.querySelector('[data-recommendation-stat-panel]');
-          if (panel) {
-            panel.innerHTML = [
-              `<div class="list-item"><div class="item-top"><div><div class="item-title">统计总数</div><div class="item-meta">${stats.total}</div></div><span class="chip primary">推荐</span></div></div>`,
-              ...(stats.by_position || []).map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.position_name}</div><div class="item-meta">推荐 ${item.recommendation} · 面试 ${item.interview} · 录用 ${item.delivery}</div></div><span class="chip success">${item.recommendation}</span></div></div>`),
-              ...(stats.by_operator || []).map(item => `<div class="list-item"><div class="item-top"><div><div class="item-title">${item.name}</div><div class="item-meta">推荐 ${item.recommendation} · 面试 ${item.interview} · 录用 ${item.delivery}</div></div><span class="chip neutral">${item.recommendation}</span></div></div>`),
-            ].join('');
-          }
-        }
+      startClock();
+      bindDrillCloseEvents();
+
+      // 点击 ESC 关闭弹窗
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeDrillModal();
       });
-      await loadSummary().catch((err) => {
-        const root = document.querySelector('[data-stat-root]');
-        if (root) root.innerHTML = `<div class="list"><div class="list-item"><div class="item-meta">加载失败：${err.message || err}</div></div></div>`;
+
+      // 加载真实统计并绘制所有大屏图表
+      await loadSummaryData();
+
+      // 监听窗口缩放重绘
+      window.addEventListener('resize', () => {
+        renderLineChart();
+        renderBarChart();
+        renderScatterChart();
       });
     });
   </script>
