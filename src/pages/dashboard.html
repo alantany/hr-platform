@@ -184,40 +184,45 @@
           value: dashboardState.summary.candidate_count,
           note: `本月有 ${metrics.monthlyCalendarEvents.length} 次推荐推进`,
           tone: 'primary',
+          link: './candidates.html',
         },
         {
           title: '客户公司数',
           value: dashboardState.summary.company_count,
           note: `当前有 ${metrics.activeProjects} 个项目在推进`,
           tone: 'success',
+          link: './customers.html',
         },
         {
           title: '总推荐数',
           value: dashboardState.summary.recommendation_count,
           note: `本月已交付 ${metrics.monthlyDeliveries.length} 次`,
           tone: 'warning',
+          link: './projects.html',
         },
         {
           title: '待处理需求',
           value: dashboardState.todos.length,
           note: dashboardState.todos.length ? '请优先处理高优先级待办' : '当前待办已清空',
           tone: 'danger',
+          link: './notifications.html',
         },
         {
           title: '总操作员数',
           value: dashboardState.summary.user_count,
           note: `本月活跃顾问 ${metrics.activeOperators} 人`,
           tone: 'neutral',
+          link: './users.html',
         },
       ];
       container.innerHTML = cards.map((card) => `
-        <article class="dashboard-kanban-card tone-${card.tone}">
+        <a href="${card.link}" class="dashboard-kanban-card tone-${card.tone}" style="display: block; text-decoration: none;">
           <div class="dashboard-kanban-title">${card.title}</div>
           <div class="dashboard-kanban-body">
             <strong>${formatNumber(card.value)}</strong>
-            <span>${card.note}</span>
+            <span style="color: #64748b;">${card.note}</span>
           </div>
-        </article>
+        </a>
       `).join('');
     }
 

@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-06-30（已完成 - 首页看板统计卡片新增跳转链接与交互微动）
+
+- 为 `dashboard.html` 顶部的五大看板数据统计卡片（求职者总数、客户公司数、总推荐数、待处理需求、总操作员数）绑定了对应功能模块的页面路由链接，支持点击直接下钻跳转。
+- 为 `.dashboard-kanban-card` 在 `styles.css` 中补齐了 transition 动画，并配置了精致的 hover 微动（上移浮起 2px 及阴影扩散）体验，使点击跳转入口在视觉上更加直观和灵动。
+
 ## 2026-06-30（已完成 - 修复超级管理员访问 notifications.html 权限缺失拦截 Bug）
 
 - 修复了此前在收口侧边栏导航后，`notifications.html` 从导航项 (navItems) 移除，导致具有超级管理员/“all”权限的用户在点击消息数字进入该页面时，被错误判定为无权限并拦截的 Bug。
@@ -2145,4 +2150,4 @@
   - 标签字典 9 个候选人维度均验证为维度内单一稳定色；Tag 为 13px、`2px 10px` 内边距和 6px 圆角。
 - 验证通过：`node --check app.js`、标签字典内联脚本语法检查、`git diff --check`、品牌色/渐变静态扫描、`pytest -q tests/test_phase3_smoke.py`（1 passed）。
 
-<!-- trigger update for pre-commit (v4) -->
+<!-- trigger update for pre-commit (v5) -->
