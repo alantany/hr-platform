@@ -3102,8 +3102,22 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     if (!candidateId || candidateId === '0') throw new Error('请先选择候选人');
     const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
-    if (candidate.status !== '已录用') {
-      throw new Error('仅已录用候选人可添加随访记录');
+    
+    let isAllowed = ['已录用', '已入职'].includes(candidate.status);
+    if (!isAllowed) {
+      const emps = await window.hrApi.employmentRecords({ candidate_id: candidateId }).catch(() => []);
+      if (emps.some(e => e.status === '已入职')) {
+        isAllowed = true;
+      }
+    }
+    if (!isAllowed) {
+      const recs = await window.hrApi.recommendations({ candidate_id: candidateId }).catch(() => []);
+      if (recs.some(r => ['已录用', '已入职'].includes(r.status))) {
+        isAllowed = true;
+      }
+    }
+    if (!isAllowed) {
+      throw new Error('仅已录用/已入职候选人可添加随访记录');
     }
     const modal = document.querySelector('[data-candidate-followup-modal]');
     const timeEl = document.querySelector('[data-candidate-followup-time]');
