@@ -8,6 +8,7 @@
   * 将 `updateCandidatePanels` 抓取和渲染备注、面试、薪资等动态面板的逻辑提升为 `app.js` 全局共享函数。并将 fetch 页面源更改为 `position-candidates.html`。这使得在岗位列表、项目管理等其他任何页面查看候选人详情时，都能成功显示完整的面试跟踪与流转进度记录。
   * **修复面试跟踪历史不显示与新增无刷新显示的 Bug**：排查发现 `updateCandidatePanels` 内部使用不匹配的 `interviewRecords` 表数据覆盖了 `candidate-detail-tracking-tbody` 表格的 innerHTML，导致原本正确的面试记录在详情渲染的最后一步被覆盖为“暂无记录”。现已移除该多余重置逻辑，让其统一交给 `app.js` 原生基于 `candidateTrackingEvents` 的高保真精美渲染机制处理，完美修复了新增和历史记录显示空白的问题。
 - **行内手风琴折叠面板对调迁移**：将行内展开显示“候选人跟踪”和“面试/薪资/入职”生命周期的下拉折叠箭头与折叠面板，从简历池列表（`candidates.html`）中移除，并完整挪动移植到岗位管理候选人列表（`position-candidates.html`）的每行中，完成了行内流转跟踪卡片在岗位下的完美对调回显。
+- **长文本框拉伸模式改造**：将全局样式表（`styles.css`）中的 `textarea { resize: vertical; }` 修改为 `resize: both;`，使系统内所有的 textarea 长文本编辑框均支持横向与纵向双向拉伸拉长。
 
 ## 2026-06-30（已完成 - 以角色为中心的一站式权限配置与岗位管理菜单补齐）
 

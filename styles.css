@@ -1994,7 +1994,7 @@ a { color: var(--primary); }
 
 .toolbar { gap: 12px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
 .input, .select, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea { min-height: 40px; padding: 8px 12px; border: 1px solid var(--input) !important; border-radius: 8px !important; background: #fff; color: var(--foreground); font-size: 14px; font-weight: 400; line-height: 1.5; box-shadow: none !important; }
-textarea { min-height: 96px; resize: vertical; }
+textarea { min-height: 96px; resize: both; }
 .input:hover, .select:hover, input:hover, select:hover, textarea:hover { border-color: #cfd4dc !important; }
 .input:focus, .select:focus, input:focus, select:focus, textarea:focus { border-color: var(--primary) !important; outline: 3px solid rgba(37, 99, 235, .1) !important; }
 input:disabled, select:disabled, textarea:disabled { background: #f3f4f6; color: var(--muted-foreground); cursor: not-allowed; }
