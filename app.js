@@ -5153,30 +5153,6 @@ window.updateCandidatePanels = async (candidateId) => {
       `).join('') || '<div class="list-item"><div class="item-meta">暂无随访记录</div></div>';
     }
     
-    // 渲染面试跟踪表
-    const trackingTbody = document.getElementById('candidate-detail-tracking-tbody');
-    if (trackingTbody) {
-      trackingTbody.innerHTML = interview.map((e, idx) => `
-        <tr style="border-bottom:1px solid #f1f5f9; hover:background:#f8fafc;">
-          <td style="padding:10px 8px; text-align:center; font-weight:600; color:#1e293b;">${e.round_name || '--'}</td>
-          <td style="padding:10px 8px; text-align:center;"><span class="chip ${e.screening_result === '通过' ? 'success' : (e.screening_result === '未通过' ? 'danger' : 'neutral')}">${e.screening_result || '--'}</span></td>
-          <td style="padding:10px 8px;">${e.interview_date || '--'}</td>
-          <td style="padding:10px 8px;">${e.interviewer || '--'}</td>
-          <td style="padding:10px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;" title="${e.interview_location || ''}">${e.interview_location || '--'}</td>
-          <td style="padding:10px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;" title="${e.interview_requirements || ''}">${e.interview_requirements || '--'}</td>
-          <td style="padding:10px 8px;">${e.interview_contact || '--'}</td>
-          <td style="padding:10px 8px;"><span class="chip ${e.result === '通过' ? 'success' : (e.result === '不合适' ? 'danger' : 'warning')}">${e.result || '--'}</span></td>
-          <td style="padding:10px 8px;"><span class="chip neutral">${e.status || '--'}</span></td>
-          <td style="padding:10px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;" title="${e.note || ''}">${e.note || '--'}</td>
-          <td style="padding:10px 8px; text-align:center;"><span class="chip ${e.onboard_status === '已入职' ? 'success' : 'neutral'}">${e.onboard_status || '未入职'}</span></td>
-          <td style="padding:10px 8px;">${e.actor || '--'}</td>
-          <td style="padding:10px 8px;">
-            <button class="btn-sm" style="color:#ef4444; border-color:#fecaca;" onclick="window.deleteTrackingEvent(${e.id}, ${candidateId})">删除</button>
-          </td>
-        </tr>
-      `).join('') || '<tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="13">暂无面试跟踪记录</td></tr>';
-    }
-
     // 渲染薪资跟踪表
     const salaryTbody = document.getElementById('candidate-detail-salary-tbody');
     if (salaryTbody) {

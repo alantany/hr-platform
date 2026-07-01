@@ -6,6 +6,7 @@
 - **全局共享与级联下拉支持**：
   * 将期待城市/户口城市级联联动交互逻辑 `setupCascadeSelector` 移入 `app.js` 作为全局方法，在每次唤起编辑弹窗时安全触发，保证所有页面的候选人编辑表单城市联动和日期控件交互全量可用。
   * 将 `updateCandidatePanels` 抓取和渲染备注、面试、薪资等动态面板的逻辑提升为 `app.js` 全局共享函数。并将 fetch 页面源更改为 `position-candidates.html`。这使得在岗位列表、项目管理等其他任何页面查看候选人详情时，都能成功显示完整的面试跟踪与流转进度记录。
+  * **修复面试跟踪历史不显示与新增无刷新显示的 Bug**：排查发现 `updateCandidatePanels` 内部使用不匹配的 `interviewRecords` 表数据覆盖了 `candidate-detail-tracking-tbody` 表格的 innerHTML，导致原本正确的面试记录在详情渲染的最后一步被覆盖为“暂无记录”。现已移除该多余重置逻辑，让其统一交给 `app.js` 原生基于 `candidateTrackingEvents` 的高保真精美渲染机制处理，完美修复了新增和历史记录显示空白的问题。
 
 ## 2026-06-30（已完成 - 以角色为中心的一站式权限配置与岗位管理菜单补齐）
 
