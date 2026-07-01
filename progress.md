@@ -2239,6 +2239,9 @@
 - Task completed at 2026-07-01 13:41:59. Update the summary with the latest finished work.
 - Task completed at 2026-07-01 13:50:19. Update the summary with the latest finished work.
 - Task finalized by Codex hook (unknown) at 2026-07-01 14:19:19
+- Task finalized by Codex hook (unknown) at 2026-07-01 14:33:15
+- Task finalized by Codex hook (unknown) at 2026-07-01 22:54:55
+- Task completed at 2026-07-01 23:01:14. Update the summary with the latest finished work.
 
 ## 2026-07-01（完成 - 候选人锁定与推荐状态硬联动）
 
@@ -2248,3 +2251,13 @@
 - 候选人列表接口补齐 `delivery_status` 和 `candidate_warranty_status`，标签管理继续只配置字段展示，不再被错误默认值污染。
 - 新增迁移 `0005_candidate_state` 并已成功执行，存量候选人状态已按有效推荐记录修复。
 - 验证通过：`node --check app.js`、`git diff --check`、完整 `pytest -q`（25 passed）；浏览器确认候选人详情显示“锁定 · 已推荐”，标签配置保留“锁定状态/推荐进度”，390px 页面无横向溢出且不存在手工状态入口。
+
+## 2026-07-01（完成 - 候选人三维状态与全列表标签统一）
+
+- 将候选人状态正式拆分为锁定、交付流程、质保三个维度，并建立跨维度不变量。
+- 推荐创建后保持岗位锁定；未录用只更新流程摘要，不再自动释放；移除推荐关系后才恢复未锁定，已入职关系禁止移除。
+- 删除旧代码中“推荐状态已录用自动生成入职记录”的隐式联动，旧“待推荐/已录用”完成存量归一化；入职只接受详情页手工“已入职/未入职”操作。
+- 质保规则统一为入职日起六个月，未入职阶段不再产生质保标签；已清理旧代码固定备注生成的伪入职记录。
+- 标签默认配置补齐锁定状态、流程状态、质保状态；简历池、岗位候选人和质保监控列表统一按标签管理启用项渲染。
+- 修复 seed 与测试清理覆盖用户标签配置的问题，后续只补缺失默认配置并清理测试新增记录。
+- 浏览器验证周靖博在三处列表均显示“锁定 / 已入职 / 质保中”，质保页显示入职日 2026-06-29、期限 6 个月、到期日 2026-12-29。
