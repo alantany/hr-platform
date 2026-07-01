@@ -12,16 +12,18 @@
   <div id="app"></div>
   <script>
     const renderRows = (items) => items.map((item) => `
-      <div class="list-item ${item.read ? '' : 'soft'}" data-action="row-click" data-target="${item.target_path || ''}" style="cursor: ${item.target_path ? 'pointer' : 'default'}">
+      <div class="list-item ${item.read ? '' : 'soft'}">
         <div class="item-top">
           <div>
             <div class="item-title">${item.title}</div>
             <div class="item-meta">${item.type || '通知'} · ${item.user || ''}</div>
-            <div class="item-meta mono">${item.created_at || ''}${item.target_path ? ` · 跳转：${item.target_path}` : ''}</div>
+            <div class="item-meta mono">${item.created_at || ''}</div>
           </div>
           <div style="display:flex; gap:8px; align-items:center;">
-            <span class="chip ${item.read ? 'neutral' : 'primary'}">${item.read ? '已读' : '未读'}</span>
-            ${item.read ? '' : `<button class="btn-sm primary" data-action="read-notification" data-id="${item.id}" onclick="event.stopPropagation()">标记已读</button>`}
+            ${item.read 
+              ? `<span class="chip neutral" style="min-width: 60px; text-align: center; display: inline-block;">已读</span>` 
+              : `<button class="btn-sm primary" data-action="read-notification" data-id="${item.id}" style="min-width: 60px; height: 28px; line-height: 28px; padding: 0 10px; font-size: 12px; font-weight: 500;">未读</button>`
+            }
           </div>
         </div>
       </div>
@@ -128,17 +130,10 @@
       }
       if (btn.dataset.action === 'read-notification') {
         try {
-          const item = await window.hrApi.readNotification(btn.dataset.id);
+          await window.hrApi.readNotification(btn.dataset.id);
           await loadNotifications();
-          if (item.target_path) location.href = item.target_path;
         } catch (err) {
           console.warn(err);
-        }
-      }
-      if (btn.dataset.action === 'row-click') {
-        const targetPath = btn.dataset.target;
-        if (targetPath) {
-          location.href = targetPath;
         }
       }
     });
