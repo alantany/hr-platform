@@ -132,6 +132,10 @@ class Candidate(Base, TimestampMixin):
     city: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="未锁定", nullable=False)
     source: Mapped[str] = mapped_column(String(64), default="手工导入", nullable=False)
+    # 冗余字段：从推荐关联表同步写入，方便标签字典直接索引
+    delivery_status: Mapped[str] = mapped_column(String(32), default="未推荐", nullable=False)
+    # 冗余字段：从入职记录同步写入，方便标签字典直接索引
+    candidate_warranty_status: Mapped[str] = mapped_column(String(32), default="", nullable=False)
     locked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     owner_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     gender: Mapped[str] = mapped_column(String(16), default="", nullable=False)

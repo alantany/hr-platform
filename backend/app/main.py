@@ -1205,6 +1205,10 @@ def add_employment_record(payload: schemas.EmploymentRecordCreate, db: Session =
         if latest_recom:
             latest_recom.status = "已录用"
             db.add(latest_recom)
+        # 同步冗余字段：candidate_warranty_status
+        candidate.candidate_warranty_status = "质保中"
+        # 同步冗余字段：delivery_status（取自最新推荐状态）
+        candidate.delivery_status = latest_recom.status if latest_recom else "已录用"
     db.add(candidate)
     
     crud.add_audit(db, user.username, "候选人跟踪", action, "employment_record", str(candidate.id), detail=payload.status)
@@ -1303,6 +1307,7 @@ def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depe
     obj.recommender_user_id = user.id
     candidate.locked = True
     candidate.status = "锁定"
+    candidate.delivery_status = "已推荐"
     crud.add_audit(db, user.username, "推荐交付", "创建推荐记录并锁定候选人", "recommendation", "new", detail=str(payload.candidate_id))
     db.commit()
     db.refresh(obj)
@@ -1387,6 +1392,7 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
             recommendation.recommender_user_id = user.id
             candidate.locked = True
             candidate.status = "锁定"
+            candidate.delivery_status = "已推荐"
             db.flush()
             crud.add_audit(
                 db,
@@ -1512,6 +1518,33 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
                 )
                 new_emp.operator_user_id = user.id
                 db.add(new_emp)
+            # 同步冗余字段到候选人主表
+            cand = db.get(Candidate, obj.candidate_id)
+            if cand:
+                cand.delivery_status = "已录用"
+                cand.candidate_warranty_status = "质保中"
+                cand.locked = True
+                cand.status = "锁定"
+                db.add(cand)
+        
+        # 所有状态变更都同步 delivery_status 到候选人主表
+        if key == "status" and value != "已录用":
+            cand = db.get(Candidate, obj.candidate_id)
+            if cand:
+                # 将推荐状态中较简洁的语义映射到 delivery_status
+                status_map = {
+                    "已推荐": "已推荐",
+                    "待推荐": "已推荐",
+                    "客户已收": "已推荐",
+                    "客户未收": "已推荐",
+                    "安排面试": "面试中",
+                    "面试中": "面试中",
+                    "未录用": "未录用",
+                    "淘汰": "淘汰",
+                    "拒绝": "未录用",
+                }
+                cand.delivery_status = status_map.get(value, value)
+                db.add(cand)
 
     crud.add_audit(db, user.username, "推荐交付", "更新推荐状态", "recommendation", str(recommendation_id), detail=obj.status)
     db.commit()
