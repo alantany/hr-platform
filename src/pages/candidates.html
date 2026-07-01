@@ -757,57 +757,26 @@
                 : '';
 
               return `
-                <div class="table-row-wrapper" style="border-bottom: 1px solid #f1f5f9;">
-                  <div class="table-row" data-row-key="${rowKey}" style="border-bottom: none;">
-                    <div><input type="checkbox" data-candidate-select data-record-key="${rowKey}" data-id="${i.id}" aria-label="选择${i.name}" ${this.selectedCandidates.has(rowKey) ? 'checked' : ''} /></div>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                      <button class="btn-sm" data-action="toggle-details" data-id="${rowKey}" data-row-key="${rowKey}" title="展开生命周期" style="padding: 4px; min-width: 24px; min-height: 24px; height: 24px; border-radius: 4px; box-shadow: none; border: 1px solid #e2e8f0; background: #fff;"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" style="transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
-                      <div class="row-title" style="margin-left: 0;">
-                        <div class="avatar-sm" style="display:flex; align-items:center; justify-content:center; background:#f3f4f6;">${i.status === '锁定' ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#f59e0b;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#15803D;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>'}</div>
-                        <div>
-                          <strong>${i.name || ''}</strong>
-                          ${candidateTagsHtml}
-                        </div>
-                      </div>
-                    </div>
-                    <div>${i.current_title || '--'}</div>
-                    <div>${i.city || '--'}</div>
-                    <div class="mono">${i.expected_salary || '--'}</div>
-                    <div>${i.source || '--'}</div>
-                    <div>${i.age ? i.age + '岁' : '--'}</div>
-                    <div>
-                      <div class="table-actions" style="display: flex; gap: 8px; flex-wrap: nowrap;">
-                        <button class="btn-sm primary" data-action="view-detail" data-id="${rowKey}" data-row-key="${rowKey}" data-candidate-key="${rowKey}" data-title="${i.name}">详情</button>
-                        ${i.file_path ? `<a href="/recruit/${i.file_path}" target="_blank" class="btn-sm primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">下载</a>` : ''}
+                <div class="table-row" data-row-key="${rowKey}" style="border-bottom: 1px solid #f1f5f9;">
+                  <div><input type="checkbox" data-candidate-select data-record-key="${rowKey}" data-id="${i.id}" aria-label="选择${i.name}" ${this.selectedCandidates.has(rowKey) ? 'checked' : ''} /></div>
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="row-title" style="margin-left: 0;">
+                      <div class="avatar-sm" style="display:flex; align-items:center; justify-content:center; background:#f3f4f6;">${i.status === '锁定' ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#f59e0b;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#15803D;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>'}</div>
+                      <div>
+                        <strong>${i.name || ''}</strong>
+                        ${candidateTagsHtml}
                       </div>
                     </div>
                   </div>
-                  <div class="table-row-details-wrapper" id="details-wrapper-${rowKey}" data-row-key="${rowKey}" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #f8fafc;">
-                    <div style="overflow: hidden;">
-                      <div class="table-row-details" id="details-${rowKey}" data-row-key="${rowKey}" style="padding: 0 24px; opacity: 0; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-top: 1px dashed transparent;">
-                        <div class="grid-2">
-                          <div class="panel">
-                        <div class="section-head">
-                          <div>
-                            <h3 style="font-size:14px;">候选人跟踪</h3>
-                          </div>
-                        </div>
-                        <div class="list" data-tracking-events="${rowKey}">
-                          <div class="list-item"><div class="item-meta">正在加载跟踪记录...</div></div>
-                        </div>
-                      </div>
-                      <div class="panel">
-                        <div class="section-head">
-                          <div>
-                            <h3 style="font-size:14px;">面试 / 薪资 / 入职</h3>
-                          </div>
-                        </div>
-                        <div class="list" data-lifecycle-events="${rowKey}">
-                          <div class="list-item"><div class="item-meta">正在加载生命周期事件...</div></div>
-                        </div>
-                      </div>
-                        </div>
-                      </div>
+                  <div>${i.current_title || '--'}</div>
+                  <div>${i.city || '--'}</div>
+                  <div class="mono">${i.expected_salary || '--'}</div>
+                  <div>${i.source || '--'}</div>
+                  <div>${i.age ? i.age + '岁' : '--'}</div>
+                  <div>
+                    <div class="table-actions" style="display: flex; gap: 8px; flex-wrap: nowrap;">
+                      <button class="btn-sm primary" data-action="view-detail" data-id="${rowKey}" data-row-key="${rowKey}" data-candidate-key="${rowKey}" data-title="${i.name}">详情</button>
+                      ${i.file_path ? `<a href="/recruit/${i.file_path}" target="_blank" class="btn-sm primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">下载</a>` : ''}
                     </div>
                   </div>
                 </div>
