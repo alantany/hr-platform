@@ -1604,7 +1604,7 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "view-detail") {
     if (!document.querySelector('[data-candidate-detail-modal]')) {
       try {
-        const res = await fetch('candidates.html');
+        const res = await fetch('position-candidates.html');
         if (res.ok) {
           const htmlText = await res.text();
           const parser = new DOMParser();
@@ -2156,6 +2156,9 @@ async function handleGlobalButton(button) {
       modal.style.display = 'block';
       modal.dataset.candidateId = String(item.id);
       modal.dataset.target = JSON.stringify({ id: item.id });
+      if (window.setupCandidateCascadeSelectors) {
+        window.setupCandidateCascadeSelectors();
+      }
     }
     return;
   }
@@ -4921,3 +4924,392 @@ window.addEventListener("popstate", () => {
   const page = location.pathname.split("/").pop() || "dashboard.html";
   loadPage(page, false);
 });
+
+// 城市二级联动及搜索数据字典（全国31个省、直辖市、自治区）
+const CITY_DATA = [
+  { province: "直辖市", cities: ["北京", "上海", "天津", "重庆"] },
+  { province: "广东省", cities: ["广州", "深圳", "珠海", "汕头", "佛山", "韶关", "湛江", "肇庆", "江门", "茂名", "惠州", "梅州", "汕尾", "河源", "阳江", "清远", "东莞", "中山", "潮州", "揭阳", "云浮"] },
+  { province: "浙江省", cities: ["杭州", "宁波", "温州", "嘉兴", "湖州", "绍兴", "金华", "衢州", "舟山", "台州", "丽水"] },
+  { province: "江苏省", cities: ["南京", "无锡", "徐州", "常州", "苏州", "南通", "连云港", "淮安", "盐城", "扬州", "镇江", "泰州", "宿迁"] },
+  { province: "四川省", cities: ["成都", "自贡", "攀枝花", "泸州", "德阳", "绵阳", "广元", "遂宁", "内江", "乐山", "南充", "眉山", "宜宾", "广安", "达州", "雅安", "巴中", "资阳", "西昌"] },
+  { province: "湖北省", cities: ["武汉", "黄石", "十堰", "宜昌", "襄阳", "鄂州", "荆门", "孝感", "荆州", "黄冈", "咸宁", "随州", "恩施"] },
+  { province: "湖南省", cities: ["长沙", "株洲", "湘潭", "衡阳", "邵阳", "岳阳", "常德", "张家界", "益阳", "郴州", "永州", "怀化", "娄底", "吉首"] },
+  { province: "福建省", cities: ["福州", "厦门", "莆田", "三明", "泉州", "漳州", "南平", "龙岩", "宁德"] },
+  { province: "山东省", cities: ["济南", "青岛", "淄博", "枣庄", "东营", "烟台", "潍坊", "济宁", "泰安", "威海", "日照", "临沂", "德州", "聊城", "滨州", "菏泽"] },
+  { province: "陕西省", cities: ["西安", "铜川", "宝鸡", "咸阳", "渭南", "延安", "汉中", "榆林", "安康", "商洛"] },
+  { province: "河北省", cities: ["石家庄", "唐山", "秦皇岛", "邯郸", "邢台", "保定", "张家口", "承德", "沧州", "廊坊", "衡水"] },
+  { province: "山西省", cities: ["太原", "大同", "阳泉", "长治", "晋城", "朔州", "晋中", "运城", "忻州", "临汾", "吕梁"] },
+  { province: "内蒙古", cities: ["呼和浩特", "包头", "乌海", "赤峰", "通辽", "鄂尔多斯", "呼伦贝尔", "巴延淖尔", "乌兰察布", "乌兰浩特", "锡林浩特"] },
+  { province: "辽宁省", cities: ["沈阳", "大连", "鞍山", "抚顺", "本溪", "丹东", "锦州", "营口", "阜新", "辽阳", "盘锦", "铁岭", "朝阳", "葫芦岛"] },
+  { province: "吉林省", cities: ["长春", "吉林", "四平", "辽源", "通化", "白山", "松原", "白城", "延吉"] },
+  { province: "黑龙江省", cities: ["哈尔滨", "齐齐哈尔", "鸡西", "鹤岗", "双鸭山", "大庆", "伊春", "佳木斯", "七台河", "牡丹江", "黑河", "绥化", "大兴安岭"] },
+  { province: "安徽省", cities: ["合肥", "芜湖", "蚌埠", "淮南", "马鞍山", "淮北", "铜陵", "安庆", "黄山", "滁州", "阜阳", "宿州", "六安", "亳州", "池州", "宣城"] },
+  { province: "江西省", cities: ["南昌", "景德镇", "萍乡", "九江", "新余", "鹰潭", "赣州", "吉安", "宜春", "抚州", "上饶"] },
+  { province: "河南省", cities: ["郑州", "开封", "洛阳", "平顶山", "安阳", "鹤壁", "新乡", "焦作", "濮阳", "许昌", "漯河", "三门峡", "南阳", "商丘", "信阳", "周口", "驻马店", "济源"] },
+  { province: "广西", cities: ["南宁", "柳州", "桂林", "梧州", "北海", "防城港", "钦州", "贵港", "玉林", "百色", "贺州", "河池", "来宾", "崇左"] },
+  { province: "海南省", cities: ["海口", "三亚", "三沙", "儋州", "琼海", "文昌", "万宁", "东方"] },
+  { province: "贵州省", cities: ["贵阳", "六盘水", "遵义", "安顺", "毕节", "铜仁", "兴义", "凯里", "都匀"] },
+  { province: "云南省", cities: ["昆明", "曲靖", "玉溪", "保山", "昭通", "丽江", "普洱", "临沧", "楚雄", "个旧", "蒙自", "景洪", "大理", "瑞丽", "香格里拉"] },
+  { province: "西藏", cities: ["拉萨", "日喀则", "昌都", "林芝", "山南", "那曲", "阿里"] },
+  { province: "甘肃省", cities: ["兰州", "嘉峪关", "金昌", "白银", "天水", "武威", "张掖", "平凉", "酒泉", "庆阳", "定西", "陇南", "临夏", "合作"] },
+  { province: "青海省", cities: ["西宁", "海东", "共和", "德令哈", "玉树"] },
+  { province: "宁夏", cities: ["银川", "石嘴山", "吴忠", "固原", "中卫"] },
+  { province: "新疆", cities: ["乌鲁木齐", "克拉玛依", "吐鲁番", "哈密", "昌吉", "博乐", "库尔勒", "阿克苏", "阿图什", "喀什", "和田", "伊宁", "塔城", "阿勒泰", "石河子"] }
+];
+
+window.setupCandidateCascadeSelectors = function() {
+  const setupCascadeSelector = ({
+    inputSel,
+    dropdownSel,
+    provinceListSel,
+    cityListSel,
+    searchResultsSel,
+    cascadeViewSel
+  }) => {
+    const input = document.querySelector(inputSel);
+    const dropdown = document.querySelector(dropdownSel);
+    const provinceList = document.querySelector(provinceListSel);
+    const cityList = document.querySelector(cityListSel);
+    const searchResults = document.querySelector(searchResultsSel);
+    const cascadeView = document.querySelector(cascadeViewSel);
+
+    if (!input || !dropdown) return;
+    if (input.dataset.cascadeBound) return;
+    input.dataset.cascadeBound = 'true';
+
+    if (provinceList) {
+      provinceList.innerHTML = CITY_DATA.map((p, idx) => `
+        <div class="province-item ${idx === 0 ? 'active' : ''}" data-idx="${idx}">${p.province}</div>
+      `).join('');
+      
+      provinceList.addEventListener('click', (e) => {
+        const item = e.target.closest('.province-item');
+        if (!item) return;
+        provinceList.querySelectorAll('.province-item').forEach(el => el.classList.remove('active'));
+        item.classList.add('active');
+        const idx = parseInt(item.getAttribute('data-idx'));
+        renderLocalCities(idx);
+      });
+    }
+
+    function renderLocalCities(provinceIdx) {
+      if (!cityList) return;
+      const cities = CITY_DATA[provinceIdx].cities;
+      cityList.innerHTML = cities.map(c => `
+        <div class="city-item" data-val="${c}">${c}</div>
+      `).join('');
+    }
+
+    renderLocalCities(0);
+
+    input.addEventListener('focus', () => {
+      dropdown.style.display = 'block';
+      filterLocalDropdown();
+    });
+
+    input.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.style.display = 'block';
+    });
+
+    input.addEventListener('input', () => {
+      filterLocalDropdown();
+    });
+
+    function filterLocalDropdown() {
+      if (!searchResults || !cascadeView) return;
+      const query = input.value.trim().toLowerCase();
+      if (!query) {
+        searchResults.style.display = 'none';
+        cascadeView.style.display = 'flex';
+        return;
+      }
+
+      const matches = [];
+      CITY_DATA.forEach(p => {
+        p.cities.forEach(c => {
+          if (c.toLowerCase().includes(query)) {
+            matches.push(c);
+          }
+        });
+      });
+
+      if (matches.length > 0) {
+        searchResults.innerHTML = matches.map(c => `
+          <div class="search-result-item" data-val="${c}">${c}</div>
+        `).join('');
+        searchResults.style.display = 'block';
+        cascadeView.style.display = 'none';
+      } else {
+        searchResults.innerHTML = '<div style="padding: 8px 12px; font-size: 12px; color: #94a3b8;">未找到匹配城市</div>';
+        searchResults.style.display = 'block';
+        cascadeView.style.display = 'none';
+      }
+    }
+
+    dropdown.addEventListener('click', (e) => {
+      const item = e.target.closest('.city-item, .search-result-item');
+      if (item) {
+        e.stopPropagation();
+        const val = item.getAttribute('data-val');
+        input.value = val;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        dropdown.style.display = 'none';
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest(inputSel) && !e.target.closest(dropdownSel)) {
+        dropdown.style.display = 'none';
+      }
+    });
+  };
+
+  setupCascadeSelector({
+    inputSel: '[data-candidate-edit-hukou]',
+    dropdownSel: '.hukou-dropdown',
+    provinceListSel: '.hukou-province-list',
+    cityListSel: '.hukou-city-list',
+    searchResultsSel: '.hukou-search-results',
+    cascadeViewSel: '.hukou-cascade-view'
+  });
+
+  setupCascadeSelector({
+    inputSel: '[data-candidate-edit-city]',
+    dropdownSel: '.editcity-dropdown',
+    provinceListSel: '.editcity-province-list',
+    cityListSel: '.editcity-city-list',
+    searchResultsSel: '.editcity-search-results',
+    cascadeViewSel: '.editcity-cascade-view'
+  });
+};
+
+window.updateCandidatePanels = async (candidateId) => {
+  if (!candidateId) return;
+  try {
+    const tracking = await window.hrApi.candidateTrackingEvents({ candidate_id: candidateId });
+    const detailModal = document.querySelector('[data-candidate-detail-modal]');
+    const trackingBox = detailModal?.querySelector('[data-tracking-events]');
+    if (trackingBox) {
+      trackingBox.innerHTML = tracking.slice(0, 3).map(e => `
+        <div class="list-item">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${e.event_type}</div>
+              <div class="item-meta">${e.summary}</div>
+            </div>
+            <span class="chip primary">${e.status || '事件'}</span>
+          </div>
+        </div>
+      `).join('') || '<div class="list-item"><div class="item-meta">暂无跟踪事件记录</div></div>';
+    }
+  } catch (err) { console.warn(err); }
+  try {
+    const exports = await window.hrApi.exportRecords({ candidate_id: candidateId });
+    const detailModal = document.querySelector('[data-candidate-detail-modal]');
+    const history = detailModal?.querySelector('[data-export-history]');
+    if (history) {
+      history.innerHTML = exports.map(r => `
+        <div class="list-item">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${r.file_name}</div>
+              <div class="item-meta">${r.company_name} · ${r.project_name} · ${r.position_name}</div>
+              <div class="item-meta mono">${r.format} · ${r.created_at}</div>
+            </div>
+            <span class="chip ${r.watermarked ? 'success' : 'neutral'}">${r.watermarked ? '带水印' : '无水印'}</span>
+          </div>
+        </div>
+      `).join('') || '<div class="list-item"><div class="item-meta">暂无导出历史</div></div>';
+    }
+  } catch (err) { console.warn(err); }
+  try {
+    const interview = await window.hrApi.interviewRecords({ candidate_id: candidateId });
+    const salary = await window.hrApi.salaryRecords({ candidate_id: candidateId });
+    const employment = await window.hrApi.employmentRecords({ candidate_id: candidateId });
+    const followUps = await window.hrApi.candidateFollowUpRecords({ candidate_id: candidateId });
+    const detailModal = document.querySelector('[data-candidate-detail-modal]');
+    const lifecycle = detailModal?.querySelector('[data-lifecycle-events]');
+    if (lifecycle) {
+      const items = [];
+      if (interview[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${interview[0].round_name}</div><div class="item-meta">${interview[0].result} · ${interview[0].interviewer}</div></div><span class="chip success">面试</span></div></div>`);
+      if (salary[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">薪资</div><div class="item-meta">${salary[0].expected_salary} / ${salary[0].offered_salary}</div></div><span class="chip warning">${salary[0].service_status}</span></div></div>`);
+      if (employment[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${employment[0].company_name}</div><div class="item-meta">${employment[0].position_name} · ${employment[0].status}</div></div><span class="chip neutral">入职</span></div></div>`);
+      if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已录用</span></div></div>`);
+      lifecycle.innerHTML = items.join('') || '<div class="list-item"><div class="item-meta">暂无面试、入职等记录</div></div>';
+    }
+    const followupBlock = document.querySelector('[data-followup-block]');
+    if (followupBlock) {
+      followupBlock.innerHTML = followUps.map(item => `
+        <div class="list-item">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${item.follow_up_time || item.created_at}</div>
+              <div class="item-meta">${item.content}</div>
+            </div>
+            <span class="chip primary">${item.status}</span>
+          </div>
+        </div>
+      `).join('') || '<div class="list-item"><div class="item-meta">暂无随访记录</div></div>';
+    }
+    
+    // 渲染面试跟踪表
+    const trackingTbody = document.getElementById('candidate-detail-tracking-tbody');
+    if (trackingTbody) {
+      trackingTbody.innerHTML = interview.map((e, idx) => `
+        <tr style="border-bottom:1px solid #f1f5f9; hover:background:#f8fafc;">
+          <td style="padding:10px 8px; text-align:center; font-weight:600; color:#1e293b;">${e.round_name || '--'}</td>
+          <td style="padding:10px 8px; text-align:center;"><span class="chip ${e.screening_result === '通过' ? 'success' : (e.screening_result === '未通过' ? 'danger' : 'neutral')}">${e.screening_result || '--'}</span></td>
+          <td style="padding:10px 8px;">${e.interview_date || '--'}</td>
+          <td style="padding:10px 8px;">${e.interviewer || '--'}</td>
+          <td style="padding:10px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;" title="${e.interview_location || ''}">${e.interview_location || '--'}</td>
+          <td style="padding:10px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;" title="${e.interview_requirements || ''}">${e.interview_requirements || '--'}</td>
+          <td style="padding:10px 8px;">${e.interview_contact || '--'}</td>
+          <td style="padding:10px 8px;"><span class="chip ${e.result === '通过' ? 'success' : (e.result === '不合适' ? 'danger' : 'warning')}">${e.result || '--'}</span></td>
+          <td style="padding:10px 8px;"><span class="chip neutral">${e.status || '--'}</span></td>
+          <td style="padding:10px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;" title="${e.note || ''}">${e.note || '--'}</td>
+          <td style="padding:10px 8px; text-align:center;"><span class="chip ${e.onboard_status === '已入职' ? 'success' : 'neutral'}">${e.onboard_status || '未入职'}</span></td>
+          <td style="padding:10px 8px;">${e.actor || '--'}</td>
+          <td style="padding:10px 8px;">
+            <button class="btn-sm" style="color:#ef4444; border-color:#fecaca;" onclick="window.deleteTrackingEvent(${e.id}, ${candidateId})">删除</button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="13">暂无面试跟踪记录</td></tr>';
+    }
+
+    // 渲染薪资跟踪表
+    const salaryTbody = document.getElementById('candidate-detail-salary-tbody');
+    if (salaryTbody) {
+      const [positions] = await Promise.all([window.hrApi.positions()]);
+      const posMap = new Map(positions.map(p => [p.id, p]));
+      salaryTbody.innerHTML = salary.map((e) => {
+        const pos = posMap.get(e.position_id);
+        const posName = pos?.name || '未知岗位';
+        return `
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:10px 8px; text-align:center; font-weight:600;">${e.interview_round || '--'}</td>
+            <td style="padding:10px 8px;">${posName}</td>
+            <td style="padding:10px 8px;">${e.company_name || '--'}</td>
+            <td style="padding:10px 8px; font-weight:600; color:#b45309;">${e.expected_salary || '--'}</td>
+            <td style="padding:10px 8px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${e.welfare_desc || ''}">${e.welfare_desc || '--'}</td>
+            <td style="padding:10px 8px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${e.onboard_cond || ''}">${e.onboard_cond || '--'}</td>
+            <td style="padding:10px 8px; text-align:center;"><span class="chip ${e.candidate_accepted === '接受' ? 'success' : 'danger'}">${e.candidate_accepted || '--'}</span></td>
+            <td style="padding:10px 8px; font-size:11px; color:#64748b;">${e.created_at || '--'}</td>
+            <td style="padding:10px 8px;">${e.actor || '--'}</td>
+            <td style="padding:10px 8px;">
+              <button class="btn-sm" style="color:#ef4444; border-color:#fecaca;" onclick="window.deleteSalaryRecord(${e.id}, ${candidateId})">删除</button>
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="10">暂无薪资/福利/入职条件跟踪记录</td></tr>';
+    }
+
+    // 渲染备注信息
+    const notesContainer = document.querySelector('[data-candidate-detail-notes]');
+    if (notesContainer) {
+      const notes = await window.hrApi.candidateNotes({ candidate_id: candidateId });
+      notesContainer.innerHTML = notes.map(n => `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; position:relative;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:11px; font-weight:600; color:#64748b;">${n.created_by || '顾问'} · ${n.created_at}</span>
+            <button class="btn-sm" style="color:#ef4444; border:none; background:none; padding:0; cursor:pointer;" onclick="window.deleteCandidateNote(${n.id}, ${candidateId})">删除</button>
+          </div>
+          <div style="font-size:12px; color:#334155; white-space:pre-wrap; line-height:1.5;">${n.content}</div>
+        </div>
+      `).join('') || '<div class="list-item"><div class="item-meta">暂无备注记录</div></div>';
+    }
+
+    // 渲染入职记录卡
+    const onboardCard = document.getElementById('employment-onboard-card');
+    const notOnboardCard = document.getElementById('employment-not-onboard-card');
+    const toggleBall = document.getElementById('employment-toggle-ball');
+    const toggleLabel = document.getElementById('employment-toggle-label');
+    const toggleTextLeft = document.getElementById('employment-toggle-text-left');
+    const toggleTextRight = document.getElementById('employment-toggle-text-right');
+    const editView = document.getElementById('employment-not-onboard-edit-view');
+    const displayView = document.getElementById('employment-not-onboard-display-view');
+    const savedNoteText = document.getElementById('employment-saved-note-text');
+
+    if (onboardCard && notOnboardCard) {
+      if (employment && employment.length > 0) {
+        const emp = employment[0];
+        if (emp.status === '已入职') {
+          onboardCard.style.display = 'block';
+          notOnboardCard.style.display = 'none';
+          document.getElementById('employment-display-onboard-date').textContent = emp.onboard_date?.slice(0, 10) || '--';
+          document.getElementById('employment-display-position').textContent = emp.position_name || '--';
+          document.getElementById('employment-display-company').textContent = emp.company_name || '--';
+          document.getElementById('employment-display-warranty').textContent = emp.warranty_status || '质保中';
+          
+          if (toggleBall && toggleLabel) {
+            toggleBall.style.transform = 'translateX(22px)';
+            toggleLabel.style.background = '#15803D';
+            toggleTextLeft.style.color = '#94a3b8';
+            toggleTextRight.style.color = '#15803D';
+          }
+        } else {
+          onboardCard.style.display = 'none';
+          notOnboardCard.style.display = 'block';
+          editView.style.display = 'none';
+          displayView.style.display = 'block';
+          savedNoteText.textContent = emp.note || '已确认未入职';
+          
+          if (toggleBall && toggleLabel) {
+            toggleBall.style.transform = 'translateX(0)';
+            toggleLabel.style.background = '#ef4444';
+            toggleTextLeft.style.color = '#ef4444';
+            toggleTextRight.style.color = '#94a3b8';
+            toggleTextLeft.textContent = '确认未入职';
+          }
+        }
+      } else {
+        onboardCard.style.display = 'none';
+        notOnboardCard.style.display = 'block';
+        editView.style.display = 'flex';
+        displayView.style.display = 'none';
+        if (toggleBall && toggleLabel) {
+          toggleBall.style.transform = 'translateX(0)';
+          toggleLabel.style.background = '#2563EB';
+          toggleTextLeft.style.color = '#2563EB';
+          toggleTextRight.style.color = '#94a3b8';
+          toggleTextLeft.textContent = '未入职';
+        }
+      }
+    }
+
+  } catch (err) { console.warn(err); }
+};
+
+window.deleteTrackingEvent = async (id, candidateId) => {
+  if (!confirm('确认删除此条面试跟踪记录？')) return;
+  try {
+    await window.hrApi.deleteInterviewRecord(id);
+    try { window.showToast('删除成功'); } catch(e) { alert('删除成功'); }
+    await window.updateCandidatePanels(candidateId);
+  } catch (err) {
+    try { window.showToast('删除失败: ' + err.message); } catch(e) { alert('删除失败: ' + err.message); }
+  }
+};
+
+window.deleteSalaryRecord = async (id, candidateId) => {
+  if (!confirm('确认删除此条薪资记录？')) return;
+  try {
+    await window.hrApi.deleteSalaryRecord(id);
+    try { window.showToast('删除成功'); } catch(e) { alert('删除成功'); }
+    await window.updateCandidatePanels(candidateId);
+  } catch (err) {
+    try { window.showToast('删除失败: ' + err.message); } catch(e) { alert('删除失败: ' + err.message); }
+  }
+};
+
+window.deleteCandidateNote = async (id, candidateId) => {
+  if (!confirm('确认删除此备注？')) return;
+  try {
+    await window.hrApi.deleteCandidateNote(id);
+    try { window.showToast('删除成功'); } catch(e) { alert('删除成功'); }
+    await window.updateCandidatePanels(candidateId);
+  } catch (err) {
+    try { window.showToast('删除失败: ' + err.message); } catch(e) { alert('删除失败: ' + err.message); }
+  }
+};
+
