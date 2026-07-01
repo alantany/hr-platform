@@ -99,7 +99,11 @@
               <h3 data-candidate-detail-title>候选人详情</h3>
               <div class="section-sub" data-candidate-detail-sub>查看候选人的完整信息。</div>
             </div>
-            <div class="hero-actions" style="margin-top:0">
+            <div class="hero-actions" style="margin-top:0; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button class="btn" data-action="locate-salary-records">薪资记录</button>
+              <button class="btn" data-action="open-candidate-employment-modal">入职状态</button>
+              <button class="btn" data-action="open-candidate-followup-modal">随访记录</button>
+              <span style="border-left:1px solid rgba(15,23,42,.1); height:24px; margin:0 4px;"></span>
               <button class="btn" data-action="close-candidate-detail-modal">关闭</button>
               <button class="btn" data-action="edit-candidate" data-id="">编辑资料</button>
               <button class="btn primary" data-action="open-candidate-mail-modal">发送邮件</button>
@@ -212,7 +216,7 @@
           </div>
 
           <!-- 薪资/福利/入职条件跟踪表 -->
-          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08); margin-top:24px;">
+          <div class="panel" data-detail-salary-panel style="box-shadow:none; border:1px solid rgba(15,23,42,.08); margin-top:24px;">
             <div class="section-head" style="margin-bottom:16px;">
               <div>
                 <h3 style="font-size:14px; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:6px;">
@@ -647,10 +651,6 @@
               <div class="section-sub">保存后会写入候选人表并刷新列表。</div>
             </div>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <button class="btn" data-action="open-add-salary-modal">薪资记录</button>
-              <button class="btn" data-action="open-candidate-employment-modal">入职状态</button>
-              <button class="btn" data-action="open-candidate-followup-modal">随访记录</button>
-              <span style="border-left:1px solid rgba(15,23,42,.1); height:24px; margin:0 8px;"></span>
               <button class="btn" data-action="close-candidate-edit-modal">取消</button>
               <button class="btn primary" data-action="confirm-candidate-edit">确认保存</button>
             </div>

@@ -840,7 +840,7 @@ function shouldShowButtonBusy(button) {
   return Boolean(
     busyLabelByAction[action] ||
     /^(confirm|refresh|read|delete|toggle|search|export|import)-/.test(action) ||
-    ["view-detail", "toggle-details", "edit-candidate", "edit-company", "edit-project", "edit-salary-record", "open-batch-recommend-modal", "open-candidate-mail-modal", "open-add-salary-modal"].includes(action)
+    ["view-detail", "toggle-details", "edit-candidate", "edit-company", "edit-project", "edit-salary-record", "open-batch-recommend-modal", "open-candidate-mail-modal", "open-add-salary-modal", "locate-salary-records"].includes(action)
   );
 }
 
@@ -3002,6 +3002,13 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
         panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }, 120);
+    return;
+  }
+  if (button.dataset.action === "locate-salary-records") {
+    const panel = document.querySelector('[data-detail-salary-panel]');
+    if (panel) {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
     return;
   }
   if (button.dataset.action === "confirm-not-onboard") {
