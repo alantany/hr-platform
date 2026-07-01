@@ -191,7 +191,7 @@ class Recommendation(Base, TimestampMixin):
     position_id: Mapped[int] = mapped_column(ForeignKey("positions.id"), nullable=False)
     recommender: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     recommender_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
-    status: Mapped[str] = mapped_column(String(32), default="待推荐", nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="已推荐", nullable=False)
     feedback: Mapped[str] = mapped_column(Text, default="", nullable=False)
     customer_comment: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
@@ -302,6 +302,19 @@ class EmploymentRecord(Base, TimestampMixin):
     @property
     def candidate_phone(self) -> str:
         return self.candidate.phone if self.candidate else ""
+
+    @property
+    def warranty_status(self) -> str:
+        if not self.onboard_date:
+            return "质保中"
+        import datetime
+        now = datetime.datetime.now(datetime.timezone.utc)
+        onboard = self.onboard_date
+        if onboard.tzinfo is None:
+            onboard = onboard.replace(tzinfo=datetime.timezone.utc)
+        if now > onboard + datetime.timedelta(days=180):
+            return "质保到期"
+        return "质保中"
 
 
 class CandidateFollowUpRecord(Base, TimestampMixin):

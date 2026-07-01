@@ -86,18 +86,21 @@ def test_employment_onboarding_and_warranty():
     assert len(res_tracking_list) == 1
     assert res_tracking_list[0]["employment_status"] == "已入职"
     
-    # b. 候选人自身的 status 大状态应变更为 "已录用"
+    # b. 根据新业务规则：候选人入职后 locked=True，status="锁定"（入职状态存储在 EmploymentRecord 里）
     res_cand_detail = client.get("/api/candidates", headers=headers).json()
     updated_cand = [c for c in res_cand_detail if c["id"] == candidate_id][0]
-    assert updated_cand["status"] == "已录用"
+    assert updated_cand["locked"] is True
+    assert updated_cand["status"] == "锁定"
 
     # c. 验证获取入职记录列表包含 candidate_name 和 candidate_phone 字段
     res_emp_records = client.get("/api/employment-records", headers=headers).json()
     my_record = [r for r in res_emp_records if r["candidate_id"] == candidate_id][0]
     assert my_record["candidate_name"] == f"入职测试候选人-{suffix}"
     assert my_record["candidate_phone"] == f"1377777{suffix[:4]}"
-    
-    # 7. 模拟“未入职”数据保存（修改状态为未入职）
+    # d. 入职记录的 warranty_status 应被动态返回为"质保中"（刚入职，未超 180 天）
+    assert my_record["warranty_status"] == "质保中"
+
+    # 7. 模拟"未入职"数据保存（修改状态为未入职，例如候选人爽约）
     not_onboard_payload = {
         "candidate_id": candidate_id,
         "status": "未入职",
@@ -115,7 +118,10 @@ def test_employment_onboarding_and_warranty():
     res_tracking_list_2 = client.get(f"/api/candidate-tracking-events?candidate_id={candidate_id}", headers=headers).json()
     assert res_tracking_list_2[0]["employment_status"] == "未入职"
     
-    # b. 候选人自身的 status 大状态应变更为 "未锁定"
+    # b. 根据新的业务规则：候选人一旦被推荐锁定后，锁定状态持久保持，不因入职状态变化而解锁
+    #    未入职不代表候选人重新"未锁定"；解锁需要人工通过 /release 接口手动执行
     res_cand_detail_2 = client.get("/api/candidates", headers=headers).json()
     updated_cand_2 = [c for c in res_cand_detail_2 if c["id"] == candidate_id][0]
-    assert updated_cand_2["status"] == "未锁定"
+    # 候选人自身 status 维持 "锁定"（锁定持久化规则），locked 字段为 True
+    assert updated_cand_2["locked"] is True
+    assert updated_cand_2["status"] == "锁定"

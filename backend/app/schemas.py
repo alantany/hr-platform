@@ -337,6 +337,7 @@ class EmploymentRecordOut(EmploymentRecordCreate):
     created_at: datetime
     candidate_name: str = ""
     candidate_phone: str = ""
+    warranty_status: str = "质保中"
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -456,7 +457,7 @@ class RecommendationCreate(BaseModel):
     candidate_id: int
     position_id: int
     recommender: str = ""
-    status: str = "待推荐"
+    status: str = "已推荐"
     feedback: str = ""
 
 
@@ -468,7 +469,7 @@ class RecommendationBatchCreate(BaseModel):
     record_keys: list[str] = Field(default_factory=list)
     position_id: int
     recommender: str = ""
-    status: str = "待推荐"
+    status: str = "已推荐"
     feedback: str = ""
 
 

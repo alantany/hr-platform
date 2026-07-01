@@ -1191,8 +1191,20 @@ def add_employment_record(payload: schemas.EmploymentRecordCreate, db: Session =
         latest_event.employment_status = payload.status
         db.add(latest_event)
         
-    # 联动更新候选人自身状态
-    candidate.status = "已录用" if payload.status == "已入职" else "未锁定"
+    # 锁定持久化与多向流转联动
+    if payload.status == "已入职":
+        candidate.locked = True
+        candidate.status = "锁定"
+        
+        # 联动更新关联的岗位推荐 Recommendation 状态为“已录用”
+        from .models import Recommendation
+        latest_recom = db.query(Recommendation).filter(
+            Recommendation.candidate_id == candidate.id,
+            Recommendation.status.in_(["待推荐", "已推荐", "面试中", "客户已收", "安排面试"])
+        ).order_by(Recommendation.created_at.desc()).first()
+        if latest_recom:
+            latest_recom.status = "已录用"
+            db.add(latest_recom)
     db.add(candidate)
     
     crud.add_audit(db, user.username, "候选人跟踪", action, "employment_record", str(candidate.id), detail=payload.status)
@@ -1471,6 +1483,36 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
             if allowed and value not in allowed:
                 raise HTTPException(status_code=400, detail=f"无法从 {obj.status} 流转到 {value}")
         setattr(obj, key, value)
+        
+        # 联动机制 B：如果推荐流转为“已录用”，自动写入“已入职”的 EmploymentRecord
+        if key == "status" and value == "已录用":
+            from .models import EmploymentRecord, Position, Project, Company
+            import datetime
+            pos = db.get(Position, obj.position_id)
+            pos_name = pos.name if pos else ""
+            comp_name = ""
+            if pos and pos.project_id:
+                proj = db.get(Project, pos.project_id)
+                if proj and proj.company_id:
+                    comp = db.get(Company, proj.company_id)
+                    if comp:
+                        comp_name = comp.name
+            existing_emp = db.query(EmploymentRecord).filter(
+                EmploymentRecord.candidate_id == obj.candidate_id
+            ).first()
+            if not existing_emp:
+                new_emp = EmploymentRecord(
+                    candidate_id=obj.candidate_id,
+                    status="已入职",
+                    company_name=comp_name,
+                    position_name=pos_name,
+                    onboard_date=datetime.datetime.now(datetime.timezone.utc),
+                    note="通过系统推荐流程自动流转入职",
+                    warranty_status="质保中"
+                )
+                new_emp.operator_user_id = user.id
+                db.add(new_emp)
+
     crud.add_audit(db, user.username, "推荐交付", "更新推荐状态", "recommendation", str(recommendation_id), detail=obj.status)
     db.commit()
     db.refresh(obj)
