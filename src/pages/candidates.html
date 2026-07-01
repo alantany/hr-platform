@@ -337,6 +337,7 @@
         </div>
       </div>
 
+      <!-- Candidate detail modal (minimal version) -->
       <div class="modal" data-candidate-detail-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
         <div class="panel" style="max-width:960px; margin:4vh auto 24px; background:#fff;">
           <div class="section-head">
@@ -346,220 +347,55 @@
             </div>
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" data-action="close-candidate-detail-modal">关闭</button>
-              <button class="btn" data-action="edit-candidate" data-id="">编辑资料</button>
-              <button class="btn primary" data-action="open-candidate-mail-modal">发送邮件</button>
             </div>
           </div>
           <div class="grid-2">
             <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">基本信息</div>
+              <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">基本信息</div>
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta" data-candidate-detail-name>--</div></div><span class="chip primary">基础</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">性别</div><div class="item-meta" data-candidate-detail-gender>--</div></div><span class="chip neutral">基础</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">年龄</div><div class="item-meta" data-candidate-detail-age>--</div></div><span class="chip neutral">基础</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">出生日期</div><div class="item-meta" data-candidate-detail-birth-date>--</div></div><span class="chip neutral">基础</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">户口所在地</div><div class="item-meta" data-candidate-detail-hukou>--</div></div><span class="chip neutral">基础</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">所在城市</div><div class="item-meta" data-candidate-detail-city>--</div></div><span class="chip success">地区</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta" data-candidate-detail-phone>--</div></div><span class="chip neutral">联系</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta" data-candidate-detail-email>--</div></div><span class="chip neutral">联系</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">家庭情况</div><div class="item-meta" data-candidate-detail-family>--</div></div><span class="chip neutral">基础</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta" data-candidate-detail-name>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">性别</div><div class="item-meta" data-candidate-detail-gender>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">年龄</div><div class="item-meta" data-candidate-detail-age>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">出生日期</div><div class="item-meta" data-candidate-detail-birth-date>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">户口所在地</div><div class="item-meta" data-candidate-detail-hukou>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">所在城市</div><div class="item-meta" data-candidate-detail-city>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta" data-candidate-detail-phone>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta" data-candidate-detail-email>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">家庭情况</div><div class="item-meta" data-candidate-detail-family>--</div></div></div></div>
               </div>
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">职业经历</div>
+              <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;">职业经历</div>
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div><div class="item-meta" data-candidate-detail-title2>--</div></div><span class="chip warning">岗位</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">最高学历</div><div class="item-meta" data-candidate-detail-education>--</div></div><span class="chip neutral">学历</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">工作年限</div><div class="item-meta" data-candidate-detail-exp>--</div></div><span class="chip neutral">经验</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">教育背景</div></div></div><div class="item-meta" data-candidate-detail-edu-detail style="white-space:pre-wrap; padding:4px 0;">--</div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">职业经历</div></div></div><div class="item-meta" data-candidate-detail-work-history style="white-space:pre-wrap; padding:4px 0;">--</div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">项目经历</div></div></div><div class="item-meta" data-candidate-detail-project-history style="white-space:pre-wrap; padding:4px 0;">--</div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">专业证书</div><div class="item-meta" data-candidate-detail-certificates>--</div></div><span class="chip neutral">资质</span></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div><div class="item-meta" data-candidate-detail-title2>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">最高学历</div><div class="item-meta" data-candidate-detail-education>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">工作年限</div><div class="item-meta" data-candidate-detail-exp>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">教育背景</div></div></div><div class="item-meta" data-candidate-detail-edu-detail style="white-space:pre-wrap;padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">职业经历</div></div></div><div class="item-meta" data-candidate-detail-work-history style="white-space:pre-wrap;padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">项目经历</div></div></div><div class="item-meta" data-candidate-detail-project-history style="white-space:pre-wrap;padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">专业证书</div><div class="item-meta" data-candidate-detail-certificates>--</div></div></div></div>
               </div>
             </div>
             <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">求职意向</div>
+              <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">求职意向</div>
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta" data-candidate-detail-salary>--</div></div><span class="chip neutral">期望</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">薪资结构</div><div class="item-meta" data-candidate-detail-salary-structure>--</div></div><span class="chip neutral">薪酬</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">到岗周期</div><div class="item-meta" data-candidate-detail-onboard>--</div></div><span class="chip neutral">时效</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">职位状态</div><div class="item-meta" data-candidate-detail-job-status>--</div></div><span class="chip neutral">状态</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">求职意向</div></div></div><div class="item-meta" data-candidate-detail-intention style="white-space:pre-wrap; padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta" data-candidate-detail-salary>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">薪资结构</div><div class="item-meta" data-candidate-detail-salary-structure>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">到岗周期</div><div class="item-meta" data-candidate-detail-onboard>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">职位状态</div><div class="item-meta" data-candidate-detail-job-status>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">求职意向</div></div></div><div class="item-meta" data-candidate-detail-intention style="white-space:pre-wrap;padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">核心价值</div></div></div><div class="item-meta" data-candidate-detail-core-value style="white-space:pre-wrap;padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">综合评估</div></div></div><div class="item-meta" data-candidate-detail-evaluation style="white-space:pre-wrap;padding:4px 0;">--</div></div>
               </div>
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">评估</div>
+              <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;">系统状态</div>
               <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">核心价值</div></div></div><div class="item-meta" data-candidate-detail-core-value style="white-space:pre-wrap; padding:4px 0;">--</div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">综合评估</div></div></div><div class="item-meta" data-candidate-detail-evaluation style="white-space:pre-wrap; padding:4px 0;">--</div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">当前状态</div><div class="item-meta" data-candidate-detail-status>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta" data-candidate-detail-source>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">身份证号</div><div class="item-meta" data-candidate-detail-idnumber>--</div></div></div></div>
+                <div class="list-item"><div class="item-top"><div><div class="item-title">标签</div><div class="item-meta" data-candidate-detail-tags>--</div></div></div></div>
               </div>
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">系统状态</div>
-              <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">当前状态</div><div class="item-meta" data-candidate-detail-status>--</div></div><span class="chip neutral">状态</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta" data-candidate-detail-source>--</div></div><span class="chip neutral">来源</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">身份证号</div><div class="item-meta" data-candidate-detail-idnumber>--</div></div><span class="chip neutral">证件</span></div></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">标签</div><div class="item-meta" data-candidate-detail-tags>--</div></div><span class="chip neutral">标签</span></div></div>
-              </div>
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">推荐项目情况</div>
-              <div class="list" data-candidate-detail-projects>
-                <div class="list-item"><div class="item-meta">暂无推荐项目记录</div></div>
-              </div>
+              <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;">推荐项目情况</div>
+              <div class="list" data-candidate-detail-projects><div class="list-item"><div class="item-meta">暂无推荐项目记录</div></div></div>
             </div>
           </div>
-          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08); margin-top:24px;">
-            <div class="section-head" style="margin-bottom:16px;">
-              <div>
-                <h3 style="font-size:14px; font-weight:600; color:#0f172a;">备注信息</h3>
-              </div>
-              <div class="hero-actions" style="margin-top:0">
-                <button class="btn primary" data-action="open-add-note-modal" style="background-color: #2563EB; border-color: #2563EB; padding:4px 12px; font-size:12px; display: flex; align-items: center; gap: 4px;">
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right:2px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>添加
-                </button>
-              </div>
-            </div>
-            <div class="list" data-candidate-detail-notes style="display:flex; flex-direction:column; gap:12px;">
-              <div class="list-item"><div class="item-meta">暂无备注记录</div></div>
-            </div>
-          </div>
-          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08); margin-top:24px;">
-            <div class="section-head" style="margin-bottom:16px;">
-              <div>
-                <h3 style="font-size:14px; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:6px;">
-                  📋 候选人跟踪表
-                </h3>
-              </div>
-              <div class="hero-actions" style="margin-top:0">
-                <button class="btn primary" data-action="open-add-tracking-modal" style="background-color:#2563EB; border-color:#2563EB; padding:4px 12px; font-size:12px; display:flex; align-items:center; gap:4px;">
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right:2px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>添加面试记录
-                </button>
-              </div>
-            </div>
-            <div style="overflow-x:auto; width:100%;">
-              <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; min-width:1000px;">
-                <thead>
-                  <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#475569;">
-                    <th style="padding:10px 8px; font-weight:600; text-align:center; width:70px;">面试轮次</th>
-                    <th style="padding:10px 8px; font-weight:600; text-align:center; width:70px;">初筛结果</th>
-                    <th style="padding:10px 8px; font-weight:600; width:90px;">面试日期</th>
-                    <th style="padding:10px 8px; font-weight:600; width:70px;">面试官</th>
-                    <th style="padding:10px 8px; font-weight:600; width:140px;">面试地点</th>
-                    <th style="padding:10px 8px; font-weight:600; width:140px;">面试要求</th>
-                    <th style="padding:10px 8px; font-weight:600; width:100px;">面试联系方式</th>
-                    <th style="padding:10px 8px; font-weight:600; width:70px;">面试结果</th>
-                    <th style="padding:10px 8px; font-weight:600; width:60px;">状态</th>
-                    <th style="padding:10px 8px; font-weight:600;">备注</th>
-                    <th style="padding:10px 8px; font-weight:600; text-align:center; width:80px;">入职状态</th>
-                    <th style="padding:10px 8px; font-weight:600; width:70px;">操作人</th>
-                    <th style="padding:10px 8px; font-weight:600; width:90px;">操作</th>
-                  </tr>
-                </thead>
-                <tbody id="candidate-detail-tracking-tbody">
-                  <tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="13">暂无面试跟踪记录</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 薪资/福利/入职条件跟踪表 -->
-          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08); margin-top:24px;">
-            <div class="section-head" style="margin-bottom:16px;">
-              <div>
-                <h3 style="font-size:14px; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:6px;">
-                  💰 薪资/福利/入职条件跟踪表
-                </h3>
-              </div>
-              <div class="hero-actions" style="margin-top:0">
-                <button class="btn primary" data-action="open-add-salary-modal" style="background-color:#2563EB; border-color:#2563EB; padding:4px 12px; font-size:12px; display:flex; align-items:center; gap:4px;">
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right:2px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>添加薪资记录
-                </button>
-              </div>
-            </div>
-            <div style="overflow-x:auto; width:100%;">
-              <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; min-width:1000px;">
-                <thead>
-                  <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#475569;">
-                    <th style="padding:10px 8px; font-weight:600; text-align:center; width:100px;">关联面试轮次</th>
-                    <th style="padding:10px 8px; font-weight:600; width:120px;">关联岗位</th>
-                    <th style="padding:10px 8px; font-weight:600; width:120px;">客户公司</th>
-                    <th style="padding:10px 8px; font-weight:600; width:100px;">约定薪资</th>
-                    <th style="padding:10px 8px; font-weight:600; width:180px;">福利说明</th>
-                    <th style="padding:10px 8px; font-weight:600; width:180px;">入职条件</th>
-                    <th style="padding:10px 8px; font-weight:600; width:80px; text-align:center;">是否接受</th>
-                    <th style="padding:10px 8px; font-weight:600; width:120px;">记录时间</th>
-                    <th style="padding:10px 8px; font-weight:600; width:80px;">操作人</th>
-                    <th style="padding:10px 8px; font-weight:600; width:90px;">操作</th>
-                  </tr>
-                </thead>
-                <tbody id="candidate-detail-salary-tbody">
-                  <tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="10">暂无薪资/福利/入职条件跟踪记录</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 候选人入职状态组件 -->
-          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08); margin-top:24px;" data-detail-employment-panel>
-            <div class="section-head" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
-              <div>
-                <h3 style="font-size:14px; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:6px;">🏢 候选人入职状态</h3>
-              </div>
-              
-              <!-- 切换滑动开关 -->
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span id="employment-toggle-text-left" style="font-size:12px; font-weight:600; color:#2563EB;">未入职</span>
-                <label id="employment-toggle-label" style="position:relative; display:inline-flex; align-items:center; width:44px; height:22px; background:#2563EB; border-radius:11px; cursor:pointer; transition: background-color 0.3s; padding:2px;">
-                  <div id="employment-toggle-ball" style="width:18px; height:18px; background:#fff; border-radius:50%; transition: transform 0.3s; transform: translateX(0);"></div>
-                </label>
-                <span id="employment-toggle-text-right" style="font-size:12px; font-weight:600; color:#94a3b8;">已入职</span>
-              </div>
-            </div>
-
-            <!-- 未入职状态显示部分 (红框) -->
-            <div id="employment-not-onboard-card" style="border:1px solid #fee2e2; border-radius:12px; padding:20px; background:#fff; margin-bottom:16px;">
-              <div style="background:#fef2f2; color:#b91c1c; border-radius:8px; padding:12px; margin-bottom:16px; font-size:12px; line-height:1.5; display:flex; align-items:center; gap:6px;">
-                <span>📋 未入职模式</span>
-              </div>
-              
-              <!-- 输入编辑态 -->
-              <div id="employment-not-onboard-edit-view" style="display:flex; flex-direction:column; gap:12px;">
-                <div style="display:flex; flex-direction:column; gap:6px;">
-                  <label style="font-size:12px; font-weight:600; color:#475569;">未入职备注原因</label>
-                  <textarea class="input" id="employment-note-textarea" rows="4" placeholder="填写未入职备注信息 (如：候选人拒绝offer、薪资未达成一致、候选人选择其他公司等)" style="width:100%; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; font-size:13px; outline:none; resize:none; font-family:inherit;"></textarea>
-                </div>
-                <div style="display:flex; justify-content:flex-start;">
-                  <button class="btn primary" data-action="confirm-not-onboard" style="background:#2563EB; border-color:#2563EB; height:36px; border-radius:18px; padding:0 24px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; cursor:pointer; color:#fff;">✓ 确认未入职</button>
-                </div>
-              </div>
-
-              <!-- 已确认展示态 -->
-              <div id="employment-not-onboard-display-view" style="display:none;">
-                <div style="font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;">已确认未入职备注：</div>
-                <div id="employment-saved-note-text" style="font-size:13px; color:#b91c1c; background:#fef2f2; border-radius:8px; padding:12px; min-height:40px; line-height:1.5; word-break:break-all;">--</div>
-              </div>
-            </div>
-
-            <!-- 已入职记录显示部分 (绿底) -->
-            <div id="employment-onboard-card" style="display:none; background:#15803D; color:#fff; border-radius:12px; padding:20px; margin-bottom:16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-              <div style="font-size:14px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-                <span>✓ 已入职记录</span>
-              </div>
-              <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
-                <div>
-                  <div style="font-size:11px; opacity:0.8; margin-bottom:4px;">入职时间</div>
-                  <div id="employment-display-onboard-date" style="font-size:13px; font-weight:700; white-space:nowrap;">--</div>
-                </div>
-                <div>
-                  <div style="font-size:11px; opacity:0.8; margin-bottom:4px;">入职岗位</div>
-                  <div id="employment-display-position" style="font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="">--</div>
-                </div>
-                <div>
-                  <div style="font-size:11px; opacity:0.8; margin-bottom:4px;">入职公司</div>
-                  <div id="employment-display-company" style="font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="">--</div>
-                </div>
-                <div>
-                  <div style="font-size:11px; opacity:0.8; margin-bottom:4px;">质保状态</div>
-                  <div id="employment-display-warranty" style="font-size:12px; font-weight:700; background:rgba(255,255,255,0.25); display:inline-block; padding:1px 6px; border-radius:4px; white-space:nowrap;">--</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
 
@@ -632,66 +468,6 @@
 
 
 
-      <div class="modal" data-candidate-followup-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:3000; padding:24px;">
-        <div class="panel" style="max-width:760px; margin:10vh auto 0; background:#fff;">
-          <div class="section-head">
-            <div>
-              <h3>随访记录</h3>
-              <div class="section-sub">仅已录用候选人可以添加随访记录。</div>
-            </div>
-            <div class="hero-actions" style="margin-top:0">
-              <button class="btn" data-action="close-candidate-followup-modal">取消</button>
-              <button class="btn primary" data-action="confirm-candidate-followup">确认保存</button>
-            </div>
-          </div>
-          <div class="grid-2">
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">随访时间</div><div class="item-meta">系统记录时间</div></div></div><input class="input" type="datetime-local" data-candidate-followup-time /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">随访内容</div><div class="item-meta">记录跟进细节</div></div></div><textarea class="input" rows="7" data-candidate-followup-content></textarea></div>
-              </div>
-            </div>
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <h3>随访历史</h3>
-              <div class="list" data-followup-block>
-                <div class="list-item"><div class="item-meta">保存后会显示真实随访记录。</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal" data-candidate-mail-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:3000; padding:24px;">
-        <div class="panel" style="max-width:840px; margin:8vh auto 0; background:#fff;">
-          <div class="section-head">
-            <div>
-              <h3 data-candidate-mail-title>发送邮件</h3>
-              <div class="section-sub">确认邮件地址、主题、正文和附件后发送，系统会写入发送记录。</div>
-            </div>
-            <div class="hero-actions" style="margin-top:0">
-              <button class="btn" data-action="close-candidate-mail-modal">取消</button>
-              <button class="btn primary" data-action="confirm-candidate-mail">确认发送</button>
-            </div>
-          </div>
-          <div class="grid-2">
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">收件邮箱</div><div class="item-meta">客户公司的邮箱</div></div></div><input class="input" data-candidate-mail-to /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">邮件主题</div><div class="item-meta">求职者姓名-岗位名</div></div></div><input class="input" data-candidate-mail-subject /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">附件名</div><div class="item-meta">求职者姓名-岗位名.pdf</div></div></div><input class="input" data-candidate-mail-attachment /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">邮件正文</div><div class="item-meta">自动生成候选人信息、轮次、日期等摘要</div></div></div><textarea class="input" rows="7" data-candidate-mail-body></textarea></div>
-              </div>
-            </div>
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-              <h3>发送历史</h3>
-              <div class="list" data-mail-history>
-                <div class="list-item"><div class="item-meta">发送后会写入邮件发送记录。</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="modal" data-recommend-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:3000; padding:24px;">
         <div class="panel" style="max-width:540px; margin:12vh auto 0; background:#fff;">
           <div class="section-head">
@@ -723,211 +499,6 @@
               <textarea class="input" rows="4" data-recommend-feedback-textarea placeholder="输入推荐理由或针对该岗位的客户评语..." style="width:100%; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px;"></textarea>
             </div>
             <div class="list-item" data-recommend-result style="display:none;"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal" data-add-note-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:3000; padding:24px;">
-        <div class="panel" style="max-width:540px; margin:15vh auto 0; background:#fff; border-radius:12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow:hidden;">
-          <div class="section-head" style="border-bottom:1px solid #f1f5f9; padding:20px 24px 16px;">
-            <div>
-              <h3 style="font-size:16px; font-weight:600; color:#0f172a;">添加备注</h3>
-            </div>
-            <div class="hero-actions" style="margin-top:0">
-              <button class="btn-sm" data-action="close-add-note-modal" style="background:none; border:none; color:#94a3b8; cursor:pointer; padding:4px;"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            </div>
-          </div>
-          <div style="padding:24px;">
-            <div style="margin-bottom:16px;">
-              <label style="display:block; font-size:13px; font-weight:500; color:#475569; margin-bottom:8px;">备注内容</label>
-              <textarea class="input" rows="5" data-add-note-textarea placeholder="请输入备注内容" style="width:100%; border:1px solid #e2e8f0; border-radius:8px; padding:12px; font-size:13px; outline:none; resize:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#2563EB'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
-            </div>
-            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
-              <button class="btn" data-action="close-add-note-modal" style="border: 1px solid #2563EB; color: #2563EB; background: #fff; border-radius: 20px; padding: 6px 20px; font-size: 13px; font-weight: 500;">取消</button>
-              <button class="btn primary" data-action="confirm-add-note" style="background: #2563EB; border-color: #2563EB; border-radius: 20px; padding: 6px 20px; font-size: 13px; font-weight: 500;">确定</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal" data-add-tracking-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:3000; padding:24px;">
-        <div class="panel" style="max-width:580px; margin:5vh auto 0; background:#fff; border-radius:12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow:hidden; display:flex; flex-direction:column; max-height:90vh;">
-          <div class="section-head" style="border-bottom:1px solid #f1f5f9; padding:20px 24px 16px; margin: 0;">
-            <div>
-              <h3 style="font-size:16px; font-weight:600; color:#0f172a;">添加面试记录</h3>
-            </div>
-            <div class="hero-actions" style="margin-top:0">
-              <button class="btn-sm" data-action="close-add-tracking-modal" style="background:none; border:none; color:#94a3b8; cursor:pointer; padding:4px;"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            </div>
-          </div>
-          <div style="padding:24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px;">
-            <!-- 初筛说明 -->
-            <div style="background-color:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px 16px; font-size:12px; color:#1e40af; line-height:1.5;">
-              <div style="font-weight:600; display:flex; align-items:center; gap:4px; margin-bottom:4px;">
-                <span>ⓘ</span> 初筛说明
-              </div>
-              <div style="color: #475569;">当操作者查看求职者简历后，如主观认定简历是否符合岗位要求，请选择“初筛”并填写结果：</div>
-              <ul style="margin:4px 0 0 0; padding-left:16px; list-style-type:disc; color: #475569;">
-                <li>初筛通过：简历可以进行第一轮面试，填写备注说明通过原因</li>
-                <li>初筛未通过：简历不符合岗位要求，填写备注说明未通过原因</li>
-              </ul>
-            </div>
-            
-            <!-- 面试轮次 -->
-            <div>
-              <label style="display:block; font-size:13px; font-weight:500; color:#475569; margin-bottom:6px;">面试轮次</label>
-              <select class="input" id="tracking-interview-round" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none; background:#fff;">
-                <option value="">请选择操作类型</option>
-                <option value="初筛">初筛（简历查看后主观判断）</option>
-                <option value="第1轮">第1轮</option>
-                <option value="第2轮">第2轮</option>
-                <option value="第3轮">第3轮</option>
-                <option value="第4轮">第4轮</option>
-                <option value="第5轮">第5轮</option>
-                <option value="第6轮">第6轮</option>
-              </select>
-            </div>
-
-            <!-- 初筛结果 -->
-            <div>
-              <label style="display:block; font-size:13px; font-weight:500; color:#475569; margin-bottom:6px;">初筛结果</label>
-              <select class="input" id="tracking-screening-result" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none; background:#fff;">
-                <option value="">请选择初筛结果</option>
-                <option value="通过">通过</option>
-                <option value="未通过">未通过</option>
-              </select>
-            </div>
-
-            <!-- 面试日期 -->
-            <div>
-              <label style="display:block; font-size:13px; font-weight:500; color:#475569; margin-bottom:6px;">面试日期</label>
-              <input type="date" class="input" id="tracking-interview-date" value="2026-05-23" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none;" />
-            </div>
-
-            <!-- 面试官 -->
-            <div>
-              <label style="display:block; font-size:13px; font-weight:500; color:#475569; margin-bottom:6px;">面试官</label>
-              <input type="text" class="input" id="tracking-interviewer" placeholder="请输入面试官姓名" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none;" />
-            </div>
-
-            <!-- 面试地点 -->
-            <div>
-              <label style="display:block; font-size:13px; font-weight:500; color:#475569; margin-bottom:6px;">面试地点</label>
-              <input type="text" class="input" id="tracking-interview-location" placeholder="请输入面试地点" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none;" />
-            </div>
-
-            <!-- 面试要求 -->
-            <div>
-              <label style="display:block; font-size:13px; font-weight:500; color:#475569; margin-bottom:6px;">面试要求</label>
-              <textarea class="input" rows="3" id="tracking-interview-requirements" placeholder="请输入面试要求（如：携带身份证、学历证明等）" style="width:100%; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; font-size:13px; outline:none; resize:none; font-family:inherit;"></textarea>
-            </div>
-
-            <!-- 面试联系方式 -->
-            <div>
-              <label style="display:block; font-size:13px; font-weight:500; color:#475569; margin-bottom:6px;">面试联系方式</label>
-              <input type="text" class="input" id="tracking-interview-contact" placeholder="请输入面试联系方式（电话/邮箱）" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none;" />
-            </div>
-
-            <!-- 备注 -->
-            <div>
-              <label style="display:block; font-size:13px; font-weight:500; color:#475569; margin-bottom:6px;">备注</label>
-              <textarea class="input" rows="3" id="tracking-note" placeholder="请输入备注信息（初筛通过：填写通过原因；初筛未通过：填写不通过原因）" style="width:100%; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; font-size:13px; outline:none; resize:none; font-family:inherit;"></textarea>
-            </div>
-          </div>
-          <div style="padding:16px 24px; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:12px;">
-            <button class="btn" data-action="close-add-tracking-modal" style="border: 1px solid #2563EB; color: #2563EB; background: #fff; border-radius: 20px; padding: 6px 20px; font-size: 13px; font-weight: 500;">取消</button>
-            <button class="btn primary" data-action="confirm-add-tracking" style="background: #2563EB; border-color: #2563EB; border-radius: 20px; padding: 6px 20px; font-size: 13px; font-weight: 500;">确定</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal" data-candidate-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
-        <div class="panel" style="max-width:960px; margin:4vh auto 24px; background:#fff;">
-          <div class="section-head">
-            <div>
-              <h3>编辑候选人</h3>
-              <div class="section-sub">保存后会写入候选人表并刷新列表。</div>
-            </div>
-            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <!-- 流转状态管理按钮组 -->
-
-              <button class="btn" data-action="open-add-salary-modal">薪资记录</button>
-              <button class="btn" data-action="open-candidate-employment-modal">入职状态</button>
-              <button class="btn" data-action="open-candidate-followup-modal">随访记录</button>
-              <span style="border-left:1px solid rgba(15,23,42,.1); height:24px; margin:0 8px;"></span>
-              <button class="btn" data-action="close-candidate-edit-modal">取消</button>
-              <button class="btn primary" data-action="confirm-candidate-edit">确认保存</button>
-            </div>
-          </div>
-          <div class="grid-2" style="max-height:70vh; overflow-y:auto; padding:2px;">
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08); margin:0;">
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">基本信息</div>
-              <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">姓名</div><div class="item-meta">可根据原件信息修正拼写错误</div></div></div><input class="input" data-candidate-edit-name /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">性别</div><div class="item-meta">男 / 女</div></div></div><select class="input" data-candidate-edit-gender><option value="">不填</option><option value="男">男</option><option value="女">女</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">年龄</div><div class="item-meta">纯数字</div></div></div><input type="number" class="input" data-candidate-edit-age placeholder="如: 28" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">出生日期</div><div class="item-meta">请选择日期</div></div></div><input class="input" type="date" data-candidate-edit-birth-date /></div>
-                <div class="list-item" style="position:relative;"><div class="item-top"><div><div class="item-title">户口所在地</div><div class="item-meta">点击选择省市</div></div></div>
-                  <div class="city-selector-wrapper" style="position: relative; width: 100%;">
-                    <input class="input" data-candidate-edit-hukou placeholder="请选择或搜索户口所在地" autocomplete="off" style="width: 100%;" />
-                    <div class="hukou-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1010; padding: 12px;">
-                      <div class="hukou-search-results" style="display: none; max-height: 240px; overflow-y: auto;"></div>
-                      <div class="hukou-cascade-view" style="display: flex; height: 240px;">
-                        <div class="hukou-province-list" style="width: 130px; border-right: 1px solid rgba(15,23,42,.06); overflow-y: auto; padding-right: 8px;"></div>
-                        <div class="hukou-city-list" style="flex: 1; overflow-y: auto; padding-left: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: start;"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="list-item" style="position:relative;"><div class="item-top"><div><div class="item-title">城市</div><div class="item-meta">点击选择城市</div></div></div>
-                  <div class="city-selector-wrapper" style="position: relative; width: 100%;">
-                    <input class="input" data-candidate-edit-city placeholder="请选择或搜索城市" autocomplete="off" style="width: 100%;" />
-                    <div class="editcity-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1010; padding: 12px;">
-                      <div class="editcity-search-results" style="display: none; max-height: 240px; overflow-y: auto;"></div>
-                      <div class="editcity-cascade-view" style="display: flex; height: 240px;">
-                        <div class="editcity-province-list" style="width: 130px; border-right: 1px solid rgba(15,23,42,.06); overflow-y: auto; padding-right: 8px;"></div>
-                        <div class="editcity-city-list" style="flex: 1; overflow-y: auto; padding-left: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: start;"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">电话</div><div class="item-meta">仅限中国11位手机号</div></div></div><input class="input" data-candidate-edit-phone placeholder="13912345678" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">邮箱</div><div class="item-meta">请输入有效邮箱</div></div></div><input class="input" type="email" data-candidate-edit-email placeholder="example@domain.com" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">家庭情况</div><div class="item-meta">婚育状况等</div></div></div><select class="input" data-candidate-edit-family><option value="">请选择</option><option value="未婚">未婚</option><option value="已婚">已婚</option><option value="已婚未育">已婚未育</option><option value="已婚已育">已婚已育</option></select></div>
-              </div>
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">职业经历</div>
-              <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">当前职位</div><div class="item-meta">现任岗位</div></div></div><input class="input" data-candidate-edit-title /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">最高学历</div><div class="item-meta">请选择学历</div></div></div><select class="input" data-candidate-edit-education><option value="高中">高中</option><option value="大专">大专</option><option value="本科" selected>本科</option><option value="硕士">硕士</option><option value="博士">博士</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">工作年限</div><div class="item-meta">年（数字）</div></div></div><input class="input" type="number" data-candidate-edit-exp-years /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">教育背景</div><div class="item-meta">详细教育经历</div></div></div><textarea class="input" rows="4" data-candidate-edit-edu-detail></textarea></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">职业经历</div><div class="item-meta">工作履历</div></div></div><textarea class="input" rows="5" data-candidate-edit-work-history></textarea></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">项目经历</div><div class="item-meta">核心项目</div></div></div><textarea class="input" rows="4" data-candidate-edit-project-history></textarea></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">专业证书</div><div class="item-meta">多个用逗号或换行分隔</div></div></div><textarea class="input" rows="3" data-candidate-edit-certificates></textarea></div>
-              </div>
-            </div>
-            <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08); margin:0;">
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">求职意向</div>
-              <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">期望薪资</div><div class="item-meta">仅限数字，单位（元/月）</div></div></div><input class="input" type="number" data-candidate-edit-salary placeholder="例如：25000" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">薪资结构</div><div class="item-meta">例：12薪+2个月年终</div></div></div><input class="input" data-candidate-edit-salary-structure /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">到岗周期</div><div class="item-meta">选择到岗时间</div></div></div><select class="input" data-candidate-edit-onboard><option value="一周">一周</option><option value="两周">两周</option><option value="三周">三周</option><option value="一个月">一个月</option><option value="两个月">两个月</option><option value="三个月">三个月</option><option value="四个月">四个月</option><option value="五个月">五个月</option><option value="六个月">六个月</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">职位状态</div><div class="item-meta">选择当前工作状态</div></div></div><select class="input" data-candidate-edit-job-status><option value="在职">在职</option><option value="离职">离职</option><option value="随时到岗">随时到岗</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">求职意向</div><div class="item-meta">目标岗位、行业</div></div></div><textarea class="input" rows="3" data-candidate-edit-intention></textarea></div>
-              </div>
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">评估</div>
-              <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">核心价值</div><div class="item-meta">核心能力提炼</div></div></div><textarea class="input" rows="3" data-candidate-edit-core-value></textarea></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">综合评估</div><div class="item-meta">顾问评价总结</div></div></div><textarea class="input" rows="3" data-candidate-edit-evaluation></textarea></div>
-              </div>
-              <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px;">系统状态</div>
-              <div class="list">
-                <div class="list-item"><div class="item-top"><div><div class="item-title">当前状态</div><div class="item-meta">未锁定 / 锁定</div></div></div><select class="input" data-candidate-edit-status><option value="未锁定">未锁定</option><option value="锁定">锁定</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">来源</div><div class="item-meta">手工导入 / 简历库</div></div></div><select class="input" data-candidate-edit-source><option value="手工导入">手工导入</option><option value="简历库">简历库</option></select></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">身份证号</div><div class="item-meta">可选，做合规校验</div></div></div><input class="input" data-candidate-edit-idnumber placeholder="例如：110101199001011234" /></div>
-                <div class="list-item"><div class="item-top"><div><div class="item-title">标签</div><div class="item-meta">逗号分隔</div></div></div><input class="input" data-candidate-edit-tags /></div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

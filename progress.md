@@ -488,7 +488,16 @@
   * **测试套件覆盖**：开发了独立的回归测试 `tests/test_employment_onboarding.py` 覆盖所有接口的变动及级联状态响应，通过 pytest 顺利通过。
 - **实现“薪资/福利/入职条件跟踪表”集成**：
   * **数据库模型扩充与自愈式迁移**：在 [models.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/models.py) 中为 `SalaryRecord` 扩充了 `interview_round`, `position_name`, `company_name`, `agreed_salary`, `welfare_desc`, `onboard_cond`, `candidate_accepted` 和 `operator` 等 8 个字段，并在 [main.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/main.py) 的 `ensure_schema()` 数据库自愈检查中新增这 8 个列的 `ALTER TABLE` DDL，支持零脚本的平滑表迁移。
-  * **后端路由补充与只读逻辑校验**：重构了 `POST /api/salary-records`，现在每次请求均添加一条新数据，实现多次备注，并注入 `operator` 操作人；完善了 `PATCH /api/salary-records/{record_id}`，对已存的面试轮次进行后端防篡改校验（已有轮次则只读只用）；新增了 `DELETE /api/salary-records/{record_id}` 物理删除接口。
+  * **后端路由补充与只读逻辑校验**：重构了 `POST /api/salary-records`，现在每次请求均添加一条新数据，实现多次备注，并注入 `operator` 操作人；完善了 `PATCH /api/salary-records/{record_id}`，对已存的面试轮次进行后端防## 2026-07-01 (简历池与岗位候选人详情/流转跟踪组件对调)
+
+- **完成简历池与岗位候选人管理详情与流转跟踪模块对调**：
+  * **架构优化**：将原本位于“简历池（`candidates.html`）”的复杂详情面板（包含备注信息、面试跟踪表、薪资福利跟踪表、已入职/未入职状态卡片）移植到“岗位候选人（`position-candidates.html`）”中，符合岗位语境下跟进面试的业务逻辑。
+  * **岗位候选人管理端**：在 `position-candidates.html` 中装配了完整的复杂详情 DOM，且引入了配套的编辑、发信、备注、面试记录、薪资跟踪、随访记录等 6 个子 Modal 容器，并在页面 JS 中移植了 `updateCandidatePanels` 抓取并填充渲染跟进数据的核心逻辑，全面打通数据流。
+  * **简历池管理端**：在 `candidates.html` 中精简了 `data-candidate-detail-modal` 为不含备注和跟进卡片的极简只读版，去掉了“编辑资料”和“发送邮件”等跟进按钮，并将不属于它的 5 个生命周期流转 Modal 彻底删除以简化页面结构。
+  * **测试回归**：运行 `pytest` 回归测试，22 个用例全部 100% 通过。
+
+- **先前进度**：
+  * 篡改校验（已有轮次则只读只用）；新增了 `DELETE /api/salary-records/{record_id}` 物理删除接口。
   * **前端 UI 高保真面板与弹窗重构**：在 [candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html) 详情中新增了“💰 薪资/福利/入职条件跟踪表”，列表支持蓝色编辑和红色删除圆圈图标按钮；在底部新增了带有黄色警告框说明、符合截图设计的全新 `data-salary-tracking-modal` 弹窗。
   * **客户公司智能下拉与模糊搜索**：将“客户公司”输入框升级为支持 `<datalist>` 的智能联想选择框。当添加或编辑弹窗打开时，会自动从后端 `window.hrApi.companies()` 异步拉取全部客户公司并作为下拉选项，同时支持拼音或公司名模糊打字搜索过滤。
   * **下拉联动与编辑只读控制**：在 [app.js](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/app.js) 中实现了点击添加时动态提取该候选人现有的面试轮次填充下拉菜单；点击“编辑”回填数值时，若已有面试轮次，则将下拉框置为 `disabled`，只读不可修改；操作删除时加入防呆 `confirm`，成功后局部重载详情面板。
