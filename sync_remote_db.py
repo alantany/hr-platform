@@ -1,10 +1,10 @@
 import os
 import sys
 from pathlib import Path
-import alembic.config
+from sqlalchemy import create_engine, text
 
 def load_env():
-    """手动从 .env 文件读取环境变量，避免依赖外部库"""
+    """手动从 .env 文件读取环境变量"""
     env_path = Path(__file__).parent / '.env'
     if env_path.exists():
         with open(env_path, 'r', encoding='utf-8') as f:
@@ -14,8 +14,8 @@ def load_env():
                     key, value = line.split('=', 1)
                     os.environ[key.strip()] = value.strip()
 
-def run_migrations():
-    print("=== 开始同步数据库表结构（执行 Alembic 迁移） ===")
+def add_columns_safely():
+    print("=== 开始同步表结构（跳过Alembic历史，直接检查并添加字段） ===")
     db_url = os.environ.get("DATABASE_URL")
     if not db_url:
         print("错误：未能在 .env 中找到 DATABASE_URL")
@@ -23,23 +23,20 @@ def run_migrations():
         
     print(f"使用的数据库连接: {db_url}")
     
-    alembicArgs = [
-        '--raiseerr',
-        'upgrade', 'head',
-    ]
     try:
-        alembic.config.main(argv=alembicArgs)
-        print("表结构迁移完成！")
+        engine = create_engine(db_url)
+        with engine.begin() as conn:
+            print("正在检查并添加 delivery_status 字段...")
+            conn.execute(text("ALTER TABLE candidates ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(32) NOT NULL DEFAULT '未推荐';"))
+            
+            print("正在检查并添加 candidate_warranty_status 字段...")
+            conn.execute(text("ALTER TABLE candidates ADD COLUMN IF NOT EXISTS candidate_warranty_status VARCHAR(32) NOT NULL DEFAULT '';"))
+            
+        print("\n表结构同步完成！两个新字段已成功添加（如果已存在则自动跳过）。")
     except Exception as e:
-        print(f"表结构迁移失败: {e}")
+        print(f"\n表结构同步失败: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
-    # 1. 加载 .env 里的配置
     load_env()
-    
-    # 2. 为了让 Alembic 能找到应用模块，确保当前目录在 sys.path 中
-    sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-    
-    # 3. 运行表结构同步
-    run_migrations()
+    add_columns_safely()
