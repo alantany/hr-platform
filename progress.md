@@ -2238,3 +2238,13 @@
 - Task finalized by Codex hook (unknown) at 2026-07-01 09:51:18
 - Task completed at 2026-07-01 13:41:59. Update the summary with the latest finished work.
 - Task completed at 2026-07-01 13:50:19. Update the summary with the latest finished work.
+- Task finalized by Codex hook (unknown) at 2026-07-01 14:19:19
+
+## 2026-07-01（完成 - 候选人锁定与推荐状态硬联动）
+
+- 新增集中式候选人推荐状态同步：推荐成功自动锁定，面试中继续锁定，已录用保持锁定，未录用/淘汰/拒绝自动回收为“未锁定 + 未推荐”。
+- 推荐删除与批量删除改为根据剩余有效推荐重新计算候选人状态，避免删除一条记录就误释放仍在流程中的候选人。
+- 候选人创建、编辑及旧锁定/释放接口已禁止手工制造锁定状态；前端移除了状态编辑器、锁定/释放按钮与确认弹窗。
+- 候选人列表接口补齐 `delivery_status` 和 `candidate_warranty_status`，标签管理继续只配置字段展示，不再被错误默认值污染。
+- 新增迁移 `0005_candidate_state` 并已成功执行，存量候选人状态已按有效推荐记录修复。
+- 验证通过：`node --check app.js`、`git diff --check`、完整 `pytest -q`（25 passed）；浏览器确认候选人详情显示“锁定 · 已推荐”，标签配置保留“锁定状态/推荐进度”，390px 页面无横向溢出且不存在手工状态入口。

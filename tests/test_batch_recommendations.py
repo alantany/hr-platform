@@ -56,19 +56,24 @@ def test_batch_recommendations_continue_and_summarize():
     suffix = uuid4().hex[:8]
     headers = auth_headers()
     position = create_position(headers, suffix)
+    other_position = create_position(headers, suffix + "-other")
     first = create_candidate(headers, suffix, "成功候选人一")
     second = create_candidate(headers, suffix, "成功候选人二")
     locked = create_candidate(headers, suffix, "锁定候选人")
     duplicate = create_candidate(headers, suffix, "重复候选人")
 
-    client.post(f"/api/candidates/{locked['id']}/lock", headers=headers)
+    locked_recommendation = client.post(
+        "/api/recommendations",
+        json={"candidate_id": locked["id"], "position_id": other_position["id"], "recommender": "admin"},
+        headers=headers,
+    )
+    assert locked_recommendation.status_code == 200
     existing = client.post(
         "/api/recommendations",
         json={"candidate_id": duplicate["id"], "position_id": position["id"], "recommender": "admin"},
         headers=headers,
     )
     assert existing.status_code == 200
-    client.post(f"/api/candidates/{duplicate['id']}/release", headers=headers)
 
     notifications_before = client.get("/api/notifications", headers=headers).json()
     response = client.post(
@@ -119,7 +124,7 @@ def test_batch_recommendations_continue_and_summarize():
     assert client.get(f"/api/candidates/{first['id']}", headers=headers).json()["locked"] is True
     assert client.get(f"/api/candidates/{first['id']}", headers=headers).json()["status"] == "锁定"
     assert client.get(f"/api/candidates/{second['id']}", headers=headers).json()["locked"] is True
-    assert client.get(f"/api/candidates/{duplicate['id']}", headers=headers).json()["locked"] is False
+    assert client.get(f"/api/candidates/{duplicate['id']}", headers=headers).json()["locked"] is True
 
     notifications_after = client.get("/api/notifications", headers=headers).json()
     new_notifications = [

@@ -17,6 +17,16 @@ TAG_OBJECT_LABELS = {
     "company": "客户",
 }
 
+ACTIVE_RECOMMENDATION_STATUS_MAP = {
+    "待推荐": "已推荐",
+    "已推荐": "已推荐",
+    "客户已收": "已推荐",
+    "客户未收": "已推荐",
+    "安排面试": "面试中",
+    "面试中": "面试中",
+    "已录用": "已录用",
+}
+
 
 def _created_at_score(value) -> float:
     if not value:
@@ -316,6 +326,8 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
             "current_title": c.current_title,
             "city": c.city,
             "status": c.status,
+            "delivery_status": c.delivery_status,
+            "candidate_warranty_status": c.candidate_warranty_status,
             "source": c.source,
             "locked": c.locked,
             "gender": c.gender,
@@ -360,6 +372,8 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "current_title": c.current_title or d.job_title,
                 "city": c.city,
                 "status": c.status,
+                "delivery_status": c.delivery_status,
+                "candidate_warranty_status": c.candidate_warranty_status,
                 "source": c.source or "简历库",
                 "locked": c.locked,
                 "gender": c.gender,
@@ -397,6 +411,8 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "current_title": d.job_title or "",
                 "city": None,
                 "status": "未锁定",
+                "delivery_status": "未推荐",
+                "candidate_warranty_status": "",
                 "source": "简历库",
                 "locked": False,
                 "gender": None,
@@ -591,12 +607,46 @@ def ensure_local_candidate(db: Session, candidate_id: int | str) -> Candidate | 
 
 
 def update_candidate(db: Session, candidate: Candidate, payload):
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    for key, value in changes.items():
+        if key in {"locked", "status"}:
+            continue
         setattr(candidate, key, value)
-    # 当 status 明确设为"锁定"时，同步锁定候选人
-    if 'status' in payload.model_dump(exclude_unset=True) and candidate.status == "锁定":
-        candidate.locked = True
     return candidate
+
+
+def sync_candidate_recommendation_state(db: Session, candidate: Candidate) -> Candidate:
+    """从推荐记录反算候选人池摘要，禁止锁定状态与推荐进度各自漂移。"""
+    recommendation = (
+        db.query(Recommendation)
+        .filter(
+            Recommendation.candidate_id == candidate.id,
+            Recommendation.status.in_(tuple(ACTIVE_RECOMMENDATION_STATUS_MAP)),
+        )
+        .order_by(Recommendation.created_at.desc(), Recommendation.id.desc())
+        .first()
+    )
+    if recommendation:
+        candidate.locked = True
+        candidate.status = "锁定"
+        candidate.delivery_status = ACTIVE_RECOMMENDATION_STATUS_MAP[recommendation.status]
+    else:
+        candidate.locked = False
+        candidate.status = "未锁定"
+        candidate.delivery_status = "未推荐"
+        candidate.owner_user_id = None
+    db.add(candidate)
+    return candidate
+
+
+def reconcile_candidate_recommendation_states(db: Session) -> int:
+    changed = 0
+    for candidate in db.query(Candidate).all():
+        before = (candidate.locked, candidate.status, candidate.delivery_status, candidate.owner_user_id)
+        sync_candidate_recommendation_state(db, candidate)
+        after = (candidate.locked, candidate.status, candidate.delivery_status, candidate.owner_user_id)
+        changed += int(before != after)
+    return changed
 
 
 def create_search_preset(db: Session, payload):

@@ -36,6 +36,26 @@ def test_employment_onboarding_and_warranty():
         "city": "杭州"
     }, headers=headers).json()
     candidate_id = candidate["id"]
+
+    company = client.post(
+        "/api/companies", json={"name": f"入职联动客户-{suffix}"}, headers=headers
+    ).json()
+    project = client.post(
+        "/api/projects",
+        json={"company_id": company["id"], "name": f"入职联动项目-{suffix}"},
+        headers=headers,
+    ).json()
+    position = client.post(
+        "/api/positions",
+        json={"project_id": project["id"], "name": "Go开发工程师"},
+        headers=headers,
+    ).json()
+    recommendation = client.post(
+        "/api/recommendations",
+        json={"candidate_id": candidate_id, "position_id": position["id"], "recommender": "admin"},
+        headers=headers,
+    )
+    assert recommendation.status_code == 200
     
     # 3. 为候选人创建一条面试记录 (CandidateTrackingEvent)
     tracking = client.post("/api/candidate-tracking-events", json={
@@ -86,11 +106,12 @@ def test_employment_onboarding_and_warranty():
     assert len(res_tracking_list) == 1
     assert res_tracking_list[0]["employment_status"] == "已入职"
     
-    # b. 根据新业务规则：候选人入职后 locked=True，status="锁定"（入职状态存储在 EmploymentRecord 里）
+    # b. 候选人已有有效推荐链路，入职后保持锁定并同步为已录用
     res_cand_detail = client.get("/api/candidates", headers=headers).json()
     updated_cand = [c for c in res_cand_detail if c["id"] == candidate_id][0]
     assert updated_cand["locked"] is True
     assert updated_cand["status"] == "锁定"
+    assert updated_cand["delivery_status"] == "已录用"
 
     # c. 验证获取入职记录列表包含 candidate_name 和 candidate_phone 字段
     res_emp_records = client.get("/api/employment-records", headers=headers).json()

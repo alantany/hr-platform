@@ -245,6 +245,8 @@ class CandidateOut(CandidateCreate):
     id: int | str
     created_at: datetime | str | None = None
     file_path: str | None = None
+    delivery_status: str | None = "未推荐"
+    candidate_warranty_status: str | None = ""
 
 
 class CandidateAiSearchRequest(BaseModel):

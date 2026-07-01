@@ -313,6 +313,25 @@ def startup() -> None:
     ensure_schema()
     seed_data()
     backfill_legacy_ownership()
+    reconcile_candidate_states()
+
+
+def reconcile_candidate_states() -> None:
+    db = SessionLocal()
+    try:
+        updated = crud.reconcile_candidate_recommendation_states(db)
+        if updated:
+            db.add(AuditLog(
+                actor="system",
+                module="候选人跟踪",
+                action="修复候选人推荐锁定状态",
+                target_type="candidate",
+                target_id="batch",
+                detail=f"Count: {updated}",
+            ))
+        db.commit()
+    finally:
+        db.close()
 
 
 def backfill_legacy_ownership() -> None:
@@ -846,8 +865,14 @@ def list_candidates(
 
 @app.post("/api/candidates", response_model=schemas.CandidateOut)
 def add_candidate(payload: schemas.CandidateCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if payload.locked or payload.status not in (None, "", "未锁定"):
+        raise HTTPException(status_code=400, detail="新候选人必须为未锁定、未推荐状态")
     owner_user_id = payload.owner_user_id if security.is_admin(user) and payload.owner_user_id else user.id
-    obj = crud.create_candidate(db, payload.model_copy(update={"owner_user_id": owner_user_id}))
+    obj = crud.create_candidate(db, payload.model_copy(update={
+        "owner_user_id": owner_user_id,
+        "locked": False,
+        "status": "未锁定",
+    }))
     crud.add_audit(db, user.username, "候选人池", "创建候选人", "candidate", "new", detail=payload.name)
     db.commit()
     db.refresh(obj)
@@ -926,6 +951,9 @@ def edit_candidate(candidate_id: str, payload: schemas.CandidateUpdate, db: Sess
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
     enforce_candidate_access(db, user, candidate)
+    protected = {"locked", "status"}.intersection(payload.model_dump(exclude_unset=True))
+    if protected:
+        raise HTTPException(status_code=400, detail="锁定状态由推荐流程自动维护，不能手工修改")
     crud.update_candidate(db, candidate, payload)
     crud.add_audit(db, user.username, "候选人池", "更新候选人", "candidate", str(candidate.id), detail=candidate.name)
     db.commit()
@@ -935,31 +963,12 @@ def edit_candidate(candidate_id: str, payload: schemas.CandidateUpdate, db: Sess
 
 @app.post("/api/candidates/{candidate_id}/lock", response_model=schemas.CandidateOut)
 def lock_candidate(candidate_id: str, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    candidate = crud.ensure_local_candidate(db, candidate_id)
-    if not candidate:
-        raise HTTPException(status_code=404, detail="候选人不存在")
-    enforce_candidate_access(db, user, candidate)
-    candidate.owner_user_id = user.id
-    crud.lock_candidate(db, candidate, True)
-    crud.add_audit(db, user.username, "候选人跟踪", "锁定候选人", "candidate", str(candidate.id), detail=candidate.name)
-    db.commit()
-    db.refresh(candidate)
-    return candidate
+    raise HTTPException(status_code=409, detail="候选人只能通过推荐至岗位自动锁定")
 
 
 @app.post("/api/candidates/{candidate_id}/release", response_model=schemas.CandidateOut)
 def release_candidate(candidate_id: str, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    candidate = crud.ensure_local_candidate(db, candidate_id)
-    if not candidate:
-        raise HTTPException(status_code=404, detail="候选人不存在")
-    if not security.is_admin(user) and candidate.owner_user_id not in (None, user.id):
-        raise HTTPException(status_code=403, detail="仅归属人可释放该候选人")
-    crud.lock_candidate(db, candidate, False)
-    candidate.owner_user_id = None
-    crud.add_audit(db, user.username, "候选人跟踪", "释放候选人", "candidate", str(candidate.id), detail=candidate.name)
-    db.commit()
-    db.refresh(candidate)
-    return candidate
+    raise HTTPException(status_code=409, detail="候选人由推荐终态或删除推荐记录自动释放")
 
 
 @app.get("/api/candidate-ownership-transfers", response_model=list[schemas.CandidateOwnershipTransferOut])
@@ -1193,9 +1202,6 @@ def add_employment_record(payload: schemas.EmploymentRecordCreate, db: Session =
         
     # 锁定持久化与多向流转联动
     if payload.status == "已入职":
-        candidate.locked = True
-        candidate.status = "锁定"
-        
         # 联动更新关联的岗位推荐 Recommendation 状态为“已录用”
         from .models import Recommendation
         latest_recom = db.query(Recommendation).filter(
@@ -1208,7 +1214,9 @@ def add_employment_record(payload: schemas.EmploymentRecordCreate, db: Session =
         # 同步冗余字段：candidate_warranty_status
         candidate.candidate_warranty_status = "质保中"
         # 同步冗余字段：delivery_status（取自最新推荐状态）
-        candidate.delivery_status = latest_recom.status if latest_recom else "已录用"
+        if latest_recom:
+            db.flush()
+            crud.sync_candidate_recommendation_state(db, candidate)
     db.add(candidate)
     
     crud.add_audit(db, user.username, "候选人跟踪", action, "employment_record", str(candidate.id), detail=payload.status)
@@ -1305,9 +1313,9 @@ def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depe
         raise HTTPException(status_code=400, detail="候选人已锁定，无法重复推荐")
     obj = crud.create_recommendation(db, payload)
     obj.recommender_user_id = user.id
-    candidate.locked = True
-    candidate.status = "锁定"
-    candidate.delivery_status = "已推荐"
+    candidate.owner_user_id = user.id
+    db.flush()
+    crud.sync_candidate_recommendation_state(db, candidate)
     crud.add_audit(db, user.username, "推荐交付", "创建推荐记录并锁定候选人", "recommendation", "new", detail=str(payload.candidate_id))
     db.commit()
     db.refresh(obj)
@@ -1355,16 +1363,6 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
                 ))
                 continue
             processed_candidate_ids.add(candidate.id)
-            if candidate.locked:
-                skipped += 1
-                items.append(schemas.RecommendationBatchItem(
-                    record_key=record_key,
-                    candidate_id=candidate.id,
-                    candidate_name=candidate.name,
-                    result="skipped",
-                    reason="候选人已锁定",
-                ))
-                continue
             existing = db.query(Recommendation).filter(
                 Recommendation.candidate_id == candidate.id,
                 Recommendation.position_id == position.id,
@@ -1380,6 +1378,16 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
                     recommendation_id=existing.id,
                 ))
                 continue
+            if candidate.locked:
+                skipped += 1
+                items.append(schemas.RecommendationBatchItem(
+                    record_key=record_key,
+                    candidate_id=candidate.id,
+                    candidate_name=candidate.name,
+                    result="skipped",
+                    reason="候选人已锁定",
+                ))
+                continue
 
             recommendation_payload = schemas.RecommendationCreate(
                 candidate_id=candidate.id,
@@ -1390,10 +1398,9 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
             )
             recommendation = crud.create_recommendation(db, recommendation_payload)
             recommendation.recommender_user_id = user.id
-            candidate.locked = True
-            candidate.status = "锁定"
-            candidate.delivery_status = "已推荐"
+            candidate.owner_user_id = user.id
             db.flush()
+            crud.sync_candidate_recommendation_state(db, candidate)
             crud.add_audit(
                 db,
                 user.username,
@@ -1479,14 +1486,16 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
                 "待推荐": ["已推荐", "淘汰"],
                 "已推荐": ["面试中", "未录用", "淘汰", "客户已收", "客户未收", "安排面试", "拒绝"],
                 "客户已收": ["安排面试", "拒绝"],
+                "客户未收": ["已推荐", "未录用", "淘汰"],
                 "安排面试": ["已录用", "未录用", "淘汰"],
                 "面试中": ["已录用", "未录用", "淘汰"],
                 "已录用": [],
                 "未录用": [],
-                "淘汰": []
+                "淘汰": [],
+                "拒绝": [],
             }
             allowed = valid_transitions.get(obj.status, [])
-            if allowed and value not in allowed:
+            if obj.status in valid_transitions and value not in allowed:
                 raise HTTPException(status_code=400, detail=f"无法从 {obj.status} 流转到 {value}")
         setattr(obj, key, value)
         
@@ -1514,37 +1523,19 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
                     position_name=pos_name,
                     onboard_date=datetime.datetime.now(datetime.timezone.utc),
                     note="通过系统推荐流程自动流转入职",
-                    warranty_status="质保中"
                 )
                 new_emp.operator_user_id = user.id
                 db.add(new_emp)
-            # 同步冗余字段到候选人主表
             cand = db.get(Candidate, obj.candidate_id)
             if cand:
-                cand.delivery_status = "已录用"
                 cand.candidate_warranty_status = "质保中"
-                cand.locked = True
-                cand.status = "锁定"
                 db.add(cand)
-        
-        # 所有状态变更都同步 delivery_status 到候选人主表
-        if key == "status" and value != "已录用":
-            cand = db.get(Candidate, obj.candidate_id)
-            if cand:
-                # 将推荐状态中较简洁的语义映射到 delivery_status
-                status_map = {
-                    "已推荐": "已推荐",
-                    "待推荐": "已推荐",
-                    "客户已收": "已推荐",
-                    "客户未收": "已推荐",
-                    "安排面试": "面试中",
-                    "面试中": "面试中",
-                    "未录用": "未录用",
-                    "淘汰": "淘汰",
-                    "拒绝": "未录用",
-                }
-                cand.delivery_status = status_map.get(value, value)
-                db.add(cand)
+
+    if "status" in payload.model_dump(exclude_unset=True):
+        cand = db.get(Candidate, obj.candidate_id)
+        if cand:
+            db.flush()
+            crud.sync_candidate_recommendation_state(db, cand)
 
     crud.add_audit(db, user.username, "推荐交付", "更新推荐状态", "recommendation", str(recommendation_id), detail=obj.status)
     db.commit()
@@ -1565,19 +1556,19 @@ def delete_recommendation(recommendation_id: int, db: Session = Depends(get_db),
     db.query(Delivery).filter(Delivery.recommendation_id == recommendation_id).delete()
     db.query(CandidateTrackingEvent).filter(CandidateTrackingEvent.recommendation_id == recommendation_id).delete()
     db.delete(obj)
-    # 解锁候选人
+    db.flush()
     if candidate:
-        candidate.locked = False
-        candidate.status = "未锁定"
-    crud.add_audit(db, user.username, "推荐交付", "删除推荐记录并解锁候选人", "recommendation", str(recommendation_id), detail=str(obj.candidate_id))
+        crud.sync_candidate_recommendation_state(db, candidate)
+    crud.add_audit(db, user.username, "推荐交付", "删除推荐记录并同步候选人状态", "recommendation", str(recommendation_id), detail=str(obj.candidate_id))
     db.commit()
-    return {"detail": "推荐记录已删除，候选人已解锁"}
+    return {"detail": "推荐记录已删除，候选人状态已同步"}
 
 
 @app.post("/api/recommendations/batch-delete")
 def batch_delete_recommendations(payload: list[int], db: Session = Depends(get_db), user: User = Depends(require_user)):
     from .models import Recommendation, Candidate, CandidateTrackingEvent
     deleted = 0
+    candidate_ids: set[int] = set()
     for recommendation_id in payload:
         obj = db.get(Recommendation, recommendation_id)
         if not obj:
@@ -1592,9 +1583,13 @@ def batch_delete_recommendations(payload: list[int], db: Session = Depends(get_d
         db.query(CandidateTrackingEvent).filter(CandidateTrackingEvent.recommendation_id == recommendation_id).delete()
         db.delete(obj)
         if candidate:
-            candidate.locked = False
-            candidate.status = "未锁定"
+            candidate_ids.add(candidate.id)
         deleted += 1
+    db.flush()
+    for candidate_id in candidate_ids:
+        candidate = db.get(Candidate, candidate_id)
+        if candidate:
+            crud.sync_candidate_recommendation_state(db, candidate)
     crud.add_audit(db, user.username, "推荐交付", "批量删除推荐记录", "recommendation", "batch", detail=f"Count: {deleted}")
     db.commit()
     return {"detail": f"已删除 {deleted} 条推荐记录", "deleted": deleted}

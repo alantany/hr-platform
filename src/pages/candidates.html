@@ -236,10 +236,8 @@
 
           <div class="table-foot" style="display:flex; justify-content:space-between; align-items:center;">
             <div class="legend">
-              <span class="legend-item"><span class="legend-dot new"></span>新入库</span>
-              <span class="legend-item"><span class="legend-dot active"></span>激活</span>
-              <span class="legend-item"><span class="legend-dot locked"></span>锁定</span>
-              <span class="legend-item"><span class="legend-dot released"></span>释放</span>
+              <span class="legend-item"><span class="legend-dot active"></span>未锁定 / 未推荐</span>
+              <span class="legend-item"><span class="legend-dot locked"></span>锁定 / 推荐中</span>
             </div>
             <div style="display:flex; align-items:center; gap:12px; margin-left:auto;">
               <span data-candidate-foot>共 0 条记录</span>
@@ -534,17 +532,6 @@
         </div>
       </div>
 
-      <div class="modal" data-candidate-action-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:3000; padding:24px;">
-        <div class="panel" style="max-width:620px; margin:12vh auto 0; background:#fff;">
-          <div class="section-head">
-            <div><h3>候选人状态确认</h3><div class="section-sub">确认后才会执行锁定或释放。</div></div>
-            <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-candidate-action-modal">取消</button><button class="btn primary" data-action="confirm-candidate-action">确认执行</button></div>
-          </div>
-          <div class="list">
-            <div class="list-item"><div class="item-top"><div><div class="item-title" data-candidate-action-title>等待操作</div><div class="item-meta" data-candidate-action-desc>点击列表或详情按钮后会在这里确认。</div></div><span class="chip warning">确认</span></div></div>
-          </div>
-        </div>
-      </div>
     `;
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();

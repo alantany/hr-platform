@@ -56,7 +56,7 @@ const pages = {
   candidates: {
     crumbs: "求职者 / 数据池",
     title: "求职者数据池",
-    desc: "高密度候选人检索工作台，支持搜索、筛选、锁定、释放和导出，围绕岗位匹配高效筛人。",
+    desc: "高密度候选人检索工作台，支持搜索、筛选、推荐和导出；推荐成功后自动锁定，失败终态自动回收。",
   },
   import: {
     crumbs: "求职者 / 简历导入",
@@ -1665,7 +1665,7 @@ async function handleGlobalButton(button) {
     set('[data-candidate-detail-intention]', item?.job_intention);
     set('[data-candidate-detail-core-value]', item?.core_value);
     set('[data-candidate-detail-evaluation]', item?.comprehensive_evaluation);
-    set('[data-candidate-detail-status]', item?.locked ? '已锁定' : (item?.status || '激活'));
+    set('[data-candidate-detail-status]', `${item?.status || '未锁定'} · ${item?.delivery_status || '未推荐'}`);
     set('[data-candidate-detail-source]', item?.source);
     set('[data-candidate-detail-idnumber]', item?.id_number);
     const candidateTagHost = document.querySelector('[data-candidate-detail-tags]');
@@ -2149,7 +2149,6 @@ async function handleGlobalButton(button) {
     fill('[data-candidate-edit-intention]', item.job_intention);
     fill('[data-candidate-edit-core-value]', item.core_value);
     fill('[data-candidate-edit-evaluation]', item.comprehensive_evaluation);
-    fill('[data-candidate-edit-status]', item.locked ? '锁定' : (item.status || '激活'));
     fill('[data-candidate-edit-source]', item.source);
     fill('[data-candidate-edit-tags]', item.tags);
     if (modal) {
@@ -2206,7 +2205,6 @@ async function handleGlobalButton(button) {
       email,
       current_title: get('[data-candidate-edit-title]'),
       city: get('[data-candidate-edit-city]'),
-      status: get('[data-candidate-edit-status]') || '激活',
       source: get('[data-candidate-edit-source]'),
       gender: get('[data-candidate-edit-gender]'),
       age: get('[data-candidate-edit-age]') ? parseInt(get('[data-candidate-edit-age]'), 10) : null,
@@ -2354,25 +2352,6 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "close-candidate-detail-modal") {
     const modal = document.querySelector('[data-candidate-detail-modal]');
     if (modal) modal.style.display = 'none';
-    return;
-  }
-  if (button.dataset.action === "toggle-candidate-lock") {
-    const editModal = document.querySelector('[data-candidate-edit-modal]');
-    const detailModal = document.querySelector('[data-candidate-detail-modal]');
-    const candidateId = String(button.dataset.candidateId || editModal?.dataset.candidateId || detailModal?.dataset.candidateId || '');
-    if (!candidateId || candidateId === '0') throw new Error('请先选择候选人');
-    const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
-    if (!candidate) throw new Error('未找到候选人');
-    const actionModal = document.querySelector('[data-candidate-action-modal]');
-    const actionTitle = document.querySelector('[data-candidate-action-title]');
-    const actionDesc = document.querySelector('[data-candidate-action-desc]');
-    const nextAction = candidate.locked ? 'release-candidate' : 'lock-candidate';
-    if (actionModal) {
-      actionModal.style.display = 'block';
-      actionModal.dataset.target = JSON.stringify({ id: candidateId, action: nextAction });
-    }
-    if (actionTitle) actionTitle.textContent = candidate.locked ? `释放候选人 ${candidate.name}` : `锁定候选人 ${candidate.name}`;
-    if (actionDesc) actionDesc.textContent = candidate.locked ? '确认后将解除锁定，允许继续流转。' : '确认后将锁定该候选人，避免重复操作。';
     return;
   }
   if (button.dataset.action === "open-batch-recommend-modal") {
@@ -3161,69 +3140,6 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     showToast(`已保存随访记录`);
     return;
   }
-  if (button.dataset.action === "close-candidate-action-modal") {
-    const modal = document.querySelector('[data-candidate-action-modal]');
-    if (modal) modal.style.display = 'none';
-    return;
-  }
-  if (button.dataset.action === "confirm-candidate-action") {
-    const modal = document.querySelector('[data-candidate-action-modal]');
-    const target = modal?.dataset.target ? JSON.parse(modal.dataset.target) : null;
-    if (!target) throw new Error('没有待执行的候选人操作');
-    const result = target.action === 'release-candidate' ? await window.hrApi.releaseCandidate(target.id) : await window.hrApi.lockCandidate(target.id);
-      const detailStatus = document.querySelector('[data-candidate-detail-status]');
-      if (detailStatus) detailStatus.textContent = result.locked ? '已锁定' : '激活';
-      const followupButton = document.querySelector('[data-action="open-candidate-followup-modal"]');
-      if (followupButton) followupButton.style.display = result.status === '已录用' ? '' : 'none';
-      if (window.candidatesPageState) {
-        const itemIndex = window.candidatesPageState.list.findIndex(i =>
-          String(i.id) === String(result.id) ||
-          (i.candidate_agent_id && String(i.candidate_agent_id) === String(result.candidate_agent_id))
-        );
-        if (itemIndex > -1) {
-          const updatedItem = {
-            ...window.candidatesPageState.list[itemIndex],
-            id: result.id,
-            locked: result.locked,
-            status: result.status
-          };
-          window.candidatesPageState.list[itemIndex] = updatedItem;
-
-          if (window.candidatesPageState.rawList) {
-            const rawIndex = window.candidatesPageState.rawList.findIndex(i =>
-              String(i.id) === String(result.id) ||
-              (i.candidate_agent_id && String(i.candidate_agent_id) === String(result.candidate_agent_id))
-            );
-            if (rawIndex > -1) {
-              window.candidatesPageState.rawList[rawIndex] = {
-                ...window.candidatesPageState.rawList[rawIndex],
-                id: result.id,
-                locked: result.locked,
-                status: result.status
-              };
-            }
-          }
-          window.candidatesPageState.render();
-        }
-      }
-      const detailModal = document.querySelector('[data-candidate-detail-modal]');
-      if (detailModal) {
-        detailModal.dataset.candidateId = String(result.id);
-      }
-      const rows = document.querySelectorAll('.table-row');
-    rows.forEach((row) => {
-      const name = row.querySelector('strong')?.textContent?.trim();
-      if (name !== result.name) return;
-      const state = row.querySelector('.state');
-      if (state) {
-        state.textContent = result.locked ? '锁定' : '激活';
-        state.className = `state ${result.locked ? 'locked' : 'active'}`;
-      }
-    });
-    if (modal) modal.style.display = 'none';
-    showToast(result.locked ? `已锁定：${result.name}` : `已释放：${result.name}`);
-    return;
-  }
   if (button.dataset.action === "open-import-modal") {
     const modal = document.querySelector('[data-import-modal]');
     if (modal) modal.style.display = 'block';
@@ -3655,36 +3571,6 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
   if (button.dataset.action === "create-candidate") {
     const modal = document.querySelector('[data-candidate-create-modal]');
     if (modal) modal.style.display = 'block';
-    return;
-  }
-  if (button.dataset.action === "lock-candidate") {
-    const candidateId = Number(button.dataset.id || 0);
-    const candidate = await window.hrApi.candidates().then(list => list.find(i => i.id === candidateId));
-    if (!candidate) throw new Error('未找到候选人');
-    const actionModal = document.querySelector('[data-candidate-action-modal]');
-    const actionTitle = document.querySelector('[data-candidate-action-title]');
-    const actionDesc = document.querySelector('[data-candidate-action-desc]');
-    if (actionModal) {
-      actionModal.style.display = 'block';
-      actionModal.dataset.target = JSON.stringify({ id: candidateId, action: 'lock-candidate' });
-    }
-    if (actionTitle) actionTitle.textContent = `锁定候选人 ${candidate.name}`;
-    if (actionDesc) actionDesc.textContent = '确认后将锁定该候选人，避免重复编辑。';
-    return;
-  }
-  if (button.dataset.action === "release-candidate") {
-    const candidateId = Number(button.dataset.id || 0);
-    const candidate = await window.hrApi.candidates().then(list => list.find(i => i.id === candidateId));
-    if (!candidate) throw new Error('未找到候选人');
-    const actionModal = document.querySelector('[data-candidate-action-modal]');
-    const actionTitle = document.querySelector('[data-candidate-action-title]');
-    const actionDesc = document.querySelector('[data-candidate-action-desc]');
-    if (actionModal) {
-      actionModal.style.display = 'block';
-      actionModal.dataset.target = JSON.stringify({ id: candidateId, action: 'release-candidate' });
-    }
-    if (actionTitle) actionTitle.textContent = `释放候选人 ${candidate.name}`;
-    if (actionDesc) actionDesc.textContent = '确认后将解除锁定，允许继续流转。';
     return;
   }
   if (button.dataset.action === "create-warranty") {
@@ -5309,4 +5195,3 @@ window.deleteCandidateNote = async (id, candidateId) => {
     try { window.showToast('删除失败: ' + err.message); } catch(e) { alert('删除失败: ' + err.message); }
   }
 };
-

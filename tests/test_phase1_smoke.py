@@ -29,13 +29,13 @@ def test_phase1_chain_smoke():
     updated_position = client.patch(f"/api/positions/{position['id']}", json={"salary_min": 20, "salary_max": 35, "location": "广州"}, headers=headers).json()
     positions = client.get(f"/api/positions?project_id={project['id']}", headers=headers).json()
     candidate = client.post("/api/candidates", json={"name": f"候选人B-{suffix}", "phone": f"1381111{suffix[:4]}", "city": "深圳"}, headers=headers).json()
-    updated_candidate = client.patch(f"/api/candidates/{candidate['id']}", json={"phone": f"1392222{suffix[:4]}", "city": "广州", "status": "激活", "source": "页面编辑"}, headers=headers).json()
+    updated_candidate = client.patch(f"/api/candidates/{candidate['id']}", json={"phone": f"1392222{suffix[:4]}", "city": "广州", "source": "页面编辑"}, headers=headers).json()
     mailed_candidate = client.patch(f"/api/candidates/{candidate['id']}", json={"email": f"{suffix}@example.com", "current_title": "高级工程师"}, headers=headers).json()
     mail_record = client.post("/api/candidate-mail-records", json={"candidate_id": candidate["id"], "recipient_email": f"{suffix}@example.com", "mail_subject": f"候选人B-{suffix}-高级工程师", "mail_body": "候选人信息预览", "attachment_name": f"候选人B-{suffix}-高级工程师.pdf", "sent_by": "admin", "status": "已发送"}, headers=headers).json()
     mail_records = client.get(f"/api/candidate-mail-records?candidate_id={candidate['id']}", headers=headers).json()
     salary_record = client.post("/api/salary-records", json={"candidate_id": candidate["id"], "expected_salary": "20k-30k", "offered_salary": "25k", "service_status": "已完成", "note": "薪资跟踪验证"}, headers=headers).json()
     employment_record = client.post("/api/employment-records", json={"candidate_id": candidate["id"], "status": "已入职", "company_name": "测试公司", "position_name": "高级工程师", "note": "入职验证"}, headers=headers).json()
-    promoted_candidate = client.patch(f"/api/candidates/{candidate['id']}", json={"status": "已录用"}, headers=headers).json()
+    promoted_candidate = client.get(f"/api/candidates/{candidate['id']}", headers=headers).json()
     followup_record = client.post("/api/candidate-follow-up-records", json={"candidate_id": candidate["id"], "status": "已录用", "follow_up_time": "2026-06-16T10:00:00", "content": "候选人已入职后随访", "operator": "admin"}, headers=headers).json()
     followup_records = client.get(f"/api/candidate-follow-up-records?candidate_id={candidate['id']}", headers=headers).json()
     note_record = client.post("/api/candidate-notes", json={"candidate_id": candidate["id"], "content": "测试候选人备注记录", "operator": "admin"}, headers=headers).json()
@@ -98,8 +98,8 @@ def test_phase1_chain_smoke():
         headers=headers,
     ).json()
     export_records = client.get(f"/api/export-records?candidate_id={candidate['id']}", headers=headers).json()
-    locked_by_update = client.patch(f"/api/candidates/{candidate['id']}", json={"locked": True}, headers=headers).json()
-    locked = client.post(f"/api/candidates/{candidate['id']}/lock", headers=headers).json()
+    locked_by_update = client.patch(f"/api/candidates/{candidate['id']}", json={"locked": True}, headers=headers)
+    locked = client.post(f"/api/candidates/{candidate['id']}/lock", headers=headers)
     # 获取 admin 用户的动态 ID
     users_list = client.get("/api/users", headers=headers).json()
     admin_id = next(u["id"] for u in users_list if u["username"] == "admin")
@@ -112,12 +112,11 @@ def test_phase1_chain_smoke():
     role_delete_ok = client.delete(f"/api/roles/{removable_role['id']}", headers=headers).json()
     preset = client.post("/api/search-presets", json={"name": f"快捷-{suffix}", "keyword": "Java", "city": "深圳", "status": "激活", "created_by": "admin"}, headers=headers).json()
     presets = client.get("/api/search-presets", headers=headers).json()
-    recommendation_blocked = client.post("/api/recommendations", json={"candidate_id": candidate["id"], "position_id": position["id"], "recommender": "admin"}, headers=headers)
-    released = client.post(f"/api/candidates/{candidate['id']}/release", headers=headers).json()
     recommendation = client.post("/api/recommendations", json={"candidate_id": candidate["id"], "position_id": position["id"], "recommender": "admin"}, headers=headers).json()
     locked_after_recommendation = client.get(f"/api/candidates/{candidate['id']}", headers=headers).json()
-    client.post(f"/api/candidates/{candidate['id']}/release", headers=headers)
-    rec = client.post("/api/recommendations", json={"candidate_id": candidate["id"], "position_id": position["id"], "recommender": "admin"}, headers=headers).json()
+    recommendation_blocked = client.post("/api/recommendations", json={"candidate_id": candidate["id"], "position_id": position["id"], "recommender": "admin"}, headers=headers)
+    released = client.post(f"/api/candidates/{candidate['id']}/release", headers=headers)
+    rec = recommendation
     feedback_record = client.post("/api/recommendation-feedbacks", json={"recommendation_id": rec["id"], "status": "客户已收", "feedback": "客户同意推进", "customer_comment": "安排下一步面试", "operator": "admin"}, headers=headers).json()
     feedback_records = client.get(f"/api/recommendation-feedbacks?recommendation_id={rec['id']}", headers=headers).json()
     delivery = client.post("/api/deliveries", json={"recommendation_id": rec["id"], "delivered_by": "admin"}, headers=headers).json()
@@ -146,7 +145,7 @@ def test_phase1_chain_smoke():
     assert any(item["candidate_id"] == candidate["id"] for item in mail_records)
     assert salary_record["expected_salary"] == "20k-30k"
     assert employment_record["status"] == "已入职"
-    assert promoted_candidate["status"] == "已录用"
+    assert promoted_candidate["status"] == "未锁定"
     assert followup_record["content"] == "候选人已入职后随访"
     assert any(item["candidate_id"] == candidate["id"] for item in followup_records)
     assert note_record["content"] == "测试候选人备注记录"
@@ -163,8 +162,8 @@ def test_phase1_chain_smoke():
     assert export_record["candidate_id"] == candidate["id"]
     assert export_record["file_name"] == f"{candidate['name']}-简历报告.pdf"
     assert any(item["candidate_id"] == candidate["id"] for item in export_records)
-    assert locked_by_update["locked"] is True
-    assert locked["locked"] is True
+    assert locked_by_update.status_code == 400
+    assert locked.status_code == 409
     assert reset_user["password_hash"] != f"dev-{suffix}"
     assert client.post("/api/auth/login", json={"username": "admin", "password": f"dev-{suffix}"}).status_code == 200
     assert edited_user["full_name"] == f"临时用户-{suffix}"
@@ -172,7 +171,7 @@ def test_phase1_chain_smoke():
     assert role_delete_blocked.status_code == 400
     assert role_delete_ok["ok"] is True
     assert recommendation_blocked.status_code == 400
-    assert released["locked"] is False
+    assert released.status_code == 409
     assert recommendation["candidate_id"] == candidate["id"]
     assert locked_after_recommendation["locked"] is True
     assert locked_after_recommendation["status"] == "锁定"
@@ -184,7 +183,7 @@ def test_phase1_chain_smoke():
     assert delivery["recommendation_id"] == rec["id"]
     assert rec_status["status"] == "客户已收"
     assert any(item["status"] == "客户已收" for item in rec_list)
-    assert any(log["action"] == "锁定候选人" for log in logs)
+    assert any(log["action"] == "创建推荐记录并锁定候选人" for log in logs)
 
     # Test database resource explorer endpoints
     tables_list = client.get("/api/db-tables", headers=headers).json()
