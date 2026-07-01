@@ -628,6 +628,7 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
           </a>`).join("")}
       </div>`;
   }).join("");
+  const firstChar = (currentUser?.full_name || "管")[0];
   return `
   <div class="app-shell">
     <aside class="sidebar">
@@ -638,7 +639,26 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
           <p>人力资源招聘管理系统 v3.0</p>
         </div>
       </div>
-      ${navHtml}
+      <div class="sidebar-nav-list" style="flex-grow: 1;">
+        ${navHtml}
+      </div>
+      <div class="sidebar-footer">
+        <div class="sidebar-user-chip">
+          <div class="sidebar-avatar">${firstChar}</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-username">${currentUser?.full_name || "管理员"}</div>
+            <div class="sidebar-role">${currentUser?.role || "超级管理员"}</div>
+          </div>
+        </div>
+        <button class="sidebar-logout-btn" data-action="logout" title="退出系统">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>退出</span>
+        </button>
+      </div>
     </aside>
     <main class="content">
       <div class="topbar">
@@ -648,15 +668,13 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
           ${pages[pageKey]?.desc ? `<p class="page-lede">${pages[pageKey].desc}</p>` : ""}
         </div>
         <div class="top-actions">
-          <a class="top-action top-notice" aria-label="未读通知" href="./notifications.html">
-            <span class="notice-dot"></span>
-            <strong>${unreadCount}</strong>
+          <a class="top-notice-btn" aria-label="未读通知" href="./notifications.html">
+            <svg class="bell-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            ${unreadCount > 0 ? `<span class="badge">${unreadCount}</span>` : ""}
           </a>
-          <div class="top-action user-chip">
-            <div class="avatar"></div>
-            <div><div style="font-weight:700">${currentUser?.full_name || "管理员"}</div><div class="small-muted">${currentUser?.role || "超级管理员"}</div></div>
-          </div>
-          <button class="top-action top-logout" data-action="logout">退出</button>
         </div>
       </div>
       ${body}
