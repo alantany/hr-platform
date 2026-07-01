@@ -26,33 +26,49 @@
             <button class="btn primary" data-action="export-audit-logs">导出当前结果</button>
           </div>
         </div>
-        <div class="grid-2">
-          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-            <div class="list">
-              <div class="list-item"><div class="item-top"><div><div class="item-title">操作人</div><div class="item-meta">模糊匹配账号或姓名</div></div></div><input class="input" data-audit-filter-actor placeholder="例如 admin" /></div>
-              <div class="list-item"><div class="item-top"><div><div class="item-title">模块</div><div class="item-meta">例如 候选人池 / 权限管理</div></div></div><input class="input" data-audit-filter-module placeholder="例如 权限管理" /></div>
-              <div class="list-item"><div class="item-top"><div><div class="item-title">动作</div><div class="item-meta">例如 新增、编辑、导出</div></div></div><input class="input" data-audit-filter-action placeholder="例如 导出简历" /></div>
-              <div class="list-item"><div class="item-top"><div><div class="item-title">对象类型</div><div class="item-meta">user / candidate / company 等</div></div></div><input class="input" data-audit-filter-target placeholder="例如 candidate" /></div>
-              <div class="list-item"><div class="item-top"><div><div class="item-title">结果</div><div class="item-meta">成功 / 失败</div></div></div>
-                <select class="input" data-audit-filter-result>
-                  <option value="">全部</option>
-                  <option value="成功">成功</option>
-                  <option value="失败">失败</option>
-                </select>
-              </div>
-              <div class="list-item"><div class="item-top"><div><div class="item-title">关键词</div><div class="item-meta">匹配对象、详情、结果</div></div></div><input class="input" data-audit-filter-keyword placeholder="例如 简历导入" /></div>
-              <div class="list-item"><div class="item-top"><div><div class="item-title">开始时间</div><div class="item-meta">ISO 时间或日期</div></div></div><input class="input" type="datetime-local" data-audit-filter-from /></div>
-              <div class="list-item"><div class="item-top"><div><div class="item-title">结束时间</div><div class="item-meta">ISO 时间或日期</div></div></div><input class="input" type="datetime-local" data-audit-filter-to /></div>
-            </div>
+        <!-- 单行水平紧凑筛选器 -->
+        <div class="audit-filters-bar" style="display: flex; flex-wrap: nowrap; gap: 12px; align-items: center; padding: 12px 16px; background: rgba(15,23,42,.02); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow-x: auto;">
+          <div class="filter-item" style="display: flex; align-items: center; gap: 6px;">
+            <span class="filter-label" style="font-size: 13px; color: var(--muted-foreground); white-space: nowrap;">操作人:</span>
+            <input class="input" data-audit-filter-actor placeholder="例如 admin" style="width: 80px; height: 32px; padding: 0 8px; font-size: 13px;" />
           </div>
-          <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-            <div class="list" data-audit-detail>
-              <div class="list-item"><div class="item-meta">选中任意一条日志查看完整详情。</div></div>
-            </div>
+          <div class="filter-item" style="display: flex; align-items: center; gap: 6px;">
+            <span class="filter-label" style="font-size: 13px; color: var(--muted-foreground); white-space: nowrap;">模块:</span>
+            <input class="input" data-audit-filter-module placeholder="例如 权限" style="width: 80px; height: 32px; padding: 0 8px; font-size: 13px;" />
+          </div>
+          <div class="filter-item" style="display: flex; align-items: center; gap: 6px;">
+            <span class="filter-label" style="font-size: 13px; color: var(--muted-foreground); white-space: nowrap;">动作:</span>
+            <input class="input" data-audit-filter-action placeholder="例如 导出" style="width: 80px; height: 32px; padding: 0 8px; font-size: 13px;" />
+          </div>
+          <div class="filter-item" style="display: flex; align-items: center; gap: 6px;">
+            <span class="filter-label" style="font-size: 13px; color: var(--muted-foreground); white-space: nowrap;">对象:</span>
+            <input class="input" data-audit-filter-target placeholder="例如 candidate" style="width: 90px; height: 32px; padding: 0 8px; font-size: 13px;" />
+          </div>
+          <div class="filter-item" style="display: flex; align-items: center; gap: 6px;">
+            <span class="filter-label" style="font-size: 13px; color: var(--muted-foreground); white-space: nowrap;">结果:</span>
+            <select class="input" data-audit-filter-result style="width: 75px; height: 32px; padding: 0 8px; font-size: 13px;">
+              <option value="">全部</option>
+              <option value="成功">成功</option>
+              <option value="失败">失败</option>
+            </select>
+          </div>
+          <div class="filter-item" style="display: flex; align-items: center; gap: 6px;">
+            <span class="filter-label" style="font-size: 13px; color: var(--muted-foreground); white-space: nowrap;">关键词:</span>
+            <input class="input" data-audit-filter-keyword placeholder="例如 简历" style="width: 80px; height: 32px; padding: 0 8px; font-size: 13px;" />
+          </div>
+          <div class="filter-item" style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
+            <span class="filter-label" style="font-size: 13px; color: var(--muted-foreground); white-space: nowrap;">时间范围:</span>
+            <input class="input" type="date" data-audit-filter-from style="width: 120px; height: 32px; padding: 0 8px; font-size: 13px;" />
+            <span style="font-size: 13px; color: var(--muted-foreground);">至</span>
+            <input class="input" type="date" data-audit-filter-to style="width: 120px; height: 32px; padding: 0 8px; font-size: 13px;" />
           </div>
         </div>
-        <div class="list" data-audit-list style="margin-top:16px;">
-          <div class="list-item"><div class="item-meta">审计日志来自数据库。</div></div>
+
+        <!-- 独占宽度的日志列表容器 -->
+        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08); padding:16px; margin:0;">
+          <div class="list" data-audit-list>
+            <div class="list-item"><div class="item-meta">加载中...</div></div>
+          </div>
         </div>
       </section>`;
 
@@ -91,33 +107,18 @@
         <div class="list-item" data-log-index="${index}">
           <div class="item-top">
             <div>
-              <div class="item-title">${log.actor}</div>
-              <div class="item-meta">${log.module} · ${log.action} · ${log.created_at}</div>
-              <div class="item-meta mono">${log.target_type || 'none'} / ${log.target_id || 'none'}</div>
+              <div class="item-title" style="font-size: 14px; font-weight: 600;">${log.actor}</div>
+              <div class="item-meta" style="margin-top: 4px;">${log.module} · ${log.action} · ${log.created_at}</div>
+              <div class="item-meta mono" style="margin-top: 2px;">对象：${log.target_type || 'none'} (${log.target_id || 'none'})</div>
+              <div class="item-meta" style="margin-top: 6px; color: var(--foreground); font-weight: 500;">详情：${log.detail || '—'}</div>
             </div>
-            <div class="table-actions">
-              <button class="btn-sm" data-action="view-audit-log" data-log-index="${index}">查看详情</button>
-              <button class="btn-sm" data-action="jump-audit-module" data-module="${log.module}">跳转模块</button>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <button class="btn-sm" data-action="jump-audit-module" data-module="${log.module}">跳转</button>
+              <span class="chip ${log.result === '成功' ? 'success' : 'neutral'}">${log.result}</span>
             </div>
-            <span class="chip ${log.result === '成功' ? 'success' : 'neutral'}">${log.result}</span>
           </div>
         </div>
       `).join('') || '<div class="list-item"><div class="item-meta">当前筛选条件下没有日志。</div></div>';
-    }
-
-    function renderDetail(log) {
-      const host = document.querySelector('[data-audit-detail]');
-      if (!host) return;
-      if (!log) {
-        host.innerHTML = '<div class="list-item"><div class="item-meta">选中任意一条日志查看完整详情。</div></div>';
-        return;
-      }
-      host.innerHTML = `
-        <div class="list-item"><div class="item-top"><div><div class="item-title">${log.action}</div><div class="item-meta">${log.module} · ${log.actor}</div></div><span class="chip ${log.result === '成功' ? 'success' : 'neutral'}">${log.result}</span></div></div>
-        <div class="list-item"><div class="item-top"><div><div class="item-title">对象</div><div class="item-meta">${log.target_type || 'none'} / ${log.target_id || 'none'}</div></div></div></div>
-        <div class="list-item"><div class="item-top"><div><div class="item-title">详情</div><div class="item-meta">${log.detail || '无'}</div></div></div></div>
-        <div class="list-item"><div class="item-top"><div><div class="item-title">时间</div><div class="item-meta mono">${log.created_at}</div></div></div></div>
-      `;
     }
 
     function downloadCsv(rows) {
@@ -151,7 +152,6 @@
       document.querySelector('[data-audit-recommend]').textContent = String(recommends);
       document.querySelector('[data-audit-permission]').textContent = String(permissions);
       renderRows(logs);
-      renderDetail(logs[0]);
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
@@ -169,10 +169,6 @@
       if (button.dataset.action === 'export-audit-logs') {
         downloadCsv(auditState.rows);
         showToast('已导出当前筛选结果');
-      }
-      if (button.dataset.action === 'view-audit-log') {
-        const index = Number(button.dataset.logIndex || 0);
-        renderDetail(auditState.rows[index]);
       }
       if (button.dataset.action === 'jump-audit-module') {
         const module = String(button.dataset.module || '');
@@ -197,11 +193,16 @@
     });
 
     document.addEventListener('input', async (event) => {
-      if (!event.target.closest('[data-audit-filter-actor], [data-audit-filter-module], [data-audit-filter-action], [data-audit-filter-target], [data-audit-filter-result], [data-audit-filter-keyword], [data-audit-filter-from], [data-audit-filter-to]')) return;
+      if (!event.target.closest('[data-audit-filter-actor], [data-audit-filter-module], [data-audit-filter-action], [data-audit-filter-target], [data-audit-filter-keyword]')) return;
       clearTimeout(window.__AUDIT_FILTER_TIMER__);
       window.__AUDIT_FILTER_TIMER__ = setTimeout(() => {
         loadLogs().catch((err) => console.warn(err));
       }, 350);
+    });
+
+    document.addEventListener('change', async (event) => {
+      if (!event.target.closest('[data-audit-filter-result], [data-audit-filter-from], [data-audit-filter-to]')) return;
+      loadLogs().catch((err) => console.warn(err));
     });
 
     window.filterLogsByModule = function(moduleName) {
