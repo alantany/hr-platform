@@ -83,11 +83,13 @@
               <div class="list-item">
                 <div class="item-top">
                   <div>
-                    <div class="item-title">字段</div>
-                    <div class="item-meta">从当前对象允许的字段池中选择</div>
+                    <div class="item-title">字段 <span style="font-size:11px;color:#6b7280;font-weight:400;">（新增时可多选）</span></div>
+                    <div class="item-meta" data-field-picker-hint>勾选需要启用为标签的字段，可多选批量添加</div>
                   </div>
                 </div>
-                <select class="input" data-tag-field-key></select>
+                <div data-tag-field-checkboxes style="max-height:220px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:4px 0;background:#fafafa;"></div>
+                <!-- 编辑时仍用单选 -->
+                <select class="input" data-tag-field-key style="display:none;"></select>
               </div>
               <div class="list-item">
                 <div class="item-top">
@@ -313,14 +315,42 @@
       select.innerHTML = STYLE_OPTIONS.map((item) => `<option value="${item.key}">${escapeHtml(item.label)}</option>`).join('');
     }
 
-    function syncFieldOptions(preferredFieldKey = '') {
+    function syncFieldOptions(preferredFieldKey = '', isEditMode = false) {
       const objectType = document.querySelector('[data-tag-object-type]')?.value || 'candidate';
       const select = document.querySelector('[data-tag-field-key]');
-      if (!select) return;
+      const checkboxContainer = document.querySelector('[data-tag-field-checkboxes]');
+      const hint = document.querySelector('[data-field-picker-hint]');
       const options = getFieldOptions(objectType);
-      select.innerHTML = options.map((item) => `<option value="${item.key}">${escapeHtml(item.label)}（${escapeHtml(item.key)}）</option>`).join('');
-      select.value = preferredFieldKey && options.some((item) => item.key === preferredFieldKey) ? preferredFieldKey : (options[0]?.key || '');
-      syncFieldLabel();
+
+      if (isEditMode) {
+        // 编辑模式：单选 select
+        if (checkboxContainer) checkboxContainer.style.display = 'none';
+        if (hint) hint.textContent = '编辑单个字段标签配置';
+        if (select) {
+          select.style.display = '';
+          select.innerHTML = options.map((item) => `<option value="${item.key}">${escapeHtml(item.label)}（${escapeHtml(item.key)}）</option>`).join('');
+          select.value = preferredFieldKey && options.some((item) => item.key === preferredFieldKey) ? preferredFieldKey : (options[0]?.key || '');
+        }
+        syncFieldLabel();
+      } else {
+        // 新增模式：多选 checkbox 列表，已存在配置的字段置灰
+        if (select) select.style.display = 'none';
+        if (hint) hint.textContent = '勾选需要启用为标签的字段，可多选批量添加';
+        const existingKeys = new Set(state.rows.filter((r) => r.object_type === objectType).map((r) => r.field_key));
+        if (checkboxContainer) {
+          checkboxContainer.style.display = '';
+          checkboxContainer.innerHTML = options.map((item) => {
+            const exists = existingKeys.has(item.key);
+            return `<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:${exists ? 'not-allowed' : 'pointer'};opacity:${exists ? '.45' : '1'};" title="${exists ? '该字段已有配置' : ''}">
+              <input type="checkbox" data-field-checkbox value="${item.key}" ${exists ? 'disabled' : ''} style="width:16px;height:16px;accent-color:#2563eb;" />
+              <span style="font-size:13px;">${escapeHtml(item.label)}</span>
+              <span style="font-size:11px;color:#9ca3af;margin-left:2px;">${escapeHtml(item.key)}</span>
+              ${exists ? '<span style="font-size:11px;color:#d97706;margin-left:auto;">已配置</span>' : ''}
+            </label>`;
+          }).join('');
+        }
+        // 初始化不做 syncFieldLabel（因为没有单一选中项）
+      }
     }
 
     function syncFieldLabel(force = false) {
@@ -351,13 +381,17 @@
 
     function openModal(row = null) {
       state.editingId = row?.id || null;
+      const isEditMode = !!row;
       const modal = document.querySelector('[data-tag-config-modal]');
       const title = document.querySelector('[data-tag-config-modal-title]');
-      if (title) title.textContent = row ? '编辑字段标签配置' : '新增字段标签配置';
+      const fieldLabelRow = document.querySelector('[data-tag-field-label]')?.closest('.list-item');
+      if (title) title.textContent = row ? '编辑字段标签配置' : '新增字段标签配置（可批量勾选）';
+      // 新增模式下隐藏「后台展示名」手填项（批量时自动取字段 label）
+      if (fieldLabelRow) fieldLabelRow.style.display = isEditMode ? '' : 'none';
       fillObjectTypeOptions();
       fillStyleOptions();
       document.querySelector('[data-tag-object-type]').value = row?.object_type || state.activeTab;
-      syncFieldOptions(row?.field_key || '');
+      syncFieldOptions(row?.field_key || '', isEditMode);
       document.querySelector('[data-tag-field-label]').value = row?.field_label || getFieldLabel(row?.object_type || state.activeTab, row?.field_key || getFieldOptions(state.activeTab)[0]?.key || '');
       document.querySelector('[data-tag-style-key]').value = row?.style_key || 'neutral';
       document.querySelector('[data-tag-sort-order]').value = String(row?.sort_order ?? 0);
@@ -379,38 +413,41 @@
 
     async function saveConfig() {
       const objectType = document.querySelector('[data-tag-object-type]')?.value || 'candidate';
-      const fieldKey = document.querySelector('[data-tag-field-key]')?.value || '';
-      const fieldLabel = document.querySelector('[data-tag-field-label]')?.value?.trim() || '';
       const styleKey = document.querySelector('[data-tag-style-key]')?.value || 'neutral';
       const sortOrder = Number(document.querySelector('[data-tag-sort-order]')?.value || 0);
       const enabled = document.querySelector('[data-tag-enabled]')?.value !== 'false';
 
-      if (!fieldKey || !fieldLabel) {
-        throw new Error('请先选择字段并填写展示名');
-      }
-
-      const duplicated = state.rows.find((item) => item.object_type === objectType && item.field_key === fieldKey && item.id !== state.editingId);
-      if (duplicated) {
-        throw new Error('同一对象下的字段配置不能重复');
-      }
-
-      const payload = {
-        object_type: objectType,
-        field_key: fieldKey,
-        field_label: fieldLabel,
-        style_key: styleKey,
-        sort_order: sortOrder,
-        enabled,
-      };
-
       if (state.editingId) {
-        await window.hrApi.updateTag(state.editingId, payload);
-      } else {
-        await window.hrApi.createTag(payload);
+        // 编辑模式：单字段保存
+        const fieldKey = document.querySelector('[data-tag-field-key]')?.value || '';
+        const fieldLabel = document.querySelector('[data-tag-field-label]')?.value?.trim() || '';
+        if (!fieldKey || !fieldLabel) throw new Error('请先选择字段并填写展示名');
+        await window.hrApi.updateTag(state.editingId, { object_type: objectType, field_key: fieldKey, field_label: fieldLabel, style_key: styleKey, sort_order: sortOrder, enabled });
+        window.hrTagSystem?.invalidate?.();
+        closeModal();
+        await loadRows();
+        return;
       }
+
+      // 新增模式：多选勾选框批量创建
+      const checked = [...document.querySelectorAll('[data-field-checkbox]:checked')];
+      if (checked.length === 0) throw new Error('请至少勾选一个字段');
+
+      let created = 0;
+      for (const cb of checked) {
+        const fKey = cb.value;
+        const fLabel = getFieldLabel(objectType, fKey);
+        const dup = state.rows.find((item) => item.object_type === objectType && item.field_key === fKey);
+        if (dup) continue; // 跳过已存在的
+        await window.hrApi.createTag({ object_type: objectType, field_key: fKey, field_label: fLabel, style_key: styleKey, sort_order: sortOrder, enabled });
+        created++;
+      }
+
       window.hrTagSystem?.invalidate?.();
       closeModal();
       await loadRows();
+      if (created === 0) throw new Error('所选字段均已配置，无需重复添加');
+      window.showToast?.(`已成功添加 ${created} 个字段标签配置`);
     }
 
     document.addEventListener('click', async (event) => {
