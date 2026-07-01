@@ -50,6 +50,9 @@ window.hrApi = {
   resetUserPassword(id, payload) {
     return this.request(`/users/${id}/reset-password`, { method: "POST", body: JSON.stringify(payload) });
   },
+  deleteUser(id) {
+    return this.request(`/users/${id}`, { method: "DELETE" });
+  },
   roles() {
     return this.request("/roles");
   },

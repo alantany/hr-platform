@@ -225,6 +225,11 @@ def reset_user_password(db: Session, user: User, payload):
     return user
 
 
+def delete_user(db: Session, user: User):
+    db.delete(user)
+    return True
+
+
 def list_roles(db: Session):
     return db.query(Role).order_by(Role.id.asc()).all()
 

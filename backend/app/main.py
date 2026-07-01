@@ -457,6 +457,20 @@ def reset_user_password(user_id: int, payload: schemas.UserResetPassword, db: Se
     return obj
 
 
+@app.delete("/api/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
+    obj = db.get(User, user_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    if obj.id == user.id:
+        raise HTTPException(status_code=400, detail="不能删除当前登录用户")
+    username = obj.username
+    crud.delete_user(db, obj)
+    crud.add_audit(db, user.username, "用户管理", "删除用户", "user", str(user_id), detail=username)
+    db.commit()
+    return {"ok": True}
+
+
 @app.get("/api/roles", response_model=list[schemas.RoleOut])
 def get_roles(db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
     return crud.list_roles(db)

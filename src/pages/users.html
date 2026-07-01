@@ -256,6 +256,7 @@
             <button type="button" class="admin-text-link" data-user-page-edit="${user.id}">编辑</button>
             <button type="button" class="admin-text-link" data-user-page-password="${user.id}">重置密码</button>
             <button type="button" class="admin-text-link ${user.is_active ? 'danger' : ''}" data-user-page-toggle="${user.id}">${user.is_active ? '禁用' : '启用'}</button>
+            <button type="button" class="admin-text-link danger" data-user-page-delete="${user.id}">删除</button>
           </div>
         </div>
       `).join('');
@@ -367,12 +368,25 @@
       openModal('[data-user-page-confirm-modal]');
     }
 
+    function openDeleteConfirmModal(userId) {
+      const user = userPageState.users.find((item) => item.id === Number(userId));
+      if (!user) return;
+      userPageState.confirmAction = { type: 'delete', userId: user.id };
+      document.querySelector('[data-user-confirm-title]').textContent = '删除用户';
+      document.querySelector('[data-user-confirm-desc]').textContent = `确认要彻底删除用户 ${user.full_name} / ${user.username} 吗？删除后该账号将无法恢复。`;
+      openModal('[data-user-page-confirm-modal]');
+    }
+
     async function runConfirmAction() {
       if (!userPageState.confirmAction) return;
       if (userPageState.confirmAction.type === 'toggle') {
         await window.hrApi.toggleUser(userPageState.confirmAction.userId);
         await loadUserPageData();
         showToast('用户状态已更新');
+      } else if (userPageState.confirmAction.type === 'delete') {
+        await window.hrApi.deleteUser(userPageState.confirmAction.userId);
+        await loadUserPageData();
+        showToast('用户已彻底删除');
       }
       closeModal('[data-user-page-confirm-modal]');
       userPageState.confirmAction = null;
@@ -427,6 +441,8 @@
         if (passwordButton) return openPasswordModal(passwordButton.dataset.userPagePassword);
         const toggleButton = event.target.closest('[data-user-page-toggle]');
         if (toggleButton) return openConfirmModal(toggleButton.dataset.userPageToggle);
+        const deleteButton = event.target.closest('[data-user-page-delete]');
+        if (deleteButton) return openDeleteConfirmModal(deleteButton.dataset.userPageDelete);
       });
     }
 
