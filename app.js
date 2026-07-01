@@ -639,7 +639,7 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
           <p>人力资源招聘管理系统 v3.0</p>
         </div>
       </div>
-      <div class="sidebar-nav-list" style="flex-grow: 1;">
+      <div class="sidebar-nav-list">
         ${navHtml}
       </div>
       <div class="sidebar-footer">
