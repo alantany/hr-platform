@@ -2254,11 +2254,11 @@ input[type="radio"],
 .sidebar {
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
 }
 
 .sidebar-footer {
-  margin-top: auto !important;
+  margin-top: 24px !important;
   padding-top: 16px !important;
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
   display: flex !important;
