@@ -18,6 +18,7 @@ TAG_OBJECT_LABELS = {
 }
 
 RECOMMENDATION_FLOW_STATUS_MAP = {
+    "待推荐": "待推荐",
     "已推荐": "已推荐",
     "客户已收": "已推荐",
     "客户未收": "已推荐",
@@ -321,16 +322,16 @@ def create_position(db: Session, payload):
             # Lock the candidate and sync delivery status according to new invariants
             cand.locked = True
             cand.status = "已锁定"
-            cand.delivery_status = "已推荐"
+            cand.delivery_status = "待推荐"
             cand.owner_user_id = obj.owner_user_id
             
-            # Create a recommendation
+            # Create a recommendation (initial status is 待推荐; must be promoted to 已推荐 manually)
             rec = Recommendation(
                 candidate_id=cand.id,
                 position_id=obj.id,
                 recommender="System Auto-Match",
                 recommender_user_id=obj.owner_user_id,
-                status="已推荐"
+                status="待推荐"
             )
             db.add(rec)
             

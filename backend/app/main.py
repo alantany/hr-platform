@@ -1400,8 +1400,8 @@ def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depe
         raise HTTPException(status_code=404, detail="候选人不存在")
     enforce_candidate_access(db, user, candidate)
     enforce_position_access(db, user, payload.position_id)
-    if payload.status != "已推荐":
-        raise HTTPException(status_code=400, detail="创建推荐记录时状态必须为已推荐")
+    # Force initial status to 待推荐; 已推荐 must be set manually via status update
+    payload = payload.model_copy(update={"status": "待推荐"})
     if candidate.locked:
         raise HTTPException(status_code=400, detail="候选人已锁定，无法重复推荐")
     obj = crud.create_recommendation(db, payload)
@@ -1420,8 +1420,8 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
     record_keys = [str(key).strip() for key in payload.record_keys if str(key).strip()]
     if not record_keys:
         raise HTTPException(status_code=400, detail="没有待推荐的候选人")
-    if payload.status != "已推荐":
-        raise HTTPException(status_code=400, detail="批量推荐状态必须为已推荐")
+    # Force initial status to 待推荐 regardless of what the client sends
+    payload = payload.model_copy(update={"status": "待推荐"})
     position = db.get(Position, payload.position_id)
     if not position:
         raise HTTPException(status_code=404, detail="岗位不存在")
@@ -1578,6 +1578,7 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
     for key, value in payload.model_dump(exclude_unset=True).items():
         if key == "status":
             valid_transitions = {
+                "待推荐": ["已推荐"],
                 "已推荐": ["面试中", "未录用", "淘汰", "客户已收", "客户未收", "安排面试", "拒绝"],
                 "客户已收": ["安排面试", "拒绝"],
                 "客户未收": ["已推荐", "未录用", "淘汰"],
@@ -1588,7 +1589,7 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
                 "淘汰": [],
                 "拒绝": [],
             }
-            if value in {"已入职", "已录用", "待推荐"}:
+            if value in {"已入职", "已录用"}:
                 raise HTTPException(status_code=400, detail="入职状态只能在候选人详情中确认")
             allowed = valid_transitions.get(obj.status, [])
             if obj.status in valid_transitions and value not in allowed:

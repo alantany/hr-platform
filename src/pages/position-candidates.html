@@ -397,12 +397,13 @@
     }
 
     function normalizeRecommendationStatus(status) {
-      const value = String(status || '已推荐');
+      const value = String(status || '待推荐');
       if (value === '已入职') return '已入职';
       if (['未录用', '淘汰', '不合适', '拒绝'].includes(value)) return '未录用';
       if (['面试中', '安排面试'].includes(value)) return '面试中';
       if (['已推荐', '客户已收', '客户未收'].includes(value)) return '已推荐';
-      return '已推荐';
+      if (value === '待推荐') return '待推荐';
+      return '待推荐';
     }
 
     function getRecommendationMatchScore(item) {
@@ -425,9 +426,10 @@
             if (!c) {
               return '<div class="list-item" style="display:grid;grid-template-columns:1.5fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr 200px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:13px;"><div>候选人不可用 (ID: ' + item.candidate_id + ')</div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>';
             }
-            const displayStatus = c.delivery_status === '已入职' ? '已入职' : (item.status || '已推荐');
+            const displayStatus = c.delivery_status === '已入职' ? '已入职' : (item.status || '待推荐');
             const statusColor = displayStatus === '已入职' ? 'success' :
-                               item.status === '淘汰' || item.status === '不合适' ? 'neutral' : 'warning';
+                               ['淘汰', '不合适', '未录用', '拒绝'].includes(displayStatus) ? 'neutral' :
+                               displayStatus === '待推荐' ? 'neutral' : 'warning';
             const fieldTags = window.hrTagSystem?.extractTags?.('candidate', c, window.__positionCandidateTagConfigs || []) || [];
             const tagHtml = fieldTags.length
               ? window.hrTagSystem.renderTags(fieldTags, { className: 'field-tag-list is-compact' })
@@ -618,6 +620,7 @@
     // Status update dialog
     function openUpdateRecommendationStatus(recommendationId, currentStatus) {
       const STATUS_TRANSITIONS = {
+        '待推荐': ['已推荐'],
         '已推荐': ['客户已收', '客户未收', '面试中', '安排面试', '未录用', '淘汰', '拒绝'],
         '客户已收': ['安排面试', '拒绝'],
         '客户未收': ['已推荐', '未录用', '淘汰'],

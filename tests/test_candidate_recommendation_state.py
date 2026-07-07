@@ -51,6 +51,11 @@ def test_recommendation_drives_candidate_lock_and_failure_releases() -> None:
         json={"candidate_id": candidate["id"], "position_id": position["id"], "recommender": "admin"},
         headers=headers,
     ).json()
+    # Initial status is now 待推荐; must be promoted manually
+    assert candidate_state(headers, candidate["id"]) == (True, "锁定", "待推荐")
+
+    # Promote to 已推荐 manually
+    client.put(f"/api/recommendations/{recommendation['id']}", json={"status": "已推荐"}, headers=headers)
     assert candidate_state(headers, candidate["id"]) == (True, "锁定", "已推荐")
 
     client.put(f"/api/recommendations/{recommendation['id']}", json={"status": "面试中"}, headers=headers)
@@ -75,6 +80,8 @@ def test_onboard_state_only_comes_from_employment_action() -> None:
         json={"candidate_id": candidate["id"], "position_id": position["id"], "recommender": "admin"},
         headers=headers,
     ).json()
+    # Promote through states manually: 待推荐 -> 已推荐 -> 面试中
+    client.put(f"/api/recommendations/{recommendation['id']}", json={"status": "已推荐"}, headers=headers)
     client.put(f"/api/recommendations/{recommendation['id']}", json={"status": "面试中"}, headers=headers)
     legacy_hired = client.put(f"/api/recommendations/{recommendation['id']}", json={"status": "已录用"}, headers=headers)
     assert legacy_hired.status_code == 400
