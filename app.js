@@ -2464,7 +2464,18 @@ async function handleGlobalButton(button) {
     if (window.candidatesPageState) {
       await window.candidatesPageState.applyFilters();
     }
-    showToast(`批量推荐：成功 ${result.succeeded}，跳过 ${result.skipped}，失败 ${result.failed}`);
+    const failedItems = result.items.filter(item => item.result === 'failed');
+    const skippedItems = result.items.filter(item => item.result === 'skipped');
+    let reasonText = '';
+    if (failedItems.length > 0) {
+      const uniqueReasons = Array.from(new Set(failedItems.map(item => `${item.candidate_name || item.record_key}(${item.reason || '失败'})`)));
+      reasonText += `。失败：${uniqueReasons.join('、')}`;
+    }
+    if (skippedItems.length > 0) {
+      const uniqueReasons = Array.from(new Set(skippedItems.map(item => `${item.candidate_name || item.record_key}(${item.reason || '跳过'})`)));
+      reasonText += `。跳过：${uniqueReasons.join('、')}`;
+    }
+    showToast(`批量推荐：成功 ${result.succeeded}，跳过 ${result.skipped}，失败 ${result.failed}${reasonText}`);
     return;
   }
   if (button.dataset.action === "open-add-note-modal") {
