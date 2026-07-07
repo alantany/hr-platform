@@ -251,6 +251,9 @@ window.hrTagSystem = {
 
 const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagConfigs = []) => {
   if (!positions.length) return '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
+  const curRole = window.currentUser?.role || '';
+  const isAdminOrLeader = curRole === '超级管理员' || curRole === 'ADMIN' || curRole === '组长' || curRole === 'LEADER';
+
   return positions.map((position) => {
     const project = projectsById.get(position.project_id) || {};
     const stats = window.positionRecommendationStats?.get(position.id) || { total: 0, selected: 0, unselected: 0, rejected: 0 };
@@ -259,9 +262,21 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagC
       : (position.urgency === '中' ? 'background: #ffedd5; color: #f97316; border: 1px solid #fed7aa;' : 'background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;');
     const fieldTags = window.hrTagSystem.extractTags("position", position, tagConfigs);
     const tagHtml = fieldTags.length ? window.hrTagSystem.renderTags(fieldTags, { className: "field-tag-list is-compact" }) : "";
+    
+    let actionsHtml = '';
+    if (isAdminOrLeader) {
+      actionsHtml = `
+        <button class="btn-sm" data-action="assign-position-permission" data-id="${position.id}" style="background-color:#10b981; border-color:#10b981; color:#fff; font-size:11px; padding:2px 8px; border-radius:4px;">分配权限</button>
+        <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
+        <button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button>
+      `;
+    } else {
+      actionsHtml = `<span style="color:#94a3b8; font-size:12px;">只读岗位</span>`;
+    }
+
     return `
       <div class="list-item" data-id="${position.id}" data-project-id="${position.project_id}">
-        <div class="item-top" style="display:grid;grid-template-columns:1.2fr 1.5fr 1.8fr 0.8fr 0.8fr 1fr 1.2fr 2.5fr 180px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;">
+        <div class="item-top" style="display:grid;grid-template-columns:1.2fr 1.5fr 1.8fr 0.8fr 0.8fr 1fr 1.2fr 2.5fr 210px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;">
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.company_name || '未知公司')}">${escapeHtml(project.company_name || '未知公司')}</div>
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.name || '')}">${escapeHtml(project.name || '--')}</div>
           <div class="item-title" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;margin-right:0;"><button type="button" data-action="show-position-candidates" data-position-id="${position.id}" style="font-weight:600;color:#0f172a;font-size:13px;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;">${escapeHtml(position.name)}</button>${tagHtml}</div>
@@ -270,7 +285,7 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagC
           <div style="color:#475569;font-size:13px;text-align:center;">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(position.location || '')}">${escapeHtml(position.location || '--')}</div>
           <div style="display:flex;gap:8px;font-size:12px;font-weight:600;white-space:nowrap;"><span>候选人 <strong style="color:#2563EB;">${stats.total}</strong></span><span>选中 <strong style="color:#15803D;">${stats.selected}</strong></span><span>未选 <strong>${stats.unselected}</strong></span><span>淘汰 <strong style="color:#ef4444;">${stats.rejected}</strong></span></div>
-          <div class="table-actions" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;"><button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button><button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button></div>
+          <div class="table-actions" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">${actionsHtml}</div>
         </div>
       </div>`;
   }).join('');
@@ -839,7 +854,7 @@ function shouldShowButtonBusy(button) {
   return Boolean(
     busyLabelByAction[action] ||
     /^(confirm|refresh|read|delete|toggle|search|export|import)-/.test(action) ||
-    ["view-detail", "toggle-details", "edit-candidate", "edit-company", "edit-project", "edit-salary-record", "open-batch-recommend-modal", "open-candidate-mail-modal", "open-add-salary-modal", "locate-salary-records"].includes(action)
+    ["view-detail", "toggle-details", "edit-candidate", "edit-company", "edit-project", "edit-salary-record", "open-batch-recommend-modal", "open-candidate-mail-modal", "open-add-salary-modal", "locate-salary-records", "assign-position-permission"].includes(action)
   );
 }
 
@@ -4368,6 +4383,73 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     }
     await refreshProjectMetrics();
     showToast(`已创建项目：${project.name}`);
+    return;
+  }
+  if (button.dataset.action === "assign-position-permission") {
+    const positionId = button.dataset.id;
+    if (!positionId) throw new Error("缺少岗位 ID");
+    
+    let modal = document.getElementById('assign-position-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'assign-position-modal';
+      modal.className = 'modal';
+      modal.style = 'display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2050; padding:24px; overflow-y:auto;';
+      modal.innerHTML = `
+        <div class="panel" style="max-width:400px; margin:15vh auto; background:#fff; padding:24px; border-radius:8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:16px; font-weight:600; color:#0f172a;">👤 分配岗位权限</h3>
+            <button class="btn" style="border:none; background:transparent; font-size:18px; color:#94a3b8; cursor:pointer;" onclick="document.getElementById('assign-position-modal').style.display='none'">×</button>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block; font-size:13px; color:#475569; margin-bottom:6px;">选择被分配人 (顾问/操作员)</label>
+            <select id="assign-position-user-select" class="input" style="width:100%; height:40px; border-radius:6px; border:1px solid #cbd5e1; outline:none; font-size:13px;"></select>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn" style="border-radius:6px; font-size:13px;" onclick="document.getElementById('assign-position-modal').style.display='none'">取消</button>
+            <button id="confirm-assign-position-btn" class="btn primary" style="border-radius:6px; font-size:13px;">确定分配</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    
+    // Fetch users
+    try {
+      const users = await window.hrApi.users();
+      const select = document.getElementById('assign-position-user-select');
+      if (select) {
+        select.innerHTML = '<option value="">-- 请选择被分配人 --</option>' + users.map(u => `
+          <option value="${u.id}">${escapeHtml(u.full_name || u.username)} (${u.role})</option>
+        `).join('');
+      }
+    } catch (err) {
+      console.warn("Failed to fetch users for position assignment:", err);
+    }
+
+    const confirmBtn = document.getElementById('confirm-assign-position-btn');
+    if (confirmBtn) {
+      confirmBtn.onclick = async () => {
+        const select = document.getElementById('assign-position-user-select');
+        const userId = select?.value;
+        if (!userId) {
+          showToast('请选择被分配人');
+          return;
+        }
+        try {
+          await window.hrApi.updatePosition(Number(positionId), { owner_user_id: Number(userId) });
+          showToast('岗位权限分配成功');
+          modal.style.display = 'none';
+          if (window.refreshManagementPage) {
+            await window.refreshManagementPage();
+          }
+        } catch (err) {
+          showToast('分配失败: ' + (err.message || err));
+        }
+      };
+    }
+
+    modal.style.display = 'block';
     return;
   }
   if (button.dataset.action === "open-position-modal") {

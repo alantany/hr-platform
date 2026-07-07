@@ -376,6 +376,18 @@ def enforce_candidate_access(db: Session, user: User, candidate: Candidate) -> N
 def enforce_position_access(db: Session, user: User, position_id: int) -> None:
     if not security.can_access_scope(db, user, "position", position_id):
         raise HTTPException(status_code=403, detail="无权访问该岗位")
+    if security.get_role_code(user.role) == "OPERATOR":
+        pos = db.get(Position, position_id)
+        if pos and pos.owner_user_id != user.id:
+            # Check DataPermission for operator
+            has_perm = db.query(DataPermission).filter(
+                DataPermission.user_id == user.id,
+                DataPermission.scope_type == "position",
+                DataPermission.scope_id == str(pos.id),
+                DataPermission.active.is_(True)
+            ).first() is not None
+            if not has_perm:
+                raise HTTPException(status_code=403, detail="该岗位未分配给您，无权对其进行操作或推荐候选人")
 
 
 def enforce_project_access(db: Session, user: User, project_id: int) -> None:
@@ -418,8 +430,14 @@ def health():
 
 
 @app.get("/api/users", response_model=list[schemas.UserOut])
-def get_users(db: Session = Depends(get_db), user: User = Depends(require_admin_user)):
-    return crud.list_users(db)
+def get_users(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if security.is_admin(user):
+        return crud.list_users(db)
+    elif security.is_leader(user):
+        sub_ids = security.subordinate_user_ids(db, user)
+        return db.query(User).filter(User.id.in_(sub_ids), User.is_active == True).all()
+    else:
+        raise HTTPException(status_code=403, detail="仅超级管理员与组长可获取用户列表")
 
 
 @app.post("/api/users", response_model=schemas.UserOut)
@@ -812,6 +830,8 @@ def list_positions(project_id: int | None = Query(default=None), db: Session = D
 
 @app.post("/api/positions", response_model=schemas.PositionOut)
 def add_position(payload: schemas.PositionCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if security.get_role_code(user.role) == "OPERATOR":
+        raise HTTPException(status_code=403, detail="操作员无权创建岗位")
     enforce_project_access(db, user, payload.project_id)
     if not payload.owner_user_id:
         payload.owner_user_id = user.id
@@ -831,6 +851,9 @@ def edit_position(position_id: int, payload: schemas.PositionUpdate, db: Session
         raise HTTPException(status_code=404, detail="岗位不存在")
     if not security.is_admin(user):
         enforce_position_access(db, user, position_id)
+    if security.get_role_code(user.role) == "OPERATOR":
+        if payload.owner_user_id is not None and payload.owner_user_id != obj.owner_user_id:
+            raise HTTPException(status_code=403, detail="操作员无权指派或变更岗位负责人")
     crud.update_position(db, obj, payload)
     crud.add_audit(db, user.username, "岗位管理", "更新岗位", "position", str(position_id), detail=obj.name)
     db.commit()

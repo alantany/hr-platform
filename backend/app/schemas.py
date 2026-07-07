@@ -206,6 +206,7 @@ class PositionUpdate(BaseModel):
     requirement_tags: dict | None = None
     target_resume_count: int | None = None
     description: str | None = None
+    owner_user_id: int | None = None
 
 
 class CandidateCreate(BaseModel):
