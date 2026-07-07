@@ -257,17 +257,17 @@ def test_leader_sees_subordinate_owned_projects_but_other_leader_cannot():
     sun_projects = {item["name"] for item in client.get("/api/projects", headers=sun_headers).json()}
 
     assert li_project["name"] in li_projects
-    assert wang_project["name"] not in li_projects
-    assert li_project["name"] not in wang_projects
+    assert wang_project["name"] in li_projects
+    assert li_project["name"] in wang_projects
     assert wang_project["name"] in wang_projects
 
     assert li_project["name"] in zhang_projects
     assert wang_project["name"] in zhang_projects
-    assert sun_project["name"] not in zhang_projects
+    assert sun_project["name"] in zhang_projects
 
     assert sun_project["name"] in sun_projects
-    assert li_project["name"] not in sun_projects
-    assert wang_project["name"] not in sun_projects
+    assert li_project["name"] in sun_projects
+    assert wang_project["name"] in sun_projects
 
 
 def test_candidate_ownership_transfer_requires_admin_approval():

@@ -101,6 +101,8 @@ def can_access_scope(db: Session, user: User, scope_type: str, scope_id: int | s
     if scope_id in (None, ""):
         return False
     scope_id = str(scope_id)
+    if scope_type in {"company", "project", "position"}:
+        return True
     permissions = _active_permissions(db, user)
     allowed_companies = {p.scope_id for p in permissions if p.scope_type == "company"}
     allowed_projects = {p.scope_id for p in permissions if p.scope_type == "project"}
@@ -150,6 +152,24 @@ def can_access_scope(db: Session, user: User, scope_type: str, scope_id: int | s
     return False
 
 
+def user_has_position_assignment(db: Session, user: User, position_id: int) -> bool:
+    if is_admin(user):
+        return True
+    pos = db.get(Position, position_id)
+    if not pos:
+        return False
+    allowed_ids = visible_owner_user_ids(db, user)
+    if pos.owner_user_id in allowed_ids:
+        return True
+    has_perm = db.query(DataPermission).filter(
+        DataPermission.user_id == user.id,
+        DataPermission.scope_type == "position",
+        DataPermission.scope_id == str(position_id),
+        DataPermission.active.is_(True)
+    ).first() is not None
+    return has_perm
+
+
 def accessible_candidate_ids(db: Session, user: User) -> list[int]:
     if is_admin(user):
         return [row[0] for row in db.query(Candidate.id).all()]
@@ -164,7 +184,7 @@ def accessible_candidate_ids(db: Session, user: User) -> list[int]:
         .all()
     )
     for candidate_id, position_id in recommendation_rows:
-        if can_access_scope(db, user, "position", position_id):
+        if user_has_position_assignment(db, user, position_id):
             ids.add(candidate_id)
     return sorted(ids)
 

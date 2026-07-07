@@ -4490,6 +4490,37 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       reset('[data-position-req-salary]', '不限');
       reset('[data-position-req-status]', '不限');
       reset('[data-position-target-count]', '10');
+      
+      const createPosProject = modal.querySelector('[data-position-project]');
+      if (createPosProject) {
+        createPosProject.innerHTML = '<option value="">加载中...</option>';
+        (async () => {
+          try {
+            const projects = await window.hrApi.projects();
+            createPosProject.innerHTML = '<option value="">请选择项目</option>' + projects.map(p => `
+              <option value="${p.id}">${escapeHtml(p.name)}</option>
+            `).join('');
+            
+            const projectMap = new Map(projects.map((p) => [p.id, p]));
+            const createCompanyDisplay = modal.querySelector('[data-position-company-display]');
+            if (createCompanyDisplay) {
+              const listener = () => {
+                const pid = Number(createPosProject.value || 0);
+                const proj = projectMap.get(pid);
+                createCompanyDisplay.textContent = proj
+                  ? `所属公司：${proj.company_name || '未知公司'} · ${proj.name}`
+                  : '所属公司：请选择项目后自动显示';
+              };
+              createPosProject.onchange = listener;
+              listener();
+            }
+          } catch (err) {
+            console.warn("Failed to populate projects select in position modal:", err);
+            createPosProject.innerHTML = '<option value="">获取项目失败</option>';
+          }
+        })();
+      }
+
       modal.style.display = 'block';
       
       // Initialize city picker if not done yet

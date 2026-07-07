@@ -409,9 +409,7 @@ def can_access_recommendation(db: Session, user: User, recommendation: Recommend
         return True
     position = recommendation.position
     if position:
-        if position.owner_user_id in allowed_ids:
-            return True
-        if security.can_access_scope(db, user, "position", position.id):
+        if security.user_has_position_assignment(db, user, position.id):
             return True
     return False
 
