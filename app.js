@@ -4496,8 +4496,8 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       reset('[data-position-location]', '');
       reset('[data-position-req-age]', '不限');
       reset('[data-position-req-gender]', '不限');
-      reset('[data-position-req-edu]', '本科');
-      reset('[data-position-req-exp]', '应届生');
+      reset('[data-position-req-edu]', '不限');
+      reset('[data-position-req-exp]', '不限');
       reset('[data-position-req-salary]', '不限');
       reset('[data-position-req-status]', '不限');
       reset('[data-position-target-count]', '10');
