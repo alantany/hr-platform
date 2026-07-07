@@ -3,12 +3,12 @@ const navGroups = [
     title: "主要功能",
     items: [
       { href: "dashboard.html", label: "首页", badge: "概览", icon: "home" },
-      { href: "candidates.html", label: "求职者数据池", badge: "资源", icon: "users" },
-      { href: "import.html", label: "简历导入", badge: "导入", icon: "file" },
       { href: "customers.html", label: "客户管理", badge: "客户", icon: "building" },
       { href: "projects.html", label: "项目管理", badge: "项目", icon: "inbox" },
-      { href: "evaluations.html", label: "评价体系", badge: "评价", icon: "star" },
+      { href: "candidates.html", label: "求职者数据池", badge: "资源", icon: "users" },
+      { href: "import.html", label: "简历导入", badge: "导入", icon: "file" },
       { href: "statistics.html", label: "统计管理", badge: "报表", icon: "chart" },
+      { href: "evaluations.html", label: "评价体系", badge: "评价", icon: "star" },
     ],
   },
   {
