@@ -209,6 +209,10 @@ class PositionUpdate(BaseModel):
     owner_user_id: int | None = None
 
 
+class PositionAssignPayload(BaseModel):
+    user_ids: list[int]
+
+
 class CandidateCreate(BaseModel):
     name: str
     phone: str | None = ""

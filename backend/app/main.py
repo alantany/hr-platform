@@ -377,17 +377,14 @@ def enforce_position_access(db: Session, user: User, position_id: int) -> None:
     if not security.can_access_scope(db, user, "position", position_id):
         raise HTTPException(status_code=403, detail="无权访问该岗位")
     if security.get_role_code(user.role) == "OPERATOR":
-        pos = db.get(Position, position_id)
-        if pos and pos.owner_user_id != user.id:
-            # Check DataPermission for operator
-            has_perm = db.query(DataPermission).filter(
-                DataPermission.user_id == user.id,
-                DataPermission.scope_type == "position",
-                DataPermission.scope_id == str(pos.id),
-                DataPermission.active.is_(True)
-            ).first() is not None
-            if not has_perm:
-                raise HTTPException(status_code=403, detail="该岗位未分配给您，无权对其进行操作或推荐候选人")
+        has_perm = db.query(DataPermission).filter(
+            DataPermission.user_id == user.id,
+            DataPermission.scope_type == "position",
+            DataPermission.scope_id == str(position_id),
+            DataPermission.active.is_(True)
+        ).first() is not None
+        if not has_perm:
+            raise HTTPException(status_code=403, detail="该岗位未分配给您，无权对其进行操作或推荐候选人")
 
 
 def enforce_project_access(db: Session, user: User, project_id: int) -> None:
@@ -830,8 +827,8 @@ def list_positions(project_id: int | None = Query(default=None), db: Session = D
 
 @app.post("/api/positions", response_model=schemas.PositionOut)
 def add_position(payload: schemas.PositionCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    if security.get_role_code(user.role) == "OPERATOR":
-        raise HTTPException(status_code=403, detail="操作员无权创建岗位")
+    if not security.is_admin(user) and not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长及系统管理员有权创建岗位")
     enforce_project_access(db, user, payload.project_id)
     if not payload.owner_user_id:
         payload.owner_user_id = user.id
@@ -873,6 +870,65 @@ def delete_position(position_id: int, db: Session = Depends(get_db), user: User 
     crud.add_audit(db, user.username, "岗位管理", "删除岗位", "position", str(position_id), detail=name)
     db.commit()
     return {"ok": True}
+
+
+@app.post("/api/positions/{position_id}/assign")
+def assign_position_permissions(position_id: int, payload: schemas.PositionAssignPayload, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    position = db.get(Position, position_id)
+    if not position:
+        raise HTTPException(status_code=404, detail="岗位不存在")
+    if not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长可分配岗位权限")
+    if not security.can_access_scope(db, user, "position", position_id):
+        raise HTTPException(status_code=403, detail="无权访问该岗位")
+    sub_ids = security.subordinate_user_ids(db, user)
+    for uid in payload.user_ids:
+        if uid not in sub_ids:
+            u = db.get(User, uid)
+            u_name = u.username if u else f"ID {uid}"
+            raise HTTPException(status_code=400, detail=f"用户 {u_name} 不是您的直属组员")
+    db.query(DataPermission).filter(
+        DataPermission.scope_type == "position",
+        DataPermission.scope_id == str(position_id)
+    ).update({"active": False})
+    for uid in payload.user_ids:
+        existing = db.query(DataPermission).filter(
+            DataPermission.user_id == uid,
+            DataPermission.scope_type == "position",
+            DataPermission.scope_id == str(position_id)
+        ).first()
+        if existing:
+            existing.active = True
+            existing.granted_by = user.username
+        else:
+            new_perm = DataPermission(
+                user_id=uid,
+                scope_type="position",
+                scope_id=str(position_id),
+                scope_name=position.name,
+                granted_by=user.username,
+                active=True
+            )
+            db.add(new_perm)
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/api/positions/{position_id}/assignees", response_model=list[int])
+def get_position_assignees(position_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    position = db.get(Position, position_id)
+    if not position:
+        raise HTTPException(status_code=404, detail="岗位不存在")
+    if not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长可查看分配信息")
+    if not security.can_access_scope(db, user, "position", position_id):
+        raise HTTPException(status_code=403, detail="无权访问该岗位")
+    perms = db.query(DataPermission).filter(
+        DataPermission.scope_type == "position",
+        DataPermission.scope_id == str(position_id),
+        DataPermission.active == True
+    ).all()
+    return [p.user_id for p in perms]
 
 
 @app.get("/api/candidates", response_model=list[schemas.CandidateOut])

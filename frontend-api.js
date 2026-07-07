@@ -109,6 +109,12 @@ window.hrApi = {
   deletePosition(id) {
     return this.request(`/positions/${id}`, { method: "DELETE" });
   },
+  getPositionAssignees(id) {
+    return this.request(`/positions/${id}/assignees`);
+  },
+  assignPosition(id, userIds) {
+    return this.request(`/positions/${id}/assign`, { method: "POST", body: JSON.stringify({ user_ids: userIds }) });
+  },
   candidates(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/candidates${qs ? `?${qs}` : ""}`);

@@ -252,7 +252,7 @@ window.hrTagSystem = {
 const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagConfigs = []) => {
   if (!positions.length) return '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
   const curRole = window.currentUser?.role || '';
-  const isAdminOrLeader = curRole === '超级管理员' || curRole === 'ADMIN' || curRole === '组长' || curRole === 'LEADER';
+  const isLeader = curRole === '组长' || curRole === 'LEADER';
 
   return positions.map((position) => {
     const project = projectsById.get(position.project_id) || {};
@@ -264,7 +264,7 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagC
     const tagHtml = fieldTags.length ? window.hrTagSystem.renderTags(fieldTags, { className: "field-tag-list is-compact" }) : "";
     
     let actionsHtml = '';
-    if (isAdminOrLeader) {
+    if (isLeader) {
       actionsHtml = `
         <button class="btn-sm" data-action="assign-position-permission" data-id="${position.id}" style="background-color:#10b981; border-color:#10b981; color:#fff; font-size:11px; padding:2px 8px; border-radius:4px;">分配权限</button>
         <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
@@ -4402,8 +4402,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
             <button class="btn" style="border:none; background:transparent; font-size:18px; color:#94a3b8; cursor:pointer;" onclick="document.getElementById('assign-position-modal').style.display='none'">×</button>
           </div>
           <div style="margin-bottom:16px;">
-            <label style="display:block; font-size:13px; color:#475569; margin-bottom:6px;">选择被分配人 (顾问/操作员)</label>
-            <select id="assign-position-user-select" class="input" style="width:100%; height:40px; border-radius:6px; border:1px solid #cbd5e1; outline:none; font-size:13px;"></select>
+            <label style="display:block; font-size:13px; color:#475569; margin-bottom:8px; font-weight:600;">选择被分配组员 (可多选)</label>
+            <div id="assign-position-user-checklist" style="max-height: 200px; overflow-y: auto; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; background: #f8fafc; display: flex; flex-direction: column; gap: 8px;">
+              <div style="color: #94a3b8; font-size: 13px; text-align: center; padding: 12px 0;">加载中...</div>
+            </div>
           </div>
           <div style="display:flex; justify-content:flex-end; gap:8px;">
             <button class="btn" style="border-radius:6px; font-size:13px;" onclick="document.getElementById('assign-position-modal').style.display='none'">取消</button>
@@ -4412,32 +4414,49 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
         </div>
       `;
       document.body.appendChild(modal);
+    } else {
+      // Clear checklist text to loading
+      const checklist = document.getElementById('assign-position-user-checklist');
+      if (checklist) checklist.innerHTML = '<div style="color: #94a3b8; font-size: 13px; text-align: center; padding: 12px 0;">加载中...</div>';
     }
     
-    // Fetch users
+    // Fetch users and current assignees
     try {
-      const users = await window.hrApi.users();
-      const select = document.getElementById('assign-position-user-select');
-      if (select) {
-        select.innerHTML = '<option value="">-- 请选择被分配人 --</option>' + users.map(u => `
-          <option value="${u.id}">${escapeHtml(u.full_name || u.username)} (${u.role})</option>
-        `).join('');
+      const [users, currentAssignees] = await Promise.all([
+        window.hrApi.users(),
+        window.hrApi.getPositionAssignees(Number(positionId)).catch(() => [])
+      ]);
+      
+      const checklist = document.getElementById('assign-position-user-checklist');
+      if (checklist) {
+        if (!users.length) {
+          checklist.innerHTML = '<div style="color: #94a3b8; font-size: 13px; text-align: center; padding: 12px 0;">暂无可分配的直属组员</div>';
+        } else {
+          checklist.innerHTML = users.map(u => {
+            const isChecked = currentAssignees.includes(u.id) ? 'checked' : '';
+            return `
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: #334155; padding: 6px 4px; border-radius: 4px; transition: background 0.15s;" onmouseover="this.style.backgroundColor='#f1f5f9'" onmouseout="this.style.backgroundColor='transparent'">
+                <input type="checkbox" value="${u.id}" name="assign-user-checkbox" ${isChecked} style="width: 16px; height: 16px; cursor: pointer;">
+                <span style="font-weight: 500;">${escapeHtml(u.full_name || u.username)} (${escapeHtml(u.role)})</span>
+              </label>
+            `;
+          }).join('');
+        }
       }
     } catch (err) {
-      console.warn("Failed to fetch users for position assignment:", err);
+      console.warn("Failed to fetch users or assignees for position assignment:", err);
+      const checklist = document.getElementById('assign-position-user-checklist');
+      if (checklist) checklist.innerHTML = '<div style="color: #ef4444; font-size: 13px; text-align: center; padding: 12px 0;">获取组员列表失败</div>';
     }
 
     const confirmBtn = document.getElementById('confirm-assign-position-btn');
     if (confirmBtn) {
       confirmBtn.onclick = async () => {
-        const select = document.getElementById('assign-position-user-select');
-        const userId = select?.value;
-        if (!userId) {
-          showToast('请选择被分配人');
-          return;
-        }
+        const checkboxes = document.querySelectorAll('input[name="assign-user-checkbox"]:checked');
+        const userIds = Array.from(checkboxes).map(cb => Number(cb.value));
+        
         try {
-          await window.hrApi.updatePosition(Number(positionId), { owner_user_id: Number(userId) });
+          await window.hrApi.assignPosition(Number(positionId), userIds);
           showToast('岗位权限分配成功');
           modal.style.display = 'none';
           if (window.refreshManagementPage) {
