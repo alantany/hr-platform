@@ -42,7 +42,6 @@ from backend.app.models import (
     User,
     WarrantyRule,
 )
-from backend.seed import DEFAULT_TAG_FIELD_CONFIGS, build_tag_config_payload
 
 
 def cleanup_models() -> list[type]:
@@ -179,7 +178,7 @@ def reset_seed_rows(db: Session) -> None:
         WarrantyRule(scope="客户", months=6, remind_days=7, auto_expire=True),
         WarrantyRule(scope="项目", months=6, remind_days=7, auto_expire=True),
         WarrantyRule(scope="岗位", months=3, remind_days=5, auto_expire=True),
-        WarrantyRule(scope="入职质保期", months=2, remind_days=5, auto_expire=True),
+        WarrantyRule(scope="入职质保期", months=6, remind_days=5, auto_expire=True),
     ])
 
     db.query(SystemConfig).delete(synchronize_session=False)
@@ -189,9 +188,6 @@ def reset_seed_rows(db: Session) -> None:
         SystemConfig(key="log_retention_days", value="90", description="日志保留天数"),
         SystemConfig(key="responsive_breakpoint", value="1280", description="响应式断点"),
     ])
-
-    db.query(TagDictionary).delete(synchronize_session=False)
-    db.add_all([TagDictionary(**build_tag_config_payload(item)) for item in DEFAULT_TAG_FIELD_CONFIGS])
 
     db.query(EmailConfig).delete(synchronize_session=False)
     db.add(EmailConfig(host="smtp.example.com", port=25, sender="noreply@example.com", username="", password="", use_tls=False, enabled=False))

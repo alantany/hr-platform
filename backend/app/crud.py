@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import socket
 
 from sqlalchemy import func, or_
@@ -17,14 +17,16 @@ TAG_OBJECT_LABELS = {
     "company": "客户",
 }
 
-ACTIVE_RECOMMENDATION_STATUS_MAP = {
-    "待推荐": "已推荐",
+RECOMMENDATION_FLOW_STATUS_MAP = {
     "已推荐": "已推荐",
     "客户已收": "已推荐",
     "客户未收": "已推荐",
     "安排面试": "面试中",
     "面试中": "面试中",
-    "已录用": "已录用",
+    "拒绝": "未录用",
+    "淘汰": "未录用",
+    "未录用": "未录用",
+    "已入职": "已入职",
 }
 
 
@@ -160,7 +162,7 @@ def dashboard_todos(db: Session, limit: int = 4) -> list[dict]:
             "title": f"推荐 {rec.candidate_id} → {rec.position_id}",
             "meta": f"{rec.recommender} · {rec.status}",
             "tag": "推进",
-            "color": "green" if rec.status in {"客户已收", "安排面试", "已录用"} else "orange",
+            "color": "green" if rec.status in {"客户已收", "安排面试", "已入职"} else "orange",
             "source": "recommendation",
             "target_path": "./dashboard.html",
         })
@@ -283,6 +285,68 @@ def update_project(db: Session, project: Project, payload):
 def create_position(db: Session, payload):
     obj = Position(**payload.model_dump())
     db.add(obj)
+    db.commit()
+    db.refresh(obj)
+
+    # Auto-match candidates
+    if obj.requirement_tags:
+        tags = obj.requirement_tags
+        query = db.query(Candidate).filter(Candidate.locked == False)
+        
+        # Simple matching logic based on tags
+        if tags.get("keyword") and tags.get("keyword").strip():
+            kw = tags.get("keyword").strip()
+            # Search across multiple fields
+            query = query.filter(
+                or_(
+                    Candidate.name.ilike(f"%{kw}%"),
+                    Candidate.current_title.ilike(f"%{kw}%"),
+                    Candidate.tags.ilike(f"%{kw}%"),
+                    Candidate.project_history.ilike(f"%{kw}%"),
+                    Candidate.work_history.ilike(f"%{kw}%")
+                )
+            )
+            
+        if tags.get("education") and tags.get("education") != "不限":
+            query = query.filter(Candidate.education == tags.get("education"))
+        if tags.get("gender") and tags.get("gender") != "不限":
+            query = query.filter(Candidate.gender == tags.get("gender"))
+        
+        # Add more filters if needed based on tags...
+        
+        target_count = obj.target_resume_count if obj.target_resume_count > 0 else 10
+        candidates = query.limit(target_count).all()
+        
+        for cand in candidates:
+            # Lock the candidate and sync delivery status according to new invariants
+            cand.locked = True
+            cand.status = "已锁定"
+            cand.delivery_status = "已推荐"
+            cand.owner_user_id = obj.owner_user_id
+            
+            # Create a recommendation
+            rec = Recommendation(
+                candidate_id=cand.id,
+                position_id=obj.id,
+                recommender="System Auto-Match",
+                recommender_user_id=obj.owner_user_id,
+                status="已推荐"
+            )
+            db.add(rec)
+            
+            # Track event
+            event = CandidateTrackingEvent(
+                candidate_id=cand.id,
+                event_type="AUTO_MATCH",
+                status="已匹配",
+                summary=f"系统自动匹配到岗位: {obj.name}",
+                operator="System",
+                position_id=obj.id
+            )
+            db.add(event)
+            
+        db.commit()
+        
     return obj
 
 
@@ -617,19 +681,29 @@ def update_candidate(db: Session, candidate: Candidate, payload):
 
 def sync_candidate_recommendation_state(db: Session, candidate: Candidate) -> Candidate:
     """从推荐记录反算候选人池摘要，禁止锁定状态与推荐进度各自漂移。"""
+    employment = (
+        db.query(EmploymentRecord)
+        .filter(EmploymentRecord.candidate_id == candidate.id)
+        .order_by(EmploymentRecord.created_at.desc(), EmploymentRecord.id.desc())
+        .first()
+    )
+    if employment and employment.status == "已入职":
+        candidate.locked = True
+        candidate.status = "锁定"
+        candidate.delivery_status = "已入职"
+        db.add(candidate)
+        return candidate
+
     recommendation = (
         db.query(Recommendation)
-        .filter(
-            Recommendation.candidate_id == candidate.id,
-            Recommendation.status.in_(tuple(ACTIVE_RECOMMENDATION_STATUS_MAP)),
-        )
+        .filter(Recommendation.candidate_id == candidate.id)
         .order_by(Recommendation.created_at.desc(), Recommendation.id.desc())
         .first()
     )
     if recommendation:
         candidate.locked = True
         candidate.status = "锁定"
-        candidate.delivery_status = ACTIVE_RECOMMENDATION_STATUS_MAP[recommendation.status]
+        candidate.delivery_status = RECOMMENDATION_FLOW_STATUS_MAP.get(recommendation.status, "已推荐")
     else:
         candidate.locked = False
         candidate.status = "未锁定"
@@ -639,12 +713,38 @@ def sync_candidate_recommendation_state(db: Session, candidate: Candidate) -> Ca
     return candidate
 
 
+def sync_candidate_warranty_state(db: Session, candidate: Candidate) -> Candidate:
+    """质保只由最新的已入职记录及其入职日期驱动。"""
+    record = (
+        db.query(EmploymentRecord)
+        .filter(EmploymentRecord.candidate_id == candidate.id)
+        .order_by(EmploymentRecord.created_at.desc(), EmploymentRecord.id.desc())
+        .first()
+    )
+    if not record or record.status != "已入职" or not record.onboard_date:
+        candidate.candidate_warranty_status = ""
+        db.add(candidate)
+        return candidate
+
+    rule = db.query(WarrantyRule).filter(WarrantyRule.scope == "入职质保期").first()
+    warranty_days = max(int(rule.months if rule else 6), 0) * 30
+    onboard = record.onboard_date
+    if onboard.tzinfo is None:
+        onboard = onboard.replace(tzinfo=timezone.utc)
+    candidate.candidate_warranty_status = (
+        "质保到期" if datetime.now(timezone.utc) > onboard + timedelta(days=warranty_days) else "质保中"
+    )
+    db.add(candidate)
+    return candidate
+
+
 def reconcile_candidate_recommendation_states(db: Session) -> int:
     changed = 0
     for candidate in db.query(Candidate).all():
-        before = (candidate.locked, candidate.status, candidate.delivery_status, candidate.owner_user_id)
+        before = (candidate.locked, candidate.status, candidate.delivery_status, candidate.candidate_warranty_status, candidate.owner_user_id)
         sync_candidate_recommendation_state(db, candidate)
-        after = (candidate.locked, candidate.status, candidate.delivery_status, candidate.owner_user_id)
+        sync_candidate_warranty_state(db, candidate)
+        after = (candidate.locked, candidate.status, candidate.delivery_status, candidate.candidate_warranty_status, candidate.owner_user_id)
         changed += int(before != after)
     return changed
 

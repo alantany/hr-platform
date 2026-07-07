@@ -27,7 +27,7 @@ def test_employment_onboarding_and_warranty():
     rule_scope_list = [r["scope"] for r in rules]
     assert "入职质保期" in rule_scope_list
     target_rule = [r for r in rules if r["scope"] == "入职质保期"][0]
-    assert target_rule["months"] == 2 # 默认为 2 个月 (60天)
+    assert target_rule["months"] == 6
     
     # 2. 创建候选人
     candidate = client.post("/api/candidates", json={
@@ -106,19 +106,20 @@ def test_employment_onboarding_and_warranty():
     assert len(res_tracking_list) == 1
     assert res_tracking_list[0]["employment_status"] == "已入职"
     
-    # b. 候选人已有有效推荐链路，入职后保持锁定并同步为已录用
+    # b. 候选人由手工入职动作同步为已入职，并从入职日期启动质保
     res_cand_detail = client.get("/api/candidates", headers=headers).json()
     updated_cand = [c for c in res_cand_detail if c["id"] == candidate_id][0]
     assert updated_cand["locked"] is True
     assert updated_cand["status"] == "锁定"
-    assert updated_cand["delivery_status"] == "已录用"
+    assert updated_cand["delivery_status"] == "已入职"
+    assert updated_cand["candidate_warranty_status"] == "质保中"
 
     # c. 验证获取入职记录列表包含 candidate_name 和 candidate_phone 字段
     res_emp_records = client.get("/api/employment-records", headers=headers).json()
     my_record = [r for r in res_emp_records if r["candidate_id"] == candidate_id][0]
     assert my_record["candidate_name"] == f"入职测试候选人-{suffix}"
     assert my_record["candidate_phone"] == f"1377777{suffix[:4]}"
-    # d. 入职记录的 warranty_status 应被动态返回为"质保中"（刚入职，未超 180 天）
+    # d. 入职记录的 warranty_status 应被动态返回为"质保中"
     assert my_record["warranty_status"] == "质保中"
 
     # 7. 模拟"未入职"数据保存（修改状态为未入职，例如候选人爽约）
@@ -139,10 +140,10 @@ def test_employment_onboarding_and_warranty():
     res_tracking_list_2 = client.get(f"/api/candidate-tracking-events?candidate_id={candidate_id}", headers=headers).json()
     assert res_tracking_list_2[0]["employment_status"] == "未入职"
     
-    # b. 根据新的业务规则：候选人一旦被推荐锁定后，锁定状态持久保持，不因入职状态变化而解锁
-    #    未入职不代表候选人重新"未锁定"；解锁需要人工通过 /release 接口手动执行
+    # b. 未入职属于失败终态，但岗位推荐关系仍在，因此保持锁定；质保停止
     res_cand_detail_2 = client.get("/api/candidates", headers=headers).json()
     updated_cand_2 = [c for c in res_cand_detail_2 if c["id"] == candidate_id][0]
-    # 候选人自身 status 维持 "锁定"（锁定持久化规则），locked 字段为 True
     assert updated_cand_2["locked"] is True
     assert updated_cand_2["status"] == "锁定"
+    assert updated_cand_2["delivery_status"] == "未录用"
+    assert updated_cand_2["candidate_warranty_status"] == ""

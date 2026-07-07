@@ -257,6 +257,12 @@ window.hrApi = {
   createEvaluation(payload) {
     return this.request("/evaluations", { method: "POST", body: JSON.stringify(payload) });
   },
+  updateEvaluation(id, payload) {
+    return this.request(`/evaluations/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+  },
+  deleteEvaluation(id) {
+    return this.request(`/evaluations/${id}`, { method: "DELETE" });
+  },
   evaluationLevels() {
     return this.request("/evaluation-levels");
   },

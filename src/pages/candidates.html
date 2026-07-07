@@ -1218,7 +1218,7 @@
             if (interview[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${interview[0].round_name}</div><div class="item-meta">${interview[0].result} · ${interview[0].interviewer}</div></div><span class="chip success">面试</span></div></div>`);
             if (salary[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">薪资</div><div class="item-meta">${salary[0].expected_salary} / ${salary[0].offered_salary}</div></div><span class="chip warning">${salary[0].service_status}</span></div></div>`);
             if (employment[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${employment[0].company_name}</div><div class="item-meta">${employment[0].position_name} · ${employment[0].status}</div></div><span class="chip neutral">入职</span></div></div>`);
-            if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已录用</span></div></div>`);
+            if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已入职</span></div></div>`);
             lifecycle.innerHTML = items.join('') || '<div class="list-item"><div class="item-meta">暂无面试、入职等记录</div></div>';
           }
           const followupBlock = document.querySelector('[data-followup-block]');

@@ -223,54 +223,272 @@ window.__PAGE_BODY__ = `
   </div>
 
   <div class="modal" data-position-edit-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
-    <div class="panel" style="max-width:760px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
-      <div class="section-head">
-        <div><h3>编辑岗位</h3><div class="section-sub">修改岗位信息后保存，会同步到数据库。</div></div>
-        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-position-edit-modal">取消</button><button class="btn primary" data-action="confirm-position-edit">确认保存</button></div>
+    <div class="panel" style="max-width:760px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto; padding:24px;">
+      <div class="section-head" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 24px;">
+        <div><h3 style="margin:0;">编辑岗位</h3></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" style="border:none; background:transparent; font-size:18px; color:#94a3b8; padding:4px;" data-action="close-position-edit-modal">×</button></div>
       </div>
-      <div class="grid-2">
-        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-          <div class="list">
-            <div class="list-item">
-              <div class="item-top"><div><div class="item-title">所属项目</div></div></div>
-              <div class="input" style="display:flex;align-items:center;min-height:42px;background:#f8fafc;color:#334155;" data-position-edit-company-display>所属公司：请选择项目后自动显示</div>
-              <input type="hidden" data-position-edit-project />
-            </div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">岗位名称</div></div></div><input class="input" data-position-edit-name /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">紧急程度</div></div></div><select class="input" data-position-edit-urgency><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div></div></div><input class="input" type="number" min="1" data-position-edit-count /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">最低薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-min /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">最高薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-max /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div></div></div><input class="input" data-position-edit-location /></div>
+      
+      <div class="list-item" style="border:none; padding:0; margin-bottom: 24px;">
+        <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">关键词搜索 <span style="color:#94a3b8; font-size: 12px; font-weight: normal; margin-left: 8px;">(用于简历池自动精准匹配)</span></div>
+        <input class="input" data-position-edit-keyword placeholder="请输入岗位相关的关键词，如：Java, Spring Boot, MySQL" style="width:100%; height:40px; border-radius:8px;" />
+      </div>
+
+      <div class="grid-2" style="gap: 24px;">
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">所属项目</div>
+          <div class="input" style="display:flex;align-items:center;height:40px;background:#f8fafc;color:#334155;border-radius:8px;" data-position-edit-company-display>所属公司：请选择项目后自动显示</div>
+          <input type="hidden" data-position-edit-project />
+        </div>
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">岗位名称 <span style="color:#ef4444">*</span></div>
+          <input class="input" data-position-edit-name placeholder="请输入岗位名称" style="width:100%; height:40px; border-radius:8px;" />
+        </div>
+        
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">紧急程度</div>
+          <select class="input" data-position-edit-urgency style="width:100%; height:40px; border-radius:8px;">
+            <option value="紧急">紧急</option>
+            <option value="正常">正常</option>
+          </select>
+        </div>
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">招聘人数</div>
+          <input class="input" type="number" min="1" data-position-edit-count placeholder="请输入招聘人数" style="width:100%; height:40px; border-radius:8px;" />
+        </div>
+
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">薪资范围 (K)</div>
+          <div style="display:flex; gap: 8px; align-items:center;">
+            <input class="input" type="number" data-position-edit-salary-min placeholder="下限" style="width:100%; height:40px; border-radius:8px;" />
+            <span style="color:#94a3b8;">-</span>
+            <input class="input" type="number" data-position-edit-salary-max placeholder="上限" style="width:100%; height:40px; border-radius:8px;" />
           </div>
         </div>
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">工作地点</div>
+          <div class="city-selector-wrapper" style="position: relative; width: 100%;">
+            <input class="input" data-position-edit-location placeholder="请输入工作地点" autocomplete="off" style="width:100%; height:40px; border-radius:8px;" />
+            <div class="city-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1000; padding: 12px;">
+              <div class="city-search-results" style="display: none; max-height: 240px; overflow-y: auto;">
+              </div>
+              <div class="city-cascade-view" style="display: flex; height: 240px;">
+                <div class="province-list" style="width: 130px; border-right: 1px solid rgba(15,23,42,.06); overflow-y: auto; padding-right: 8px;">
+                </div>
+                <div class="city-list" style="flex: 1; overflow-y: auto; padding-left: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: start;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 32px;">
+        <h4 style="margin: 0 0 16px 0; font-size:14px; color:#1e293b;">简历数匹配规则</h4>
+        <div style="display:flex; align-items:flex-end; gap: 16px;">
+          <div class="list-item" style="border:none; padding:0; flex:1; max-width:200px;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">目标简历数</div>
+            <input class="input" type="number" min="1" data-position-edit-target-count placeholder="请输入目标简历数" style="width:100%; height:40px; border-radius:8px;" />
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 32px;">
+        <h4 style="margin: 0 0 16px 0; font-size:14px; color:#1e293b;">岗位要求标签</h4>
+        <div class="grid-2" style="gap: 24px;">
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">年龄规则</div>
+            <select class="input" data-position-edit-req-age style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="20-30岁">20-30岁</option>
+              <option value="30-40岁">30-40岁</option>
+            </select>
+          </div>
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">性别规则</div>
+            <select class="input" data-position-edit-req-gender style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="男">男</option>
+              <option value="女">女</option>
+            </select>
+          </div>
+          
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">学历要求</div>
+            <select class="input" data-position-edit-req-edu style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="本科">本科</option>
+              <option value="大专">大专</option>
+              <option value="硕士">硕士</option>
+            </select>
+          </div>
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">工作经验</div>
+            <select class="input" data-position-edit-req-exp style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="应届生">应届生</option>
+              <option value="1-3年">1-3年</option>
+              <option value="3-5年">3-5年</option>
+              <option value="5年以上">5年以上</option>
+            </select>
+          </div>
+
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">薪酬规则</div>
+            <select class="input" data-position-edit-req-salary style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="面议">面议</option>
+            </select>
+          </div>
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">求职状态</div>
+            <select class="input" data-position-edit-req-status style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="离职">离职</option>
+              <option value="在职">在职</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:16px 0 0 0; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:12px; margin-top: 32px;">
+        <button class="btn" data-action="close-position-edit-modal" style="border-radius:20px; padding:0 24px; height:36px; border:1px solid #cbd5e1; color:#64748b; background:#fff; font-size:14px; cursor:pointer;">取消</button>
+        <button class="btn primary" data-action="confirm-position-edit" style="border-radius:20px; padding:0 24px; height:36px; background:#8b5cf6; border:none; font-size:14px; color:#fff; cursor:pointer;">确认保存</button>
       </div>
     </div>
   </div>
 
-  <!-- 新建岗位弹窗 -->
   <div class="modal" data-position-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px; overflow-y:auto;">
-    <div class="panel" style="max-width:760px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto;">
-      <div class="section-head">
-        <div><h3>新建岗位</h3><div class="section-sub">选择所属项目并填写岗位需求。</div></div>
-        <div class="hero-actions" style="margin-top:0"><button class="btn" data-action="close-position-modal">取消</button><button class="btn primary" data-action="confirm-position-create">确认保存</button></div>
+    <div class="panel" style="max-width:760px; margin:0 auto; background:#fff; max-height:calc(100vh - 48px); overflow:auto; padding:24px;">
+      <div class="section-head" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 24px;">
+        <div><h3 style="margin:0;">创建岗位</h3></div>
+        <div class="hero-actions" style="margin-top:0"><button class="btn" style="border:none; background:transparent; font-size:18px; color:#94a3b8; padding:4px;" data-action="close-position-modal">×</button></div>
       </div>
-      <div class="grid-2">
-        <div class="panel" style="box-shadow:none; border:1px solid rgba(15,23,42,.08);">
-          <div class="list">
-            <div class="list-item">
-              <div class="item-top"><div><div class="item-title">所属项目</div><div class="item-meta">岗位必须挂载到项目</div></div></div>
-              <select class="input" data-position-project></select>
-              <div class="item-meta" data-position-company-display>所属公司：请选择项目后自动显示</div>
-            </div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">岗位名称</div><div class="item-meta">招聘职位</div></div></div><input class="input" data-position-name /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">紧急程度</div><div class="item-meta">高 / 中 / 低</div></div></div><select class="input" data-position-urgency><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div><div class="item-meta">岗位需求数量</div></div></div><input class="input" type="number" min="1" data-position-count value="1" /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">最低薪资</div><div class="item-meta">月薪下限</div></div></div><input class="input" type="number" min="0" data-position-salary-min /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">最高薪资</div><div class="item-meta">月薪上限</div></div></div><input class="input" type="number" min="0" data-position-salary-max /></div>
-            <div class="list-item"><div class="item-top"><div><div class="item-title">工作地点</div><div class="item-meta">岗位地点</div></div></div><input class="input" data-position-location /></div>
+      
+      <div class="list-item" style="border:none; padding:0; margin-bottom: 24px;">
+        <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">关键词搜索 <span style="color:#94a3b8; font-size: 12px; font-weight: normal; margin-left: 8px;">(用于简历池自动精准匹配)</span></div>
+        <input class="input" data-position-keyword placeholder="请输入岗位相关的关键词，如：Java, Spring Boot, MySQL" style="width:100%; height:40px; border-radius:8px;" />
+      </div>
+
+      <div class="grid-2" style="gap: 24px;">
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">所属项目 <span style="color:#ef4444">*</span></div>
+          <select class="input" data-position-project style="width:100%; height:40px; border-radius:8px;"></select>
+        </div>
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">岗位名称 <span style="color:#ef4444">*</span></div>
+          <input class="input" data-position-name placeholder="请输入岗位名称" style="width:100%; height:40px; border-radius:8px;" />
+        </div>
+        
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">紧急程度</div>
+          <select class="input" data-position-urgency style="width:100%; height:40px; border-radius:8px;">
+            <option value="紧急">紧急</option>
+            <option value="正常">正常</option>
+          </select>
+        </div>
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">招聘人数</div>
+          <input class="input" type="number" min="1" data-position-count placeholder="请输入招聘人数" style="width:100%; height:40px; border-radius:8px;" />
+        </div>
+
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">薪资范围 (K)</div>
+          <div style="display:flex; gap: 8px; align-items:center;">
+            <input class="input" type="number" data-position-salary-min placeholder="下限" style="width:100%; height:40px; border-radius:8px;" />
+            <span style="color:#94a3b8;">-</span>
+            <input class="input" type="number" data-position-salary-max placeholder="上限" style="width:100%; height:40px; border-radius:8px;" />
           </div>
         </div>
+        <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">工作地点</div>
+          <div class="city-selector-wrapper" style="position: relative; width: 100%;">
+            <input class="input" data-position-location placeholder="请输入工作地点" autocomplete="off" style="width:100%; height:40px; border-radius:8px;" />
+            <div class="city-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1000; padding: 12px;">
+              <div class="city-search-results" style="display: none; max-height: 240px; overflow-y: auto;">
+              </div>
+              <div class="city-cascade-view" style="display: flex; height: 240px;">
+                <div class="province-list" style="width: 130px; border-right: 1px solid rgba(15,23,42,.06); overflow-y: auto; padding-right: 8px;">
+                </div>
+                <div class="city-list" style="flex: 1; overflow-y: auto; padding-left: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: start;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 32px;">
+        <h4 style="margin: 0 0 16px 0; font-size:14px; color:#1e293b;">简历数匹配规则</h4>
+        <div style="display:flex; align-items:flex-end; gap: 16px;">
+          <div class="list-item" style="border:none; padding:0; flex:1; max-width:200px;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">目标简历数</div>
+            <input class="input" type="number" min="1" data-position-target-count placeholder="请输入目标简历数" style="width:100%; height:40px; border-radius:8px;" value="10" />
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 32px;">
+        <h4 style="margin: 0 0 16px 0; font-size:14px; color:#1e293b;">岗位要求标签</h4>
+        <div class="grid-2" style="gap: 24px;">
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">年龄规则</div>
+            <select class="input" data-position-req-age style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="20-30岁">20-30岁</option>
+              <option value="30-40岁">30-40岁</option>
+            </select>
+          </div>
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">性别规则</div>
+            <select class="input" data-position-req-gender style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="男">男</option>
+              <option value="女">女</option>
+            </select>
+          </div>
+          
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">学历要求</div>
+            <select class="input" data-position-req-edu style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="本科" selected>本科</option>
+              <option value="大专">大专</option>
+              <option value="硕士">硕士</option>
+            </select>
+          </div>
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">工作经验</div>
+            <select class="input" data-position-req-exp style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="应届生" selected>应届生</option>
+              <option value="1-3年">1-3年</option>
+              <option value="3-5年">3-5年</option>
+              <option value="5年以上">5年以上</option>
+            </select>
+          </div>
+
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">薪酬规则</div>
+            <select class="input" data-position-req-salary style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="面议">面议</option>
+            </select>
+          </div>
+          <div class="list-item" style="border:none; padding:0;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">求职状态</div>
+            <select class="input" data-position-req-status style="width:100%; height:40px; border-radius:8px;">
+              <option value="不限">不限</option>
+              <option value="离职">离职</option>
+              <option value="在职">在职</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:16px 0 0 0; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:12px; margin-top: 32px;">
+        <button class="btn" data-action="close-position-modal" style="border-radius:20px; padding:0 24px; height:36px; border:1px solid #cbd5e1; color:#64748b; background:#fff; font-size:14px; cursor:pointer;">取消</button>
+        <button class="btn primary" data-action="confirm-position-create" style="border-radius:20px; padding:0 24px; height:36px; background:#8b5cf6; border:none; font-size:14px; color:#fff; cursor:pointer;">创建</button>
       </div>
     </div>
   </div>

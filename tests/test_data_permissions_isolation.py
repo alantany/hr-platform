@@ -73,8 +73,8 @@ def test_data_permission_sharing_and_isolation():
         assert resp_peer.json()["email"] == "candidateb@example.com"
 
         # 5. 顾问 A 和 B 的推荐
-        rec_a = Recommendation(candidate_id=cand_a.id, position_id=pos.id, status="待推荐", recommender=user_a.username, recommender_user_id=user_a.id)
-        rec_b = Recommendation(candidate_id=cand_b.id, position_id=pos.id, status="待推荐", recommender=user_b.username, recommender_user_id=user_b.id)
+        rec_a = Recommendation(candidate_id=cand_a.id, position_id=pos.id, status="已推荐", recommender=user_a.username, recommender_user_id=user_a.id)
+        rec_b = Recommendation(candidate_id=cand_b.id, position_id=pos.id, status="已推荐", recommender=user_b.username, recommender_user_id=user_b.id)
         db.add_all([rec_a, rec_b])
         db.commit()
         db.refresh(rec_a)

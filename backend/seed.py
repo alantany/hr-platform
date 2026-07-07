@@ -57,6 +57,9 @@ DEFAULT_TAG_FIELD_CONFIGS = [
     {"object_type": "candidate", "field_key": "onboard_cycle", "field_label": "到岗周期", "style_key": "muted", "sort_order": 50, "enabled": True},
     {"object_type": "candidate", "field_key": "gender", "field_label": "性别", "style_key": "neutral", "sort_order": 60, "enabled": False},
     {"object_type": "candidate", "field_key": "city", "field_label": "所在城市", "style_key": "subtle-outline", "sort_order": 70, "enabled": False},
+    {"object_type": "candidate", "field_key": "status", "field_label": "锁定状态", "style_key": "primary-soft", "sort_order": 80, "enabled": True},
+    {"object_type": "candidate", "field_key": "delivery_status", "field_label": "流程状态", "style_key": "subtle-outline", "sort_order": 90, "enabled": True},
+    {"object_type": "candidate", "field_key": "candidate_warranty_status", "field_label": "质保状态", "style_key": "muted", "sort_order": 100, "enabled": True},
     {"object_type": "position", "field_key": "urgency", "field_label": "紧急程度", "style_key": "primary-soft", "sort_order": 10, "enabled": True},
     {"object_type": "position", "field_key": "location", "field_label": "工作地点", "style_key": "subtle-outline", "sort_order": 20, "enabled": True},
     {"object_type": "position", "field_key": "education_requirement", "field_label": "学历要求", "style_key": "muted", "sort_order": 30, "enabled": True},
@@ -149,22 +152,14 @@ def seed() -> None:
         for config in DEFAULT_TAG_FIELD_CONFIGS:
             payload = build_tag_config_payload(config)
             existing = existing_tag_configs.get((payload["object_type"], payload["field_key"]))
-            if existing:
-                existing.category = payload["category"]
-                existing.name = payload["name"]
-                existing.color = payload["color"]
-                existing.field_label = payload["field_label"]
-                existing.style_key = payload["style_key"]
-                existing.sort_order = payload["sort_order"]
-                existing.enabled = payload["enabled"]
-            else:
+            if not existing:
                 db.add(TagDictionary(**payload))
         warranty_defaults = {
             "简历": (3, 10, True),
             "客户": (6, 7, True),
             "项目": (6, 7, True),
             "岗位": (3, 5, True),
-            "入职质保期": (2, 5, True),
+            "入职质保期": (6, 5, True),
         }
         existing_scopes = {item.scope for item in db.query(WarrantyRule).all()}
         for scope, (months, remind_days, auto_expire) in warranty_defaults.items():

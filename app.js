@@ -7,7 +7,6 @@ const navGroups = [
       { href: "import.html", label: "简历导入", badge: "导入", icon: "file" },
       { href: "customers.html", label: "客户管理", badge: "客户", icon: "building" },
       { href: "projects.html", label: "项目管理", badge: "项目", icon: "inbox" },
-      { href: "positions.html", label: "岗位管理", badge: "岗位", icon: "settings" },
       { href: "evaluations.html", label: "评价体系", badge: "评价", icon: "star" },
       { href: "statistics.html", label: "统计管理", badge: "报表", icon: "chart" },
     ],
@@ -56,7 +55,7 @@ const pages = {
   candidates: {
     crumbs: "求职者 / 数据池",
     title: "求职者数据池",
-    desc: "高密度候选人检索工作台，支持搜索、筛选、推荐和导出；推荐成功后自动锁定，失败终态自动回收。",
+    desc: "高密度候选人检索工作台，支持搜索、筛选、推荐和导出；存在岗位推荐关系期间保持锁定。",
   },
   import: {
     crumbs: "求职者 / 简历导入",
@@ -271,7 +270,7 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagC
           <div style="color:#475569;font-size:13px;text-align:center;">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(position.location || '')}">${escapeHtml(position.location || '--')}</div>
           <div style="display:flex;gap:8px;font-size:12px;font-weight:600;white-space:nowrap;"><span>候选人 <strong style="color:#2563EB;">${stats.total}</strong></span><span>选中 <strong style="color:#15803D;">${stats.selected}</strong></span><span>未选 <strong>${stats.unselected}</strong></span><span>淘汰 <strong style="color:#ef4444;">${stats.rejected}</strong></span></div>
-          <div class="table-actions" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;"><button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button><button class="btn-sm" data-action="noop" data-title="分配权限">分配权限</button><button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button></div>
+          <div class="table-actions" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;"><button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button><button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button></div>
         </div>
       </div>`;
   }).join('');
@@ -494,7 +493,7 @@ async function renderPositionListFromState() {
     }
     const bucket = statsMap.get(pId);
     bucket.total++;
-    if (['合适', '已录用', '已入职', '面试中'].includes(r.status)) {
+    if (['合适', '已入职', '面试中'].includes(r.status)) {
       bucket.selected++;
     } else if (['不合适', '淘汰', '放弃'].includes(r.status)) {
       bucket.rejected++;
@@ -1706,7 +1705,7 @@ async function handleGlobalButton(button) {
               const compName = comp?.name || '未知客户';
               const projName = proj?.name || '未知项目';
               const posName = pos?.name || '未知岗位';
-              const statusText = r.status || '待推荐';
+              const statusText = r.status || '已推荐';
               const feedbackText = r.feedback || r.customer_comment || '暂无评语';
               return `
                 <div class="list-item">
@@ -1853,23 +1852,26 @@ async function handleGlobalButton(button) {
       }
     })();
 
-    // 渲染薪资/福利/入职条件跟踪表
+    // 渲染面试评价记录 (previously salary records)
     const openAddSalaryBtn = document.querySelector('[data-candidate-detail-modal] [data-action="open-add-salary-modal"]');
     if (openAddSalaryBtn) {
       openAddSalaryBtn.dataset.id = resolvedId;
     }
     const salaryTbody = document.getElementById('candidate-detail-salary-tbody');
     if (salaryTbody) {
-      salaryTbody.innerHTML = '<tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="10">加载中...</td></tr>';
+      salaryTbody.innerHTML = '<tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="8">加载中...</td></tr>';
     }
     (async () => {
       try {
         const resolvedIdNum = item?.id != null ? Number(item.id) : null;
         if (resolvedIdNum) {
-          const records = await window.hrApi.salaryRecords({ candidate_id: resolvedIdNum });
+          const [records, positions] = await Promise.all([
+            window.hrApi.evaluations({ candidate_id: resolvedIdNum }),
+            window.hrApi.positions()
+          ]);
           if (salaryTbody) {
             if (records.length === 0) {
-              salaryTbody.innerHTML = '<tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="10">暂无薪资/福利/入职条件跟踪记录</td></tr>';
+              salaryTbody.innerHTML = '<tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="8">暂无面试评价记录</td></tr>';
             } else {
               salaryTbody.innerHTML = records.map(rec => {
                 const formatTime = (dtStr) => {
@@ -1884,34 +1886,24 @@ async function handleGlobalButton(button) {
                   }
                 };
 
-                // 操作按钮：编辑（铅笔）+ 删除（垃圾桶）
-                const editBtn = `<button class="btn-sm" data-action="edit-salary-record" data-id="${rec.id}" data-candidate-id="${resolvedId}" title="编辑记录" style="background-color:#3b82f6; border-color:#3b82f6; color:#fff; border-radius:50%; width:24px; height:24px; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:none; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>`;
-                const deleteBtn = `<button class="btn-sm" data-action="delete-salary-record" data-id="${rec.id}" data-candidate-id="${resolvedId}" title="删除记录" style="background-color:#ef4444; border-color:#ef4444; color:#fff; border-radius:50%; width:24px; height:24px; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:none; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>`;
+                const editBtn = `<button class="btn-sm" data-action="edit-salary-record" data-id="${rec.id}" data-candidate-id="${resolvedId}" title="编辑评价" style="background-color:#3b82f6; border-color:#3b82f6; color:#fff; border-radius:50%; width:24px; height:24px; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:none; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>`;
+                const deleteBtn = `<button class="btn-sm" data-action="delete-salary-record" data-id="${rec.id}" data-candidate-id="${resolvedId}" title="删除评价" style="background-color:#ef4444; border-color:#ef4444; color:#fff; border-radius:50%; width:24px; height:24px; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:none; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>`;
                 const actionHtml = `<div style="display:flex; gap:6px; align-items:center; justify-content:flex-start;">${editBtn}${deleteBtn}</div>`;
 
-                // 是否接受状态徽标
-                let acceptHtml = '-';
-                if (rec.candidate_accepted === '接受') {
-                  acceptHtml = `<span style="background-color:#e6fffa; color:#047481; border:1px solid #b2f5ea; border-radius:4px; padding:2px 8px; font-size:11px; font-weight:600; white-space:nowrap;">接受</span>`;
-                } else if (rec.candidate_accepted === '不接受') {
-                  acceptHtml = `<span style="background-color:#fff5f5; color:#c53030; border:1px solid #feb2b2; border-radius:4px; padding:2px 8px; font-size:11px; font-weight:600; white-space:nowrap;">不接受</span>`;
-                }
-
-                // 关联面试轮次徽标
-                const roundName = rec.interview_round || '-';
+                const position = positions.find(p => p.id === rec.position_id);
+                const roundName = rec.round_name || '-';
                 const roundHtml = roundName !== '-' ? `<span style="background-color:#EFF6FF; color:#2563EB; border-radius:12px; padding:2px 8px; font-size:11px; font-weight:600; white-space:nowrap;">${roundName}</span>` : '-';
+                const gradeClass = rec.grade === '优秀' ? 'success' : rec.grade === '良好' ? 'primary' : rec.grade === '一般' ? 'warning' : 'neutral';
 
                 return `
                   <tr style="border-bottom:1px solid #f1f5f9; hover:background-color:#fafafa;">
                     <td style="padding:10px 8px; text-align:center;">${roundHtml}</td>
-                    <td style="padding:10px 8px; white-space:nowrap;">${rec.position_name || '-'}</td>
-                    <td style="padding:10px 8px; white-space:nowrap;">${rec.company_name || '-'}</td>
-                    <td style="padding:10px 8px; color:#2563EB; font-weight:600;">${rec.agreed_salary || '-'}</td>
-                    <td style="padding:10px 8px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${rec.welfare_desc || ''}">${rec.welfare_desc || '-'}</td>
-                    <td style="padding:10px 8px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${rec.onboard_cond || ''}">${rec.onboard_cond || '-'}</td>
-                    <td style="padding:10px 8px; text-align:center;">${acceptHtml}</td>
+                    <td style="padding:10px 8px; white-space:nowrap;">${position?.name || `岗位 ${rec.position_id || '--'}`}</td>
+                    <td style="padding:10px 8px;"><span class="chip ${gradeClass}" style="padding:2px 8px; font-weight:600; font-size:11px;">${rec.grade || '-'}</span></td>
+                    <td style="padding:10px 8px; color:#0f172a; font-weight:600;">${rec.score || 0} 分</td>
+                    <td style="padding:10px 8px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${rec.content || ''}">${rec.content || '-'}</td>
+                    <td style="padding:10px 8px;">${rec.evaluator || '-'}</td>
                     <td style="padding:10px 8px; white-space:nowrap;">${formatTime(rec.created_at)}</td>
-                    <td style="padding:10px 8px;">${rec.operator || '-'}</td>
                     <td style="padding:10px 8px;">${actionHtml}</td>
                   </tr>
                 `;
@@ -1920,7 +1912,7 @@ async function handleGlobalButton(button) {
           }
         }
       } catch (err) {
-        console.warn("Failed to load salary tracking records:", err);
+        console.warn("Failed to load evaluation tracking records:", err);
       }
     })();
 
@@ -1939,7 +1931,7 @@ async function handleGlobalButton(button) {
             const salaryComp = latestSalary?.company_name || '--';
 
             // 2. 异步获取质保天数
-            let warrantyDays = 60; // 默认 60 天
+            let warrantyDays = 180; // 默认 6 个月
             try {
               const rules = await window.hrApi.warrantyRules();
               const rule = rules.find(r => r.scope === '入职质保期');
@@ -2418,7 +2410,7 @@ async function handleGlobalButton(button) {
       record_keys: recordKeys,
       position_id: Number(positionId),
       recommender: 'admin',
-      status: '待推荐',
+      status: '已推荐',
       feedback: feedback
     });
     const successfulKeys = new Set(result.items.filter((item) => item.result === 'success').map((item) => item.record_key));
@@ -2762,7 +2754,14 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
 }
 
   if (button.dataset.action === "open-add-salary-modal") {
-    const candidateId = String(button.dataset.id || button.dataset.candidateId || document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId || '');
+    const candidateId = String(
+      button.dataset.id ||
+      button.dataset.candidateId ||
+      document.body.dataset.candidateId ||
+      document.querySelector('[data-candidate-detail-modal]')?.dataset.candidateId ||
+      document.querySelector('[data-candidate-edit-modal]')?.dataset.candidateId ||
+      ''
+    );
     if (!candidateId || candidateId === '0') throw new Error('请先打开候选人详情');
 
     const modal = document.querySelector('[data-salary-tracking-modal]');
@@ -2773,29 +2772,39 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     delete modal.dataset.recordId;
 
     const titleEl = document.getElementById('salary-modal-title');
-    if (titleEl) titleEl.innerHTML = '💰 添加薪资/福利/入职条件记录';
+    if (titleEl) titleEl.innerHTML = '📝 添加面试评价';
 
     const roundEl = document.getElementById('salary-interview-round');
-    const agreedEl = document.getElementById('salary-agreed-salary');
-    const welfareEl = document.getElementById('salary-welfare-desc');
-    const onboardEl = document.getElementById('salary-onboard-cond');
-    const acceptEl = document.getElementById('salary-candidate-accepted');
     const positionSelect = document.getElementById('salary-position-id');
+    const gradeSelect = document.getElementById('salary-evaluation-grade');
+    const scoreInput = document.getElementById('salary-evaluation-score');
+    const contentTextarea = document.getElementById('salary-evaluation-content');
 
-    await populateSalaryPositionOptions();
-    if (positionSelect) positionSelect.value = '';
-    if (agreedEl) agreedEl.value = '';
-    if (welfareEl) welfareEl.value = '';
-    if (onboardEl) onboardEl.value = '';
-    if (acceptEl) acceptEl.value = '接受';
+    let prefilledPositionId = '';
+    let prefilledRound = '';
 
-    if (roundEl) {
-      roundEl.innerHTML = '';
-      roundEl.disabled = false;
+    // Get current position from query param if present
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlPositionId = urlParams.get('position_id');
+    if (urlPositionId) {
+      prefilledPositionId = urlPositionId;
+    }
 
-      try {
-        const events = await window.hrApi.candidateTrackingEvents({ candidate_id: Number(candidateId) });
-        const rounds = [...new Set(events.map(evt => evt.interview_round).filter(Boolean))];
+    try {
+      const events = await window.hrApi.candidateTrackingEvents({ candidate_id: Number(candidateId) });
+      const rounds = [...new Set(events.map(evt => evt.interview_round).filter(Boolean))];
+      
+      const latestEvent = [...events].reverse().find(evt => evt.position_id && evt.interview_round);
+      if (latestEvent) {
+        if (!prefilledPositionId) {
+          prefilledPositionId = String(latestEvent.position_id);
+        }
+        prefilledRound = latestEvent.interview_round;
+      }
+
+      if (roundEl) {
+        roundEl.innerHTML = '';
+        roundEl.disabled = false;
         if (rounds.length > 0) {
           rounds.forEach(r => {
             const opt = document.createElement('option');
@@ -2811,8 +2820,15 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
             roundEl.appendChild(opt);
           });
         }
-      } catch (err) {
-        console.warn("Failed to fetch candidate tracking events for round selection:", err);
+        if (prefilledRound) {
+          roundEl.value = prefilledRound;
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch candidate tracking events for round selection:", err);
+      if (roundEl) {
+        roundEl.innerHTML = '';
+        roundEl.disabled = false;
         ['第1轮', '第2轮', '第3轮', '第4轮'].forEach(r => {
           const opt = document.createElement('option');
           opt.value = r;
@@ -2820,6 +2836,19 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
           roundEl.appendChild(opt);
         });
       }
+    }
+
+    await populateSalaryPositionOptions({ positionId: prefilledPositionId });
+    if (gradeSelect) gradeSelect.value = '良好';
+    if (scoreInput) scoreInput.value = '4';
+    if (contentTextarea) contentTextarea.value = '';
+
+    // Auto update score when grade changes inside this modal too
+    if (gradeSelect && scoreInput) {
+      gradeSelect.onchange = () => {
+        const score = Number(gradeSelect.selectedOptions[0]?.dataset.score || 0);
+        if (score) scoreInput.value = String(score);
+      };
     }
 
     modal.style.display = 'block';
@@ -2842,44 +2871,43 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
 
     const roundEl = document.getElementById('salary-interview-round');
     const positionSelect = document.getElementById('salary-position-id');
-    const agreedEl = document.getElementById('salary-agreed-salary');
-    const welfareEl = document.getElementById('salary-welfare-desc');
-    const onboardEl = document.getElementById('salary-onboard-cond');
-    const acceptEl = document.getElementById('salary-candidate-accepted');
+    const gradeSelect = document.getElementById('salary-evaluation-grade');
+    const scoreInput = document.getElementById('salary-evaluation-score');
+    const contentTextarea = document.getElementById('salary-evaluation-content');
 
     const user = window.currentUser || await window.hrApi.me().catch(() => null);
     const operatorName = user?.full_name || user?.username || '管理员';
 
     const payload = {
       candidate_id: Number(candidateId),
-      position_id: Number(positionSelect?.value || 0) || null,
-      interview_round: roundEl?.value || '',
-      agreed_salary: agreedEl?.value?.trim() || '',
-      welfare_desc: welfareEl?.value?.trim() || '',
-      onboard_cond: onboardEl?.value?.trim() || '',
-      candidate_accepted: acceptEl?.value || '接受',
-      operator: operatorName
+      position_id: Number(positionSelect?.value || 0) || 1,
+      evaluator: operatorName,
+      round_name: roundEl?.value || '第1轮',
+      grade: gradeSelect?.value || '良好',
+      score: Number(scoreInput?.value || 4),
+      content: contentTextarea?.value?.trim() || ''
     };
 
-    if (!payload.interview_round) throw new Error('请选择或指定关联面试轮次');
+    if (!payload.round_name) throw new Error('请选择或指定关联面试轮次');
     if (!payload.position_id) throw new Error('请选择关联岗位');
 
     if (mode === 'add') {
-      await window.hrApi.createSalaryRecord(payload);
-      showToast('添加薪资记录成功');
+      await window.hrApi.createEvaluation(payload);
+      showToast('添加面试评价成功');
     } else if (mode === 'edit') {
       if (!recordId) throw new Error('找不到记录 ID，无法更新');
-      await window.hrApi.updateSalaryRecord(Number(recordId), payload);
-      showToast('更新薪资记录成功');
+      await window.hrApi.updateEvaluation(Number(recordId), payload);
+      showToast('更新面试评价成功');
     }
 
     modal.style.display = 'none';
 
     const detailModal = document.querySelector('[data-candidate-detail-modal]');
-    if (detailModal && detailModal.dataset.candidateId === candidateId) {
+    const activeCandidateId = candidateId || document.body.dataset.candidateId || detailModal?.dataset.candidateId;
+    if (detailModal && activeCandidateId) {
       const fakeBtn = document.createElement("button");
       fakeBtn.dataset.action = "view-detail";
-      fakeBtn.dataset.id = candidateId;
+      fakeBtn.dataset.id = String(activeCandidateId);
       handleGlobalButton(fakeBtn).catch(err => console.warn(err));
     }
     return;
@@ -2897,43 +2925,42 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     modal.dataset.recordId = recordId;
 
     const titleEl = document.getElementById('salary-modal-title');
-    if (titleEl) titleEl.innerHTML = '📝 编辑薪资/福利/入职条件记录';
+    if (titleEl) titleEl.innerHTML = '📝 编辑面试评价';
 
     const roundEl = document.getElementById('salary-interview-round');
-    const agreedEl = document.getElementById('salary-agreed-salary');
-    const welfareEl = document.getElementById('salary-welfare-desc');
-    const onboardEl = document.getElementById('salary-onboard-cond');
-    const acceptEl = document.getElementById('salary-candidate-accepted');
     const positionSelect = document.getElementById('salary-position-id');
+    const gradeSelect = document.getElementById('salary-evaluation-grade');
+    const scoreInput = document.getElementById('salary-evaluation-score');
+    const contentTextarea = document.getElementById('salary-evaluation-content');
 
-    const list = await window.hrApi.salaryRecords({ candidate_id: Number(candidateId) });
+    const list = await window.hrApi.evaluations({ candidate_id: Number(candidateId) });
     const rec = list.find(i => String(i.id) === String(recordId));
-    if (!rec) throw new Error('未找到该薪资记录');
+    if (!rec) throw new Error('未找到该面试评价');
 
     await populateSalaryPositionOptions({
-      positionId: rec.position_id || '',
-      positionName: rec.position_name || '',
-      companyName: rec.company_name || '',
+      positionId: rec.position_id || ''
     });
     if (positionSelect && rec.position_id) positionSelect.value = String(rec.position_id);
-    if (agreedEl) agreedEl.value = rec.agreed_salary || '';
-    if (welfareEl) welfareEl.value = rec.welfare_desc || '';
-    if (onboardEl) onboardEl.value = rec.onboard_cond || '';
-    if (acceptEl) acceptEl.value = rec.candidate_accepted || '接受';
+    if (gradeSelect) gradeSelect.value = rec.grade || '良好';
+    if (scoreInput) scoreInput.value = rec.score || 4;
+    if (contentTextarea) contentTextarea.value = rec.content || '';
+
+    // Auto update score when grade changes inside this modal too
+    if (gradeSelect && scoreInput) {
+      gradeSelect.onchange = () => {
+        const score = Number(gradeSelect.selectedOptions[0]?.dataset.score || 0);
+        if (score) scoreInput.value = String(score);
+      };
+    }
 
     if (roundEl) {
       roundEl.innerHTML = '';
       const opt = document.createElement('option');
-      opt.value = rec.interview_round || '第1轮';
-      opt.textContent = rec.interview_round || '第1轮';
+      opt.value = rec.round_name || '第1轮';
+      opt.textContent = rec.round_name || '第1轮';
       roundEl.appendChild(opt);
-      roundEl.value = rec.interview_round || '第1轮';
-
-      if (rec.interview_round) {
-        roundEl.disabled = true;
-      } else {
-        roundEl.disabled = false;
-      }
+      roundEl.value = rec.round_name || '第1轮';
+      roundEl.disabled = true;
     }
 
     modal.style.display = 'block';
@@ -2944,18 +2971,19 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const candidateId = button.dataset.candidateId;
     if (!recordId || !candidateId) throw new Error('参数缺失');
 
-    if (!confirm('您确定要删除这条薪资/福利/入职条件跟踪记录吗？')) {
+    if (!confirm('您确定要删除这条面试评价记录吗？')) {
       return;
     }
 
-    await window.hrApi.deleteSalaryRecord(Number(recordId));
-    showToast('删除薪资记录成功');
+    await window.hrApi.deleteEvaluation(Number(recordId));
+    showToast('删除面试评价成功');
 
     const detailModal = document.querySelector('[data-candidate-detail-modal]');
-    if (detailModal && detailModal.dataset.candidateId === candidateId) {
+    const activeCandidateId = candidateId || document.body.dataset.candidateId || detailModal?.dataset.candidateId;
+    if (detailModal && activeCandidateId) {
       const fakeBtn = document.createElement("button");
       fakeBtn.dataset.action = "view-detail";
-      fakeBtn.dataset.id = candidateId;
+      fakeBtn.dataset.id = String(activeCandidateId);
       handleGlobalButton(fakeBtn).catch(err => console.warn(err));
     }
     return;
@@ -3082,21 +3110,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const candidate = await window.hrApi.candidates().then(list => list.find(i => String(i.id) === candidateId));
     if (!candidate) throw new Error('未找到候选人');
     
-    let isAllowed = ['已录用', '已入职'].includes(candidate.status);
+    const emps = await window.hrApi.employmentRecords({ candidate_id: candidateId }).catch(() => []);
+    const isAllowed = emps.some(e => e.status === '已入职');
     if (!isAllowed) {
-      const emps = await window.hrApi.employmentRecords({ candidate_id: candidateId }).catch(() => []);
-      if (emps.some(e => e.status === '已入职')) {
-        isAllowed = true;
-      }
-    }
-    if (!isAllowed) {
-      const recs = await window.hrApi.recommendations({ candidate_id: candidateId }).catch(() => []);
-      if (recs.some(r => ['已录用', '已入职'].includes(r.status))) {
-        isAllowed = true;
-      }
-    }
-    if (!isAllowed) {
-      throw new Error('仅已录用/已入职候选人可添加随访记录');
+      throw new Error('仅已入职候选人可添加随访记录');
     }
     const modal = document.querySelector('[data-candidate-followup-modal]');
     const timeEl = document.querySelector('[data-candidate-followup-time]');
@@ -3124,7 +3141,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     if (!content) throw new Error('请填写随访内容');
     const record = await window.hrApi.createCandidateFollowUpRecord({
       candidate_id: candidateId,
-      status: '已录用',
+      status: '已入职',
       follow_up_time: follow_up_time ? new Date(follow_up_time).toISOString() : null,
       content,
       operator: 'admin',
@@ -3477,14 +3494,20 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const evaluation = await window.hrApi.createEvaluation({ candidate_id: candidateId, position_id: positionId, evaluator: 'admin', round_name: roundName, grade, score, content });
     const modal = document.querySelector('[data-evaluation-modal]');
     if (modal) modal.style.display = 'none';
-    const list = document.querySelector('[data-evaluation-list]');
-    if (list) {
+    if (window.renderEvaluationList && window.evaluationData) {
       const [items, candidates, positions] = await Promise.all([window.hrApi.evaluations(), window.hrApi.candidates(), window.hrApi.positions()]);
-      list.innerHTML = items.slice(0, 3).map(i => {
-        const candidate = candidates.find(c => c.id === i.candidate_id);
-        const position = positions.find(p => p.id === i.position_id);
-        return `<div class="list-item"><div class="item-top"><div><div class="item-title">${candidate?.name || `候选人 ${i.candidate_id}`}</div><div class="item-meta">${position?.name || `岗位 ${i.position_id || '--'}`} · ${i.round_name}</div></div><span class="chip success">${i.grade} · ${i.score} 分</span></div><div class="item-meta">${i.content || '无备注'}</div></div>`;
-      }).join('');
+      window.evaluationData = { ...window.evaluationData, items, candidates, positions };
+      window.renderEvaluationList();
+    } else {
+      const list = document.querySelector('[data-evaluation-list]');
+      if (list) {
+        const [items, candidates, positions] = await Promise.all([window.hrApi.evaluations(), window.hrApi.candidates(), window.hrApi.positions()]);
+        list.innerHTML = items.slice(0, 3).map(i => {
+          const candidate = candidates.find(c => c.id === i.candidate_id);
+          const position = positions.find(p => p.id === i.position_id);
+          return `<div class="list-item"><div class="item-top"><div><div class="item-title">${candidate?.name || `候选人 ${i.candidate_id}`}</div><div class="item-meta">${position?.name || `岗位 ${i.position_id || '--'}`} · ${i.round_name}</div></div><span class="chip success">${i.grade} · ${i.score} 分</span></div><div class="item-meta">${i.content || '无备注'}</div></div>`;
+        }).join('');
+      }
     }
     await window.hrApi.createNotification({
       user: 'admin',
@@ -4349,7 +4372,31 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
   }
   if (button.dataset.action === "open-position-modal") {
     const modal = document.querySelector('[data-position-modal]');
-    if (modal) modal.style.display = 'block';
+    if (modal) {
+      const reset = (selector, val) => { const el = document.querySelector(selector); if (el) el.value = val; };
+      reset('[data-position-keyword]', '');
+      reset('[data-position-project]', '');
+      reset('[data-position-name]', '');
+      reset('[data-position-urgency]', '正常');
+      reset('[data-position-count]', '1');
+      reset('[data-position-salary-min]', '');
+      reset('[data-position-salary-max]', '');
+      reset('[data-position-location]', '');
+      reset('[data-position-req-age]', '不限');
+      reset('[data-position-req-gender]', '不限');
+      reset('[data-position-req-edu]', '本科');
+      reset('[data-position-req-exp]', '应届生');
+      reset('[data-position-req-salary]', '不限');
+      reset('[data-position-req-status]', '不限');
+      reset('[data-position-target-count]', '10');
+      modal.style.display = 'block';
+      
+      // Initialize city picker if not done yet
+      if (!window.__positionCityInitialized) {
+        initCitySelector('[data-position-modal]');
+        window.__positionCityInitialized = true;
+      }
+    }
     return;
   }
   if (button.dataset.action === "close-position-modal") {
@@ -4362,10 +4409,25 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const name = document.querySelector('[data-position-name]')?.value?.trim() || '';
     const urgency = document.querySelector('[data-position-urgency]')?.value || '中';
     const hiringCount = Number(document.querySelector('[data-position-count]')?.value || 1);
+    
     const salaryMin = Number(document.querySelector('[data-position-salary-min]')?.value || 0) || null;
     const salaryMax = Number(document.querySelector('[data-position-salary-max]')?.value || 0) || null;
     const location = document.querySelector('[data-position-location]')?.value?.trim() || '';
+    const keyword = document.querySelector('[data-position-keyword]')?.value?.trim() || '';
+    
     if (!projectId || !name) throw new Error('请先选择项目并填写岗位名称');
+
+    const requirementTags = {
+      keyword,
+      age: document.querySelector('[data-position-req-age]')?.value || '不限',
+      gender: document.querySelector('[data-position-req-gender]')?.value || '不限',
+      education: document.querySelector('[data-position-req-edu]')?.value || '不限',
+      experience: document.querySelector('[data-position-req-exp]')?.value || '不限',
+      salary: document.querySelector('[data-position-req-salary]')?.value || '不限',
+      job_status: document.querySelector('[data-position-req-status]')?.value || '不限'
+    };
+    const targetResumeCount = Number(document.querySelector('[data-position-target-count]')?.value || 10);
+
     const position = await window.hrApi.createPosition({
       project_id: projectId,
       name,
@@ -4374,7 +4436,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       salary_min: salaryMin,
       salary_max: salaryMax,
       location,
+      requirement_tags: requirementTags,
+      target_resume_count: targetResumeCount
     });
+    
     const modal = document.querySelector('[data-position-modal]');
     if (modal) modal.style.display = 'none';
     if (document.querySelector('[data-company-list]')) {
@@ -4382,6 +4447,13 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     } else if (document.querySelector('[data-project-list]')) {
       await window.refreshManagementPage();
     }
+    
+    // Check if on positions.html list
+    if (document.querySelector('[data-position-list]') && window.location.pathname.includes('positions.html')) {
+      // Refresh positions list if possible, or reload
+      window.location.reload();
+    }
+
     showToast(`已创建岗位：${position.name}`);
     return;
   }
@@ -4407,9 +4479,28 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     document.querySelector('[data-position-edit-salary-min]').value = item.salary_min || '';
     document.querySelector('[data-position-edit-salary-max]').value = item.salary_max || '';
     document.querySelector('[data-position-edit-location]').value = item.location || '';
+    
+    // Fill new tags
+    const tags = item.requirement_tags || {};
+    const setVal = (selector, val) => { const el = document.querySelector(selector); if (el) el.value = val; };
+    setVal('[data-position-edit-keyword]', tags.keyword || '');
+    setVal('[data-position-edit-req-age]', tags.age || '不限');
+    setVal('[data-position-edit-req-gender]', tags.gender || '不限');
+    setVal('[data-position-edit-req-edu]', tags.education || '不限');
+    setVal('[data-position-edit-req-exp]', tags.experience || '不限');
+    setVal('[data-position-edit-req-salary]', tags.salary || '不限');
+    setVal('[data-position-edit-req-status]', tags.job_status || '不限');
+    setVal('[data-position-edit-target-count]', String(item.target_resume_count || 10));
+
     if (modal) {
       modal.style.display = 'block';
       modal.dataset.target = JSON.stringify({ id: item.id });
+      
+      // Initialize city picker for edit modal
+      if (!window.__positionEditCityInitialized) {
+        initCitySelector('[data-position-edit-modal]');
+        window.__positionEditCityInitialized = true;
+      }
     }
     return;
   }
@@ -4429,7 +4520,20 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const salaryMin = Number(document.querySelector('[data-position-edit-salary-min]')?.value || 0) || null;
     const salaryMax = Number(document.querySelector('[data-position-edit-salary-max]')?.value || 0) || null;
     const location = document.querySelector('[data-position-edit-location]')?.value?.trim() || '';
+    
     if (!projectId || !name) throw new Error('请先选择项目并填写岗位名称');
+
+    const requirementTags = {
+      keyword: document.querySelector('[data-position-edit-keyword]')?.value || '',
+      age: document.querySelector('[data-position-edit-req-age]')?.value || '不限',
+      gender: document.querySelector('[data-position-edit-req-gender]')?.value || '不限',
+      education: document.querySelector('[data-position-edit-req-edu]')?.value || '不限',
+      experience: document.querySelector('[data-position-edit-req-exp]')?.value || '不限',
+      salary: document.querySelector('[data-position-edit-req-salary]')?.value || '不限',
+      job_status: document.querySelector('[data-position-edit-req-status]')?.value || '不限'
+    };
+    const targetResumeCount = Number(document.querySelector('[data-position-edit-target-count]')?.value || 10);
+
     const position = await window.hrApi.updatePosition(target.id, {
       project_id: projectId,
       name,
@@ -4438,6 +4542,8 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       salary_min: salaryMin,
       salary_max: salaryMax,
       location,
+      requirement_tags: requirementTags,
+      target_resume_count: targetResumeCount
     });
     if (modal) modal.style.display = 'none';
     if (document.querySelector('[data-company-list]')) {
@@ -4649,7 +4755,7 @@ window.fetchCandidatePanels = async function(candidateId, container) {
           items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">未入职</div><div class="item-meta">原因：${employment[0].note || '无备注原因'}</div></div><span class="chip neutral">入职</span></div></div>`);
         }
       }
-      if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已录用</span></div></div>`);
+      if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已入职</span></div></div>`);
       lifecycleList.innerHTML = items.join('') || '<div class="list-item"><div class="item-meta">暂无面试、入职等生命周期记录</div></div>';
     }
 
@@ -5032,7 +5138,7 @@ window.updateCandidatePanels = async (candidateId) => {
   } catch (err) { console.warn(err); }
   try {
     const interview = await window.hrApi.interviewRecords({ candidate_id: candidateId });
-    const salary = await window.hrApi.salaryRecords({ candidate_id: candidateId });
+    const salary = await window.hrApi.evaluations({ candidate_id: candidateId });
     const employment = await window.hrApi.employmentRecords({ candidate_id: candidateId });
     const followUps = await window.hrApi.candidateFollowUpRecords({ candidate_id: candidateId });
     const detailModal = document.querySelector('[data-candidate-detail-modal]');
@@ -5040,9 +5146,9 @@ window.updateCandidatePanels = async (candidateId) => {
     if (lifecycle) {
       const items = [];
       if (interview[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${interview[0].round_name}</div><div class="item-meta">${interview[0].result} · ${interview[0].interviewer}</div></div><span class="chip success">面试</span></div></div>`);
-      if (salary[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">薪资</div><div class="item-meta">${salary[0].expected_salary} / ${salary[0].offered_salary}</div></div><span class="chip warning">${salary[0].service_status}</span></div></div>`);
+      if (salary[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">评价</div><div class="item-meta">${salary[0].grade} · ${salary[0].score} 分</div></div><span class="chip warning">${salary[0].round_name}</span></div></div>`);
       if (employment[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${employment[0].company_name}</div><div class="item-meta">${employment[0].position_name} · ${employment[0].status}</div></div><span class="chip neutral">入职</span></div></div>`);
-      if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已录用</span></div></div>`);
+      if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已入职</span></div></div>`);
       lifecycle.innerHTML = items.join('') || '<div class="list-item"><div class="item-meta">暂无面试、入职等记录</div></div>';
     }
     const followupBlock = document.querySelector('[data-followup-block]');
@@ -5060,7 +5166,7 @@ window.updateCandidatePanels = async (candidateId) => {
       `).join('') || '<div class="list-item"><div class="item-meta">暂无随访记录</div></div>';
     }
     
-    // 渲染薪资跟踪表
+    // 渲染面试评价记录
     const salaryTbody = document.getElementById('candidate-detail-salary-tbody');
     if (salaryTbody) {
       const [positions] = await Promise.all([window.hrApi.positions()]);
@@ -5068,23 +5174,36 @@ window.updateCandidatePanels = async (candidateId) => {
       salaryTbody.innerHTML = salary.map((e) => {
         const pos = posMap.get(e.position_id);
         const posName = pos?.name || '未知岗位';
+        const formatTime = (dtStr) => {
+          if (!dtStr) return '--';
+          try {
+            const d = new Date(dtStr);
+            if (isNaN(d.getTime())) return dtStr;
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          } catch (err) {
+            return dtStr;
+          }
+        };
+
+        const editBtn = `<button class="btn-sm" data-action="edit-salary-record" data-id="${e.id}" data-candidate-id="${candidateId}" title="编辑评价" style="background-color:#3b82f6; border-color:#3b82f6; color:#fff; border-radius:50%; width:24px; height:24px; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:none; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>`;
+        const deleteBtn = `<button class="btn-sm" data-action="delete-salary-record" data-id="${e.id}" data-candidate-id="${candidateId}" title="删除评价" style="background-color:#ef4444; border-color:#ef4444; color:#fff; border-radius:50%; width:24px; height:24px; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:none; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>`;
+        const actionHtml = `<div style="display:flex; gap:6px; align-items:center; justify-content:flex-start;">${editBtn}${deleteBtn}</div>`;
+        const gradeClass = e.grade === '优秀' ? 'success' : e.grade === '良好' ? 'primary' : e.grade === '一般' ? 'warning' : 'neutral';
+
         return `
           <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:10px 8px; text-align:center; font-weight:600;">${e.interview_round || '--'}</td>
+            <td style="padding:10px 8px; text-align:center; font-weight:600;"><span style="background-color:#EFF6FF; color:#2563EB; border-radius:12px; padding:2px 8px; font-size:11px; font-weight:600; white-space:nowrap;">${e.round_name || '--'}</span></td>
             <td style="padding:10px 8px;">${posName}</td>
-            <td style="padding:10px 8px;">${e.company_name || '--'}</td>
-            <td style="padding:10px 8px; font-weight:600; color:#b45309;">${e.expected_salary || '--'}</td>
-            <td style="padding:10px 8px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${e.welfare_desc || ''}">${e.welfare_desc || '--'}</td>
-            <td style="padding:10px 8px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${e.onboard_cond || ''}">${e.onboard_cond || '--'}</td>
-            <td style="padding:10px 8px; text-align:center;"><span class="chip ${e.candidate_accepted === '接受' ? 'success' : 'danger'}">${e.candidate_accepted || '--'}</span></td>
-            <td style="padding:10px 8px; font-size:11px; color:#64748b;">${e.created_at || '--'}</td>
-            <td style="padding:10px 8px;">${e.actor || '--'}</td>
-            <td style="padding:10px 8px;">
-              <button class="btn-sm" style="color:#ef4444; border-color:#fecaca;" onclick="window.deleteSalaryRecord(${e.id}, ${candidateId})">删除</button>
-            </td>
+            <td style="padding:10px 8px;"><span class="chip ${gradeClass}" style="padding:2px 8px; font-weight:600; font-size:11px;">${e.grade || '--'}</span></td>
+            <td style="padding:10px 8px; font-weight:600; color:#0f172a;">${e.score || 0} 分</td>
+            <td style="padding:10px 8px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${e.content || ''}">${e.content || '--'}</td>
+            <td style="padding:10px 8px;">${e.evaluator || '--'}</td>
+            <td style="padding:10px 8px; font-size:11px; color:#64748b;">${formatTime(e.created_at)}</td>
+            <td style="padding:10px 8px;">${actionHtml}</td>
           </tr>
         `;
-      }).join('') || '<tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="10">暂无薪资/福利/入职条件跟踪记录</td></tr>';
+      }).join('') || '<tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="8">暂无面试评价记录</td></tr>';
     }
 
     // 渲染备注信息
@@ -5122,7 +5241,7 @@ window.updateCandidatePanels = async (candidateId) => {
           document.getElementById('employment-display-onboard-date').textContent = emp.onboard_date?.slice(0, 10) || '--';
           document.getElementById('employment-display-position').textContent = emp.position_name || '--';
           document.getElementById('employment-display-company').textContent = emp.company_name || '--';
-          document.getElementById('employment-display-warranty').textContent = emp.warranty_status || '质保中';
+          document.getElementById('employment-display-warranty').textContent = emp.warranty_status || '质保未开始';
           
           if (toggleBall && toggleLabel) {
             toggleBall.style.transform = 'translateX(22px)';
@@ -5193,5 +5312,116 @@ window.deleteCandidateNote = async (id, candidateId) => {
     await window.updateCandidatePanels(candidateId);
   } catch (err) {
     try { window.showToast('删除失败: ' + err.message); } catch(e) { alert('删除失败: ' + err.message); }
+  }
+};
+
+window.initCitySelector = function(modalSelector) {
+  const CITY_DATA = [
+    { province: "直辖市", cities: ["北京", "上海", "天津", "重庆"] },
+    { province: "广东省", cities: ["广州", "深圳", "珠海", "汕头", "佛山", "东莞", "中山"] },
+    { province: "浙江省", cities: ["杭州", "宁波", "温州", "嘉兴", "湖州", "绍兴", "金华"] },
+    { province: "江苏省", cities: ["南京", "无锡", "徐州", "常州", "苏州", "南通"] },
+    { province: "四川省", cities: ["成都", "绵阳", "宜宾"] },
+    { province: "湖北省", cities: ["武汉", "宜昌", "襄阳"] },
+    { province: "山东省", cities: ["济南", "青岛", "烟台", "潍坊"] },
+    { province: "福建省", cities: ["福州", "厦门", "泉州"] },
+    { province: "陕西省", cities: ["西安"] },
+    { province: "河南省", cities: ["郑州", "洛阳"] }
+  ];
+
+  const modal = document.querySelector(modalSelector);
+  if (!modal) return;
+  const cityInput = modal.querySelector('[data-position-location], [data-position-edit-location]');
+  const cityDropdown = modal.querySelector('.city-dropdown');
+  const provinceListEl = modal.querySelector('.province-list');
+  const cityListEl = modal.querySelector('.city-list');
+  const searchResultsEl = modal.querySelector('.city-search-results');
+  const cascadeViewEl = modal.querySelector('.city-cascade-view');
+
+  if (provinceListEl) {
+    provinceListEl.innerHTML = CITY_DATA.map((p, idx) => `
+      <div class="province-item ${idx === 0 ? 'active' : ''}" data-idx="${idx}" style="padding:8px; cursor:pointer; font-size:13px; color:#475569;">${p.province}</div>
+    `).join('');
+    
+    provinceListEl.addEventListener('click', (e) => {
+      const item = e.target.closest('.province-item');
+      if (!item) return;
+      provinceListEl.querySelectorAll('.province-item').forEach(el => {
+        el.classList.remove('active');
+        el.style.fontWeight = 'normal';
+        el.style.color = '#475569';
+      });
+      item.classList.add('active');
+      item.style.fontWeight = '600';
+      item.style.color = '#2563EB';
+      const idx = parseInt(item.getAttribute('data-idx'));
+      renderCities(idx);
+    });
+  }
+
+  function renderCities(provinceIdx) {
+    if (!cityListEl) return;
+    const cities = CITY_DATA[provinceIdx].cities;
+    cityListEl.innerHTML = cities.map(c => `
+      <div class="city-item" data-val="${c}" style="padding:6px 12px; cursor:pointer; font-size:13px; border-radius:4px; background:#f8fafc; color:#334155; text-align:center;">${c}</div>
+    `).join('');
+  }
+  renderCities(0);
+
+  if (cityInput && cityDropdown) {
+    cityInput.addEventListener('focus', () => {
+      cityDropdown.style.display = 'block';
+      filterCityDropdown();
+    });
+    cityInput.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cityDropdown.style.display = 'block';
+    });
+    cityInput.addEventListener('input', () => {
+      filterCityDropdown();
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    const cityItem = e.target.closest('.city-item, .search-result-item');
+    if (cityItem && modal.contains(cityItem)) {
+      const val = cityItem.getAttribute('data-val');
+      if (cityInput) {
+        cityInput.value = val;
+        cityInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (cityDropdown) cityDropdown.style.display = 'none';
+      return;
+    }
+    if (cityDropdown && !e.target.closest('.city-selector-wrapper')) {
+      cityDropdown.style.display = 'none';
+    }
+  });
+
+  function filterCityDropdown() {
+    if (!cityInput || !searchResultsEl || !cascadeViewEl) return;
+    const query = cityInput.value.trim().toLowerCase();
+    if (!query) {
+      searchResultsEl.style.display = 'none';
+      cascadeViewEl.style.display = 'flex';
+      return;
+    }
+    const matches = [];
+    CITY_DATA.forEach(p => {
+      p.cities.forEach(c => {
+        if (c.toLowerCase().includes(query)) matches.push(c);
+      });
+    });
+    if (matches.length > 0) {
+      searchResultsEl.innerHTML = matches.map(c => `
+        <div class="search-result-item" data-val="${c}" style="padding:8px 12px; cursor:pointer; font-size:13px; border-bottom:1px solid #f1f5f9;">${c}</div>
+      `).join('');
+      searchResultsEl.style.display = 'block';
+      cascadeViewEl.style.display = 'none';
+    } else {
+      searchResultsEl.innerHTML = '<div style="padding:12px; font-size:13px; color:#94a3b8; text-align:center;">暂无匹配城市</div>';
+      searchResultsEl.style.display = 'block';
+      cascadeViewEl.style.display = 'none';
+    }
   }
 };

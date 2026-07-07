@@ -156,7 +156,7 @@
         dashboardState.employments,
         'created_at',
         monthDate,
-        (row) => ['已入职', '已录用'].includes(row.status)
+        (row) => row.status === '已入职'
       );
       const monthlyFeedbacks = getMonthRows(dashboardState.feedbacks, 'created_at', monthDate);
       const monthlyCalendarEvents = getCalendarEvents().filter((row) => sameMonth(row.date, monthDate));
@@ -342,7 +342,7 @@
         {
           title: '本月入职数量',
           value: metrics.monthlyEmployments.length,
-          note: metrics.monthlyEmployments.length ? '已录用 / 已入职记录已纳入统计' : '本月暂无入职转化',
+          note: metrics.monthlyEmployments.length ? '已入职记录已纳入统计' : '本月暂无入职转化',
           tone: 'warning',
         },
         {

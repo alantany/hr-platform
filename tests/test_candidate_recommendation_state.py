@@ -62,12 +62,12 @@ def test_recommendation_drives_candidate_lock_and_failure_releases() -> None:
         headers=headers,
     )
     assert terminal.status_code == 200
-    assert candidate_state(headers, candidate["id"]) == (False, "未锁定", "未推荐")
+    assert candidate_state(headers, candidate["id"]) == (True, "锁定", "未录用")
     history = client.get(f"/api/recommendations?candidate_id={candidate['id']}", headers=headers).json()
     assert history[0]["status"] == "未录用"
 
 
-def test_hired_stays_locked_and_delete_resynchronizes() -> None:
+def test_onboard_state_only_comes_from_employment_action() -> None:
     headers = auth_headers()
     candidate, position = create_flow(headers)
     recommendation = client.post(
@@ -76,13 +76,29 @@ def test_hired_stays_locked_and_delete_resynchronizes() -> None:
         headers=headers,
     ).json()
     client.put(f"/api/recommendations/{recommendation['id']}", json={"status": "面试中"}, headers=headers)
-    hired = client.put(f"/api/recommendations/{recommendation['id']}", json={"status": "已录用"}, headers=headers)
-    assert hired.status_code == 200
-    assert candidate_state(headers, candidate["id"]) == (True, "锁定", "已录用")
+    legacy_hired = client.put(f"/api/recommendations/{recommendation['id']}", json={"status": "已录用"}, headers=headers)
+    assert legacy_hired.status_code == 400
+    assert candidate_state(headers, candidate["id"]) == (True, "锁定", "面试中")
+    assert client.get(f"/api/employment-records?candidate_id={candidate['id']}", headers=headers).json() == []
+
+    onboard = client.post(
+        "/api/employment-records",
+        json={
+            "candidate_id": candidate["id"],
+            "status": "已入职",
+            "company_name": "状态联动客户",
+            "position_name": "状态联动岗位",
+        },
+        headers=headers,
+    )
+    assert onboard.status_code == 200
+    assert candidate_state(headers, candidate["id"]) == (True, "锁定", "已入职")
+    onboard_candidate = client.get(f"/api/candidates/{candidate['id']}", headers=headers).json()
+    assert onboard_candidate["candidate_warranty_status"] == "质保中"
 
     deleted = client.delete(f"/api/recommendations/{recommendation['id']}", headers=headers)
-    assert deleted.status_code == 200
-    assert candidate_state(headers, candidate["id"]) == (False, "未锁定", "未推荐")
+    assert deleted.status_code == 409
+    assert candidate_state(headers, candidate["id"]) == (True, "锁定", "已入职")
 
 
 def test_manual_lock_fields_and_endpoints_are_rejected() -> None:

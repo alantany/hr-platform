@@ -283,6 +283,7 @@ def _delete_position_graph(db: Session, position_ids: list[int]) -> None:
     recommendation_ids = [row[0] for row in db.query(Recommendation.id).filter(Recommendation.position_id.in_(position_ids)).all()]
     db.query(CandidateTrackingEvent).filter(CandidateTrackingEvent.position_id.in_(position_ids)).delete(synchronize_session=False)
     db.query(Evaluation).filter(Evaluation.position_id.in_(position_ids)).delete(synchronize_session=False)
+    db.query(SalaryRecord).filter(SalaryRecord.position_id.in_(position_ids)).delete(synchronize_session=False)
     _delete_recommendation_graph(db, recommendation_ids)
     db.query(Position).filter(Position.id.in_(position_ids)).delete(synchronize_session=False)
 
@@ -1179,7 +1180,16 @@ def add_employment_record(payload: schemas.EmploymentRecordCreate, db: Session =
     candidate = crud.ensure_local_candidate(db, payload.candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
+    if payload.status not in {"已入职", "未入职"}:
+        raise HTTPException(status_code=400, detail="入职状态只能为已入职或未入职")
     payload.candidate_id = candidate.id
+    if payload.status == "已入职" and payload.onboard_date is None:
+        payload.onboard_date = datetime.now(timezone.utc)
+    latest_recom = db.query(Recommendation).filter(
+        Recommendation.candidate_id == candidate.id,
+    ).order_by(Recommendation.created_at.desc(), Recommendation.id.desc()).first()
+    if not latest_recom:
+        raise HTTPException(status_code=400, detail="候选人尚未推荐至岗位，不能进入入职流程")
     # Upsert：同一候选人已有入职记录则更新，否则新建
     existing = crud.list_employment_records(db, candidate_id=candidate.id)
     if existing:
@@ -1201,22 +1211,11 @@ def add_employment_record(payload: schemas.EmploymentRecordCreate, db: Session =
         db.add(latest_event)
         
     # 锁定持久化与多向流转联动
-    if payload.status == "已入职":
-        # 联动更新关联的岗位推荐 Recommendation 状态为“已录用”
-        from .models import Recommendation
-        latest_recom = db.query(Recommendation).filter(
-            Recommendation.candidate_id == candidate.id,
-            Recommendation.status.in_(["待推荐", "已推荐", "面试中", "客户已收", "安排面试"])
-        ).order_by(Recommendation.created_at.desc()).first()
-        if latest_recom:
-            latest_recom.status = "已录用"
-            db.add(latest_recom)
-        # 同步冗余字段：candidate_warranty_status
-        candidate.candidate_warranty_status = "质保中"
-        # 同步冗余字段：delivery_status（取自最新推荐状态）
-        if latest_recom:
-            db.flush()
-            crud.sync_candidate_recommendation_state(db, candidate)
+    latest_recom.status = "已入职" if payload.status == "已入职" else "未录用"
+    db.add(latest_recom)
+    db.flush()
+    crud.sync_candidate_recommendation_state(db, candidate)
+    crud.sync_candidate_warranty_state(db, candidate)
     db.add(candidate)
     
     crud.add_audit(db, user.username, "候选人跟踪", action, "employment_record", str(candidate.id), detail=payload.status)
@@ -1231,7 +1230,22 @@ def edit_employment_record(record_id: int, payload: schemas.EmploymentRecordCrea
     record = db.get(EmploymentRecord, record_id)
     if not record:
         raise HTTPException(status_code=404, detail="入职记录不存在")
+    if payload.status not in {"已入职", "未入职"}:
+        raise HTTPException(status_code=400, detail="入职状态只能为已入职或未入职")
+    if payload.status == "已入职" and payload.onboard_date is None:
+        payload.onboard_date = record.onboard_date or datetime.now(timezone.utc)
     obj = crud.update_employment_record(db, record, payload)
+    candidate = db.get(Candidate, record.candidate_id)
+    if candidate:
+        latest_recom = db.query(Recommendation).filter(
+            Recommendation.candidate_id == candidate.id,
+        ).order_by(Recommendation.created_at.desc(), Recommendation.id.desc()).first()
+        if latest_recom:
+            latest_recom.status = "已入职" if payload.status == "已入职" else "未录用"
+            db.add(latest_recom)
+        db.flush()
+        crud.sync_candidate_recommendation_state(db, candidate)
+        crud.sync_candidate_warranty_state(db, candidate)
     crud.add_audit(db, user.username, "候选人跟踪", "更新入职记录", "employment_record", str(record.candidate_id), detail=payload.status)
     db.commit()
     db.refresh(obj)
@@ -1309,6 +1323,8 @@ def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depe
         raise HTTPException(status_code=404, detail="候选人不存在")
     enforce_candidate_access(db, user, candidate)
     enforce_position_access(db, user, payload.position_id)
+    if payload.status != "已推荐":
+        raise HTTPException(status_code=400, detail="创建推荐记录时状态必须为已推荐")
     if candidate.locked:
         raise HTTPException(status_code=400, detail="候选人已锁定，无法重复推荐")
     obj = crud.create_recommendation(db, payload)
@@ -1327,6 +1343,8 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
     record_keys = [str(key).strip() for key in payload.record_keys if str(key).strip()]
     if not record_keys:
         raise HTTPException(status_code=400, detail="没有待推荐的候选人")
+    if payload.status != "已推荐":
+        raise HTTPException(status_code=400, detail="批量推荐状态必须为已推荐")
     position = db.get(Position, payload.position_id)
     if not position:
         raise HTTPException(status_code=404, detail="岗位不存在")
@@ -1483,59 +1501,29 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
     for key, value in payload.model_dump(exclude_unset=True).items():
         if key == "status":
             valid_transitions = {
-                "待推荐": ["已推荐", "淘汰"],
                 "已推荐": ["面试中", "未录用", "淘汰", "客户已收", "客户未收", "安排面试", "拒绝"],
                 "客户已收": ["安排面试", "拒绝"],
                 "客户未收": ["已推荐", "未录用", "淘汰"],
-                "安排面试": ["已录用", "未录用", "淘汰"],
-                "面试中": ["已录用", "未录用", "淘汰"],
-                "已录用": [],
+                "安排面试": ["未录用", "淘汰", "拒绝"],
+                "面试中": ["未录用", "淘汰", "拒绝"],
+                "已入职": [],
                 "未录用": [],
                 "淘汰": [],
                 "拒绝": [],
             }
+            if value in {"已入职", "已录用", "待推荐"}:
+                raise HTTPException(status_code=400, detail="入职状态只能在候选人详情中确认")
             allowed = valid_transitions.get(obj.status, [])
             if obj.status in valid_transitions and value not in allowed:
                 raise HTTPException(status_code=400, detail=f"无法从 {obj.status} 流转到 {value}")
         setattr(obj, key, value)
         
-        # 联动机制 B：如果推荐流转为“已录用”，自动写入“已入职”的 EmploymentRecord
-        if key == "status" and value == "已录用":
-            from .models import EmploymentRecord, Position, Project, Company
-            import datetime
-            pos = db.get(Position, obj.position_id)
-            pos_name = pos.name if pos else ""
-            comp_name = ""
-            if pos and pos.project_id:
-                proj = db.get(Project, pos.project_id)
-                if proj and proj.company_id:
-                    comp = db.get(Company, proj.company_id)
-                    if comp:
-                        comp_name = comp.name
-            existing_emp = db.query(EmploymentRecord).filter(
-                EmploymentRecord.candidate_id == obj.candidate_id
-            ).first()
-            if not existing_emp:
-                new_emp = EmploymentRecord(
-                    candidate_id=obj.candidate_id,
-                    status="已入职",
-                    company_name=comp_name,
-                    position_name=pos_name,
-                    onboard_date=datetime.datetime.now(datetime.timezone.utc),
-                    note="通过系统推荐流程自动流转入职",
-                )
-                new_emp.operator_user_id = user.id
-                db.add(new_emp)
-            cand = db.get(Candidate, obj.candidate_id)
-            if cand:
-                cand.candidate_warranty_status = "质保中"
-                db.add(cand)
-
     if "status" in payload.model_dump(exclude_unset=True):
         cand = db.get(Candidate, obj.candidate_id)
         if cand:
             db.flush()
             crud.sync_candidate_recommendation_state(db, cand)
+            crud.sync_candidate_warranty_state(db, cand)
 
     crud.add_audit(db, user.username, "推荐交付", "更新推荐状态", "recommendation", str(recommendation_id), detail=obj.status)
     db.commit()
@@ -1551,6 +1539,12 @@ def delete_recommendation(recommendation_id: int, db: Session = Depends(get_db),
         raise HTTPException(status_code=404, detail="推荐记录不存在")
     enforce_recommendation_access(db, user, obj)
     candidate = db.get(Candidate, obj.candidate_id)
+    current_employment = db.query(EmploymentRecord).filter(
+        EmploymentRecord.candidate_id == obj.candidate_id,
+        EmploymentRecord.status == "已入职",
+    ).first()
+    if current_employment:
+        raise HTTPException(status_code=409, detail="候选人已入职，不能移除其岗位推荐关系")
     # 删除推荐记录的下游数据
     db.query(RecommendationFeedback).filter(RecommendationFeedback.recommendation_id == recommendation_id).delete()
     db.query(Delivery).filter(Delivery.recommendation_id == recommendation_id).delete()
@@ -1576,6 +1570,12 @@ def batch_delete_recommendations(payload: list[int], db: Session = Depends(get_d
         try:
             enforce_recommendation_access(db, user, obj)
         except HTTPException:
+            continue
+        current_employment = db.query(EmploymentRecord).filter(
+            EmploymentRecord.candidate_id == obj.candidate_id,
+            EmploymentRecord.status == "已入职",
+        ).first()
+        if current_employment:
             continue
         candidate = db.get(Candidate, obj.candidate_id)
         db.query(RecommendationFeedback).filter(RecommendationFeedback.recommendation_id == recommendation_id).delete()
@@ -1668,6 +1668,30 @@ def add_evaluation(payload: schemas.EvaluationCreate, db: Session = Depends(get_
     db.commit()
     db.refresh(obj)
     return obj
+
+
+@app.put("/api/evaluations/{evaluation_id}", response_model=schemas.EvaluationOut)
+def update_evaluation(evaluation_id: int, payload: schemas.EvaluationUpdate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    obj = db.get(Evaluation, evaluation_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="评价记录不存在")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(obj, key, value)
+    crud.add_audit(db, user.username, "评价体系", "修改评价", "evaluation", "edit", detail=f"ID: {evaluation_id}")
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
+@app.delete("/api/evaluations/{evaluation_id}")
+def delete_evaluation(evaluation_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    obj = db.get(Evaluation, evaluation_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="评价记录不存在")
+    db.delete(obj)
+    crud.add_audit(db, user.username, "评价体系", "删除评价", "evaluation", "delete", detail=f"ID: {evaluation_id}")
+    db.commit()
+    return {"ok": True}
 
 
 @app.get("/api/evaluation-levels", response_model=list[schemas.EvaluationLevelOut])
@@ -1871,7 +1895,7 @@ def analytics_summary(db: Session = Depends(get_db), user: User = Depends(requir
         key = recommendation.recommender or "未命名"
         bucket = recommender_stats.setdefault(key, {"total": 0, "active": 0})
         bucket["total"] += 1
-        if recommendation.status in {"客户已收", "安排面试", "已录用"}:
+        if recommendation.status in {"客户已收", "安排面试", "已入职"}:
             bucket["active"] += 1
     customer_stats: dict[str, dict[str, int]] = {}
     for project, company_name in projects:
@@ -1927,15 +1951,15 @@ def recommendation_stats(
     for row in rows:
         pos = by_position.setdefault(row.position_id, {"recommendation": 0, "interview": 0, "delivery": 0})
         pos["recommendation"] += 1
-        if row.status in {"客户已收", "安排面试", "已录用"}:
+        if row.status in {"客户已收", "安排面试", "已入职"}:
             pos["interview"] += 1
-        if row.status == "已录用":
+        if row.status == "已入职":
             pos["delivery"] += 1
         op = by_operator.setdefault(row.recommender or "未命名", {"recommendation": 0, "interview": 0, "delivery": 0})
         op["recommendation"] += 1
-        if row.status in {"客户已收", "安排面试", "已录用"}:
+        if row.status in {"客户已收", "安排面试", "已入职"}:
             op["interview"] += 1
-        if row.status == "已录用":
+        if row.status == "已入职":
             op["delivery"] += 1
     positions = {p.id: p.name for p in db.query(Position).all()}
     return {

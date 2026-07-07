@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -114,6 +114,8 @@ class Position(Base, TimestampMixin):
     age_requirement: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     education_requirement: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     experience_requirement: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    requirement_tags: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    target_resume_count: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)
     owner_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
@@ -309,8 +311,8 @@ class EmploymentRecord(Base, TimestampMixin):
 
     @property
     def warranty_status(self) -> str:
-        if not self.onboard_date:
-            return "质保中"
+        if self.status != "已入职" or not self.onboard_date:
+            return ""
         import datetime
         now = datetime.datetime.now(datetime.timezone.utc)
         onboard = self.onboard_date
@@ -326,7 +328,7 @@ class CandidateFollowUpRecord(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id"), nullable=False)
-    status: Mapped[str] = mapped_column(String(32), default="已录用", nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="已入职", nullable=False)
     follow_up_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     content: Mapped[str] = mapped_column(Text, default="", nullable=False)
     operator: Mapped[str] = mapped_column(String(64), default="", nullable=False)

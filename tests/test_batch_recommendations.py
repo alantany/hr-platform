@@ -88,7 +88,7 @@ def test_batch_recommendations_continue_and_summarize():
             ],
             "position_id": position["id"],
             "recommender": "admin",
-            "status": "待推荐",
+            "status": "已推荐",
             "feedback": "统一推荐理由",
         },
         headers=headers,

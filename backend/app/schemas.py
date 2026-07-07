@@ -182,6 +182,8 @@ class PositionCreate(BaseModel):
     age_requirement: str = ""
     education_requirement: str = ""
     experience_requirement: str = ""
+    requirement_tags: dict | None = None
+    target_resume_count: int = 10
     description: str = ""
     owner_user_id: int | None = None
 
@@ -201,6 +203,8 @@ class PositionUpdate(BaseModel):
     age_requirement: str | None = None
     education_requirement: str | None = None
     experience_requirement: str | None = None
+    requirement_tags: dict | None = None
+    target_resume_count: int | None = None
     description: str | None = None
 
 
@@ -339,14 +343,14 @@ class EmploymentRecordOut(EmploymentRecordCreate):
     created_at: datetime
     candidate_name: str = ""
     candidate_phone: str = ""
-    warranty_status: str = "质保中"
+    warranty_status: str = ""
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class CandidateFollowUpRecordCreate(BaseModel):
     candidate_id: int | str
-    status: str = "已录用"
+    status: str = "已入职"
     follow_up_time: datetime | None = None
     content: str = ""
     operator: str = ""
@@ -563,6 +567,15 @@ class EvaluationCreate(BaseModel):
     grade: str
     score: int = 5
     content: str = ""
+
+
+class EvaluationUpdate(BaseModel):
+    position_id: int | None = None
+    evaluator: str | None = None
+    round_name: str | None = None
+    grade: str | None = None
+    score: int | None = None
+    content: str | None = None
 
 
 class EvaluationOut(EvaluationCreate):

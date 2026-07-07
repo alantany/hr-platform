@@ -31,13 +31,13 @@
           <div class="position-summary-item"><span>薪资范围：</span><strong data-position-salary>--</strong></div>
           <div class="position-summary-item"><span>候选人数量：</span><strong class="is-primary" data-candidate-count>0人</strong></div>
           <div class="position-summary-item"><span>已推荐：</span><strong class="is-success" data-recommend-count>0人</strong></div>
-          <div class="position-summary-item"><span>已录用：</span><strong class="is-success" data-hired-count>0人</strong></div>
+          <div class="position-summary-item"><span>已入职：</span><strong class="is-success" data-hired-count>0人</strong></div>
           <div class="position-processing-limit">剩余 2h 处理时限</div>
         </div>
 
         <div class="position-candidates-filter panel">
           <label class="position-filter-field position-filter-keyword"><span>候选人姓名</span><input class="input" type="search" placeholder="搜索候选人" data-position-filter-keyword /></label>
-          <label class="position-filter-field"><span>推荐状态</span><select class="input" data-position-filter-status><option value="">全部</option><option value="待推荐">待推荐</option><option value="已推荐">已推荐</option><option value="面试中">面试中</option><option value="已录用">已录用</option><option value="未录用">未录用</option></select></label>
+          <label class="position-filter-field"><span>流程状态</span><select class="input" data-position-filter-status><option value="">全部</option><option value="已推荐">已推荐</option><option value="面试中">面试中</option><option value="已入职">已入职</option><option value="未录用">未录用</option></select></label>
           <label class="position-filter-field"><span>匹配度</span><select class="input" data-position-filter-match><option value="">全部</option><option value="90">90%以上</option><option value="80">80%-90%</option><option value="70">70%-80%</option><option value="below70">70%以下</option></select></label>
           <div class="position-filter-actions">
             <button class="btn primary" type="button" onclick="applyPositionCandidateFilters()">搜索</button>
@@ -100,9 +100,8 @@
               <div class="section-sub" data-candidate-detail-sub>查看候选人的完整信息。</div>
             </div>
             <div class="hero-actions" style="margin-top:0; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <button class="btn" data-action="locate-salary-records">薪资记录</button>
+              <button class="btn" data-action="locate-salary-records">评价记录</button>
               <button class="btn" data-action="open-candidate-employment-modal">入职状态</button>
-              <button class="btn" data-action="open-candidate-followup-modal">随访记录</button>
               <span style="border-left:1px solid rgba(15,23,42,.1); height:24px; margin:0 4px;"></span>
               <button class="btn" data-action="close-candidate-detail-modal">关闭</button>
               <button class="btn" data-action="edit-candidate" data-id="">编辑资料</button>
@@ -220,33 +219,31 @@
             <div class="section-head" style="margin-bottom:16px;">
               <div>
                 <h3 style="font-size:14px; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:6px;">
-                  💰 薪资/福利/入职条件跟踪表
+                  📝 面试评价记录
                 </h3>
               </div>
               <div class="hero-actions" style="margin-top:0">
-                <button class="btn primary" data-action="open-add-salary-modal" style="background-color:#2563EB; border-color:#2563EB; padding:4px 12px; font-size:12px; display:flex; align-items:center; gap:4px;">
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right:2px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>添加薪资记录
+                <button class="btn primary" data-action="open-add-salary-modal" style="background-color:#8b5cf6; border-color:#8b5cf6; padding:4px 12px; font-size:12px; display:flex; align-items:center; gap:4px;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right:2px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>添加评价
                 </button>
               </div>
             </div>
             <div style="overflow-x:auto; width:100%;">
-              <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; min-width:1000px;">
+              <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
                 <thead>
                   <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#475569;">
-                    <th style="padding:10px 8px; font-weight:600; text-align:center; width:100px;">关联面试轮次</th>
-                    <th style="padding:10px 8px; font-weight:600; width:120px;">关联岗位</th>
-                    <th style="padding:10px 8px; font-weight:600; width:120px;">客户公司</th>
-                    <th style="padding:10px 8px; font-weight:600; width:100px;">约定薪资</th>
-                    <th style="padding:10px 8px; font-weight:600; width:180px;">福利说明</th>
-                    <th style="padding:10px 8px; font-weight:600; width:180px;">入职条件</th>
-                    <th style="padding:10px 8px; font-weight:600; width:80px; text-align:center;">是否接受</th>
-                    <th style="padding:10px 8px; font-weight:600; width:120px;">记录时间</th>
-                    <th style="padding:10px 8px; font-weight:600; width:80px;">操作人</th>
-                    <th style="padding:10px 8px; font-weight:600; width:90px;">操作</th>
+                    <th style="padding:10px 8px; font-weight:600; text-align:center; width:120px;">关联面试轮次</th>
+                    <th style="padding:10px 8px; font-weight:600; width:160px;">关联岗位</th>
+                    <th style="padding:10px 8px; font-weight:600; width:100px;">等级</th>
+                    <th style="padding:10px 8px; font-weight:600; width:100px;">分值</th>
+                    <th style="padding:10px 8px; font-weight:600; width:260px;">评价内容</th>
+                    <th style="padding:10px 8px; font-weight:600; width:120px;">评价人</th>
+                    <th style="padding:10px 8px; font-weight:600; width:150px;">评价时间</th>
+                    <th style="padding:10px 8px; font-weight:600; width:100px;">操作</th>
                   </tr>
                 </thead>
                 <tbody id="candidate-detail-salary-tbody">
-                  <tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="10">暂无薪资/福利/入职条件跟踪记录</td></tr>
+                  <tr><td style="padding:20px; text-align:center; color:#94a3b8;" colspan="8">暂无面试评价记录</td></tr>
                 </tbody>
               </table>
             </div>
@@ -381,8 +378,8 @@
         );
 
         window.__positionCandidateRows = candidateDetails;
-        const recommendedCount = candidateDetails.filter(function(item) { return normalizeRecommendationStatus(item.status) !== '待推荐'; }).length;
-        const hiredCount = candidateDetails.filter(function(item) { return normalizeRecommendationStatus(item.status) === '已录用'; }).length;
+        const recommendedCount = candidateDetails.length;
+        const hiredCount = candidateDetails.filter(function(item) { return item.candidate?.delivery_status === '已入职'; }).length;
         setText('[data-candidate-count]', candidateDetails.length + '人');
         setText('[data-recommend-count]', recommendedCount + '人');
         setText('[data-hired-count]', hiredCount + '人');
@@ -400,12 +397,12 @@
     }
 
     function normalizeRecommendationStatus(status) {
-      const value = String(status || '待推荐');
-      if (['已录用', '已入职'].includes(value)) return '已录用';
+      const value = String(status || '已推荐');
+      if (value === '已入职') return '已入职';
       if (['未录用', '淘汰', '不合适', '拒绝'].includes(value)) return '未录用';
       if (['面试中', '安排面试'].includes(value)) return '面试中';
       if (['已推荐', '客户已收', '客户未收'].includes(value)) return '已推荐';
-      return '待推荐';
+      return '已推荐';
     }
 
     function getRecommendationMatchScore(item) {
@@ -428,7 +425,8 @@
             if (!c) {
               return '<div class="list-item" style="display:grid;grid-template-columns:1.5fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr 1fr 200px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:13px;"><div>候选人不可用 (ID: ' + item.candidate_id + ')</div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>';
             }
-            const statusColor = item.status === '已录用' || item.status === '已入职' ? 'success' :
+            const displayStatus = c.delivery_status === '已入职' ? '已入职' : (item.status || '已推荐');
+            const statusColor = displayStatus === '已入职' ? 'success' :
                                item.status === '淘汰' || item.status === '不合适' ? 'neutral' : 'warning';
             const fieldTags = window.hrTagSystem?.extractTags?.('candidate', c, window.__positionCandidateTagConfigs || []) || [];
             const tagHtml = fieldTags.length
@@ -447,7 +445,7 @@
               + '<div style="color:#475569;font-size:13px;text-align:center;">' + (c.city || '--') + '</div>'
               + '<div style="color:#475569;font-size:13px;text-align:center;">' + (c.education || '--') + '</div>'
               + '<div style="color:#475569;font-size:13px;text-align:center;">' + (c.experience_years != null ? c.experience_years + '年' : '--') + '</div>'
-              + '<div style="text-align:center;"><span class="chip ' + statusColor + '" style="font-size:11px;padding:3px 8px;">' + (item.status || '待推荐') + '</span></div>'
+              + '<div style="text-align:center;"><span class="chip ' + statusColor + '" style="font-size:11px;padding:3px 8px;">' + displayStatus + '</span></div>'
               + '<div class="table-actions" style="display:flex;gap:6px;align-items:center;justify-content:center;">'
               + '<button class="btn-sm" data-action="view-detail" data-id="' + c.id + '">详情</button>'
               + '<button class="btn-sm" onclick="positionExportSingle(' + c.id + ', \'' + (c.name || '').replace(/'/g, "\\'") + '\')">简历导出</button>'
@@ -480,7 +478,8 @@
       const matchBand = document.querySelector('[data-position-filter-match]')?.value || '';
       const rows = (window.__positionCandidateRows || []).filter(function(item) {
         const nameMatches = !keyword || String(item.candidate?.name || '').toLowerCase().includes(keyword);
-        const statusMatches = !status || normalizeRecommendationStatus(item.status) === status;
+        const normalizedStatus = item.candidate?.delivery_status === '已入职' ? '已入职' : normalizeRecommendationStatus(item.status);
+        const statusMatches = !status || normalizedStatus === status;
         const score = getRecommendationMatchScore(item);
         let matchMatches = !matchBand;
         if (matchBand === '90') matchMatches = score !== null && score >= 90;
@@ -858,58 +857,51 @@
         </div>
       </div>
 
-      <!-- Salary Tracking modal -->
+      <!-- Candidate Evaluation modal -->
       <div class="modal" data-salary-tracking-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:3000; padding:24px; overflow-y:auto;">
         <div class="panel" style="max-width:540px; margin:5vh auto; background:#fff; border-radius:12px; padding:24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
-            <h3 id="salary-modal-title" style="font-size:16px; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:6px;">💰 添加薪资/福利/入职条件记录</h3>
+            <h3 id="salary-modal-title" style="font-size:16px; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:6px;">📝 添加面试评价</h3>
             <button data-action="close-salary-tracking-modal" style="background:none; border:none; font-size:20px; color:#94a3b8; cursor:pointer; line-height:1;">&times;</button>
-          </div>
-          <div style="background-color:#fffbeb; border:1px solid #fef3c7; border-radius:8px; padding:12px; margin-bottom:16px; font-size:12px; color:#b45309; line-height:1.5;">
-            <div style="font-weight:600; display:flex; align-items:center; gap:4px; margin-bottom:2px;">
-              <span>ⓘ 说明</span>
-            </div>
-            当候选人接受该岗位时，记录客户公司与候选人的约定薪资/福利/入职条件；当候选人不接受该岗位时，记录不接受的原因。
           </div>
           <div style="display:flex; flex-direction:column; gap:12px;">
             <div>
-              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">关联面试轮次</label>
+              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">关联面试轮次 <span style="color:#ef4444">*</span></label>
               <select class="input" id="salary-interview-round" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none; background:#fff;">
               </select>
             </div>
             <div>
-              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">关联岗位</label>
+              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">关联岗位 <span style="color:#ef4444">*</span></label>
               <select class="input" id="salary-position-id" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none; background:#fff;">
                 <option value="">请选择岗位</option>
               </select>
             </div>
-            <div>
-              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">客户公司</label>
-              <div class="input" id="salary-company-name-display" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none; background:#f8fafc; color:#64748b; display:flex; align-items:center;">所属公司：请选择岗位后自动显示</div>
+            <!-- Keep hidden company display to avoid breaking javascript references if any, but hide it visually -->
+            <div style="display:none;">
+              <div id="salary-company-name-display"></div>
             </div>
             <div>
-              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">约定薪资</label>
-              <input type="text" class="input" id="salary-agreed-salary" placeholder="请输入约定薪资（如：25-35K/月）" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none;" />
-            </div>
-            <div>
-              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">福利说明</label>
-              <textarea class="input" rows="3" id="salary-welfare-desc" placeholder="请输入福利说明（如：五险一金、带薪年假、年终奖等）" style="width:100%; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; font-size:13px; outline:none; resize:none; font-family:inherit;"></textarea>
-            </div>
-            <div>
-              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">入职条件</label>
-              <textarea class="input" rows="3" id="salary-onboard-cond" placeholder="请输入入职条件（如：携带身份证、学历证明、离职证明等）" style="width:100%; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; font-size:13px; outline:none; resize:none; font-family:inherit;"></textarea>
-            </div>
-            <div>
-              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">候选人是否接受</label>
-              <select class="input" id="salary-candidate-accepted" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none; background:#fff;">
-                <option value="接受">接受</option>
-                <option value="不接受">不接受</option>
+              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">评价等级 <span style="color:#ef4444">*</span></label>
+              <select class="input" id="salary-evaluation-grade" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none; background:#fff;">
+                <option value="优秀" data-score="5">优秀</option>
+                <option value="良好" data-score="4" selected>良好</option>
+                <option value="一般" data-score="3">一般</option>
+                <option value="较差" data-score="2">较差</option>
+                <option value="不合格" data-score="1">不合格</option>
               </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">评分 (1 - 5 分) <span style="color:#ef4444">*</span></label>
+              <input type="number" class="input" id="salary-evaluation-score" min="1" max="5" value="4" style="width:100%; height:38px; border:1px solid #e2e8f0; border-radius:8px; padding:0 12px; font-size:13px; outline:none;" />
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">评语备注</label>
+              <textarea class="input" rows="3" id="salary-evaluation-content" placeholder="请输入面试评语或表现备注..." style="width:100%; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; font-size:13px; outline:none; resize:none; font-family:inherit;"></textarea>
             </div>
           </div>
           <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px; border-top:1px solid #f1f5f9; padding-top:16px;">
             <button class="btn" data-action="close-salary-tracking-modal" style="height:36px; padding:0 16px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; background:#fff; cursor:pointer;">取消</button>
-            <button class="btn primary" data-action="confirm-salary-tracking" style="height:36px; padding:0 16px; background:#2563EB; border:1px solid #2563EB; color:#fff; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">确定</button>
+            <button class="btn primary" data-action="confirm-salary-tracking" style="height:36px; padding:0 16px; background:#8b5cf6; border:1px solid #8b5cf6; color:#fff; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">确定</button>
           </div>
         </div>
       </div>
@@ -920,7 +912,7 @@
           <div class="section-head">
             <div>
               <h3>随访记录</h3>
-              <div class="section-sub">仅已录用候选人可以添加随访记录。</div>
+              <div class="section-sub">仅已入职候选人可以添加随访记录。</div>
             </div>
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" data-action="close-candidate-followup-modal">取消</button>
