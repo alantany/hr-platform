@@ -275,13 +275,8 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagC
       actionsHtml = `<span style="color:#94a3b8; font-size:12px;">只读岗位</span>`;
     }
 
-    const jdHtml = position.description?.trim()
-      ? `<div class="position-jd-preview" style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;"><div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px;">岗位 JD</div><div style="color:#334155;font-size:13px;line-height:1.6;white-space:pre-wrap;max-height:120px;overflow:hidden;" title="${escapeHtml(position.description)}">${escapeHtml(position.description)}</div></div>`
-      : '';
-
     return `
       <div class="list-item" data-id="${position.id}" data-project-id="${position.project_id}">
-        ${jdHtml}
         <div class="item-top" style="display:grid;grid-template-columns:1.2fr 1.5fr 1.8fr 0.8fr 0.8fr 1fr 1.2fr 2.5fr 210px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;">
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.company_name || '未知公司')}">${escapeHtml(project.company_name || '未知公司')}</div>
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.name || '')}">${escapeHtml(project.name || '--')}</div>

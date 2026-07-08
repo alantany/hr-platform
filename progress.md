@@ -1,5 +1,9 @@
 # Progress
 
+## 2026-07-08（完成 - 岗位列表去掉 JD 展示）
+
+- 岗位列表仅保留表格行，JD 仍在创建/编辑弹窗录入，并在岗位候选人页完整展示。
+
 ## 2026-07-08（完成 - positions 缺列安全补丁脚本）
 
 - 新增 `scripts/patch-positions-missing-columns.sql`、`backend/scripts/patch_positions_columns.py`、`windows/04-patch-positions-columns.bat`，仅 ADD COLUMN，不删数据。
