@@ -142,6 +142,10 @@ button, input, select { font: inherit; }
   backdrop-filter: blur(8px);
 }
 .crumbs { color: var(--muted-foreground); font-size: 12px; margin-bottom: 4px; }
+.crumb-link { color: inherit; text-decoration: none; transition: color .15s ease; }
+.crumb-link:hover { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.crumb-current { color: var(--muted-foreground); }
+.crumb-sep { color: var(--muted-foreground); }
 .top-actions { display: flex; gap: 10px; align-items: center; }
 .top-action {
   display: inline-flex;

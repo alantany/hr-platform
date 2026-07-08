@@ -633,6 +633,57 @@ function getNavVisibility(role, permissions = null) {
   ]);
 }
 
+const crumbHrefMap = {
+  "首页": "./dashboard.html",
+  "数据看板": "./dashboard.html",
+  "求职者": "./candidates.html",
+  "数据池": "./candidates.html",
+  "简历导入": "./import.html",
+  "客户管理": "./customers.html",
+  "客户列表": "./customers.html",
+  "项目管理": "./projects.html",
+  "岗位管理": "./projects.html",
+  "平台岗位发布": "./recruit-job-publish.html",
+  "岗位发布": "./recruit-job-publish.html",
+  "岗位列表": "./recruit-job-list.html",
+  "每日任务": "./recruit-daily-tasks.html",
+  "评价": "./evaluations.html",
+  "评价管理": "./evaluations.html",
+  "系统设置": "./users.html",
+  "质保期管理": "./warranty.html",
+  "任务与通知": "./notifications.html",
+  "待办中心": "./notifications.html",
+  "统计": "./statistics.html",
+  "数据大屏": "./statistics.html",
+  "用户管理": "./users.html",
+  "角色管理": "./roles.html",
+  "权限管理": "./permissions.html",
+  "数据权限": "./data-permissions.html",
+  "标签字典": "./dictionary.html",
+  "AI中心": "./ai-center.html",
+  "能力总览": "./ai-center.html",
+  "系统配置": "./system-config.html",
+  "操作日志": "./logs.html",
+  "数据探针": "./db-explorer.html",
+  "开发工具": "./ui-kit.html",
+  "UI 样板": "./ui-kit.html",
+};
+
+function renderCrumbsHtml(pageKey) {
+  const crumbsStr = pages[pageKey]?.crumbs;
+  if (!crumbsStr) return "AI招聘管理平台";
+  const parts = crumbsStr.split(" / ").map((part) => part.trim()).filter(Boolean);
+  return parts.map((label, index) => {
+    const isLast = index === parts.length - 1;
+    const href = crumbHrefMap[label];
+    const separator = index > 0 ? '<span class="crumb-sep"> / </span>' : "";
+    if (!isLast && href) {
+      return `${separator}<a class="crumb-link" href="${href}">${escapeHtml(label)}</a>`;
+    }
+    return `${separator}<span class="crumb-current">${escapeHtml(label)}</span>`;
+  }).join("");
+}
+
 function shell(pageKey, body, currentUser = null, unreadCount = 0) {
   const active = (p) => {
     const baseHref = p.split("?")[0];
@@ -690,7 +741,7 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
     <main class="content">
       <div class="topbar">
         <div>
-          <div class="crumbs">${pages[pageKey]?.crumbs || "AI招聘管理平台"}</div>
+          <div class="crumbs">${renderCrumbsHtml(pageKey)}</div>
           <h2 class="page-title" style="margin-top:0;">${pages[pageKey]?.title || "AI招聘管理平台"}</h2>
           ${pages[pageKey]?.desc ? `<p class="page-lede">${pages[pageKey].desc}</p>` : ""}
         </div>
@@ -4902,6 +4953,15 @@ document.addEventListener("focusout", (event) => {
 
 window.renderApp = render;
 
+function isSystemTrackingEvent(item) {
+  const type = String(item?.event_type || '').trim().toUpperCase();
+  return type === 'AUTO_MATCH' || type.startsWith('AUTO_');
+}
+
+function getDisplayTrackingEvents(tracking = []) {
+  return tracking.filter((item) => !isSystemTrackingEvent(item));
+}
+
 window.fetchCandidatePanels = async function(candidateId, container) {
   try {
     const [tracking, evaluations, positions] = await Promise.all([
@@ -4910,26 +4970,28 @@ window.fetchCandidatePanels = async function(candidateId, container) {
       window.hrApi.positions(),
     ]);
     const posMap = new Map(positions.map((p) => [p.id, p]));
+    const displayTracking = getDisplayTrackingEvents(tracking);
 
     const trackingList = container.querySelector('[data-tracking-events]');
     const evaluationList = container.querySelector('[data-candidate-evaluations]');
+
+    const formatTime = (dtStr) => {
+      if (!dtStr) return '--';
+      try {
+        const d = new Date(dtStr);
+        if (Number.isNaN(d.getTime())) return dtStr;
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      } catch {
+        return dtStr;
+      }
+    };
 
     if (evaluationList) {
       const gradeClass = (grade) => (
         grade === '优秀' ? 'success' : grade === '良好' ? 'primary' : grade === '一般' ? 'warning' : 'neutral'
       );
-      const formatTime = (dtStr) => {
-        if (!dtStr) return '--';
-        try {
-          const d = new Date(dtStr);
-          if (Number.isNaN(d.getTime())) return dtStr;
-          const pad = (n) => String(n).padStart(2, '0');
-          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-        } catch {
-          return dtStr;
-        }
-      };
-      evaluationList.innerHTML = evaluations.map((rec) => {
+      evaluationList.innerHTML = evaluations.length ? evaluations.map((rec) => {
         const position = posMap.get(rec.position_id);
         const positionName = escapeHtml(position?.name || (rec.position_id ? `岗位 ${rec.position_id}` : '--'));
         const roundName = escapeHtml(rec.round_name || '评价轮次');
@@ -4950,22 +5012,22 @@ window.fetchCandidatePanels = async function(candidateId, container) {
               <span class="chip ${gradeClass(gradeKey)}">${grade}</span>
             </div>
           </div>`;
-      }).join('') || '<div class="list-item"><div class="item-meta">暂无候选人评价记录，可在详情页添加评价</div></div>';
+      }).join('') : '<div class="list-item"><div class="item-meta">无候选人评价</div></div>';
     }
 
     if (trackingList) {
-      trackingList.innerHTML = tracking.map(item => `
+      trackingList.innerHTML = displayTracking.length ? displayTracking.map((item) => `
         <div class="list-item">
           <div class="item-top">
             <div>
-              <div class="item-title">${item.event_type}</div>
-              <div class="item-meta">${item.summary || ''}</div>
-              ${item.created_at ? `<div class="item-meta mono" style="font-size: 11px; margin-top: 4px;">${item.created_at}</div>` : ''}
+              <div class="item-title">${escapeHtml(item.event_type || '跟踪事件')}</div>
+              <div class="item-meta">${escapeHtml(item.summary || '')}</div>
+              ${item.created_at ? `<div class="item-meta mono" style="font-size: 11px; margin-top: 4px;">${formatTime(item.created_at)}</div>` : ''}
             </div>
-            <span class="chip primary">${item.status || '事件'}</span>
+            <span class="chip primary">${escapeHtml(item.status || '事件')}</span>
           </div>
         </div>
-      `).join('') || '<div class="list-item"><div class="item-meta">暂无跟踪事件记录</div></div>';
+      `).join('') : '<div class="list-item"><div class="item-meta">无跟踪记录</div></div>';
     }
   } catch (err) {
     console.warn('Failed to fetch candidate panels:', err);
