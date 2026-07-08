@@ -17,6 +17,7 @@ const navGroups = [
       { href: "recruit-job-publish.html", label: "岗位发布", badge: "发布", icon: "file" },
       { href: "recruit-job-list.html", label: "岗位列表", badge: "列表", icon: "inbox" },
       { href: "recruit-daily-tasks.html", label: "每日任务", badge: "任务", icon: "chart" },
+      { href: "notifications.html?tab=position-tasks", label: "任务看板", badge: "任务", icon: "inbox" },
     ],
   },
   {
@@ -627,10 +628,16 @@ function getNavVisibility(role, permissions = null) {
 }
 
 function shell(pageKey, body, currentUser = null, unreadCount = 0) {
-  const active = (p) => p === `${pageKey}.html` || (pageKey === "index" && p === "dashboard.html");
+  const active = (p) => {
+    const baseHref = p.split("?")[0];
+    return baseHref === `${pageKey}.html` || (pageKey === "index" && baseHref === "dashboard.html");
+  };
   const visible = getNavVisibility(currentUser?.role || currentUser?.role_name || "超级管理员", currentUser?.permissions);
   const navHtml = navGroups.map((group) => {
-    const items = group.items.filter(({ href }) => visible.has(href));
+    const items = group.items.filter(({ href }) => {
+      const baseHref = href.split("?")[0];
+      return visible.has(href) || visible.has(baseHref);
+    });
     if (!items.length) return "";
     return `
       <div class="nav-group">
@@ -756,7 +763,8 @@ async function render() {
     }
     el.querySelectorAll(".nav-item").forEach((item) => {
       const itemHref = item.getAttribute("href").split("/").pop() || "";
-      item.classList.toggle("active", itemHref === page);
+      const baseHref = itemHref.split("?")[0];
+      item.classList.toggle("active", baseHref === page);
     });
   } else {
     el.innerHTML = shell(key, window.__PAGE_BODY__ || "", currentUser, unreadCount);

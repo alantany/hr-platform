@@ -177,6 +177,14 @@
 - [x] 完成多人共享岗位轻量测试
 - **Status:** complete
 
+### Phase 20 - 左侧导航增加"任务看板"标签（已完成）
+
+- [x] 在 `navGroups` "岗位管理"分组新增"任务看板"菜单项，指向 `notifications.html?tab=position-tasks`
+- [x] 适配 `shell` 函数中 `active` 和 `visible` 逻辑以支持带查询参数的 href
+- [x] 适配 `initPage` 菜单激活状态高亮切换逻辑
+- [x] 更新 `progress.md` 和 `task_plan.md`
+- **Status:** complete
+
 ## Key Constraints (持续有效)
 
 - 新增任何候选人写入接口，后端 handler 必须先调用 `ensure_local_candidate` 做 ID 解析

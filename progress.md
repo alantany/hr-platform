@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-07-08（已完成 - 左侧导航增加"任务看板"标签）
+
+- **新增"任务看板"导航标签**：在 `app.js` 的 `navGroups` "岗位管理"分组下新增 `{ href: "notifications.html?tab=position-tasks", label: "任务看板" }` 菜单项，用户可直接通过左侧菜单进入首页"待办岗位"卡片所指向的岗位待办任务页面。
+- **适配带查询参数的菜单高亮**：修改 `shell` 函数中的 `active` 判定逻辑，提取 `href` 的 base path（剥离 `?` 后缀）再做匹配，确保进入 `notifications.html?tab=position-tasks` 时"任务看板"菜单项能正确高亮。
+- **适配权限可见性过滤**：修改 `shell` 函数中 `navGroups` 过滤逻辑，对带查询参数的 href 同时检查完整 href 和 base path，确保权限系统不会误拦截该菜单项。
+- **适配 `initPage` 页面切换高亮**：修改 `initPage` 中菜单激活状态切换逻辑，使用 `baseHref` 比对，确保页面刷新后菜单高亮状态正确。
+
 ## 2026-07-01 (简历池与岗位候选人详情/流转跟踪组件对调 - 体验优化与冲突修复)
 
 - **移除重复的编辑弹窗**：移除了 `position-candidates.html` 中 `window.__PAGE_BODY__` 模版里残留的旧版简易 `data-candidate-edit-modal`，彻底解决了 DOM 元素重复导致高保真复杂版编辑弹窗被盖住、城市级联选择器和日期组件不响应的问题。
@@ -2351,6 +2358,20 @@
 - Task completed at 2026-07-08 00:15:14. Update the summary with the latest finished work.
 - Task completed at 2026-07-08 00:19:39. Update the summary with the latest finished work.
 - Task completed at 2026-07-08 09:33:31. Update the summary with the latest finished work.
+- Task finalized by Codex hook (unknown) at 2026-07-08 11:53:56
+- Task finalized by Codex hook (unknown) at 2026-07-08 11:55:28
+- Task finalized by Codex hook (unknown) at 2026-07-08 11:56:04
+- Task finalized by Codex hook (unknown) at 2026-07-08 12:10:25
+- Task finalized by Codex hook (unknown) at 2026-07-08 12:24:52
+- Task finalized by Codex hook (unknown) at 2026-07-08 12:26:56
+- Task finalized by Codex hook (unknown) at 2026-07-08 12:29:18
+- Task finalized by Codex hook (unknown) at 2026-07-08 12:34:04
+- Task finalized by Codex hook (unknown) at 2026-07-08 12:36:42
+- Task finalized by Codex hook (unknown) at 2026-07-08 12:39:05
+- Task finalized by Codex hook (unknown) at 2026-07-08 12:42:08
+- Task finalized by Codex hook (unknown) at 2026-07-08 12:44:00
+- Task finalized by Codex hook (unknown) at 2026-07-08 12:48:39
+
 ## 2026-07-08（完成 - 岗位分配确认待办）
 
 - 新增 `position_assignment_tasks` 业务表及 Alembic 迁移，记录岗位、接收人、分配人、处理状态、处理说明和处理时间。
