@@ -697,6 +697,8 @@ def list_companies(db: Session = Depends(get_db), user: User = Depends(require_u
 
 @app.post("/api/companies", response_model=schemas.CompanyOut)
 def add_company(payload: schemas.CompanyCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if not security.is_admin(user) and not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长及系统管理员有权创建客户")
     if not payload.owner_user_id:
         payload.owner_user_id = user.id
     elif not security.is_admin(user):
@@ -713,6 +715,8 @@ def edit_company(company_id: int, payload: schemas.CompanyUpdate, db: Session = 
     obj = db.get(Company, company_id)
     if not obj:
         raise HTTPException(status_code=404, detail="客户公司不存在")
+    if not security.is_admin(user) and not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长及系统管理员有权编辑客户")
     if not security.is_admin(user):
         enforce_company_access(db, user, company_id)
     crud.update_company(db, obj, payload)
@@ -727,6 +731,8 @@ def delete_company(company_id: int, db: Session = Depends(get_db), user: User = 
     obj = db.get(Company, company_id)
     if not obj:
         raise HTTPException(status_code=404, detail="客户公司不存在")
+    if not security.is_admin(user) and not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长及系统管理员有权删除客户")
     if not security.is_admin(user):
         enforce_company_access(db, user, company_id)
     name = obj.name
@@ -754,6 +760,8 @@ def list_projects(company_id: int | None = Query(default=None), db: Session = De
 
 @app.post("/api/projects", response_model=schemas.ProjectOut)
 def add_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if not security.is_admin(user) and not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长及系统管理员有权创建项目")
     if not security.is_admin(user):
         enforce_company_access(db, user, payload.company_id)
     if not payload.owner_user_id:
@@ -772,6 +780,8 @@ def edit_project(project_id: int, payload: schemas.ProjectUpdate, db: Session = 
     obj = db.get(Project, project_id)
     if not obj:
         raise HTTPException(status_code=404, detail="项目不存在")
+    if not security.is_admin(user) and not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长及系统管理员有权编辑项目")
     if not security.is_admin(user):
         enforce_project_access(db, user, project_id)
     crud.update_project(db, obj, payload)
@@ -801,6 +811,8 @@ def delete_project(project_id: int, db: Session = Depends(get_db), user: User = 
     obj = db.get(Project, project_id)
     if not obj:
         raise HTTPException(status_code=404, detail="项目不存在")
+    if not security.is_admin(user) and not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长及系统管理员有权删除项目")
     if not security.is_admin(user):
         enforce_project_access(db, user, project_id)
     name = obj.name
@@ -861,6 +873,8 @@ def delete_position(position_id: int, db: Session = Depends(get_db), user: User 
     obj = db.get(Position, position_id)
     if not obj:
         raise HTTPException(status_code=404, detail="岗位不存在")
+    if not security.is_admin(user) and not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长及系统管理员有权删除岗位")
     if not security.is_admin(user):
         enforce_position_access(db, user, position_id)
     name = obj.name

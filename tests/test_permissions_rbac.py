@@ -244,12 +244,17 @@ def test_leader_sees_subordinate_owned_projects_but_other_leader_cannot():
     zhang_headers = user_headers(zhang["username"])
     sun_headers = user_headers(sun["username"])
 
-    li_company = client.post("/api/companies", json={"name": f"李四客户-{suffix}"}, headers=li_headers).json()
-    li_project = client.post("/api/projects", json={"company_id": li_company["id"], "name": f"李四项目-{suffix}"}, headers=li_headers).json()
-    wang_company = client.post("/api/companies", json={"name": f"王五客户-{suffix}"}, headers=wang_headers).json()
-    wang_project = client.post("/api/projects", json={"company_id": wang_company["id"], "name": f"王五项目-{suffix}"}, headers=wang_headers).json()
+    # Companies and projects must be created by leaders (operators no longer have write access)
+    li_company = client.post("/api/companies", json={"name": f"李四客户-{suffix}"}, headers=zhang_headers).json()
+    li_project = client.post("/api/projects", json={"company_id": li_company["id"], "name": f"李四项目-{suffix}"}, headers=zhang_headers).json()
+    wang_company = client.post("/api/companies", json={"name": f"王五客户-{suffix}"}, headers=zhang_headers).json()
+    wang_project = client.post("/api/projects", json={"company_id": wang_company["id"], "name": f"王五项目-{suffix}"}, headers=zhang_headers).json()
     sun_company = client.post("/api/companies", json={"name": f"孙二客户-{suffix}"}, headers=sun_headers).json()
     sun_project = client.post("/api/projects", json={"company_id": sun_company["id"], "name": f"孙二项目-{suffix}"}, headers=sun_headers).json()
+
+    # Verify operators cannot create companies or projects
+    assert client.post("/api/companies", json={"name": f"李四违规客户-{suffix}"}, headers=li_headers).status_code == 403
+    assert client.post("/api/projects", json={"company_id": li_company["id"], "name": f"李四违规项目-{suffix}"}, headers=li_headers).status_code == 403
 
     li_projects = {item["name"] for item in client.get("/api/projects", headers=li_headers).json()}
     wang_projects = {item["name"] for item in client.get("/api/projects", headers=wang_headers).json()}
