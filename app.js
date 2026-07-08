@@ -1999,11 +1999,10 @@ async function handleGlobalButton(button) {
           const panel = document.querySelector('[data-detail-employment-panel]');
           if (panel) {
             panel.dataset.candidateId = String(resolvedIdNum);
-            // 1. 获取最新一条薪资记录以带出公司与岗位
-            const salaryList = await window.hrApi.salaryRecords({ candidate_id: resolvedIdNum });
-            const latestSalary = salaryList && salaryList[0];
-            const salaryPos = latestSalary?.position_name || '--';
-            const salaryComp = latestSalary?.company_name || '--';
+            // 1. 解析入职所需的岗位与公司（薪资记录 → 面试评价 → 推荐岗位 → 当前页岗位）
+            const employmentCtx = await resolveEmploymentContext(resolvedIdNum);
+            const salaryPos = employmentCtx.position_name;
+            const salaryComp = employmentCtx.company_name;
 
             // 2. 异步获取质保天数
             let warrantyDays = 180; // 默认 6 个月
@@ -2019,6 +2018,17 @@ async function handleGlobalButton(button) {
             panel.dataset.warrantyDays = String(warrantyDays);
             panel.dataset.salaryPos = salaryPos;
             panel.dataset.salaryComp = salaryComp;
+
+            const posEl = document.getElementById('employment-display-position');
+            const compEl = document.getElementById('employment-display-company');
+            if (posEl && salaryPos !== '--') {
+              posEl.textContent = salaryPos;
+              posEl.title = salaryPos;
+            }
+            if (compEl && salaryComp !== '--') {
+              compEl.textContent = salaryComp;
+              compEl.title = salaryComp;
+            }
 
             // 3. 定义开关切换 UI 处理函数
             window.setEmploymentPanelState = function(state) {
@@ -2050,14 +2060,17 @@ async function handleGlobalButton(button) {
             // 绑定 Toggle 开关点击事件 (滑到“已入职”直接生效，滑到“未入职”则进入编辑备注态)
             const toggleLabel = document.getElementById('employment-toggle-label');
             if (toggleLabel) {
-              toggleLabel.onclick = function() {
+              toggleLabel.onclick = async function() {
                 const nextState = panel.dataset.onboardState === 'onboard' ? 'not-onboard' : 'onboard';
 
                 if (nextState === 'onboard') {
-                  const position_name = panel.dataset.salaryPos;
-                  const company_name = panel.dataset.salaryComp;
+                  const ctx = await resolveEmploymentContext(resolvedIdNum);
+                  panel.dataset.salaryPos = ctx.position_name;
+                  panel.dataset.salaryComp = ctx.company_name;
+                  const position_name = ctx.position_name;
+                  const company_name = ctx.company_name;
                   if (position_name === '--' || company_name === '--') {
-                    showToast('当前候选人缺少关联岗位或客户公司，请先在薪资/福利/入职条件跟踪表中录入约定薪资记录！');
+                    showToast('当前候选人缺少关联岗位或客户公司，请先推荐至岗位并录入面试评价。');
                     return;
                   }
 
@@ -2788,6 +2801,63 @@ async function handleGlobalButton(button) {
     showToast(`已发送邮件：${record.mail_subject}`);
     return;
   }
+async function resolveEmploymentContext(candidateId) {
+  const cid = Number(candidateId);
+  if (!cid) return { position_name: '--', company_name: '--' };
+
+  const [salaryList, evaluations, recommendations, positions, projects] = await Promise.all([
+    window.hrApi.salaryRecords({ candidate_id: cid }).catch(() => []),
+    window.hrApi.evaluations({ candidate_id: cid }).catch(() => []),
+    window.hrApi.recommendations({ candidate_id: cid }).catch(() => []),
+    window.hrApi.positions().catch(() => []),
+    window.hrApi.projects().catch(() => []),
+  ]);
+
+  const projectMap = new Map(projects.map((project) => [project.id, project]));
+  const positionMap = new Map(positions.map((position) => [position.id, position]));
+
+  const fromPositionId = (positionId) => {
+    const position = positionMap.get(Number(positionId));
+    if (!position) return null;
+    const project = projectMap.get(position.project_id);
+    const positionName = String(position.name || '').trim();
+    const companyName = String(project?.company_name || '').trim();
+    if (!positionName || !companyName) return null;
+    return { position_name: positionName, company_name: companyName };
+  };
+
+  const latestSalary = salaryList[0];
+  if (latestSalary) {
+    const salaryPos = String(latestSalary.position_name || '').trim();
+    const salaryComp = String(latestSalary.company_name || '').trim();
+    if (salaryPos && salaryComp) {
+      return { position_name: salaryPos, company_name: salaryComp };
+    }
+    const fromSalaryPos = fromPositionId(latestSalary.position_id);
+    if (fromSalaryPos) return fromSalaryPos;
+  }
+
+  const evalWithPosition = evaluations.find((item) => item.position_id) || evaluations[0];
+  if (evalWithPosition?.position_id) {
+    const fromEval = fromPositionId(evalWithPosition.position_id);
+    if (fromEval) return fromEval;
+  }
+
+  const recWithPosition = recommendations.find((item) => item.position_id) || recommendations[0];
+  if (recWithPosition?.position_id) {
+    const fromRec = fromPositionId(recWithPosition.position_id);
+    if (fromRec) return fromRec;
+  }
+
+  const urlPositionId = new URLSearchParams(window.location.search).get('position_id');
+  if (urlPositionId) {
+    const fromUrl = fromPositionId(urlPositionId);
+    if (fromUrl) return fromUrl;
+  }
+
+  return { position_name: '--', company_name: '--' };
+}
+
 async function populateSalaryPositionOptions({ positionId = '', positionName = '', companyName = '' } = {}) {
   const positionSelect = document.getElementById('salary-position-id');
   const companyDisplay = document.getElementById('salary-company-name-display');
@@ -3155,7 +3225,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const onboard_date_str = document.getElementById('employment-display-onboard-date').textContent;
 
     if (position_name === '--' || company_name === '--') {
-      throw new Error('当前候选人缺少关联岗位或客户公司，请先在薪资/福利/入职条件跟踪表中录入约定薪资记录！');
+      throw new Error('当前候选人缺少关联岗位或客户公司，请先推荐至岗位并录入面试评价。');
     }
 
     const payload = {
