@@ -4957,6 +4957,25 @@ function getDisplayTrackingEvents(tracking = []) {
   return tracking.filter((item) => !isSystemTrackingEvent(item));
 }
 
+function renderCandidatePanelEntry({ title, summary = '', content = '', time = '', chipLabel = '', chipClass = 'primary' }) {
+  const summaryHtml = summary ? `<div class="candidate-panel-entry-summary">${summary}</div>` : '';
+  const contentHtml = content ? `<div class="candidate-panel-entry-content">${content}</div>` : '';
+  const timeHtml = time ? `<div class="candidate-panel-entry-time">${time}</div>` : '';
+  const chipHtml = chipLabel ? `<span class="chip ${chipClass} candidate-panel-entry-chip">${chipLabel}</span>` : '';
+  return `
+    <div class="candidate-panel-entry">
+      <div class="candidate-panel-entry-head">
+        <div class="candidate-panel-entry-main">
+          <div class="candidate-panel-entry-title">${title}</div>
+          ${summaryHtml}
+          ${contentHtml}
+          ${timeHtml}
+        </div>
+        ${chipHtml}
+      </div>
+    </div>`;
+}
+
 window.fetchCandidatePanels = async function(candidateId, container) {
   try {
     const [tracking, evaluations, positions] = await Promise.all([
@@ -4983,6 +5002,7 @@ window.fetchCandidatePanels = async function(candidateId, container) {
     };
 
     if (evaluationList) {
+      evaluationList.className = 'candidate-panel-list';
       const gradeClass = (grade) => (
         grade === '优秀' ? 'success' : grade === '良好' ? 'primary' : grade === '一般' ? 'warning' : 'neutral'
       );
@@ -4990,39 +5010,32 @@ window.fetchCandidatePanels = async function(candidateId, container) {
         const position = posMap.get(rec.position_id);
         const positionName = escapeHtml(position?.name || (rec.position_id ? `岗位 ${rec.position_id}` : '--'));
         const roundName = escapeHtml(rec.round_name || '评价轮次');
-        const grade = escapeHtml(rec.grade || '--');
-        const score = rec.score != null ? `${rec.score} 分` : '--';
-        const content = escapeHtml(rec.content || '暂无评价内容');
+        const grade = String(rec.grade || '').trim();
+        const gradeText = escapeHtml(grade || '--');
+        const scoreText = rec.score != null ? `${rec.score} 分` : '';
         const evaluator = escapeHtml(rec.evaluator || '未知评价人');
-        const gradeKey = rec.grade || '';
-        return `
-          <div class="list-item">
-            <div class="item-top">
-              <div>
-                <div class="item-title">${roundName} · ${positionName}</div>
-                <div class="item-meta">${grade} · ${score} · ${evaluator}</div>
-                <div class="item-meta" style="margin-top:4px;">${content}</div>
-                <div class="item-meta mono" style="font-size:11px;margin-top:4px;">${formatTime(rec.created_at)}</div>
-              </div>
-              <span class="chip ${gradeClass(gradeKey)}">${grade}</span>
-            </div>
-          </div>`;
-      }).join('') : '<div class="list-item"><div class="item-meta">无候选人评价</div></div>';
+        const summaryParts = [gradeText, scoreText, evaluator].filter(Boolean);
+        const contentText = String(rec.content || '').trim();
+        return renderCandidatePanelEntry({
+          title: `${roundName} · ${positionName}`,
+          summary: summaryParts.join(' · '),
+          content: contentText ? escapeHtml(contentText) : '',
+          time: formatTime(rec.created_at),
+          chipLabel: gradeText !== '--' ? gradeText : '',
+          chipClass: gradeClass(grade),
+        });
+      }).join('') : '<div class="candidate-panel-empty">无候选人评价</div>';
     }
 
     if (trackingList) {
-      trackingList.innerHTML = displayTracking.length ? displayTracking.map((item) => `
-        <div class="list-item">
-          <div class="item-top">
-            <div>
-              <div class="item-title">${escapeHtml(item.event_type || '跟踪事件')}</div>
-              <div class="item-meta">${escapeHtml(item.summary || '')}</div>
-              ${item.created_at ? `<div class="item-meta mono" style="font-size: 11px; margin-top: 4px;">${formatTime(item.created_at)}</div>` : ''}
-            </div>
-            <span class="chip primary">${escapeHtml(item.status || '事件')}</span>
-          </div>
-        </div>
-      `).join('') : '<div class="list-item"><div class="item-meta">无跟踪记录</div></div>';
+      trackingList.className = 'candidate-panel-list';
+      trackingList.innerHTML = displayTracking.length ? displayTracking.map((item) => renderCandidatePanelEntry({
+        title: escapeHtml(item.event_type || '跟踪事件'),
+        summary: escapeHtml(item.summary || ''),
+        time: item.created_at ? formatTime(item.created_at) : '',
+        chipLabel: escapeHtml(item.status || '事件'),
+        chipClass: 'primary',
+      })).join('') : '<div class="candidate-panel-empty">无跟踪记录</div>';
     }
   } catch (err) {
     console.warn('Failed to fetch candidate panels:', err);

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>岗位候选人管理</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260708-position-candidates" />
+  <link rel="stylesheet" href="../../styles.css?v=20260709-candidate-panels" />
   <script defer src="../../frontend-api.js"></script>
   <script defer src="../../app.js?v=20260629-tag-fields"></script>
 </head>
@@ -483,14 +483,14 @@
               + '<div class="table-row-details-wrapper" id="details-wrapper-' + c.id + '" data-row-key="' + c.id + '" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #f8fafc; width:100%;">'
               + '  <div style="overflow: hidden;">'
               + '    <div class="table-row-details" id="details-' + c.id + '" data-row-key="' + c.id + '" style="padding: 0 24px; opacity: 0; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-top: 1px dashed transparent;">'
-              + '      <div class="grid-2" data-candidate-details-grid style="padding: 16px 0;">'
-              + '        <div class="panel" data-candidate-tracking-panel style="margin-bottom:16px;">'
-              + '          <div class="section-head"><div><h3 style="font-size:14px;">候选人跟踪</h3></div></div>'
-              + '          <div class="list" data-tracking-events="' + c.id + '"></div>'
+              + '      <div class="candidate-expand-panels" data-candidate-details-grid>'
+              + '        <div class="candidate-expand-panel" data-candidate-tracking-panel>'
+              + '          <h4 class="candidate-expand-panel-title">候选人跟踪</h4>'
+              + '          <div class="candidate-panel-list" data-tracking-events="' + c.id + '"></div>'
               + '        </div>'
-              + '        <div class="panel" data-candidate-evaluation-panel style="margin-bottom:16px;">'
-              + '          <div class="section-head"><div><h3 style="font-size:14px;">候选人评价</h3></div></div>'
-              + '          <div class="list" data-candidate-evaluations="' + c.id + '"><div class="list-item"><div class="item-meta">正在加载评价记录...</div></div></div>'
+              + '        <div class="candidate-expand-panel" data-candidate-evaluation-panel>'
+              + '          <h4 class="candidate-expand-panel-title">候选人评价</h4>'
+              + '          <div class="candidate-panel-list" data-candidate-evaluations="' + c.id + '"><div class="candidate-panel-empty">加载中...</div></div>'
               + '        </div>'
               + '      </div>'
               + '    </div>'
