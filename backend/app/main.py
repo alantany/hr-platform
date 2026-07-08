@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from . import crud, models, schemas
 from .config import settings
 from .database import Base, SessionLocal, engine, get_db
-from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
+from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
 from . import security
 from .security import get_current_user
 from backend.seed import seed as seed_data
@@ -284,6 +284,11 @@ def _delete_position_graph(db: Session, position_ids: list[int]) -> None:
     db.query(CandidateTrackingEvent).filter(CandidateTrackingEvent.position_id.in_(position_ids)).delete(synchronize_session=False)
     db.query(Evaluation).filter(Evaluation.position_id.in_(position_ids)).delete(synchronize_session=False)
     db.query(SalaryRecord).filter(SalaryRecord.position_id.in_(position_ids)).delete(synchronize_session=False)
+    db.query(PositionAssignmentTask).filter(PositionAssignmentTask.position_id.in_(position_ids)).delete(synchronize_session=False)
+    db.query(DataPermission).filter(
+        DataPermission.scope_type == "position",
+        DataPermission.scope_id.in_([str(item) for item in position_ids]),
+    ).delete(synchronize_session=False)
     _delete_recommendation_graph(db, recommendation_ids)
     db.query(Position).filter(Position.id.in_(position_ids)).delete(synchronize_session=False)
 
@@ -606,7 +611,27 @@ def dashboard_summary(db: Session = Depends(get_db), user: User = Depends(requir
 
 @app.get("/api/dashboard/todos", response_model=list[schemas.DashboardTodoOut])
 def dashboard_todos(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return crud.dashboard_todos(db)
+    tasks = (
+        db.query(PositionAssignmentTask, Position.name)
+        .join(Position, Position.id == PositionAssignmentTask.position_id)
+        .filter(
+            PositionAssignmentTask.assignee_user_id == user.id,
+            PositionAssignmentTask.status == "pending",
+        )
+        .order_by(PositionAssignmentTask.created_at.desc())
+        .all()
+    )
+    return [
+        {
+            "title": position_name,
+            "meta": "岗位分配待确认",
+            "tag": "确认",
+            "color": "red",
+            "source": "position_assignment_task",
+            "target_path": "./notifications.html?tab=position-tasks",
+        }
+        for _, position_name in tasks
+    ]
 
 
 @app.get("/api/audit-logs", response_model=list[schemas.AuditLogOut])
@@ -899,31 +924,80 @@ def assign_position_permissions(position_id: int, payload: schemas.PositionAssig
             u = db.get(User, uid)
             u_name = u.username if u else f"ID {uid}"
             raise HTTPException(status_code=400, detail=f"用户 {u_name} 不是您的直属组员")
-    db.query(DataPermission).filter(
-        DataPermission.scope_type == "position",
-        DataPermission.scope_id == str(position_id)
-    ).update({"active": False})
-    for uid in payload.user_ids:
-        existing = db.query(DataPermission).filter(
+    selected_ids = set(payload.user_ids)
+    existing_tasks = db.query(PositionAssignmentTask).filter(
+        PositionAssignmentTask.position_id == position_id
+    ).all()
+    tasks_by_user = {task.assignee_user_id: task for task in existing_tasks}
+
+    for task in existing_tasks:
+        if task.assignee_user_id in selected_ids:
+            continue
+        task.status = "revoked"
+        task.responded_at = datetime.now(timezone.utc)
+        permission = db.query(DataPermission).filter(
+            DataPermission.user_id == task.assignee_user_id,
+            DataPermission.scope_type == "position",
+            DataPermission.scope_id == str(position_id),
+        ).first()
+        if permission:
+            permission.active = False
+
+    created_count = 0
+    for uid in selected_ids:
+        permission = db.query(DataPermission).filter(
             DataPermission.user_id == uid,
             DataPermission.scope_type == "position",
             DataPermission.scope_id == str(position_id)
         ).first()
-        if existing:
-            existing.active = True
-            existing.granted_by = user.username
+        task = tasks_by_user.get(uid)
+        if task and task.status in {"pending", "accepted"}:
+            if permission:
+                permission.active = task.status == "accepted"
+                permission.granted_by = user.username
+            continue
+
+        if permission:
+            permission.active = False
+            permission.granted_by = user.username
         else:
-            new_perm = DataPermission(
+            permission = DataPermission(
                 user_id=uid,
                 scope_type="position",
                 scope_id=str(position_id),
                 scope_name=position.name,
                 granted_by=user.username,
-                active=True
+                active=False,
             )
-            db.add(new_perm)
+            db.add(permission)
+        if task:
+            task.status = "pending"
+            task.assigned_by_user_id = user.id
+            task.response_note = ""
+            task.responded_at = None
+        else:
+            task = PositionAssignmentTask(
+                position_id=position_id,
+                assignee_user_id=uid,
+                assigned_by_user_id=user.id,
+                status="pending",
+            )
+            db.add(task)
+        assignee = db.get(User, uid)
+        db.add(Notification(
+            user=assignee.username,
+            title=f"{user.full_name}已向您分配岗位：{position.name}",
+            type="岗位分配",
+            read=False,
+            target_path="./notifications.html?tab=position-tasks",
+        ))
+        created_count += 1
+    crud.add_audit(
+        db, user.username, "岗位管理", "发起岗位分配", "position", str(position_id),
+        detail=f"待确认 {created_count} 人，当前选择 {len(selected_ids)} 人",
+    )
     db.commit()
-    return {"ok": True}
+    return {"ok": True, "pending_count": created_count}
 
 
 @app.get("/api/positions/{position_id}/assignees", response_model=list[int])
@@ -935,12 +1009,102 @@ def get_position_assignees(position_id: int, db: Session = Depends(get_db), user
         raise HTTPException(status_code=403, detail="仅组长可查看分配信息")
     if not security.can_access_scope(db, user, "position", position_id):
         raise HTTPException(status_code=403, detail="无权访问该岗位")
-    perms = db.query(DataPermission).filter(
-        DataPermission.scope_type == "position",
-        DataPermission.scope_id == str(position_id),
-        DataPermission.active == True
+    tasks = db.query(PositionAssignmentTask).filter(
+        PositionAssignmentTask.position_id == position_id,
+        PositionAssignmentTask.status.in_(["pending", "accepted"]),
     ).all()
-    return [p.user_id for p in perms]
+    return [task.assignee_user_id for task in tasks]
+
+
+def _position_assignment_task_out(db: Session, task: PositionAssignmentTask) -> dict:
+    position = db.get(Position, task.position_id)
+    assignee = db.get(User, task.assignee_user_id)
+    assigner = db.get(User, task.assigned_by_user_id)
+    project = db.get(Project, position.project_id) if position else None
+    return {
+        "id": task.id,
+        "position_id": task.position_id,
+        "position_name": position.name if position else "岗位已删除",
+        "project_name": project.name if project else "",
+        "assignee_user_id": task.assignee_user_id,
+        "assignee_name": (assignee.full_name or assignee.username) if assignee else "未知用户",
+        "assigned_by_user_id": task.assigned_by_user_id,
+        "assigned_by_name": (assigner.full_name or assigner.username) if assigner else "未知用户",
+        "status": task.status,
+        "response_note": task.response_note,
+        "created_at": task.created_at,
+        "updated_at": task.updated_at,
+        "responded_at": task.responded_at,
+    }
+
+
+@app.get("/api/position-assignment-tasks", response_model=list[schemas.PositionAssignmentTaskOut])
+def list_position_assignment_tasks(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    query = db.query(PositionAssignmentTask)
+    if security.is_leader(user):
+        query = query.filter(PositionAssignmentTask.assigned_by_user_id == user.id)
+    elif not security.is_admin(user):
+        query = query.filter(PositionAssignmentTask.assignee_user_id == user.id)
+    tasks = query.order_by(PositionAssignmentTask.created_at.desc()).all()
+    return [_position_assignment_task_out(db, task) for task in tasks]
+
+
+@app.post("/api/position-assignment-tasks/{task_id}/respond", response_model=schemas.PositionAssignmentTaskOut)
+def respond_position_assignment_task(
+    task_id: int,
+    payload: schemas.PositionAssignmentRespondPayload,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    task = db.get(PositionAssignmentTask, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="岗位分配任务不存在")
+    if task.assignee_user_id != user.id:
+        raise HTTPException(status_code=403, detail="只能处理分配给自己的岗位任务")
+    if task.status != "pending":
+        raise HTTPException(status_code=400, detail="该岗位任务已处理或已撤回")
+    position = db.get(Position, task.position_id)
+    if not position:
+        raise HTTPException(status_code=404, detail="岗位不存在")
+
+    accepted = payload.action == "accept"
+    task.status = "accepted" if accepted else "rejected"
+    task.response_note = payload.note.strip()
+    task.responded_at = datetime.now(timezone.utc)
+    permission = db.query(DataPermission).filter(
+        DataPermission.user_id == user.id,
+        DataPermission.scope_type == "position",
+        DataPermission.scope_id == str(task.position_id),
+    ).first()
+    if not permission:
+        permission = DataPermission(
+            user_id=user.id,
+            scope_type="position",
+            scope_id=str(task.position_id),
+            scope_name=position.name,
+            active=accepted,
+        )
+        db.add(permission)
+    permission.active = accepted
+    assigner = db.get(User, task.assigned_by_user_id)
+    permission.granted_by = assigner.username if assigner else ""
+    response_text = "已接受" if accepted else "已拒绝"
+    note_suffix = f"，原因：{task.response_note}" if task.response_note else ""
+    if assigner:
+        db.add(Notification(
+            user=assigner.username,
+            title=f"{user.full_name}{response_text}岗位：{position.name}{note_suffix}",
+            type="岗位分配回执",
+            read=False,
+            target_path="./notifications.html?tab=position-tasks",
+        ))
+    crud.add_audit(
+        db, user.username, "岗位管理", response_text + "岗位分配", "position_assignment_task", str(task.id),
+        detail=f"{position.name}{note_suffix}",
+    )
+    db.commit()
+    db.refresh(task)
+    return _position_assignment_task_out(db, task)
 
 
 @app.get("/api/candidates", response_model=list[schemas.CandidateOut])

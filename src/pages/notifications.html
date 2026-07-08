@@ -11,6 +11,42 @@
 <body>
   <div id="app"></div>
   <script>
+    const escapeTaskText = (value) => String(value ?? '')
+      .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+
+    const taskStatusMap = {
+      pending: ['待确认', 'warning'],
+      accepted: ['已接受', 'success'],
+      rejected: ['已拒绝', 'danger'],
+      revoked: ['已撤回', 'neutral'],
+    };
+
+    const renderTaskRows = (items) => items.map((item) => {
+      const [statusLabel, statusTone] = taskStatusMap[item.status] || [item.status, 'neutral'];
+      const canRespond = item.status === 'pending' && Number(item.assignee_user_id) === Number(state.currentUser?.id);
+      const responseMeta = item.response_note ? `<div class="item-meta">处理说明：${escapeTaskText(item.response_note)}</div>` : '';
+      return `
+        <div class="list-item ${item.status === 'pending' ? 'soft' : ''}">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${escapeTaskText(item.position_name)}</div>
+              <div class="item-meta">${escapeTaskText(item.project_name || '未关联项目')} · ${escapeTaskText(item.assigned_by_name)} 分配给 ${escapeTaskText(item.assignee_name)}</div>
+              <div class="item-meta mono">${escapeTaskText(item.created_at || '')}</div>
+              ${responseMeta}
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+              <span class="chip ${statusTone}">${statusLabel}</span>
+              ${canRespond ? `
+                <button class="btn-sm primary" data-action="accept-position-task" data-id="${item.id}">接受</button>
+                <button class="btn-sm" data-action="reject-position-task" data-id="${item.id}">拒绝</button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
     const renderRows = (items) => items.map((item) => `
       <div class="list-item ${item.read ? '' : 'soft'}">
         <div class="item-top">
@@ -29,7 +65,7 @@
       </div>
     `).join('');
 
-    const state = { items: [] };
+    const state = { items: [], tasks: [], currentUser: null };
 
     function readFilter(selector) {
       return document.querySelector(selector)?.value?.trim?.() || '';
@@ -60,7 +96,29 @@
       document.querySelector('[data-notification-list]').innerHTML = items.length ? renderRows(items) : '<div class="list-item"><div class="item-meta">当前筛选条件下没有通知。</div></div>';
     }
 
+    async function loadPositionTasks() {
+      const tasks = await window.hrApi.positionAssignmentTasks();
+      state.tasks = tasks;
+      const pending = tasks.filter((item) => item.status === 'pending');
+      document.querySelector('[data-position-task-count]').textContent = String(pending.length);
+      document.querySelector('[data-position-task-list]').innerHTML = tasks.length
+        ? renderTaskRows(tasks)
+        : '<div class="list-item"><div class="item-meta">当前没有岗位分配任务。</div></div>';
+    }
+
     window.__PAGE_BODY__ = `
+      <section class="panel" id="position-tasks" data-position-task-section>
+        <div class="section-head">
+          <div>
+            <h3>岗位分配待办 <span class="chip warning" data-position-task-count>0</span></h3>
+            <div class="section-sub">操作员在这里接受或拒绝组长分配的岗位；组长可以查看处理结果。</div>
+          </div>
+          <button class="btn secondary" data-action="refresh-position-tasks">刷新</button>
+        </div>
+        <div class="list" data-position-task-list>
+          <div class="list-item"><div class="item-meta">加载中...</div></div>
+        </div>
+      </section>
       <section class="metrics">
         <div class="metric-card" onclick="filterNotices('', null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">通知总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-notice-total>0</div><div class="metric-label">当前筛选结果</div></div>
         <div class="metric-card" onclick="filterNotices('false', null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">未读通知</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-notice-unread>0</div><div class="metric-label">需要处理的消息</div></div>
@@ -115,10 +173,18 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       await renderApp();
+      state.currentUser = window.currentUser || await window.hrApi.me();
+      await loadPositionTasks().catch((err) => {
+        const list = document.querySelector('[data-position-task-list]');
+        if (list) list.innerHTML = `<div class="list-item"><div class="item-meta">加载失败：${escapeTaskText(err.message || err)}</div></div>`;
+      });
       await loadNotifications().catch((err) => {
         const list = document.querySelector('[data-notification-list]');
         if (list) list.innerHTML = `<div class="list-item"><div class="item-meta">加载失败：${err.message || err}</div></div>`;
       });
+      if (new URLSearchParams(location.search).get('tab') === 'position-tasks') {
+        document.querySelector('[data-position-task-section]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
 
     document.addEventListener('click', async (event) => {
@@ -127,6 +193,22 @@
       if (btn.dataset.action === 'refresh-notifications') {
         await loadNotifications().catch((err) => console.warn(err));
         showToast('通知已刷新');
+      }
+      if (btn.dataset.action === 'refresh-position-tasks') {
+        await loadPositionTasks();
+        showToast('岗位待办已刷新');
+      }
+      if (btn.dataset.action === 'accept-position-task') {
+        await window.hrApi.respondPositionAssignmentTask(btn.dataset.id, 'accept');
+        await Promise.all([loadPositionTasks(), loadNotifications()]);
+        showToast('已接受岗位分配，岗位权限已生效');
+      }
+      if (btn.dataset.action === 'reject-position-task') {
+        const note = window.prompt('可填写拒绝原因（选填）', '') ?? null;
+        if (note === null) return;
+        await window.hrApi.respondPositionAssignmentTask(btn.dataset.id, 'reject', note);
+        await Promise.all([loadPositionTasks(), loadNotifications()]);
+        showToast('已拒绝岗位分配');
       }
       if (btn.dataset.action === 'read-notification') {
         try {

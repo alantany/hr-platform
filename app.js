@@ -108,9 +108,9 @@ const pages = {
     desc: "统一配置质保期并监控候选人到期状态，支持到期提醒与重新激活。",
   },
   notifications: {
-    crumbs: "通知提醒 / 通知列表",
-    title: "通知提醒",
-    desc: "承接导入、候选人、评价、质保和系统事件的站内消息，支持查看、已读与跳转。",
+    crumbs: "任务与通知 / 待办中心",
+    title: "任务与通知",
+    desc: "处理岗位分配待办，并查看导入、评价、质保和系统事件等站内消息。",
   },
   statistics: {
     crumbs: "统计 / 数据大屏",
@@ -4467,8 +4467,8 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
         const userIds = Array.from(checkboxes).map(cb => Number(cb.value));
         
         try {
-          await window.hrApi.assignPosition(Number(positionId), userIds);
-          showToast('岗位权限分配成功');
+          const result = await window.hrApi.assignPosition(Number(positionId), userIds);
+          showToast(result.pending_count ? `已发送 ${result.pending_count} 条岗位确认任务` : '岗位分配已更新');
           modal.style.display = 'none';
           if (window.refreshManagementPage) {
             await window.refreshManagementPage();

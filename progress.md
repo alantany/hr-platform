@@ -2351,3 +2351,12 @@
 - Task completed at 2026-07-08 00:15:14. Update the summary with the latest finished work.
 - Task completed at 2026-07-08 00:19:39. Update the summary with the latest finished work.
 - Task completed at 2026-07-08 09:33:31. Update the summary with the latest finished work.
+## 2026-07-08（完成 - 岗位分配确认待办）
+
+- 新增 `position_assignment_tasks` 业务表及 Alembic 迁移，记录岗位、接收人、分配人、处理状态、处理说明和处理时间。
+- 改造组长“分配权限”流程：新增选择生成待确认任务和站内提醒，不再立即启用岗位权限；重复保存相同分配不会重复发送任务，取消选择会撤回任务并停用权限。
+- 新增岗位任务查询与接受/拒绝接口；操作员接受后启用对应 `DataPermission`，拒绝则保持停用，并向组长发送“已接受/已拒绝”回执通知。
+- 通知中心新增“岗位分配待办”区域，操作员可直接接受或拒绝，组长可查看所有处理状态和拒绝原因。
+- 首页原“待处理需求”卡片已改为“待办岗位”，仅统计当前用户尚未接受或拒绝的岗位分配任务，并直达通知中心岗位待办区域。
+- 测试清理机制已纳入新任务表；新增接受与拒绝流程测试。完整 `pytest -q` 通过（27 passed），Python/JavaScript 语法、`git diff --check` 与 Alembic 单一 head 检查通过。
+- 浏览器验收连接在登录提交阶段连续超时，未取得稳定页面交互结果；功能行为由完整接口回归覆盖，未留下临时任务、权限或通知测试数据。

@@ -61,6 +61,19 @@ class DataPermission(Base, TimestampMixin):
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
+class PositionAssignmentTask(Base, TimestampMixin):
+    __tablename__ = "position_assignment_tasks"
+    __table_args__ = (UniqueConstraint("position_id", "assignee_user_id", name="uq_position_assignment_task"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    position_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    assignee_user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    assigned_by_user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), default="pending", nullable=False, index=True)
+    response_note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    responded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class Company(Base, TimestampMixin):
     __tablename__ = "companies"
 

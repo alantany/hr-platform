@@ -201,11 +201,11 @@
           link: './projects.html',
         },
         {
-          title: '待处理需求',
+          title: '待办岗位',
           value: dashboardState.todos.length,
-          note: dashboardState.todos.length ? '请优先处理高优先级待办' : '当前待办已清空',
+          note: dashboardState.todos.length ? `有 ${dashboardState.todos.length} 个岗位等待确认` : '当前没有待确认岗位',
           tone: 'danger',
-          link: './notifications.html',
+          link: './notifications.html?tab=position-tasks',
         },
         {
           title: '总操作员数',

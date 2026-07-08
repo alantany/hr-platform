@@ -213,6 +213,27 @@ class PositionAssignPayload(BaseModel):
     user_ids: list[int]
 
 
+class PositionAssignmentRespondPayload(BaseModel):
+    action: Literal["accept", "reject"]
+    note: str = ""
+
+
+class PositionAssignmentTaskOut(BaseModel):
+    id: int
+    position_id: int
+    position_name: str
+    project_name: str = ""
+    assignee_user_id: int
+    assignee_name: str
+    assigned_by_user_id: int
+    assigned_by_name: str
+    status: Literal["pending", "accepted", "rejected", "revoked"]
+    response_note: str = ""
+    created_at: datetime
+    updated_at: datetime
+    responded_at: datetime | None = None
+
+
 class CandidateCreate(BaseModel):
     name: str
     phone: str | None = ""

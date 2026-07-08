@@ -115,6 +115,15 @@ window.hrApi = {
   assignPosition(id, userIds) {
     return this.request(`/positions/${id}/assign`, { method: "POST", body: JSON.stringify({ user_ids: userIds }) });
   },
+  positionAssignmentTasks() {
+    return this.request("/position-assignment-tasks");
+  },
+  respondPositionAssignmentTask(id, action, note = "") {
+    return this.request(`/position-assignment-tasks/${id}/respond`, {
+      method: "POST",
+      body: JSON.stringify({ action, note }),
+    });
+  },
   candidates(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/candidates${qs ? `?${qs}` : ""}`);
