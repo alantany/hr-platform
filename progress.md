@@ -1,5 +1,14 @@
 # Progress
 
+## 2026-07-08（完成 - positions 缺列安全补丁脚本）
+
+- 新增 `scripts/patch-positions-missing-columns.sql`、`backend/scripts/patch_positions_columns.py`、`windows/04-patch-positions-columns.bat`，仅 ADD COLUMN，不删数据。
+
+## 2026-07-08（完成 - 远程库 positions 缺列自愈）
+
+- 远程 PostgreSQL 若未执行 Alembic，会报 `positions.requirement_tags` 不存在。
+- 已在 `ensure_schema()` 启动钩子补 `requirement_tags`（JSON）与 `target_resume_count`（默认 10）自动加列。
+
 ## 2026-07-08（完成 - 岗位候选人交互与面包屑一批提交）
 
 - 展开行空态：无跟踪显示「无跟踪记录」，无评价显示「无候选人评价」；AUTO_MATCH 不计入跟踪。

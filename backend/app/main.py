@@ -197,6 +197,8 @@ def ensure_schema() -> None:
             "age_requirement": "ALTER TABLE positions ADD COLUMN age_requirement TEXT NOT NULL DEFAULT ''",
             "education_requirement": "ALTER TABLE positions ADD COLUMN education_requirement TEXT NOT NULL DEFAULT ''",
             "experience_requirement": "ALTER TABLE positions ADD COLUMN experience_requirement TEXT NOT NULL DEFAULT ''",
+            "requirement_tags": "ALTER TABLE positions ADD COLUMN requirement_tags JSON",
+            "target_resume_count": "ALTER TABLE positions ADD COLUMN target_resume_count INTEGER NOT NULL DEFAULT 10",
             "description": "ALTER TABLE positions ADD COLUMN description TEXT NOT NULL DEFAULT ''",
         }.items():
             if column not in pos_cols:
