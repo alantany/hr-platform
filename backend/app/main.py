@@ -1149,6 +1149,27 @@ def list_candidates(
     user: User = Depends(require_user),
 ):
     items = crud.list_candidates(db, keyword=keyword, city=city, status=status)
+    assigned_position_ids = {
+        int(scope_id)
+        for (scope_id,) in db.query(DataPermission.scope_id).filter(
+            DataPermission.user_id == user.id,
+            DataPermission.scope_type == "position",
+            DataPermission.active.is_(True),
+        ).all()
+        if str(scope_id).isdigit()
+    }
+    self_locked_candidate_ids: set[int] = set()
+    if assigned_position_ids:
+        self_locked_candidate_ids = {
+            candidate_id
+            for (candidate_id,) in db.query(Recommendation.candidate_id).filter(
+                Recommendation.position_id.in_(assigned_position_ids)
+            ).distinct().all()
+        }
+    for item in items:
+        record_key = str(item.get("record_key") or "")
+        candidate_id = int(record_key.split(":", 1)[1]) if record_key.startswith("candidate:") else None
+        item["self_locked"] = bool(item.get("locked") and candidate_id in self_locked_candidate_ids)
     return items
 
 

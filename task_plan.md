@@ -170,6 +170,13 @@
 - [x] 完成轻量定向测试
 - **Status:** complete
 
+### Phase 19 - 候选人自己锁定筛选（已完成）
+
+- [x] 新增“自己锁定”状态选项
+- [x] 按已生效岗位权限与推荐关系计算共享候选人
+- [x] 完成多人共享岗位轻量测试
+- **Status:** complete
+
 ## Key Constraints (持续有效)
 
 - 新增任何候选人写入接口，后端 handler 必须先调用 `ensure_local_candidate` 做 ID 解析

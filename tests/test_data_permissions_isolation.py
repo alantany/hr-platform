@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi.testclient import TestClient
 from backend.app.main import app
 from backend.app.database import SessionLocal
-from backend.app.models import User, Candidate, Recommendation, Company, Project, Position
+from backend.app.models import User, Candidate, Recommendation, Company, DataPermission, Project, Position
 
 client = TestClient(app)
 
@@ -50,8 +50,8 @@ def test_data_permission_sharing_and_isolation():
         db.refresh(user_b)
 
         # 2. 创建候选人
-        cand_a = Candidate(name=f"共享候选人A-{suffix}", phone="13812345678", email="candidatea@example.com", owner_user_id=user_a.id)
-        cand_b = Candidate(name=f"共享候选人B-{suffix}", phone="13987654321", email="candidateb@example.com", owner_user_id=user_b.id)
+        cand_a = Candidate(name=f"共享候选人A-{suffix}", phone="13812345678", email="candidatea@example.com", owner_user_id=user_a.id, locked=True, status="锁定")
+        cand_b = Candidate(name=f"共享候选人B-{suffix}", phone="13987654321", email="candidateb@example.com", owner_user_id=user_b.id, locked=True, status="锁定")
         db.add_all([cand_a, cand_b])
         db.commit()
         db.refresh(cand_a)
@@ -87,10 +87,24 @@ def test_data_permission_sharing_and_isolation():
         assert rec_a.id in rec_ids
         assert rec_b.id not in rec_ids
 
+        # 7. 同一岗位分配给多人时，岗位下锁定候选人对两人都属于“自己锁定”
+        db.add_all([
+            DataPermission(user_id=user_a.id, scope_type="position", scope_id=str(pos.id), scope_name=pos.name, active=True),
+            DataPermission(user_id=user_b.id, scope_type="position", scope_id=str(pos.id), scope_name=pos.name, active=True),
+        ])
+        db.commit()
+        rows_a = client.get("/api/candidates", headers=headers_a).json()
+        rows_b = client.get("/api/candidates", headers={"Authorization": f"Bearer user:op_b_{suffix}"}).json()
+        shared_names = {cand_a.name, cand_b.name}
+        assert {row["name"] for row in rows_a if row["self_locked"]} >= shared_names
+        assert {row["name"] for row in rows_b if row["self_locked"]} >= shared_names
+
     finally:
         # 清理数据
         if cand_a or cand_b:
             db.query(Recommendation).filter(Recommendation.candidate_id.in_([c.id for c in [cand_a, cand_b] if c])).delete()
+        if user_a or user_b:
+            db.query(DataPermission).filter(DataPermission.user_id.in_([u.id for u in [user_a, user_b] if u])).delete()
         if cand_a:
             db.delete(cand_a)
         if cand_b:
