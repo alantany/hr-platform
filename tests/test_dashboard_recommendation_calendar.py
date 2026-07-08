@@ -1,0 +1,84 @@
+from uuid import uuid4
+
+from fastapi.testclient import TestClient
+
+from backend.app.database import SessionLocal
+from backend.app.main import app
+from backend.app.models import Candidate, Company, Position, Project, Recommendation, User
+from backend.app.security import hash_password
+
+
+client = TestClient(app)
+
+
+def headers(username: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer user:{username}"}
+
+
+def test_recommendation_calendar_uses_recommended_status_and_user_hierarchy():
+    suffix = uuid4().hex[:8]
+    db = SessionLocal()
+    try:
+        leader = User(
+            username=f"temp_calendar_leader_{suffix}",
+            full_name="日历组长",
+            password_hash=hash_password("test"),
+            role="组长",
+            is_active=True,
+        )
+        outsider = User(
+            username=f"temp_calendar_outsider_{suffix}",
+            full_name="外组操作员",
+            password_hash=hash_password("test"),
+            role="操作员",
+            is_active=True,
+        )
+        db.add_all([leader, outsider])
+        db.flush()
+        operator = User(
+            username=f"temp_calendar_operator_{suffix}",
+            full_name="直属操作员",
+            password_hash=hash_password("test"),
+            role="操作员",
+            is_active=True,
+            manager_user_id=leader.id,
+        )
+        db.add(operator)
+        db.flush()
+        company = Company(name=f"推荐日历客户-{suffix}", owner_user_id=leader.id)
+        db.add(company)
+        db.flush()
+        project = Project(company_id=company.id, name=f"推荐日历项目-{suffix}", owner_user_id=leader.id)
+        db.add(project)
+        db.flush()
+        position = Position(project_id=project.id, name=f"推荐日历岗位-{suffix}", owner_user_id=leader.id)
+        db.add(position)
+        db.flush()
+        candidates = [
+            Candidate(name=f"组长推荐-{suffix}", owner_user_id=leader.id),
+            Candidate(name=f"组员推荐-{suffix}", owner_user_id=operator.id),
+            Candidate(name=f"组员待推荐-{suffix}", owner_user_id=operator.id),
+            Candidate(name=f"外组推荐-{suffix}", owner_user_id=outsider.id),
+        ]
+        db.add_all(candidates)
+        db.flush()
+        db.add_all([
+            Recommendation(candidate_id=candidates[0].id, position_id=position.id, recommender=leader.username, recommender_user_id=leader.id, status="已推荐"),
+            Recommendation(candidate_id=candidates[1].id, position_id=position.id, recommender=operator.username, recommender_user_id=operator.id, status="已推荐"),
+            Recommendation(candidate_id=candidates[2].id, position_id=position.id, recommender=operator.username, recommender_user_id=operator.id, status="待推荐"),
+            Recommendation(candidate_id=candidates[3].id, position_id=position.id, recommender=outsider.username, recommender_user_id=outsider.id, status="已推荐"),
+        ])
+        db.commit()
+        leader_username = leader.username
+        operator_username = operator.username
+        outsider_username = outsider.username
+    finally:
+        db.close()
+
+    leader_rows = client.get("/api/dashboard/recommendation-calendar", headers=headers(leader_username)).json()
+    operator_rows = client.get("/api/dashboard/recommendation-calendar", headers=headers(operator_username)).json()
+    outsider_rows = client.get("/api/dashboard/recommendation-calendar", headers=headers(outsider_username)).json()
+
+    assert {row["operator"] for row in leader_rows} == {"日历组长", "直属操作员"}
+    assert [row["operator"] for row in operator_rows] == ["直属操作员"]
+    assert [row["operator"] for row in outsider_rows] == ["外组操作员"]

@@ -114,6 +114,11 @@ class DashboardTodoOut(BaseModel):
     target_path: str = ""
 
 
+class DashboardRecommendationCalendarOut(BaseModel):
+    date: datetime
+    operator: str
+
+
 class CompanyCreate(BaseModel):
     name: str
     contact_name: str = ""

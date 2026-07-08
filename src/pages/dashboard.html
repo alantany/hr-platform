@@ -57,7 +57,7 @@
       interviews: [],
       employments: [],
       feedbacks: [],
-      auditLogs: [],
+      recommendationCalendar: [],
       calendarMonth: null,
       selectedDayKey: '',
     };
@@ -111,33 +111,12 @@
       return dates[0] || null;
     }
 
-    function getRecommendationAuditRows() {
-      return dashboardState.auditLogs
-        .filter((row) => String(row.module || '').includes('推荐') || String(row.action || '').includes('推荐'))
-        .map((row) => ({
-          date: parseDateValue(row.created_at),
-          operator: row.actor || '未署名顾问',
-          source: 'audit',
-        }))
-        .filter((row) => row.date);
-    }
-
     function getCalendarEvents() {
-      if (dashboardState.deliveries.length) {
-        return dashboardState.deliveries.map((item) => ({
-          date: parseDateValue(item.delivered_at),
-          operator: item.delivered_by || '未署名顾问',
-          source: 'delivery',
-        })).filter((item) => item.date);
-      }
-      if (dashboardState.recommendations.length) {
-        return dashboardState.recommendations.map((item) => ({
-          date: parseDateValue(item.created_at),
-          operator: item.recommender || '未署名顾问',
-          source: 'recommendation',
-        })).filter((item) => item.date);
-      }
-      return getRecommendationAuditRows();
+      return dashboardState.recommendationCalendar.map((item) => ({
+        date: parseDateValue(item.date),
+        operator: item.operator || '未署名顾问',
+        source: 'recommendation',
+      })).filter((item) => item.date);
     }
 
     function getMonthRows(rows, picker, monthDate, predicate = null) {
@@ -405,7 +384,7 @@
         window.hrApi.interviewRecords(),
         window.hrApi.employmentRecords(),
         window.hrApi.recommendationFeedbacks(),
-        window.hrApi.auditLogs(),
+        window.hrApi.dashboardRecommendationCalendar(),
       ]);
       const [
         summaryResult,
@@ -416,7 +395,7 @@
         interviewsResult,
         employmentsResult,
         feedbacksResult,
-        auditLogsResult,
+        recommendationCalendarResult,
       ] = requests;
 
       dashboardState.summary = summaryResult.status === 'fulfilled' ? summaryResult.value : {
@@ -432,7 +411,7 @@
       dashboardState.interviews = interviewsResult.status === 'fulfilled' ? interviewsResult.value : [];
       dashboardState.employments = employmentsResult.status === 'fulfilled' ? employmentsResult.value : [];
       dashboardState.feedbacks = feedbacksResult.status === 'fulfilled' ? feedbacksResult.value : [];
-      dashboardState.auditLogs = auditLogsResult.status === 'fulfilled' ? auditLogsResult.value : [];
+      dashboardState.recommendationCalendar = recommendationCalendarResult.status === 'fulfilled' ? recommendationCalendarResult.value : [];
 
       const latestActivity =
         getLatestDate(getCalendarEvents(), ['date']) ||

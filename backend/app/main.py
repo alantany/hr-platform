@@ -634,6 +634,26 @@ def dashboard_todos(db: Session = Depends(get_db), user: User = Depends(require_
     ]
 
 
+@app.get("/api/dashboard/recommendation-calendar", response_model=list[schemas.DashboardRecommendationCalendarOut])
+def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    query = (
+        db.query(Recommendation, User)
+        .join(User, User.id == Recommendation.recommender_user_id)
+        .filter(Recommendation.status == "已推荐")
+    )
+    if not security.is_admin(user):
+        visible_user_ids = security.visible_owner_user_ids(db, user)
+        query = query.filter(Recommendation.recommender_user_id.in_(visible_user_ids))
+    rows = query.order_by(Recommendation.created_at.asc()).all()
+    return [
+        {
+            "date": recommendation.created_at,
+            "operator": recommender.full_name or recommender.username,
+        }
+        for recommendation, recommender in rows
+    ]
+
+
 @app.get("/api/audit-logs", response_model=list[schemas.AuditLogOut])
 def audit_logs(
     limit: int = Query(default=50, ge=1, le=500),

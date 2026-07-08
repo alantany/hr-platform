@@ -31,6 +31,9 @@ window.hrApi = {
   dashboardTodos() {
     return this.request("/dashboard/todos");
   },
+  dashboardRecommendationCalendar() {
+    return this.request("/dashboard/recommendation-calendar");
+  },
   auditLogs(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/audit-logs${qs ? `?${qs}` : ""}`);
