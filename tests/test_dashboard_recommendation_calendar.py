@@ -80,5 +80,7 @@ def test_recommendation_calendar_uses_recommended_status_and_user_hierarchy():
     outsider_rows = client.get("/api/dashboard/recommendation-calendar", headers=headers(outsider_username)).json()
 
     assert {row["operator"] for row in leader_rows} == {"日历组长", "直属操作员"}
+    assert {row["group_leader"] for row in leader_rows} == {"日历组长"}
     assert [row["operator"] for row in operator_rows] == ["直属操作员"]
+    assert [row["group_leader"] for row in operator_rows] == ["日历组长"]
     assert [row["operator"] for row in outsider_rows] == ["外组操作员"]

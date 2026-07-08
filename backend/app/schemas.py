@@ -117,6 +117,7 @@ class DashboardTodoOut(BaseModel):
 class DashboardRecommendationCalendarOut(BaseModel):
     date: datetime
     operator: str
+    group_leader: str
 
 
 class CompanyCreate(BaseModel):
@@ -195,6 +196,7 @@ class PositionCreate(BaseModel):
 
 class PositionOut(PositionCreate):
     id: int
+    created_at: datetime | None = None
 
 
 class PositionUpdate(BaseModel):

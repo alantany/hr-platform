@@ -645,10 +645,23 @@ def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User 
         visible_user_ids = security.visible_owner_user_ids(db, user)
         query = query.filter(Recommendation.recommender_user_id.in_(visible_user_ids))
     rows = query.order_by(Recommendation.created_at.asc()).all()
+    users_by_id = {item.id: item for item in db.query(User).all()}
+
+    def resolve_group_leader(recommender: User) -> str:
+        current = recommender
+        visited: set[int] = set()
+        while current and current.id not in visited:
+            visited.add(current.id)
+            if security.is_leader(current):
+                return current.full_name or current.username
+            current = users_by_id.get(current.manager_user_id)
+        return recommender.full_name or recommender.username
+
     return [
         {
             "date": recommendation.created_at,
             "operator": recommender.full_name or recommender.username,
+            "group_leader": resolve_group_leader(recommender),
         }
         for recommendation, recommender in rows
     ]

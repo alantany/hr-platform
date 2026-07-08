@@ -163,6 +163,13 @@
 - [x] 完成角色范围测试、全量回归和浏览器检查
 - **Status:** complete
 
+### Phase 18 - 日历分组详情与月度新增岗位（已完成）
+
+- [x] 单日推荐详情按组长汇总
+- [x] “本月客户反馈”替换为“本月新增岗位”
+- [x] 完成轻量定向测试
+- **Status:** complete
+
 ## Key Constraints (持续有效)
 
 - 新增任何候选人写入接口，后端 handler 必须先调用 `ensure_local_candidate` 做 ID 解析

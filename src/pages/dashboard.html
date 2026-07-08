@@ -51,12 +51,12 @@
     const dashboardState = {
       summary: null,
       projects: [],
+      positions: [],
       todos: [],
       recommendations: [],
       deliveries: [],
       interviews: [],
       employments: [],
-      feedbacks: [],
       recommendationCalendar: [],
       calendarMonth: null,
       selectedDayKey: '',
@@ -115,6 +115,7 @@
       return dashboardState.recommendationCalendar.map((item) => ({
         date: parseDateValue(item.date),
         operator: item.operator || '未署名顾问',
+        groupLeader: item.group_leader || item.operator || '未分组',
         source: 'recommendation',
       })).filter((item) => item.date);
     }
@@ -137,7 +138,7 @@
         monthDate,
         (row) => row.status === '已入职'
       );
-      const monthlyFeedbacks = getMonthRows(dashboardState.feedbacks, 'created_at', monthDate);
+      const monthlyPositions = getMonthRows(dashboardState.positions, 'created_at', monthDate);
       const monthlyCalendarEvents = getCalendarEvents().filter((row) => sameMonth(row.date, monthDate));
       const activeProjects = dashboardState.projects.filter((row) => row.status !== '招聘完毕').length;
       const activeOperators = new Set(monthlyCalendarEvents.map((row) => row.operator || '未署名顾问')).size;
@@ -146,7 +147,7 @@
         monthlyDeliveries,
         monthlyInterviews,
         monthlyEmployments,
-        monthlyFeedbacks,
+        monthlyPositions,
         monthlyCalendarEvents,
         activeProjects,
         activeOperators,
@@ -285,16 +286,20 @@
       const detailRows = events.filter((item) => dayKey(item.date) === dashboardState.selectedDayKey);
       const detail = document.querySelector('[data-calendar-detail]');
       if (detail) {
-        const operatorCount = new Set(detailRows.map((row) => row.operator)).size;
+        const groupCounts = [...detailRows.reduce((groups, row) => {
+          const groupName = row.groupLeader || '未分组';
+          groups.set(groupName, (groups.get(groupName) || 0) + 1);
+          return groups;
+        }, new Map()).entries()].map(([name, count]) => ({ name, count }));
         detail.innerHTML = `
           <div class="dashboard-calendar-detail-copy">
             <div class="dashboard-calendar-detail-title">${dashboardState.selectedDayKey ? formatDayLabel(selectedDate) : `${formatMonthLabel(monthDate)}总览`}</div>
             <div class="dashboard-calendar-detail-meta">
-              ${detailRows.length ? `当天推荐 ${detailRows.length} 条，涉及 ${operatorCount} 位顾问` : '当天暂无推荐交付记录'}
+              ${detailRows.length ? `当天共推荐 ${detailRows.length} 人，涉及 ${groupCounts.length} 个组` : '当天暂无推荐记录'}
             </div>
           </div>
           <div class="dashboard-calendar-detail-tags">
-            ${detailRows.slice(0, 4).map((row) => `<span class="dashboard-operator-chip">${row.operator}</span>`).join('') || '<span class="dashboard-operator-chip is-muted">暂无顾问记录</span>'}
+            ${groupCounts.map((group) => `<span class="dashboard-operator-chip">${escapeHtml(group.name)}组 推荐 ${group.count} 人</span>`).join('') || '<span class="dashboard-operator-chip is-muted">暂无分组推荐记录</span>'}
           </div>
         `;
       }
@@ -325,9 +330,9 @@
           tone: 'warning',
         },
         {
-          title: '本月客户反馈',
-          value: metrics.monthlyFeedbacks.length,
-          note: metrics.monthlyFeedbacks.length ? '客户反馈记录已沉淀到推荐链路' : '本月暂无客户反馈记录',
+          title: '本月新增岗位',
+          value: metrics.monthlyPositions.length,
+          note: metrics.monthlyPositions.length ? `本月累计创建 ${metrics.monthlyPositions.length} 个岗位` : '本月暂无新增岗位',
           tone: 'danger',
         },
       ];
@@ -378,23 +383,23 @@
       const requests = await Promise.allSettled([
         window.hrApi.dashboardSummary(),
         window.hrApi.projects(),
+        window.hrApi.positions(),
         window.hrApi.dashboardTodos(),
         window.hrApi.recommendations(),
         window.hrApi.deliveries(),
         window.hrApi.interviewRecords(),
         window.hrApi.employmentRecords(),
-        window.hrApi.recommendationFeedbacks(),
         window.hrApi.dashboardRecommendationCalendar(),
       ]);
       const [
         summaryResult,
         projectsResult,
+        positionsResult,
         todosResult,
         recommendationsResult,
         deliveriesResult,
         interviewsResult,
         employmentsResult,
-        feedbacksResult,
         recommendationCalendarResult,
       ] = requests;
 
@@ -405,12 +410,12 @@
         user_count: 0,
       };
       dashboardState.projects = projectsResult.status === 'fulfilled' ? projectsResult.value : [];
+      dashboardState.positions = positionsResult.status === 'fulfilled' ? positionsResult.value : [];
       dashboardState.todos = todosResult.status === 'fulfilled' ? todosResult.value : [];
       dashboardState.recommendations = recommendationsResult.status === 'fulfilled' ? recommendationsResult.value : [];
       dashboardState.deliveries = deliveriesResult.status === 'fulfilled' ? deliveriesResult.value : [];
       dashboardState.interviews = interviewsResult.status === 'fulfilled' ? interviewsResult.value : [];
       dashboardState.employments = employmentsResult.status === 'fulfilled' ? employmentsResult.value : [];
-      dashboardState.feedbacks = feedbacksResult.status === 'fulfilled' ? feedbacksResult.value : [];
       dashboardState.recommendationCalendar = recommendationCalendarResult.status === 'fulfilled' ? recommendationCalendarResult.value : [];
 
       const latestActivity =
