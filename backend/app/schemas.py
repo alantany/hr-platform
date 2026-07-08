@@ -285,6 +285,7 @@ class CandidateOut(CandidateCreate):
     delivery_status: str | None = "未推荐"
     candidate_warranty_status: str | None = ""
     self_locked: bool = False
+    has_interview_round: bool = False
 
 
 class CandidateAiSearchRequest(BaseModel):

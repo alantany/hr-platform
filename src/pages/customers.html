@@ -8,7 +8,7 @@ window.__PAGE_BODY__ = `
   </section>
   <section class="panel">
     <div class="section-head"><div><h3>客户公司</h3><div class="section-sub">甲方公司及其项目推进概览。</div></div><div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="open-company-modal">新建客户</button><button class="btn" data-action="refresh-page">刷新列表</button></div></div>
-    <div class="table-head customer-table-head" style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 0.8fr 0.8fr 1.2fr 100px; gap: 10px; padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569; font-size: 13px; align-items: center;">
+    <div class="table-head customer-table-head" style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 0.8fr 0.8fr 1.2fr 160px; gap: 10px; padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569; font-size: 13px; align-items: center;">
       <div>公司名称</div>
       <div>联系人</div>
       <div>联系电话</div>
@@ -136,6 +136,7 @@ window.__PAGE_BODY__ = `
               <input type="hidden" data-position-edit-project />
             </div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">岗位名称</div></div></div><input class="input" data-position-edit-name /></div>
+            <div class="list-item" style="grid-column: 1 / -1;"><div class="item-top"><div><div class="item-title">岗位 JD</div></div></div><textarea class="input" data-position-edit-description rows="5" placeholder="请输入岗位职责、任职要求等 JD 内容" style="min-height:120px; resize:vertical; line-height:1.6;"></textarea></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">紧急程度</div></div></div><select class="input" data-position-edit-urgency><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">招聘人数</div></div></div><input class="input" type="number" min="1" data-position-edit-count /></div>
             <div class="list-item"><div class="item-top"><div><div class="item-title">最低薪资</div></div></div><input class="input" type="number" min="0" data-position-edit-salary-min /></div>

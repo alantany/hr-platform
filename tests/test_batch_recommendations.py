@@ -13,6 +13,8 @@ from fastapi.testclient import TestClient
 from backend.app import crud
 from backend.app import main as main_module
 from backend.app.main import app
+from backend.app.database import SessionLocal
+from backend.app.models import Candidate, DataPermission, User
 
 
 client = TestClient(app)
@@ -194,3 +196,54 @@ def test_batch_recommendations_reject_inaccessible_position(monkeypatch):
         f"/api/recommendations?position_id={position['id']}",
         headers=headers,
     ).json() == []
+
+
+def test_operator_can_recommend_unlocked_candidate_owned_by_peer():
+    suffix = uuid4().hex[:8]
+    admin_headers = auth_headers()
+    db = SessionLocal()
+    user_a = None
+    user_b = None
+    try:
+        user_a = User(username=f"op_a_{suffix}", full_name="顾问A", role="操作员", password_hash="hash", is_active=True)
+        user_b = User(username=f"op_b_{suffix}", full_name="顾问B", role="操作员", password_hash="hash", is_active=True)
+        db.add_all([user_a, user_b])
+        db.commit()
+        db.refresh(user_a)
+        db.refresh(user_b)
+
+        position = create_position(admin_headers, suffix)
+        db.add(DataPermission(
+            user_id=user_a.id,
+            scope_type="position",
+            scope_id=str(position["id"]),
+            scope_name=position["name"],
+            active=True,
+        ))
+        peer_candidate = Candidate(
+            name=f"同事录入-{suffix}",
+            phone=f"135{suffix[:8]}",
+            owner_user_id=user_b.id,
+            locked=False,
+            status="未锁定",
+        )
+        db.add(peer_candidate)
+        db.commit()
+        db.refresh(peer_candidate)
+
+        headers_a = {"Authorization": f"Bearer user:op_a_{suffix}"}
+        response = client.post(
+            "/api/recommendations/batch",
+            headers=headers_a,
+            json={
+                "position_id": position["id"],
+                "record_keys": [f"candidate:{peer_candidate.id}"],
+                "status": "待推荐",
+            },
+        )
+        assert response.status_code == 200, response.text
+        result = response.json()
+        assert result["succeeded"] == 1, result
+        assert result["failed"] == 0
+    finally:
+        db.close()

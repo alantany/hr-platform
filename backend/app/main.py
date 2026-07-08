@@ -378,6 +378,12 @@ def enforce_candidate_access(db: Session, user: User, candidate: Candidate) -> N
         raise HTTPException(status_code=403, detail="无权访问该候选人")
 
 
+def assert_can_recommend_candidate(db: Session, user: User, candidate: Candidate) -> None:
+    """简历池为公共资源：未锁定候选人允许推荐至已分配岗位，不做归属限制。"""
+    if candidate.locked and not security.can_access_scope(db, user, "candidate", candidate.id):
+        raise HTTPException(status_code=403, detail="无权访问该候选人")
+
+
 def enforce_position_access(db: Session, user: User, position_id: int) -> None:
     if not security.can_access_scope(db, user, "position", position_id):
         raise HTTPException(status_code=403, detail="无权访问该岗位")
@@ -728,12 +734,18 @@ def _project_out(db: Session, project: Project, company_name: str | None = None)
     if company_name is None:
         company_name = db.query(Company.name).filter(Company.id == project.company_id).scalar() or ""
     level = {"A": "高", "B": "中", "C": "低"}.get(project.level, project.level)
+    # 按岗位招满规则实时校准展示状态（招聘中止除外）
+    effective_status = project.status
+    if project.status != "招聘中止":
+        effective_status = "招聘完毕" if crud.is_project_hiring_complete(db, project.id) else (
+            "招聘中" if project.status == "招聘完毕" else project.status
+        )
     return {
         "id": project.id,
         "company_id": project.company_id,
         "company_name": company_name,
         "name": project.name,
-        "status": project.status,
+        "status": effective_status,
         "level": level,
         "hiring_count": int(hiring_count or 0),
         "position_count": int(position_count or 0),
@@ -902,6 +914,7 @@ def add_position(payload: schemas.PositionCreate, db: Session = Depends(get_db),
         payload.owner_user_id = user.id
     elif not security.is_admin(user):
         payload.owner_user_id = user.id
+    payload = payload.model_copy(update={"target_resume_count": crud.POSITION_LOCK_LIMIT})
     obj = crud.create_position(db, payload)
     crud.add_audit(db, user.username, "岗位管理", "创建岗位", "position", "new", detail=payload.name)
     db.commit()
@@ -1166,10 +1179,12 @@ def list_candidates(
                 Recommendation.position_id.in_(assigned_position_ids)
             ).distinct().all()
         }
+    interviewed_ids = crud.candidate_ids_with_interview_rounds(db)
     for item in items:
         record_key = str(item.get("record_key") or "")
         candidate_id = int(record_key.split(":", 1)[1]) if record_key.startswith("candidate:") else None
         item["self_locked"] = bool(item.get("locked") and candidate_id in self_locked_candidate_ids)
+        item["has_interview_round"] = bool(candidate_id and candidate_id in interviewed_ids)
     return items
 
 
@@ -1526,6 +1541,10 @@ def add_employment_record(payload: schemas.EmploymentRecordCreate, db: Session =
     crud.sync_candidate_recommendation_state(db, candidate)
     crud.sync_candidate_warranty_state(db, candidate)
     db.add(candidate)
+    if latest_recom and latest_recom.position_id:
+        position = db.get(Position, latest_recom.position_id)
+        if position:
+            crud.sync_project_completion_status(db, position.project_id)
     
     crud.add_audit(db, user.username, "候选人跟踪", action, "employment_record", str(candidate.id), detail=payload.status)
     db.commit()
@@ -1555,6 +1574,10 @@ def edit_employment_record(record_id: int, payload: schemas.EmploymentRecordCrea
         db.flush()
         crud.sync_candidate_recommendation_state(db, candidate)
         crud.sync_candidate_warranty_state(db, candidate)
+        if latest_recom and latest_recom.position_id:
+            position = db.get(Position, latest_recom.position_id)
+            if position:
+                crud.sync_project_completion_status(db, position.project_id)
     crud.add_audit(db, user.username, "候选人跟踪", "更新入职记录", "employment_record", str(record.candidate_id), detail=payload.status)
     db.commit()
     db.refresh(obj)
@@ -1630,12 +1653,16 @@ def add_recommendation(payload: schemas.RecommendationCreate, db: Session = Depe
     candidate = crud.ensure_local_candidate(db, payload.candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="候选人不存在")
-    enforce_candidate_access(db, user, candidate)
+    assert_can_recommend_candidate(db, user, candidate)
     enforce_position_access(db, user, payload.position_id)
     # Force initial status to 待推荐; 已推荐 must be set manually via status update
     payload = payload.model_copy(update={"status": "待推荐"})
     if candidate.locked:
         raise HTTPException(status_code=400, detail="候选人已锁定，无法重复推荐")
+    try:
+        crud.ensure_position_lock_quota(db, payload.position_id, extra=1)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     obj = crud.create_recommendation(db, payload)
     obj.recommender_user_id = user.id
     candidate.owner_user_id = user.id
@@ -1659,6 +1686,11 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
         raise HTTPException(status_code=404, detail="岗位不存在")
     enforce_position_access(db, user, position.id)
 
+    remaining_slots = max(
+        crud.POSITION_LOCK_LIMIT - crud.count_position_locked_candidates(db, position.id),
+        0,
+    )
+
     items: list[schemas.RecommendationBatchItem] = []
     processed_candidate_ids: set[int] = set()
     succeeded = 0
@@ -1678,7 +1710,7 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
                     reason="候选人不存在",
                 ))
                 continue
-            enforce_candidate_access(db, user, candidate)
+            assert_can_recommend_candidate(db, user, candidate)
             if candidate.id in processed_candidate_ids:
                 skipped += 1
                 items.append(schemas.RecommendationBatchItem(
@@ -1713,6 +1745,16 @@ def add_batch_recommendations(payload: schemas.RecommendationBatchCreate, db: Se
                     candidate_name=candidate.name,
                     result="skipped",
                     reason="候选人已锁定",
+                ))
+                continue
+            if succeeded >= remaining_slots:
+                skipped += 1
+                items.append(schemas.RecommendationBatchItem(
+                    record_key=record_key,
+                    candidate_id=candidate.id,
+                    candidate_name=candidate.name,
+                    result="skipped",
+                    reason=f"此岗位锁定名额已满（上限 {crud.POSITION_LOCK_LIMIT} 人）",
                 ))
                 continue
 

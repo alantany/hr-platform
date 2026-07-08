@@ -180,6 +180,7 @@
                       <option value="unlocked">未锁定</option>
                       <option value="locked">已锁定</option>
                       <option value="self_locked">自己锁定</option>
+                      <option value="never_interviewed">未面试</option>
                     </select>
                   </div>
                   <button class="btn success" data-action="open-search-preset-modal" style="height: 38px;">保存搜索方案</button>
@@ -647,7 +648,7 @@
             });
           }
           
-          // 4. 状态过滤 (unlocked / locked)
+          // 4. 状态过滤 (unlocked / locked / never_interviewed)
           if (excludeVal) {
             if (excludeVal === 'unlocked') {
               filtered = filtered.filter(i => !i.locked && i.status !== '锁定');
@@ -655,6 +656,8 @@
               filtered = filtered.filter(i => i.locked || i.status === '锁定');
             } else if (excludeVal === 'self_locked') {
               filtered = filtered.filter(i => i.self_locked === true);
+            } else if (excludeVal === 'never_interviewed') {
+              filtered = filtered.filter(i => !i.has_interview_round);
             }
           }
 
@@ -1082,7 +1085,7 @@
           const activeHotkeys = Array.from(document.querySelectorAll('[data-hotkey].active')).map(el => el.getAttribute('data-hotkey'));
           
           const sortTexts = { "default": "默认", "created_desc": "更新时间降序", "age_asc": "年龄升序" };
-          const excludeTexts = { "": "不限", "unlocked": "未锁定", "locked": "已锁定", "self_locked": "自己锁定" };
+          const excludeTexts = { "": "不限", "unlocked": "未锁定", "locked": "已锁定", "self_locked": "自己锁定", "never_interviewed": "未面试" };
           
           const parts = [
             `关键词：${kw}`,

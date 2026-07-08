@@ -30,6 +30,90 @@ RECOMMENDATION_FLOW_STATUS_MAP = {
     "已入职": "已入职",
 }
 
+# 单个岗位同时处于锁定关系（有推荐记录）的候选人上限
+POSITION_LOCK_LIMIT = 10
+
+
+def count_position_locked_candidates(db: Session, position_id: int) -> int:
+    return (
+        db.query(func.count(Recommendation.id))
+        .filter(Recommendation.position_id == position_id)
+        .scalar()
+        or 0
+    )
+
+
+def ensure_position_lock_quota(db: Session, position_id: int, extra: int = 1) -> None:
+    """岗位锁定名额不足时抛出 ValueError，供 API 层转成 HTTP 400。"""
+    current = count_position_locked_candidates(db, position_id)
+    if current + max(int(extra or 0), 0) > POSITION_LOCK_LIMIT:
+        raise ValueError(f"此岗位锁定名额已满（上限 {POSITION_LOCK_LIMIT} 人），请先移除后再添加")
+
+
+def count_position_onboarded(db: Session, position_id: int) -> int:
+    return (
+        db.query(func.count(Recommendation.id))
+        .filter(
+            Recommendation.position_id == position_id,
+            Recommendation.status == "已入职",
+        )
+        .scalar()
+        or 0
+    )
+
+
+def is_position_hiring_filled(db: Session, position: Position) -> bool:
+    needed = max(int(position.hiring_count or 0), 0)
+    if needed <= 0:
+        return True
+    onboarded = count_position_onboarded(db, position.id)
+    return onboarded == needed
+
+
+def is_project_hiring_complete(db: Session, project_id: int) -> bool:
+    positions = db.query(Position).filter(Position.project_id == project_id).all()
+    if not positions:
+        return False
+    return all(is_position_hiring_filled(db, position) for position in positions)
+
+
+def sync_project_completion_status(db: Session, project_id: int | None) -> Project | None:
+    """项目下每个岗位均招满（已入职人数 == 应招人数）时，自动标记招聘完毕。"""
+    if not project_id:
+        return None
+    project = db.get(Project, project_id)
+    if not project:
+        return None
+    if project.status == "招聘中止":
+        return project
+    if is_project_hiring_complete(db, project_id):
+        project.status = "招聘完毕"
+    elif project.status == "招聘完毕":
+        # 若后续入职回退导致未招满，回退为招聘中
+        project.status = "招聘中"
+    db.add(project)
+    return project
+
+
+def candidate_ids_with_interview_rounds(db: Session) -> set[int]:
+    tracked = {
+        int(candidate_id)
+        for (candidate_id,) in db.query(CandidateTrackingEvent.candidate_id)
+        .filter(
+            CandidateTrackingEvent.interview_round.isnot(None),
+            CandidateTrackingEvent.interview_round != "",
+        )
+        .distinct()
+        .all()
+        if candidate_id is not None
+    }
+    interviewed = {
+        int(candidate_id)
+        for (candidate_id,) in db.query(InterviewRecord.candidate_id).distinct().all()
+        if candidate_id is not None
+    }
+    return tracked | interviewed
+
 
 def _created_at_score(value) -> float:
     if not value:
@@ -284,75 +368,24 @@ def update_project(db: Session, project: Project, payload):
 
 
 def create_position(db: Session, payload):
-    obj = Position(**payload.model_dump())
+    data = payload.model_dump()
+    # 岗位锁定名额固定为 10，创建时不再自动从简历池搜索锁定
+    data["target_resume_count"] = POSITION_LOCK_LIMIT
+    tags = dict(data.get("requirement_tags") or {})
+    tags["keyword"] = ""
+    data["requirement_tags"] = tags
+    obj = Position(**data)
     db.add(obj)
     db.commit()
     db.refresh(obj)
-
-    # Auto-match candidates
-    if obj.requirement_tags:
-        tags = obj.requirement_tags
-        query = db.query(Candidate).filter(Candidate.locked == False)
-        
-        # Simple matching logic based on tags
-        if tags.get("keyword") and tags.get("keyword").strip():
-            kw = tags.get("keyword").strip()
-            # Search across multiple fields
-            query = query.filter(
-                or_(
-                    Candidate.name.ilike(f"%{kw}%"),
-                    Candidate.current_title.ilike(f"%{kw}%"),
-                    Candidate.tags.ilike(f"%{kw}%"),
-                    Candidate.project_history.ilike(f"%{kw}%"),
-                    Candidate.work_history.ilike(f"%{kw}%")
-                )
-            )
-            
-        if tags.get("education") and tags.get("education") != "不限":
-            query = query.filter(Candidate.education == tags.get("education"))
-        if tags.get("gender") and tags.get("gender") != "不限":
-            query = query.filter(Candidate.gender == tags.get("gender"))
-        
-        # Add more filters if needed based on tags...
-        
-        target_count = obj.target_resume_count if obj.target_resume_count > 0 else 10
-        candidates = query.limit(target_count).all()
-        
-        for cand in candidates:
-            # Lock the candidate and sync delivery status according to new invariants
-            cand.locked = True
-            cand.status = "已锁定"
-            cand.delivery_status = "待推荐"
-            cand.owner_user_id = obj.owner_user_id
-            
-            # Create a recommendation (initial status is 待推荐; must be promoted to 已推荐 manually)
-            rec = Recommendation(
-                candidate_id=cand.id,
-                position_id=obj.id,
-                recommender="System Auto-Match",
-                recommender_user_id=obj.owner_user_id,
-                status="待推荐"
-            )
-            db.add(rec)
-            
-            # Track event
-            event = CandidateTrackingEvent(
-                candidate_id=cand.id,
-                event_type="AUTO_MATCH",
-                status="已匹配",
-                summary=f"系统自动匹配到岗位: {obj.name}",
-                operator="System",
-                position_id=obj.id
-            )
-            db.add(event)
-            
-        db.commit()
-        
     return obj
 
 
 def update_position(db: Session, position: Position, payload):
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    if "target_resume_count" in changes:
+        changes["target_resume_count"] = POSITION_LOCK_LIMIT
+    for key, value in changes.items():
         setattr(position, key, value)
     return position
 

@@ -9,15 +9,15 @@ const navGroups = [
       { href: "import.html", label: "简历导入", badge: "导入", icon: "file" },
       { href: "statistics.html", label: "统计管理", badge: "报表", icon: "chart" },
       { href: "evaluations.html", label: "评价体系", badge: "评价", icon: "star" },
+      { href: "notifications.html?tab=position-tasks", label: "任务看板", badge: "任务", icon: "inbox" },
     ],
   },
   {
-    title: "岗位管理",
+    title: "平台岗位发布",
     items: [
       { href: "recruit-job-publish.html", label: "岗位发布", badge: "发布", icon: "file" },
       { href: "recruit-job-list.html", label: "岗位列表", badge: "列表", icon: "inbox" },
       { href: "recruit-daily-tasks.html", label: "每日任务", badge: "任务", icon: "chart" },
-      { href: "notifications.html?tab=position-tasks", label: "任务看板", badge: "任务", icon: "inbox" },
     ],
   },
   {
@@ -81,20 +81,20 @@ const pages = {
   "position-candidates": {
     crumbs: "项目管理 / 岗位候选人",
     title: "岗位候选人管理",
-    desc: "管理该岗位下的推荐候选人。",
+    desc: "",
   },
   "recruit-job-publish": {
-    crumbs: "岗位管理 / 岗位发布",
+    crumbs: "平台岗位发布 / 岗位发布",
     title: "岗位发布",
     desc: "发布供 Recruit 抓取后台读取的岗位条件，数据写入 PostgreSQL 的 recruit.job_postings。",
   },
   "recruit-job-list": {
-    crumbs: "岗位管理 / 岗位列表",
+    crumbs: "平台岗位发布 / 岗位列表",
     title: "岗位列表",
     desc: "查看和维护 Recruit 岗位库，控制岗位是否参与抓取任务。",
   },
   "recruit-daily-tasks": {
-    crumbs: "岗位管理 / 每日任务",
+    crumbs: "平台岗位发布 / 每日任务",
     title: "每日任务",
     desc: "按日期查看 Recruit 抓取任务的打招呼、索要简历、下载和回执统计。",
   },
@@ -275,8 +275,13 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagC
       actionsHtml = `<span style="color:#94a3b8; font-size:12px;">只读岗位</span>`;
     }
 
+    const jdHtml = position.description?.trim()
+      ? `<div class="position-jd-preview" style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;"><div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px;">岗位 JD</div><div style="color:#334155;font-size:13px;line-height:1.6;white-space:pre-wrap;max-height:120px;overflow:hidden;" title="${escapeHtml(position.description)}">${escapeHtml(position.description)}</div></div>`
+      : '';
+
     return `
       <div class="list-item" data-id="${position.id}" data-project-id="${position.project_id}">
+        ${jdHtml}
         <div class="item-top" style="display:grid;grid-template-columns:1.2fr 1.5fr 1.8fr 0.8fr 0.8fr 1fr 1.2fr 2.5fr 210px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;">
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.company_name || '未知公司')}">${escapeHtml(project.company_name || '未知公司')}</div>
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.name || '')}">${escapeHtml(project.name || '--')}</div>
@@ -408,7 +413,7 @@ const renderCompanyTableMarkup = (companies = [], projects = [], positions = [],
     const tagHtml = fieldTags.length ? window.hrTagSystem.renderTags(fieldTags, { className: "field-tag-list is-compact" }) : "";
     return `
     <div class="list-item" data-id="${company.id}">
-      <div class="item-top" style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 0.8fr 0.8fr 1.2fr 100px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+      <div class="item-top" style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 0.8fr 0.8fr 1.2fr 160px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
         <div class="item-title customer-name-preview" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; margin-right: 0;">
           <button class="customer-name-trigger" type="button" aria-haspopup="dialog">${escapeHtml(company.name)}</button>
           ${tagHtml}
@@ -426,6 +431,7 @@ const renderCompanyTableMarkup = (companies = [], projects = [], positions = [],
           <span class="chip ${chipClass}" style="width: 80px; text-align: center; display: inline-block; margin: 0 auto;">${computedStatus}</span>
         </div>
         <div class="table-actions" style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
+          <button class="btn-sm" data-action="view-company-projects" data-id="${company.id}" data-company-name="${escapeHtml(company.name)}">项目</button>
           <button class="btn-sm" data-action="edit-company" data-id="${company.id}">编辑</button>
           <button class="btn-sm" data-action="delete-company" data-id="${company.id}">删除</button>
         </div>
@@ -4490,13 +4496,20 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     modal.style.display = 'block';
     return;
   }
+  if (button.dataset.action === "view-company-projects") {
+    const companyId = button.dataset.id || '';
+    if (!companyId) throw new Error('未找到客户');
+    location.href = `./projects.html?company_id=${encodeURIComponent(companyId)}`;
+    return;
+  }
   if (button.dataset.action === "open-position-modal") {
     const modal = document.querySelector('[data-position-modal]');
     if (modal) {
       const reset = (selector, val) => { const el = document.querySelector(selector); if (el) el.value = val; };
-      reset('[data-position-keyword]', '');
+      reset('[data-position-company]', '');
       reset('[data-position-project]', '');
       reset('[data-position-name]', '');
+      reset('[data-position-description]', '');
       reset('[data-position-urgency]', '正常');
       reset('[data-position-count]', '1');
       reset('[data-position-salary-min]', '');
@@ -4509,39 +4522,44 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       reset('[data-position-req-salary]', '不限');
       reset('[data-position-req-status]', '不限');
       reset('[data-position-target-count]', '10');
-      
+
+      const createPosCompany = modal.querySelector('[data-position-company]');
       const createPosProject = modal.querySelector('[data-position-project]');
-      if (createPosProject) {
-        createPosProject.innerHTML = '<option value="">加载中...</option>';
+      if (createPosCompany && createPosProject) {
+        createPosCompany.innerHTML = '<option value="">加载中...</option>';
+        createPosProject.innerHTML = '<option value="">请先选择客户</option>';
+        createPosProject.disabled = true;
         (async () => {
           try {
-            const projects = await window.hrApi.projects();
-            createPosProject.innerHTML = '<option value="">请选择项目</option>' + projects.map(p => `
-              <option value="${p.id}">${escapeHtml(p.name)}</option>
+            const [companies, projects] = await Promise.all([
+              window.hrApi.companies(),
+              window.hrApi.projects(),
+            ]);
+            createPosCompany.innerHTML = '<option value="">请选择客户</option>' + companies.map((c) => `
+              <option value="${c.id}">${escapeHtml(c.name)}</option>
             `).join('');
-            
-            const projectMap = new Map(projects.map((p) => [p.id, p]));
-            const createCompanyDisplay = modal.querySelector('[data-position-company-display]');
-            if (createCompanyDisplay) {
-              const listener = () => {
-                const pid = Number(createPosProject.value || 0);
-                const proj = projectMap.get(pid);
-                createCompanyDisplay.textContent = proj
-                  ? `所属公司：${proj.company_name || '未知公司'} · ${proj.name}`
-                  : '所属公司：请选择项目后自动显示';
-              };
-              createPosProject.onchange = listener;
-              listener();
-            }
+            const fillProjects = () => {
+              const companyId = Number(createPosCompany.value || 0);
+              const filtered = companyId
+                ? projects.filter((p) => p.company_id === companyId)
+                : [];
+              createPosProject.disabled = !companyId;
+              createPosProject.innerHTML = companyId
+                ? ('<option value="">请选择项目</option>' + filtered.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(''))
+                : '<option value="">请先选择客户</option>';
+            };
+            createPosCompany.onchange = fillProjects;
+            fillProjects();
           } catch (err) {
-            console.warn("Failed to populate projects select in position modal:", err);
+            console.warn("Failed to populate company/project selects in position modal:", err);
+            createPosCompany.innerHTML = '<option value="">获取客户失败</option>';
             createPosProject.innerHTML = '<option value="">获取项目失败</option>';
           }
         })();
       }
 
       modal.style.display = 'block';
-      
+
       // Initialize city picker if not done yet
       if (!window.__positionCityInitialized) {
         initCitySelector('[data-position-modal]');
@@ -4556,20 +4574,21 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     return;
   }
   if (button.dataset.action === "confirm-position-create") {
+    const companyId = Number(document.querySelector('[data-position-company]')?.value || 0);
     const projectId = Number(document.querySelector('[data-position-project]')?.value || 0);
     const name = document.querySelector('[data-position-name]')?.value?.trim() || '';
+    const description = document.querySelector('[data-position-description]')?.value?.trim() || '';
     const urgency = document.querySelector('[data-position-urgency]')?.value || '中';
     const hiringCount = Number(document.querySelector('[data-position-count]')?.value || 1);
-    
+
     const salaryMin = Number(document.querySelector('[data-position-salary-min]')?.value || 0) || null;
     const salaryMax = Number(document.querySelector('[data-position-salary-max]')?.value || 0) || null;
     const location = document.querySelector('[data-position-location]')?.value?.trim() || '';
-    const keyword = document.querySelector('[data-position-keyword]')?.value?.trim() || '';
-    
-    if (!projectId || !name) throw new Error('请先选择项目并填写岗位名称');
+
+    if (!companyId || !projectId || !name) throw new Error('请先选择客户、项目并填写岗位名称');
 
     const requirementTags = {
-      keyword,
+      keyword: '',
       age: document.querySelector('[data-position-req-age]')?.value || '不限',
       gender: document.querySelector('[data-position-req-gender]')?.value || '不限',
       education: document.querySelector('[data-position-req-edu]')?.value || '不限',
@@ -4577,11 +4596,12 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       salary: document.querySelector('[data-position-req-salary]')?.value || '不限',
       job_status: document.querySelector('[data-position-req-status]')?.value || '不限'
     };
-    const targetResumeCount = Number(document.querySelector('[data-position-target-count]')?.value || 10);
+    const targetResumeCount = 10;
 
     const position = await window.hrApi.createPosition({
       project_id: projectId,
       name,
+      description,
       urgency,
       hiring_count: hiringCount,
       salary_min: salaryMin,
@@ -4617,6 +4637,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const project = projects.find(p => p.id === Number(item.project_id));
     const company = companies.find(c => c.id === Number(project?.company_id));
     const modal = document.querySelector('[data-position-edit-modal]');
+    const setVal = (selector, val) => { const el = document.querySelector(selector); if (el) el.value = val; };
     document.querySelector('[data-position-edit-project]').value = String(item.project_id || '');
     const companyDisplay = document.querySelector('[data-position-edit-company-display]');
     if (companyDisplay) {
@@ -4625,6 +4646,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
         : `所属公司：${project?.company_name || '未知公司'} · ${project?.name || '未知项目'}`;
     }
     document.querySelector('[data-position-edit-name]').value = item.name || '';
+    setVal('[data-position-edit-description]', item.description || '');
     document.querySelector('[data-position-edit-urgency]').value = item.urgency || '中';
     document.querySelector('[data-position-edit-count]').value = String(item.hiring_count || 1);
     document.querySelector('[data-position-edit-salary-min]').value = item.salary_min || '';
@@ -4633,7 +4655,6 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     
     // Fill new tags
     const tags = item.requirement_tags || {};
-    const setVal = (selector, val) => { const el = document.querySelector(selector); if (el) el.value = val; };
     setVal('[data-position-edit-keyword]', tags.keyword || '');
     setVal('[data-position-edit-req-age]', tags.age || '不限');
     setVal('[data-position-edit-req-gender]', tags.gender || '不限');
@@ -4641,7 +4662,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     setVal('[data-position-edit-req-exp]', tags.experience || '不限');
     setVal('[data-position-edit-req-salary]', tags.salary || '不限');
     setVal('[data-position-edit-req-status]', tags.job_status || '不限');
-    setVal('[data-position-edit-target-count]', String(item.target_resume_count || 10));
+    setVal('[data-position-edit-target-count]', '10');
 
     if (modal) {
       modal.style.display = 'block';
@@ -4666,6 +4687,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     if (!target) throw new Error('没有待编辑的岗位');
     const projectId = Number(document.querySelector('[data-position-edit-project]')?.value || 0);
     const name = document.querySelector('[data-position-edit-name]')?.value?.trim() || '';
+    const description = document.querySelector('[data-position-edit-description]')?.value?.trim() || '';
     const urgency = document.querySelector('[data-position-edit-urgency]')?.value || '中';
     const hiringCount = Number(document.querySelector('[data-position-edit-count]')?.value || 1);
     const salaryMin = Number(document.querySelector('[data-position-edit-salary-min]')?.value || 0) || null;
@@ -4683,11 +4705,12 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       salary: document.querySelector('[data-position-edit-req-salary]')?.value || '不限',
       job_status: document.querySelector('[data-position-edit-req-status]')?.value || '不限'
     };
-    const targetResumeCount = Number(document.querySelector('[data-position-edit-target-count]')?.value || 10);
+    const targetResumeCount = 10;
 
     const position = await window.hrApi.updatePosition(target.id, {
       project_id: projectId,
       name,
+      description,
       urgency,
       hiring_count: hiringCount,
       salary_min: salaryMin,
@@ -4881,33 +4904,53 @@ window.renderApp = render;
 
 window.fetchCandidatePanels = async function(candidateId, container) {
   try {
-    const tracking = await window.hrApi.candidateTrackingEvents({ candidate_id: candidateId });
-    const interview = await window.hrApi.interviewRecords({ candidate_id: candidateId });
-    const salary = await window.hrApi.salaryRecords({ candidate_id: candidateId });
-    const employment = await window.hrApi.employmentRecords({ candidate_id: candidateId });
-    const followUps = await window.hrApi.candidateFollowUpRecords({ candidate_id: candidateId });
+    const [tracking, evaluations, positions] = await Promise.all([
+      window.hrApi.candidateTrackingEvents({ candidate_id: candidateId }),
+      window.hrApi.evaluations({ candidate_id: candidateId }),
+      window.hrApi.positions(),
+    ]);
+    const posMap = new Map(positions.map((p) => [p.id, p]));
 
     const trackingList = container.querySelector('[data-tracking-events]');
-    const lifecycleList = container.querySelector('[data-lifecycle-events]');
+    const evaluationList = container.querySelector('[data-candidate-evaluations]');
 
-    if (lifecycleList) {
-      const items = [];
-      if (interview[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${interview[0].round_name}</div><div class="item-meta">${interview[0].result} · ${interview[0].interviewer}</div></div><span class="chip success">面试</span></div></div>`);
-      if (salary[0]) {
-        const salaryShow = salary[0].agreed_salary || `${salary[0].expected_salary || '--'} / ${salary[0].offered_salary || '--'}`;
-        const acceptStatus = salary[0].candidate_accepted ? `候选人：${salary[0].candidate_accepted}` : salary[0].service_status;
-        const chipClass = salary[0].candidate_accepted === '接受' ? 'success' : (salary[0].candidate_accepted === '不接受' ? 'neutral' : 'warning');
-        items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">薪资</div><div class="item-meta">${salaryShow}</div></div><span class="chip ${chipClass}">${acceptStatus}</span></div></div>`);
-      }
-      if (employment[0]) {
-        if (employment[0].status === '已入职') {
-          items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">${employment[0].company_name}</div><div class="item-meta">${employment[0].position_name} · 已入职</div></div><span class="chip success">入职</span></div></div>`);
-        } else {
-          items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">未入职</div><div class="item-meta">原因：${employment[0].note || '无备注原因'}</div></div><span class="chip neutral">入职</span></div></div>`);
+    if (evaluationList) {
+      const gradeClass = (grade) => (
+        grade === '优秀' ? 'success' : grade === '良好' ? 'primary' : grade === '一般' ? 'warning' : 'neutral'
+      );
+      const formatTime = (dtStr) => {
+        if (!dtStr) return '--';
+        try {
+          const d = new Date(dtStr);
+          if (Number.isNaN(d.getTime())) return dtStr;
+          const pad = (n) => String(n).padStart(2, '0');
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        } catch {
+          return dtStr;
         }
-      }
-      if (followUps[0]) items.push(`<div class="list-item"><div class="item-top"><div><div class="item-title">随访</div><div class="item-meta">${followUps[0].follow_up_time || followUps[0].created_at} · ${followUps[0].content}</div></div><span class="chip primary">已入职</span></div></div>`);
-      lifecycleList.innerHTML = items.join('') || '<div class="list-item"><div class="item-meta">暂无面试、入职等生命周期记录</div></div>';
+      };
+      evaluationList.innerHTML = evaluations.map((rec) => {
+        const position = posMap.get(rec.position_id);
+        const positionName = escapeHtml(position?.name || (rec.position_id ? `岗位 ${rec.position_id}` : '--'));
+        const roundName = escapeHtml(rec.round_name || '评价轮次');
+        const grade = escapeHtml(rec.grade || '--');
+        const score = rec.score != null ? `${rec.score} 分` : '--';
+        const content = escapeHtml(rec.content || '暂无评价内容');
+        const evaluator = escapeHtml(rec.evaluator || '未知评价人');
+        const gradeKey = rec.grade || '';
+        return `
+          <div class="list-item">
+            <div class="item-top">
+              <div>
+                <div class="item-title">${roundName} · ${positionName}</div>
+                <div class="item-meta">${grade} · ${score} · ${evaluator}</div>
+                <div class="item-meta" style="margin-top:4px;">${content}</div>
+                <div class="item-meta mono" style="font-size:11px;margin-top:4px;">${formatTime(rec.created_at)}</div>
+              </div>
+              <span class="chip ${gradeClass(gradeKey)}">${grade}</span>
+            </div>
+          </div>`;
+      }).join('') || '<div class="list-item"><div class="item-meta">暂无候选人评价记录，可在详情页添加评价</div></div>';
     }
 
     if (trackingList) {

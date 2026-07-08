@@ -229,20 +229,20 @@ window.__PAGE_BODY__ = `
         <div class="hero-actions" style="margin-top:0"><button class="btn" style="border:none; background:transparent; font-size:18px; color:#94a3b8; padding:4px;" data-action="close-position-edit-modal">×</button></div>
       </div>
       
-      <div class="list-item" style="border:none; padding:0; margin-bottom: 24px;">
-        <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">关键词搜索 <span style="color:#94a3b8; font-size: 12px; font-weight: normal; margin-left: 8px;">(用于简历池自动精准匹配)</span></div>
-        <input class="input" data-position-edit-keyword placeholder="请输入岗位相关的关键词，如：Java, Spring Boot, MySQL" style="width:100%; height:40px; border-radius:8px;" />
-      </div>
-
       <div class="grid-2" style="gap: 24px;">
         <div class="list-item" style="border:none; padding:0;">
           <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">所属项目</div>
           <div class="input" style="display:flex;align-items:center;height:40px;background:#f8fafc;color:#334155;border-radius:8px;" data-position-edit-company-display>所属公司：请选择项目后自动显示</div>
           <input type="hidden" data-position-edit-project />
+          <input type="hidden" data-position-edit-keyword />
         </div>
         <div class="list-item" style="border:none; padding:0;">
           <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">岗位名称 <span style="color:#ef4444">*</span></div>
           <input class="input" data-position-edit-name placeholder="请输入岗位名称" style="width:100%; height:40px; border-radius:8px;" />
+        </div>
+        <div class="list-item" style="border:none; padding:0; grid-column: 1 / -1;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">岗位 JD</div>
+          <textarea class="input" data-position-edit-description rows="5" placeholder="请输入岗位职责、任职要求等 JD 内容" style="width:100%; min-height:120px; border-radius:8px; resize:vertical; line-height:1.6;"></textarea>
         </div>
         
         <div class="list-item" style="border:none; padding:0;">
@@ -284,11 +284,12 @@ window.__PAGE_BODY__ = `
       </div>
 
       <div style="margin-top: 32px;">
-        <h4 style="margin: 0 0 16px 0; font-size:14px; color:#1e293b;">简历数匹配规则</h4>
+        <h4 style="margin: 0 0 16px 0; font-size:14px; color:#1e293b;">锁定名额</h4>
         <div style="display:flex; align-items:flex-end; gap: 16px;">
-          <div class="list-item" style="border:none; padding:0; flex:1; max-width:200px;">
-            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">目标简历数</div>
-            <input class="input" type="number" min="1" data-position-edit-target-count placeholder="请输入目标简历数" style="width:100%; height:40px; border-radius:8px;" />
+          <div class="list-item" style="border:none; padding:0; flex:1; max-width:240px;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">岗位锁定上限</div>
+            <input class="input" type="number" data-position-edit-target-count value="10" readonly style="width:100%; height:40px; border-radius:8px; background:#f8fafc; color:#334155;" />
+            <div class="item-meta" style="margin-top:6px;">固定 10 个锁定名额</div>
           </div>
         </div>
       </div>
@@ -365,19 +366,24 @@ window.__PAGE_BODY__ = `
         <div class="hero-actions" style="margin-top:0"><button class="btn" style="border:none; background:transparent; font-size:18px; color:#94a3b8; padding:4px;" data-action="close-position-modal">×</button></div>
       </div>
       
-      <div class="list-item" style="border:none; padding:0; margin-bottom: 24px;">
-        <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">关键词搜索 <span style="color:#94a3b8; font-size: 12px; font-weight: normal; margin-left: 8px;">(用于简历池自动精准匹配)</span></div>
-        <input class="input" data-position-keyword placeholder="请输入岗位相关的关键词，如：Java, Spring Boot, MySQL" style="width:100%; height:40px; border-radius:8px;" />
-      </div>
-
       <div class="grid-2" style="gap: 24px;">
         <div class="list-item" style="border:none; padding:0;">
-          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">所属项目 <span style="color:#ef4444">*</span></div>
-          <select class="input" data-position-project style="width:100%; height:40px; border-radius:8px;"></select>
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">所属客户 <span style="color:#ef4444">*</span></div>
+          <select class="input" data-position-company style="width:100%; height:40px; border-radius:8px;"></select>
         </div>
         <div class="list-item" style="border:none; padding:0;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">所属项目 <span style="color:#ef4444">*</span></div>
+          <select class="input" data-position-project style="width:100%; height:40px; border-radius:8px;" disabled>
+            <option value="">请先选择客户</option>
+          </select>
+        </div>
+        <div class="list-item" style="border:none; padding:0; grid-column: 1 / -1;">
           <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">岗位名称 <span style="color:#ef4444">*</span></div>
           <input class="input" data-position-name placeholder="请输入岗位名称" style="width:100%; height:40px; border-radius:8px;" />
+        </div>
+        <div class="list-item" style="border:none; padding:0; grid-column: 1 / -1;">
+          <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">岗位 JD</div>
+          <textarea class="input" data-position-description rows="5" placeholder="请输入岗位职责、任职要求等 JD 内容" style="width:100%; min-height:120px; border-radius:8px; resize:vertical; line-height:1.6;"></textarea>
         </div>
         
         <div class="list-item" style="border:none; padding:0;">
@@ -419,11 +425,12 @@ window.__PAGE_BODY__ = `
       </div>
 
       <div style="margin-top: 32px;">
-        <h4 style="margin: 0 0 16px 0; font-size:14px; color:#1e293b;">简历数匹配规则</h4>
+        <h4 style="margin: 0 0 16px 0; font-size:14px; color:#1e293b;">锁定名额</h4>
         <div style="display:flex; align-items:flex-end; gap: 16px;">
-          <div class="list-item" style="border:none; padding:0; flex:1; max-width:200px;">
-            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">目标简历数</div>
-            <input class="input" type="number" min="1" data-position-target-count placeholder="请输入目标简历数" style="width:100%; height:40px; border-radius:8px;" value="10" />
+          <div class="list-item" style="border:none; padding:0; flex:1; max-width:240px;">
+            <div class="item-title" style="margin-bottom:8px; color:#475569; font-size:13px;">岗位锁定上限</div>
+            <input class="input" type="number" data-position-target-count value="10" readonly style="width:100%; height:40px; border-radius:8px; background:#f8fafc; color:#334155;" />
+            <div class="item-meta" style="margin-top:6px;">固定 10 个锁定名额，由操作员从简历池补充</div>
           </div>
         </div>
       </div>
@@ -549,19 +556,37 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (createCompany) createCompany.innerHTML = `<option value="">请选择客户</option>${companyOptions}`;
     if (editCompany) editCompany.innerHTML = `<option value="">请选择客户</option>${companyOptions}`;
     
+    const createPosCompany = document.querySelector('[data-position-company]');
     const createPosProject = document.querySelector('[data-position-project]');
-    if (createPosProject) createPosProject.innerHTML = `<option value="">请选择项目</option>` + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    if (createPosCompany) {
+      createPosCompany.innerHTML = `<option value="">请选择客户</option>${companyOptions}`;
+    }
+    const fillCreatePosProjects = (companyId) => {
+      if (!createPosProject) return;
+      const filtered = companyId
+        ? projects.filter((p) => p.company_id === Number(companyId))
+        : [];
+      createPosProject.disabled = !companyId;
+      createPosProject.innerHTML = companyId
+        ? (`<option value="">请选择项目</option>` + filtered.map((p) => `<option value="${p.id}">${String(p.name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}</option>`).join(''))
+        : '<option value="">请先选择客户</option>';
+    };
+    fillCreatePosProjects('');
+    if (createPosCompany) {
+      createPosCompany.addEventListener('change', (e) => fillCreatePosProjects(e.target.value));
+    }
 
-    const projectMap = new Map(projects.map((p) => [p.id, p]));
-    const createCompanyDisplay = document.querySelector('[data-position-company-display]');
-    if (createPosProject && createCompanyDisplay) {
-      createPosProject.addEventListener('change', () => {
-        const pid = Number(createPosProject.value || 0);
-        const proj = projectMap.get(pid);
-        createCompanyDisplay.textContent = proj
-          ? `所属公司：${proj.company_name || '未知公司'} · ${proj.name}`
-          : '所属公司：请选择项目后自动显示';
-      });
+    // URL ?company_id= 进入时按客户过滤项目列表
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlCompanyId = urlParams.get('company_id') || '';
+    if (urlCompanyId) {
+      window.projectFilters = window.projectFilters || { name: '', companyId: '', status: '', level: '' };
+      window.projectFilters.companyId = urlCompanyId;
+      if (searchProjComp) searchProjComp.value = urlCompanyId;
+      if (searchPosComp) {
+        searchPosComp.value = urlCompanyId;
+        updateSearchPosProjectOptions(urlCompanyId);
+      }
     }
 
     // Tab 切换逻辑
