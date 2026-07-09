@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-简历池搜索已改为空格分隔多关键词 AND 匹配（智联/前程口径）。维护流程：**改代码 → 更新 `task_plan.md` / `findings.md` / `progress.md` → commit → push**。
+简历池搜索：空格=且，逗号/竖线=或（例 `Java,Spring 北京`）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
