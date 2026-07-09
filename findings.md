@@ -1,5 +1,18 @@
 # Findings
 
+## 2026-07-09（DeepSeek 官方 API 切换）
+
+- **网关地址**：简历解析 Worker 与 AI 能力中心统一调用 DeepSeek 官方 `https://api.deepseek.com`，默认模型 `deepseek-v4-flash`。
+- **环境变量**：`.env` 使用 `DEEPSEEK_BASE_URL` / `DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL`；`config.py` 仍兼容旧 `OPENROUTER_*` 变量名以便平滑迁移。
+- **部署口径**：远程 Windows/Linux 只需在 `.env` 填写 DeepSeek Key 与 `DATABASE_URL`，无需再依赖 OpenRouter 账号。
+
+## 2026-07-09（Windows 简历解析启动脚本）
+
+- **守护进程入口**：`windows/05-start-resume-parser.bat` 或项目根 `run-resume-parser.bat` / `run-resume-parser.ps1`，启动 `backend/scripts/resume_parser_worker.py`（10 秒轮询，Ctrl+C 停止）。
+- **批量入队入口**：`windows/06-queue-resume-tasks.bat` 或 `queue-resume-tasks-windows.bat`，仅在需要把已有 `recruit.resume_downloads` 一次性写入 `resume_parse_tasks` 时使用；日常由 Worker 自动差集同步。
+- **脚本行为**：自动 `cd` 至项目根、检测并激活 `.venv`/`venv`、缺少 Python 或 Worker 异常退出时 `pause`，便于双击排错。
+- **前置条件**：`.env` 含 `DEEPSEEK_*` 与 `DATABASE_URL`；依赖已安装；PostgreSQL 可达且 `resume_parse_tasks` / `candidates` 表已初始化。
+
 ## 2026-07-09（项目列表「我的项目」筛选）
 
 - **口径**：当前用户被组长分配的岗位（`PositionAssignmentTask` 待接受/已接受，或岗位 `DataPermission` 已激活）所属的项目。

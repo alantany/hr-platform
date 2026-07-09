@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-项目列表已支持「我的项目」勾选过滤（组长分配岗位所属项目）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+AI 大模型已切换为 DeepSeek 官方 API（`DEEPSEEK_*` 环境变量）；Windows 部署已补齐简历解析守护进程与批量入队启动脚本。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

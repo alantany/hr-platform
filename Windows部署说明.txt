@@ -37,6 +37,9 @@ windows\02-init-db.bat
 3) Start the backend service:
 windows\03-start-backend.bat
 
+4) Start the AI resume parser worker (optional, run in a separate window):
+windows\05-start-resume-parser.bat
+
 5. Initialize database tables manually
 If you do not want to use the step-by-step scripts, you can run:
 
@@ -80,13 +83,49 @@ If successful, it returns:
 3) If table initialization fails, make sure database `hr_platform` exists and `user_delivery` has permission.
 4) If the frontend cannot load, confirm the backend is running on port 8000 and Windows Firewall allows it.
 
-9. Recommended order
+9. AI resume parser worker
+The resume parser syncs new resumes from recruit.resume_downloads, calls the DeepSeek API to parse PDF/DOCX files, and upserts results into the candidates table. It runs as a long-lived daemon and should be started in a separate Command Prompt window while the backend is running.
+
+Prerequisites:
+- Project root `.env` must include DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL, and DATABASE_URL.
+- Dependencies from requirements.txt must already be installed (step 3).
+- PostgreSQL must be reachable and resume_parse_tasks / candidates tables must exist.
+
+Start the daemon (recommended):
+
+windows\05-start-resume-parser.bat
+
+Or from the project root:
+
+run-resume-parser.bat
+
+Or in PowerShell:
+
+.\run-resume-parser.ps1
+
+One-time batch queue (optional):
+Normally the worker auto-syncs new resumes from recruit.resume_downloads. Run this only when you need to enqueue all existing downloads that are not yet in resume_parse_tasks:
+
+windows\06-queue-resume-tasks.bat
+
+Or:
+
+queue-resume-tasks-windows.bat
+
+Notes:
+- The worker polls every 10 seconds. Press Ctrl+C to stop.
+- If you use a virtual environment, scripts auto-activate `.venv` or `venv` when present.
+- On failure, batch scripts pause so you can read the error when double-clicking.
+
+10. Recommended order
 1) Install dependencies
 2) Initialize database tables
 3) Start the backend service
+4) Start the resume parser worker (optional)
 
 Command order:
 
 windows\01-install-deps.bat
 windows\02-init-db.bat
 windows\03-start-backend.bat
+windows\05-start-resume-parser.bat

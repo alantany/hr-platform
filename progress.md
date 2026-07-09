@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-09（完成 - Windows 简历解析启动脚本 + 收尾提交推送）
+
+- 新增 Windows 启动脚本：`windows/05-start-resume-parser.bat`、`windows/06-queue-resume-tasks.bat`；项目根目录 `run-resume-parser.bat`、`run-resume-parser.ps1`、`queue-resume-tasks-windows.bat`。
+- 脚本自动切换至项目根目录、检测并激活 `.venv`/`venv`、失败时 `pause` 便于双击运行排错。
+- 已更新 `Windows部署说明.txt` 第 9 节（AI 简历解析守护进程）与推荐启动顺序；`findings.md`、`task_plan.md` 已同步 DeepSeek 与 Windows 脚本要点。
+
 ## 2026-07-09（完成 - AI 大模型切换为 DeepSeek 官方 API）
 
 - 将简历解析与 AI 能力中心的大模型网关从 OpenRouter 改为 DeepSeek 官方地址 `https://api.deepseek.com`，默认模型 `deepseek-v4-flash`。
