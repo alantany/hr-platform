@@ -1,5 +1,9 @@
 # Progress
 
+## 2026-07-09（完成 - 工作年限标签显示「N年」）
+
+- `hrTagSystem` 对 `experience_years` 字段标签自动补「年」，避免列表出现裸数字「20」。
+
 ## 2026-07-09（完成 - 标签字典热词管理）
 
 - 新增 `search_hotwords` 与 CRUD API；标签字典页增加「热词管理」Tab。

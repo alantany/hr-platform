@@ -165,8 +165,14 @@ let tagConfigCachePromise = null;
 
 function getObjectFieldValue(record, fieldKey) {
   const value = record?.[fieldKey];
-  if (value === null || value === undefined) return "";
+  if (value === null || value === undefined || value === "") return "";
   if (Array.isArray(value)) return value.map((item) => String(item || "").trim()).filter(Boolean).join(" / ");
+  // 工作年限标签显示为「N年」，避免只出现裸数字
+  if (fieldKey === "experience_years") {
+    const years = String(value).trim();
+    if (!years) return "";
+    return /年$/.test(years) ? years : `${years}年`;
+  }
   return String(value).trim();
 }
 
