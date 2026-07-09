@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-09（完成 - 用户操作手册）
+
+- 对照 `app.js` 导航、各业务页、`docs/prd/`、业务流程总览与 findings，编写 `outputs/用户操作手册.md`。
+- 覆盖：主流程检查表、角色权限、各模块操作、搜索语法、锁定/入职/质保规则、平台岗位发布差异、FAQ 与按角色日常清单。
+- 另提供并排浏览摘要 Canvas：`user-operation-manual.canvas.tsx`。
+
 ## 2026-07-09（完成 - Windows 数据库连接脚本 con_pg.bat）
 
 - 新增项目根目录 `con_pg.bat`，双击或命令行运行即可用 psql 连接 `hr_platform`（`127.0.0.1:5432`，账号 `user_delivery`）。

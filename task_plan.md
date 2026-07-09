@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-近期维护已完成：**单设备登录互踢**（`session_token`）、**简历解析姓名连续字符去重**（修复 wkhtmltopdf PDF 逐字双写如「袁袁太太兴兴」→「袁太兴」）。AI 大模型使用 DeepSeek 官方 API（`DEEPSEEK_*`）；Windows 已补齐简历解析守护进程脚本。维护流程：**改代码 → 更新三份 MD → commit → push**。
+已补充 **用户操作手册**（`outputs/用户操作手册.md`）。近期维护还包括：单设备登录互踢、简历解析姓名去重、DeepSeek API、Windows 简历解析脚本。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
