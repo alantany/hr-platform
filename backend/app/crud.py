@@ -10,7 +10,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from . import security
-from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, User, WarrantyRule
+from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, User, WarrantyRule
 
 
 TAG_OBJECT_LABELS = {
@@ -323,6 +323,28 @@ def add_audit(db: Session, actor: str, module: str, action: str, target_type: st
     )
     db.add(log)
     return log
+
+
+def assigned_project_ids_for_user(db: Session, user_id: int) -> list[int]:
+    position_ids: set[int] = set()
+    for (position_id,) in db.query(PositionAssignmentTask.position_id).filter(
+        PositionAssignmentTask.assignee_user_id == user_id,
+        PositionAssignmentTask.status.in_(["pending", "accepted"]),
+    ).all():
+        position_ids.add(int(position_id))
+    for (scope_id,) in db.query(DataPermission.scope_id).filter(
+        DataPermission.user_id == user_id,
+        DataPermission.scope_type == "position",
+        DataPermission.active.is_(True),
+    ).all():
+        if str(scope_id).isdigit():
+            position_ids.add(int(scope_id))
+    for (position_id,) in db.query(Position.id).filter(Position.owner_user_id == user_id).all():
+        position_ids.add(int(position_id))
+    if not position_ids:
+        return []
+    rows = db.query(Position.project_id).filter(Position.id.in_(position_ids)).distinct().all()
+    return sorted({int(project_id) for (project_id,) in rows if project_id is not None})
 
 
 def dashboard_summary(db: Session) -> dict:

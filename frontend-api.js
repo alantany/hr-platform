@@ -25,6 +25,9 @@ window.hrApi = {
   me() {
     return this.request("/me");
   },
+  myAssignedProjectIds() {
+    return this.request("/me/assigned-project-ids");
+  },
   dashboardSummary() {
     return this.request("/dashboard/summary");
   },

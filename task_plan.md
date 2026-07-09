@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-简历池搜索：空格=且，逗号/竖线=或（例 `Java,Spring 北京`）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+项目列表已支持「我的项目」勾选过滤（组长分配岗位所属项目）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

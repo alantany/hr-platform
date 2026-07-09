@@ -167,6 +167,10 @@ class ProjectOut(ProjectCreate):
     created_at: datetime | None = None
 
 
+class AssignedProjectIdsOut(BaseModel):
+    project_ids: list[int] = Field(default_factory=list)
+
+
 class ProjectUpdate(BaseModel):
     company_id: int | None = None
     name: str | None = None

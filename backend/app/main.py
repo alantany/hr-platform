@@ -612,6 +612,11 @@ def me(user: User = Depends(require_user), db: Session = Depends(get_db)):
     )
 
 
+@app.get("/api/me/assigned-project-ids", response_model=schemas.AssignedProjectIdsOut)
+def my_assigned_project_ids(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    return schemas.AssignedProjectIdsOut(project_ids=crud.assigned_project_ids_for_user(db, user.id))
+
+
 @app.get("/api/dashboard/summary", response_model=schemas.DashboardSummary)
 def dashboard_summary(db: Session = Depends(get_db), user: User = Depends(require_user)):
     return schemas.DashboardSummary(**crud.dashboard_summary(db))

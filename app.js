@@ -461,14 +461,20 @@ async function refreshCustomerList() {
 async function renderProjectListFromState() {
   const projectList = document.querySelector('[data-project-list]');
   if (!projectList) return;
-  const [projects, tagConfigs] = await Promise.all([
+  const [projects, assignedProjects, tagConfigs] = await Promise.all([
     window.hrApi.projects(),
+    window.hrApi.myAssignedProjectIds().catch(() => ({ project_ids: [] })),
     window.hrTagSystem.fetchConfigs(),
   ]);
+  window.myAssignedProjectIds = assignedProjects?.project_ids || [];
 
   let filteredProjects = projects;
   if (window.projectFilters) {
-    const { name, companyId, status, level } = window.projectFilters;
+    const { name, companyId, status, level, onlyMine } = window.projectFilters;
+    if (onlyMine) {
+      const idSet = new Set(window.myAssignedProjectIds || []);
+      filteredProjects = filteredProjects.filter((p) => idSet.has(p.id));
+    }
     if (name) {
       filteredProjects = filteredProjects.filter(p => p.name && p.name.toLowerCase().includes(name.toLowerCase()));
     }
@@ -485,7 +491,8 @@ async function renderProjectListFromState() {
 
   const projectTitle = document.querySelector('#project-list-title');
   if (projectTitle) {
-    projectTitle.textContent = `项目列表 (共 ${filteredProjects.length} 个)`;
+    const mineHint = window.projectFilters?.onlyMine ? ' · 我的项目' : '';
+    projectTitle.textContent = `项目列表 (共 ${filteredProjects.length} 个${mineHint})`;
   }
 
   projectList.innerHTML = renderProjectListMarkup(filteredProjects, tagConfigs);
