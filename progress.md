@@ -1,5 +1,9 @@
 # Progress
 
+## 2026-07-09（完成 - Windows 数据库连接脚本 con_pg.bat）
+
+- 新增项目根目录 `con_pg.bat`，双击或命令行运行即可用 psql 连接 `hr_platform`（`127.0.0.1:5432`，账号 `user_delivery`）。
+
 ## 2026-07-09（完成 - 简历解析姓名去重 + 本地 PDF 忽略）
 
 - 新增 `security.normalize_candidate_name()`，折叠姓名字符串连续重复字符（如 wkhtmltopdf PDF 导致的「袁袁太太兴兴」→「袁太兴」）；仅作用于 `name` 字段，其它内文仍由 LLM 处理。
