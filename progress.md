@@ -1,5 +1,13 @@
 # Progress
 
+## 2026-07-09（完成 - 简历池按简历文件名去重）
+
+- canonical 键优先使用 `file_path` 的文件名；同名 PDF（如多次投递仅日期目录不同）只展示一条；无附件时回退手机/邮箱/姓名。
+
+## 2026-07-09（完成 - 简历池按自然人去重）
+
+- `list_candidates` canonical 键改为手机号/邮箱/身份证/姓名（自然人），不再按 `candidate_agent_id`（线程）拆行；`ensure_local_candidate` 与 recruit import 写入前先匹配已有自然人。
+
 ## 2026-07-09（完成 - 新建客户名称读取错误）
 
 - 客户列表「项目」按钮的 `data-company-name` 与新建弹窗输入框同名，导致 `querySelector` 误选按钮（无 `.value`）而始终判空；已改为仅在弹窗内读取表单字段。

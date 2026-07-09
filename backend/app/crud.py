@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from pathlib import PurePosixPath
+import re
 import socket
 
 from sqlalchemy import func, or_
@@ -171,11 +173,141 @@ def _record_priority(item: dict) -> tuple[int, int, float, int]:
     )
 
 
-def _dedupe_key_for_item(item: dict) -> str:
+def _normalize_resume_file_key(file_path: str | None) -> str | None:
+    text = str(file_path or "").strip().replace("\\", "/")
+    if not text:
+        return None
+    name = PurePosixPath(text).name.strip().lower()
+    return name or None
+
+
+def _normalize_phone(value: str | None) -> str:
+    return re.sub(r"\D", "", str(value or ""))
+
+
+def _person_dedupe_key(
+    name: str | None = "",
+    phone: str | None = "",
+    email: str | None = "",
+    id_number: str | None = "",
+) -> str | None:
+    phone_norm = _normalize_phone(phone)
+    if phone_norm:
+        return f"phone:{phone_norm}"
+    email_norm = str(email or "").strip().lower()
+    if email_norm:
+        return f"email:{email_norm}"
+    id_norm = str(id_number or "").strip()
+    if id_norm:
+        return f"id:{id_norm}"
+    name_norm = str(name or "").strip().lower()
+    if name_norm:
+        return f"name:{name_norm}"
+    return None
+
+
+def _person_dedupe_key_for_item(item: dict) -> str:
+    file_key = _normalize_resume_file_key(item.get("file_path"))
+    if file_key:
+        return f"file:{file_key}"
+    person_key = _person_dedupe_key(
+        item.get("name"),
+        item.get("phone"),
+        item.get("email"),
+        item.get("id_number"),
+    )
+    if person_key:
+        return person_key
     candidate_agent_id = item.get("candidate_agent_id")
     if candidate_agent_id:
         return f"agent:{candidate_agent_id}"
     return str(item.get("record_key") or f"candidate:{item.get('id')}")
+
+
+def find_candidate_by_resume_file(db: Session, file_path: str | None) -> Candidate | None:
+    file_key = _normalize_resume_file_key(file_path)
+    if not file_key:
+        return None
+    matches = [
+        row
+        for row in db.query(Candidate).filter(Candidate.file_path.isnot(None), Candidate.file_path != "").all()
+        if _normalize_resume_file_key(row.file_path) == file_key
+    ]
+    if not matches:
+        return None
+    return max(
+        matches,
+        key=lambda row: (
+            _record_completeness_score(
+                {
+                    "name": row.name,
+                    "phone": row.phone,
+                    "email": row.email,
+                    "current_title": row.current_title,
+                    "city": row.city,
+                    "education": row.education,
+                    "age": row.age,
+                    "file_path": row.file_path,
+                }
+            ),
+            int(row.id or 0),
+        ),
+    )
+
+
+def find_candidate_by_person(
+    db: Session,
+    *,
+    name: str = "",
+    phone: str = "",
+    email: str = "",
+    id_number: str = "",
+    file_path: str = "",
+) -> Candidate | None:
+    by_file = find_candidate_by_resume_file(db, file_path)
+    if by_file:
+        return by_file
+
+    id_norm = str(id_number or "").strip()
+    if id_norm:
+        found = db.query(Candidate).filter(Candidate.id_number == id_norm).first()
+        if found:
+            return found
+
+    phone_norm = _normalize_phone(phone)
+    if phone_norm:
+        for row in db.query(Candidate).filter(Candidate.phone.isnot(None), Candidate.phone != "").all():
+            if _normalize_phone(row.phone) == phone_norm:
+                return row
+
+    email_norm = str(email or "").strip().lower()
+    if email_norm:
+        found = db.query(Candidate).filter(func.lower(Candidate.email) == email_norm).first()
+        if found:
+            return found
+
+    name_norm = str(name or "").strip()
+    if name_norm:
+        rows = (
+            db.query(Candidate)
+            .filter(Candidate.name == name_norm)
+            .all()
+        )
+        if rows:
+            return max(
+                rows,
+                key=lambda row: (
+                    1 if _normalize_phone(row.phone) else 0,
+                    1 if str(row.email or "").strip() else 0,
+                    _record_completeness_score({"name": row.name, "phone": row.phone, "email": row.email, "current_title": row.current_title, "city": row.city, "education": row.education, "age": row.age}),
+                    int(row.id or 0),
+                ),
+            )
+    return None
+
+
+def _dedupe_key_for_item(item: dict) -> str:
+    return _person_dedupe_key_for_item(item)
 
 
 def add_audit(db: Session, actor: str, module: str, action: str, target_type: str = "", target_id: str = "", result: str = "成功", detail: str = ""):
@@ -637,6 +769,15 @@ def ensure_local_candidate(db: Session, candidate_id: int | str) -> Candidate | 
             existing = db.query(Candidate).filter(Candidate.candidate_agent_id == download.candidate_agent_id).first()
             if existing:
                 return existing
+            existing_by_person = find_candidate_by_person(
+                db,
+                name=profile.candidate_name,
+                phone=getattr(profile, "candidate_phone", "") or "",
+                email=getattr(profile, "candidate_email", "") or "",
+                file_path=download.file_path or "",
+            )
+            if existing_by_person:
+                return existing_by_person
             target_id = val if db.get(Candidate, val) is None else None
             new_c = _build_candidate(download, profile, target_id)
             db.add(new_c)
@@ -662,6 +803,15 @@ def ensure_local_candidate(db: Session, candidate_id: int | str) -> Candidate | 
         existing_by_agent = db.query(Candidate).filter(Candidate.candidate_agent_id == agent_id).first()
         if existing_by_agent:
             return existing_by_agent
+        existing_by_person = find_candidate_by_person(
+            db,
+            name=profile.candidate_name,
+            phone=getattr(profile, "candidate_phone", "") or "",
+            email=getattr(profile, "candidate_email", "") or "",
+            file_path=download.file_path or "",
+        )
+        if existing_by_person:
+            return existing_by_person
         target_id = val if db.get(Candidate, val) is None else None
         new_c = _build_candidate(download, profile, target_id)
         db.add(new_c)
@@ -696,6 +846,15 @@ def ensure_local_candidate(db: Session, candidate_id: int | str) -> Candidate | 
         existing_by_agent = db.query(Candidate).filter(Candidate.candidate_agent_id == agent_id).first()
         if existing_by_agent:
             return existing_by_agent
+        existing_by_person = find_candidate_by_person(
+            db,
+            name=profile.candidate_name,
+            phone=getattr(profile, "candidate_phone", "") or "",
+            email=getattr(profile, "candidate_email", "") or "",
+            file_path=download.file_path or "",
+        )
+        if existing_by_person:
+            return existing_by_person
         target_id = download.id if db.get(Candidate, download.id) is None else None
         new_c = _build_candidate(download, profile, target_id)
         db.add(new_c)

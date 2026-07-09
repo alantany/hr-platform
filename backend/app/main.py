@@ -3242,22 +3242,25 @@ def import_recruit_candidate(agent_id: str, db: Session = Depends(get_db), user:
     if not profile:
         raise HTTPException(status_code=404, detail="抓取候选人记录不存在")
         
-    existing = db.query(Candidate).filter(
-        Candidate.name == profile.candidate_name,
-        Candidate.education == (profile.candidate_education or "")
-    ).first()
+    download = db.query(RecruitResumeDownload).filter(
+        RecruitResumeDownload.candidate_agent_id == agent_id
+    ).order_by(RecruitResumeDownload.created_at.desc()).first()
+
+    existing = crud.find_candidate_by_person(
+        db,
+        name=profile.candidate_name,
+        phone=getattr(profile, "candidate_phone", "") or "",
+        email=getattr(profile, "candidate_email", "") or "",
+        file_path=download.file_path if download else "",
+    )
     
     if existing:
         return {
             "success": True,
             "candidate": schemas.CandidateOut.model_validate(existing, from_attributes=True).model_dump(),
-            "message": "系统内已存在同名且同学历的候选人，已关联现有候选人。"
+            "message": "系统内已存在同一候选人，已关联现有记录。",
         }
         
-    download = db.query(RecruitResumeDownload).filter(
-        RecruitResumeDownload.candidate_agent_id == agent_id
-    ).order_by(RecruitResumeDownload.created_at.desc()).first()
-    
     import re
     age_val = None
     if profile.candidate_age:
