@@ -25,6 +25,7 @@ class User(Base, TimestampMixin):
     role: Mapped[str] = mapped_column(String(32), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     manager_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    session_token: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
 
 class Role(Base, TimestampMixin):

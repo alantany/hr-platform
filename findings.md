@@ -1,5 +1,13 @@
 # Findings
 
+## 2026-07-09（单设备登录）
+
+- **会话模型**：`users.session_token` 保存当前有效会话；登录调用 `rotate_user_session` 生成随机 token 并覆盖旧值，实现「后登录踢先登录」。
+- **Token 格式**：`user:{username}:{session_token}`；不再接受无 session 的旧格式 `user:{username}`。
+- **退出**：`POST /api/auth/logout` 清空 `session_token`，旧 Token 立即失效。
+- **前端**：`frontend-api.js` 在 401 且 detail 含「其他设备」时带 `reason=kicked` 跳转登录页；`login.html` 展示被踢提示。
+- **开发后门**：环境变量 `ACCESS_TOKEN`（dev-token）仍可直接映射 admin，不受单设备限制。
+
 ## 2026-07-09（DeepSeek 官方 API 切换）
 
 - **网关地址**：简历解析 Worker 与 AI 能力中心统一调用 DeepSeek 官方 `https://api.deepseek.com`，默认模型 `deepseek-v4-flash`。

@@ -6,13 +6,14 @@ from backend.app.database import SessionLocal
 from backend.app.main import app
 from backend.app.models import Candidate, Company, Position, Project, Recommendation, User
 from backend.app.security import hash_password
+from tests.auth_helpers import login_headers
 
 
 client = TestClient(app)
 
 
 def headers(username: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer user:{username}"}
+    return login_headers(client, username)
 
 
 def test_recommendation_calendar_uses_recommended_status_and_user_hierarchy():

@@ -92,6 +92,7 @@ def ensure_schema() -> None:
             "phone": "ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''",
             "email": "ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT ''",
             "manager_user_id": "ALTER TABLE users ADD COLUMN manager_user_id INTEGER",
+            "session_token": "ALTER TABLE users ADD COLUMN session_token VARCHAR(64)",
         }.items():
             if column not in user_cols:
                 conn.execute(text(ddl))
@@ -578,13 +579,15 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
     if not security.verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
+    access_token = security.rotate_user_session(user)
     crud.add_audit(db, user.username, "认证登录", "用户登录", "user", str(user.id), detail=user.username)
     db.commit()
-    return schemas.TokenResponse(access_token=security.issue_user_token(user))
+    return schemas.TokenResponse(access_token=access_token)
 
 
 @app.post("/api/auth/logout")
 def logout(user: User = Depends(require_user), db: Session = Depends(get_db)):
+    security.clear_user_session(user)
     crud.add_audit(db, user.username, "认证登录", "用户退出", "user", str(user.id), detail=user.username)
     db.commit()
     return {"ok": True}

@@ -17,8 +17,16 @@ def admin_headers():
     return {"Authorization": f"Bearer {token}"}
 
 
-def user_headers(username: str):
-    return {"Authorization": f"Bearer user:{username}"}
+def user_headers(username: str, password: str | None = None):
+    password_map = {
+        "admin": "admin123",
+        "leader": "leader123",
+        "operator": "operator123",
+    }
+    pwd = password if password is not None else password_map.get(username, "operator123")
+    login_res = client.post("/api/auth/login", json={"username": username, "password": pwd})
+    assert login_res.status_code == 200, login_res.text
+    return {"Authorization": f"Bearer {login_res.json()['access_token']}"}
 
 
 def test_non_admin_cannot_manage_permission_system():
@@ -48,6 +56,30 @@ def test_login_uses_real_user_identity_and_logout_is_audited():
 
     logs = client.get("/api/audit-logs", headers=admin_headers()).json()
     assert any(log["module"] == "认证登录" and log["action"] == "用户退出" for log in logs)
+
+
+def test_single_device_login_kicks_previous_session():
+    first_login = client.post("/api/auth/login", json={"username": "operator", "password": "operator123"})
+    assert first_login.status_code == 200
+    first_token = first_login.json()["access_token"]
+    first_headers = {"Authorization": f"Bearer {first_token}"}
+    assert client.get("/api/me", headers=first_headers).status_code == 200
+
+    second_login = client.post("/api/auth/login", json={"username": "operator", "password": "operator123"})
+    assert second_login.status_code == 200
+    second_token = second_login.json()["access_token"]
+    assert second_token != first_token
+    second_headers = {"Authorization": f"Bearer {second_token}"}
+    assert client.get("/api/me", headers=second_headers).status_code == 200
+
+    kicked = client.get("/api/me", headers=first_headers)
+    assert kicked.status_code == 401
+    assert "其他设备" in kicked.json()["detail"]
+
+    assert client.post("/api/auth/logout", headers=second_headers).json()["ok"] is True
+    expired = client.get("/api/me", headers=second_headers)
+    assert expired.status_code == 401
+    assert "失效" in expired.json()["detail"]
 
 
 def test_admin_cannot_demote_current_admin_account():
@@ -239,10 +271,10 @@ def test_leader_sees_subordinate_owned_projects_but_other_leader_cannot():
         headers=headers,
     ).json()
 
-    li_headers = user_headers(li["username"])
-    wang_headers = user_headers(wang["username"])
-    zhang_headers = user_headers(zhang["username"])
-    sun_headers = user_headers(sun["username"])
+    li_headers = user_headers(li["username"], "operator123")
+    wang_headers = user_headers(wang["username"], "operator123")
+    zhang_headers = user_headers(zhang["username"], "leader123")
+    sun_headers = user_headers(sun["username"], "leader123")
 
     # Companies and projects must be created by leaders (operators no longer have write access)
     li_company = client.post("/api/companies", json={"name": f"李四客户-{suffix}"}, headers=zhang_headers).json()

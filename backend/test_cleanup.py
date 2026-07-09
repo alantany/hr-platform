@@ -153,6 +153,7 @@ def reset_seed_rows(db: Session) -> None:
         admin.password_hash = hash_password("admin123")
         admin.role = "超级管理员"
         admin.is_active = True
+        admin.session_token = None
     leader = db.query(User).filter(User.username == "leader").first()
     if leader is None:
         db.add(User(username="leader", full_name="团队组长", phone="", email="", password_hash=hash_password("leader123"), role="组长", is_active=True))
@@ -163,6 +164,7 @@ def reset_seed_rows(db: Session) -> None:
         leader.password_hash = hash_password("leader123")
         leader.role = "组长"
         leader.is_active = True
+        leader.session_token = None
     operator = db.query(User).filter(User.username == "operator").first()
     if operator is None:
         db.add(User(username="operator", full_name="一线操作员", phone="", email="", password_hash=hash_password("operator123"), role="操作员", is_active=True))
@@ -173,6 +175,7 @@ def reset_seed_rows(db: Session) -> None:
         operator.password_hash = hash_password("operator123")
         operator.role = "操作员"
         operator.is_active = True
+        operator.session_token = None
 
     db.query(WarrantyRule).delete(synchronize_session=False)
     db.add_all([

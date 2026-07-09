@@ -3,13 +3,14 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from backend.app.main import app
+from tests.auth_helpers import login_headers
 
 
 client = TestClient(app)
 
 
-def headers(username: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer user:{username}"}
+def headers(username: str, password: str | None = None) -> dict[str, str]:
+    return login_headers(client, username, password)
 
 
 def test_position_assignment_requires_operator_confirmation_and_notifies_leader():
@@ -29,7 +30,7 @@ def test_position_assignment_requires_operator_confirmation_and_notifies_leader(
         },
         headers=admin_headers,
     ).json()
-    operator_headers = headers(operator_username)
+    operator_headers = headers(operator_username, "operator123")
     company = client.post("/api/companies", json={"name": f"岗位待办客户-{suffix}"}, headers=leader_headers).json()
     project = client.post(
         "/api/projects",
@@ -99,12 +100,12 @@ def test_rejected_position_assignment_does_not_enable_permission():
     project = client.post("/api/projects", json={"company_id": company["id"], "name": f"拒绝岗位项目-{suffix}"}, headers=leader_headers).json()
     position = client.post("/api/positions", json={"project_id": project["id"], "name": f"拒绝岗位-{suffix}"}, headers=leader_headers).json()
     client.post(f"/api/positions/{position['id']}/assign", json={"user_ids": [operator["id"]]}, headers=leader_headers)
-    task = client.get("/api/position-assignment-tasks", headers=headers(operator_username)).json()[0]
+    task = client.get("/api/position-assignment-tasks", headers=headers(operator_username, "operator123")).json()[0]
 
     rejected = client.post(
         f"/api/position-assignment-tasks/{task['id']}/respond",
         json={"action": "reject", "note": "当前任务已满"},
-        headers=headers(operator_username),
+        headers=headers(operator_username, "operator123"),
     )
     assert rejected.status_code == 200
     assert rejected.json()["status"] == "rejected"

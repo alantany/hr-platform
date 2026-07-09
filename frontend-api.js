@@ -6,8 +6,17 @@ window.hrApi = {
     if (this.token) headers.Authorization = `Bearer ${this.token}`;
     const res = await fetch(`${this.baseUrl}${path}`, { ...options, headers });
     if (res.status === 401 && !location.pathname.endsWith("/login.html")) {
+      const text = await res.text();
       localStorage.removeItem("hr_token");
-      location.href = `./login.html?next=${encodeURIComponent(location.pathname.split("/").pop() || "dashboard.html")}`;
+      this.token = "";
+      let reason = "";
+      try {
+        const body = JSON.parse(text);
+        if (body.detail && String(body.detail).includes("其他设备")) {
+          reason = "&reason=kicked";
+        }
+      } catch (_) {}
+      location.href = `./login.html?next=${encodeURIComponent(location.pathname.split("/").pop() || "dashboard.html")}${reason}`;
       throw new Error("请先登录");
     }
     if (!res.ok) {

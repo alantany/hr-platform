@@ -8,6 +8,8 @@ from fastapi.testclient import TestClient
 from backend.app.main import app
 from backend.app.database import SessionLocal
 from backend.app.models import User, Candidate, Recommendation, Company, DataPermission, Project, Position
+from backend.app.security import hash_password
+from tests.auth_helpers import login_headers
 
 client = TestClient(app)
 
@@ -42,8 +44,8 @@ def test_data_permission_sharing_and_isolation():
         db.refresh(pos)
 
         # 1. 准备测试用户
-        user_a = User(username=f"op_a_{suffix}", full_name="顾问A", role="操作员", password_hash="hash")
-        user_b = User(username=f"op_b_{suffix}", full_name="顾问B", role="操作员", password_hash="hash")
+        user_a = User(username=f"op_a_{suffix}", full_name="顾问A", role="操作员", password_hash=hash_password("test"), is_active=True)
+        user_b = User(username=f"op_b_{suffix}", full_name="顾问B", role="操作员", password_hash=hash_password("test"), is_active=True)
         db.add_all([user_a, user_b])
         db.commit()
         db.refresh(user_a)
@@ -57,7 +59,7 @@ def test_data_permission_sharing_and_isolation():
         db.refresh(cand_a)
         db.refresh(cand_b)
 
-        headers_a = {"Authorization": f"Bearer user:op_a_{suffix}"}
+        headers_a = login_headers(client, f"op_a_{suffix}")
 
         # 3. 验证共享候选人池 ── 顾问 A 能看到 B 录入的候选人
         resp = client.get("/api/candidates", headers=headers_a)
@@ -94,7 +96,7 @@ def test_data_permission_sharing_and_isolation():
         ])
         db.commit()
         rows_a = client.get("/api/candidates", headers=headers_a).json()
-        rows_b = client.get("/api/candidates", headers={"Authorization": f"Bearer user:op_b_{suffix}"}).json()
+        rows_b = client.get("/api/candidates", headers=login_headers(client, f"op_b_{suffix}")).json()
         shared_names = {cand_a.name, cand_b.name}
         assert {row["name"] for row in rows_a if row["self_locked"]} >= shared_names
         assert {row["name"] for row in rows_b if row["self_locked"]} >= shared_names

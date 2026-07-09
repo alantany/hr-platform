@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import secrets
 from functools import wraps
 from typing import Callable
 
@@ -31,8 +32,33 @@ def verify_password(password: str, stored_password: str) -> bool:
     return password == stored_password
 
 
+SESSION_KICKED_MESSAGE = "您的账号已在其他设备登录，请重新登录"
+SESSION_EXPIRED_MESSAGE = "登录已失效，请重新登录"
+
+
+def rotate_user_session(user: User) -> str:
+    user.session_token = secrets.token_urlsafe(32)
+    return f"user:{user.username}:{user.session_token}"
+
+
+def clear_user_session(user: User) -> None:
+    user.session_token = None
+
+
 def issue_user_token(user: User) -> str:
-    return f"user:{user.username}"
+    if not user.session_token:
+        return rotate_user_session(user)
+    return f"user:{user.username}:{user.session_token}"
+
+
+def parse_user_token(token: str) -> tuple[str | None, str | None]:
+    if not token.startswith("user:"):
+        return token, None
+    payload = token.removeprefix("user:")
+    if ":" not in payload:
+        return payload, None
+    username, session_token = payload.split(":", 1)
+    return username, session_token or None
 
 
 def get_role_code(role: str | None) -> str:
@@ -195,12 +221,20 @@ def get_current_user(db: Session, authorization: str | None) -> User:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="请先登录")
     if token == settings.access_token:
         user = db.query(User).filter(User.username == "admin").first()
-    elif token.startswith("user:"):
-        user = db.query(User).filter(User.username == token.removeprefix("user:")).first()
-    else:
-        user = db.query(User).filter(User.username == token).first()
+        if not user or not user.is_active:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="账号不可用")
+        return user
+
+    username, session_token = parse_user_token(token)
+    if not username:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=SESSION_EXPIRED_MESSAGE)
+    user = db.query(User).filter(User.username == username).first()
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="账号不可用")
+    if not session_token or not user.session_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=SESSION_EXPIRED_MESSAGE)
+    if session_token != user.session_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=SESSION_KICKED_MESSAGE)
     return user
 
 

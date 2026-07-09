@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-09（完成 - 单设备登录互踢）
+
+- 用户表新增 `session_token`；登录时生成新会话并写入库，Token 格式为 `user:{username}:{session_token}`。
+- 鉴权校验 Token 与库中 `session_token` 一致；新设备登录会使旧 Token 返回 401「您的账号已在其他设备登录」；主动退出会清空会话。
+- 前端 401 时若检测到被踢下线，跳转登录页并展示提示；新增 `test_single_device_login_kicks_previous_session` 及测试登录辅助 `tests/auth_helpers.py`。
+
 ## 2026-07-09（完成 - Windows 简历解析启动脚本 + 收尾提交推送）
 
 - 新增 Windows 启动脚本：`windows/05-start-resume-parser.bat`、`windows/06-queue-resume-tasks.bat`；项目根目录 `run-resume-parser.bat`、`run-resume-parser.ps1`、`queue-resume-tasks-windows.bat`。

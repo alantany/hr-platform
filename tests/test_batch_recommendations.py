@@ -15,6 +15,8 @@ from backend.app import main as main_module
 from backend.app.main import app
 from backend.app.database import SessionLocal
 from backend.app.models import Candidate, DataPermission, User
+from backend.app.security import hash_password
+from tests.auth_helpers import login_headers
 
 
 client = TestClient(app)
@@ -205,8 +207,8 @@ def test_operator_can_recommend_unlocked_candidate_owned_by_peer():
     user_a = None
     user_b = None
     try:
-        user_a = User(username=f"op_a_{suffix}", full_name="顾问A", role="操作员", password_hash="hash", is_active=True)
-        user_b = User(username=f"op_b_{suffix}", full_name="顾问B", role="操作员", password_hash="hash", is_active=True)
+        user_a = User(username=f"op_a_{suffix}", full_name="顾问A", role="操作员", password_hash=hash_password("test"), is_active=True)
+        user_b = User(username=f"op_b_{suffix}", full_name="顾问B", role="操作员", password_hash=hash_password("test"), is_active=True)
         db.add_all([user_a, user_b])
         db.commit()
         db.refresh(user_a)
@@ -231,7 +233,7 @@ def test_operator_can_recommend_unlocked_candidate_owned_by_peer():
         db.commit()
         db.refresh(peer_candidate)
 
-        headers_a = {"Authorization": f"Bearer user:op_a_{suffix}"}
+        headers_a = login_headers(client, f"op_a_{suffix}")
         response = client.post(
             "/api/recommendations/batch",
             headers=headers_a,
