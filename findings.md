@@ -1,5 +1,13 @@
 # Findings
 
+## 2026-07-09（搜 ai 时职位名未排第一）
+
+- **现象**：搜 `ai` 时，「ai大模型算法工程师」未排第一，前面是架构师/研发经理等。
+- **原因**：
+  1. 表头「期望职位」实际渲染的是 `current_title`，而 L1 原先只匹配 `job_intention`（常为空），职位名落在 L2。
+  2. 短词 `ai` 用子串匹配会误命中经历里的 `AIGC`/`training` 等，多人 L2 同分后按创建时间排。
+- **修复**：L1 = `job_intention` + `current_title`；L2 仅经历/技能；≤2 字母英文词改边界匹配；列表列改为 `job_intention || current_title`。
+
 ## 2026-07-09（AI 检索后下载按钮丢失）
 
 - **原因**：AI 检索成功后用接口返回的候选人**整表替换**列表；`CandidateOut` 只带 ORM 上的 `file_path`。简历库来源常把路径挂在 `recruit.resume_downloads`，主表为空，导致「下载」按钮条件 `i.file_path` 为假。

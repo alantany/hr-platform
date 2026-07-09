@@ -560,16 +560,26 @@ def _join_search_parts(parts: list) -> str:
     return " ".join(str(p) for p in parts if p).lower()
 
 
+def _token_matches_text(token: str, text: str) -> bool:
+    """短英文词（如 ai）用边界匹配，避免命中 AIGC/training 等。"""
+    hay = (text or "").lower()
+    needle = (token or "").lower()
+    if not needle:
+        return False
+    if re.fullmatch(r"[a-z0-9]{1,2}", needle):
+        return re.search(rf"(^|[^a-z0-9#+.]){re.escape(needle)}([^a-z0-9#+.]|$)", hay) is not None
+    return needle in hay
+
+
 def _candidate_l1_search_text(item: dict) -> str:
-    """L1：期望岗位 / 求职意向（最高优先）。"""
-    return _join_search_parts([item.get("job_intention")])
+    """L1：期望岗位名（求职意向 + 当前/期望职位名，最高优先）。"""
+    return _join_search_parts([item.get("job_intention"), item.get("current_title")])
 
 
 def _candidate_l2_search_text(item: dict) -> str:
-    """L2：当前职位、工作/项目经历、核心价值、证书。"""
+    """L2：工作/项目经历、核心价值、证书（职位名已在 L1）。"""
     return _join_search_parts(
         [
-            item.get("current_title"),
             item.get("work_history"),
             item.get("project_history"),
             item.get("core_value"),
@@ -586,15 +596,14 @@ def _candidate_search_text(item: dict) -> str:
 def _count_keyword_group_hits(text: str, groups: list[list[str]]) -> int:
     if not groups:
         return 0
-    hay = (text or "").lower()
-    return sum(1 for or_tokens in groups if any(token in hay for token in or_tokens))
+    return sum(1 for or_tokens in groups if any(_token_matches_text(token, text) for token in or_tokens))
 
 
 def _matches_search_keyword(text: str, keyword: str | None) -> bool:
     groups = _parse_search_keyword_groups(keyword)
     if not groups:
         return True
-    return all(any(token in text for token in or_tokens) for or_tokens in groups)
+    return all(any(_token_matches_text(token, text) for token in or_tokens) for or_tokens in groups)
 
 
 def _score_candidate_keyword_match(item: dict, keyword: str | None) -> tuple[int, int]:

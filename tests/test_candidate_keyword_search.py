@@ -33,7 +33,7 @@ def test_search_text_excludes_name_phone_city():
     assert "spring" in text
 
 
-def test_l1_hit_ranks_above_l2_only():
+def test_l1_title_ranks_above_l2_experience_only():
     keyword = "Java"
     l1_hit = {
         "id": 1,
@@ -45,7 +45,7 @@ def test_l1_hit_ranks_above_l2_only():
     l2_only = {
         "id": 2,
         "job_intention": "产品经理",
-        "current_title": "Java工程师",
+        "current_title": "产品经理",
         "work_history": "负责 Java 服务",
         "created_at": "2026-06-01 10:00:00",
     }
@@ -54,9 +54,35 @@ def test_l1_hit_ranks_above_l2_only():
     assert crud._score_candidate_keyword_match(l1_hit, keyword)[0] == 1
     assert crud._score_candidate_keyword_match(l2_only, keyword)[0] == 0
     assert crud._score_candidate_keyword_match(l2_only, keyword)[1] >= 1
-    # L1 分更高，即使创建时间更早也应排前
     assert crud._score_candidate_keyword_match(l1_hit, keyword) > crud._score_candidate_keyword_match(
         l2_only, keyword
+    )
+
+
+def test_current_title_counts_as_l1():
+    item = {
+        "job_intention": "",
+        "current_title": "ai大模型算法工程师",
+        "work_history": "",
+    }
+    assert crud._score_candidate_keyword_match(item, "ai")[0] == 1
+
+
+def test_short_token_ai_does_not_match_aigc_in_experience():
+    experience_only = {
+        "job_intention": "架构师",
+        "current_title": "架构师",
+        "work_history": "负责 AIGC 与 RAG 系统，熟悉 LangChain",
+    }
+    title_hit = {
+        "job_intention": "",
+        "current_title": "ai大模型算法工程师",
+        "work_history": "",
+    }
+    assert not crud._matches_search_keyword(crud._candidate_search_text(experience_only), "ai")
+    assert crud._matches_search_keyword(crud._candidate_search_text(title_hit), "ai")
+    assert crud._score_candidate_keyword_match(title_hit, "ai") > crud._score_candidate_keyword_match(
+        experience_only, "ai"
     )
 
 

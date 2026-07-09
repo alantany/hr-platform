@@ -1011,17 +1011,27 @@ function _joinSearchParts(parts) {
   return parts.filter(Boolean).map((p) => String(p)).join(" ").toLowerCase();
 }
 
-/** L1：期望岗位 / 求职意向（最高优先） */
-function buildCandidateL1SearchText(item) {
-  if (!item) return "";
-  return _joinSearchParts([item.job_intention]);
+/** 短英文词（如 ai）用边界匹配，避免命中 AIGC/training 等 */
+function tokenMatchesText(token, text) {
+  const hay = String(text || "").toLowerCase();
+  const needle = String(token || "").toLowerCase();
+  if (!needle) return false;
+  if (/^[a-z0-9]{1,2}$/.test(needle)) {
+    return new RegExp(`(^|[^a-z0-9#+.])${needle}([^a-z0-9#+.]|$)`, "i").test(hay);
+  }
+  return hay.includes(needle);
 }
 
-/** L2：岗位相关补充字段（当前职位、经历、技能等） */
+/** L1：期望岗位名（求职意向 + 当前/期望职位名，最高优先） */
+function buildCandidateL1SearchText(item) {
+  if (!item) return "";
+  return _joinSearchParts([item.job_intention, item.current_title]);
+}
+
+/** L2：经历与技能补充（不含职位名，职位名已在 L1） */
 function buildCandidateL2SearchText(item) {
   if (!item) return "";
   return _joinSearchParts([
-    item.current_title,
     item.work_history,
     item.project_history,
     item.core_value,
@@ -1037,9 +1047,8 @@ function buildCandidateSearchText(item) {
 
 function _countKeywordGroupHits(text, groups) {
   if (!groups.length) return 0;
-  const hay = String(text || "").toLowerCase();
   return groups.reduce(
-    (n, orTokens) => n + (orTokens.some((token) => hay.includes(token)) ? 1 : 0),
+    (n, orTokens) => n + (orTokens.some((token) => tokenMatchesText(token, text)) ? 1 : 0),
     0
   );
 }
@@ -1047,7 +1056,7 @@ function _countKeywordGroupHits(text, groups) {
 function matchesSearchKeywords(text, keyword) {
   const groups = parseSearchKeywordGroups(keyword);
   if (!groups.length) return true;
-  return groups.every((orTokens) => orTokens.some((token) => text.includes(token)));
+  return groups.every((orTokens) => orTokens.some((token) => tokenMatchesText(token, text)));
 }
 
 /** 相关性分：L1 命中组数优先，其次 L2；用于结果排序 */
