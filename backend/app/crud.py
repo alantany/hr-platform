@@ -523,10 +523,22 @@ def update_position(db: Session, position: Position, payload):
     return position
 
 
-def _tokenize_search_keywords(keyword: str | None) -> list[str]:
+def _parse_search_keyword_groups(keyword: str | None) -> list[list[str]]:
     if not keyword:
         return []
-    return [part for part in keyword.strip().lower().split() if part]
+    groups: list[list[str]] = []
+    for group in keyword.strip().lower().split():
+        or_tokens = [part.strip() for part in re.split(r"[,|，]", group) if part.strip()]
+        if or_tokens:
+            groups.append(or_tokens)
+    return groups
+
+
+def _matches_search_keyword(text: str, keyword: str | None) -> bool:
+    groups = _parse_search_keyword_groups(keyword)
+    if not groups:
+        return True
+    return all(any(token in text for token in or_tokens) for or_tokens in groups)
 
 
 def _candidate_search_text(item: dict) -> str:
@@ -714,9 +726,8 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
     filtered = []
     for item in merged_results:
         if keyword:
-            tokens = _tokenize_search_keywords(keyword)
             text = _candidate_search_text(item)
-            if tokens and not all(token in text for token in tokens):
+            if not _matches_search_keyword(text, keyword):
                 continue
         if city:
             if item["city"] != city:

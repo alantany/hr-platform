@@ -2,9 +2,10 @@
 
 ## 2026-07-09（简历池多关键词搜索）
 
-- **空格分隔多词**：搜索框输入 `Java Spring 北京` 会拆成三个词，采用 **AND（且）** 逻辑——简历文本中须**同时包含**每个词才命中，与智联/前程猎头端常见行为一致。
+- **空格分隔多词**：搜索框输入 `Java Spring 北京` 会拆成三个词，采用 **AND（且）** 逻辑——简历文本中须**同时包含**每个词才命中。
+- **逗号/竖线放宽（OR）**：同一「词组」内用英文逗号 `,`、中文逗号 `，` 或竖线 `|` 表示 **OR（或）**，例如 `Java,Spring` 命中其一即可；`Java,Spring 北京` 表示「(Java 或 Spring) 且 北京」。
 - **检索范围**：除姓名、职位、学历、城市等基础字段外，一并检索手机、邮箱、工作经历、项目经历、证书、综合评价、求职意向、标签等全文。
-- **前后端一致**：`app.js` 提供 `tokenizeSearchKeywords` / `buildCandidateSearchText` / `matchesSearchKeywords`；`crud.list_candidates` 的 `keyword` 参数使用相同 AND 规则。
+- **前后端一致**：`app.js` 提供 `parseSearchKeywordGroups` / `buildCandidateSearchText` / `matchesSearchKeywords`；`crud.list_candidates` 的 `keyword` 参数使用相同规则。
 
 ## 2026-07-09（岗位弹窗薪酬字段简化）
 

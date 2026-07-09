@@ -991,9 +991,14 @@ async function withButtonBusy(button, task, label) {
 window.withButtonBusy = withButtonBusy;
 window.setButtonBusyLabel = setButtonBusyLabel;
 
-/** 空格分隔多关键词（智联/前程常见：全部命中 AND） */
-function tokenizeSearchKeywords(keyword) {
-  return String(keyword || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+/** 解析搜索词：空格分组=且(AND)，组内逗号/竖线=或(OR) */
+function parseSearchKeywordGroups(keyword) {
+  const raw = String(keyword || "").trim().toLowerCase();
+  if (!raw) return [];
+  return raw
+    .split(/\s+/)
+    .map((group) => group.split(/[,|，]/).map((s) => s.trim()).filter(Boolean))
+    .filter((group) => group.length > 0);
 }
 
 function buildCandidateSearchText(item) {
@@ -1027,12 +1032,12 @@ function buildCandidateSearchText(item) {
 }
 
 function matchesSearchKeywords(text, keyword) {
-  const tokens = tokenizeSearchKeywords(keyword);
-  if (!tokens.length) return true;
-  return tokens.every((token) => text.includes(token));
+  const groups = parseSearchKeywordGroups(keyword);
+  if (!groups.length) return true;
+  return groups.every((orTokens) => orTokens.some((token) => text.includes(token)));
 }
 
-window.tokenizeSearchKeywords = tokenizeSearchKeywords;
+window.parseSearchKeywordGroups = parseSearchKeywordGroups;
 window.buildCandidateSearchText = buildCandidateSearchText;
 window.matchesSearchKeywords = matchesSearchKeywords;
 
