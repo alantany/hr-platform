@@ -672,6 +672,23 @@ class TagUpdate(BaseModel):
     enabled: bool | None = None
 
 
+class SearchHotwordCreate(BaseModel):
+    keyword: str
+    sort_order: int = 0
+    enabled: bool = True
+
+
+class SearchHotwordOut(SearchHotwordCreate):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SearchHotwordUpdate(BaseModel):
+    keyword: str | None = None
+    sort_order: int | None = None
+    enabled: bool | None = None
+
+
 class NotificationCreate(BaseModel):
     user: str
     title: str

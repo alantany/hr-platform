@@ -10,7 +10,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from . import security
-from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, User, WarrantyRule
+from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchHotword, SearchPreset, SystemConfig, TagDictionary, User, WarrantyRule
 
 
 TAG_OBJECT_LABELS = {
@@ -1319,6 +1319,65 @@ def delete_tag(db: Session, tag: TagDictionary):
 
 def list_tags(db: Session):
     return db.query(TagDictionary).filter(TagDictionary.field_key != "").order_by(TagDictionary.object_type.asc(), TagDictionary.sort_order.asc(), TagDictionary.id.asc()).all()
+
+
+DEFAULT_SEARCH_HOTWORDS = [
+    "销售",
+    "课程顾问",
+    "招聘",
+    "行政",
+    "客服",
+    "Java",
+    "前端",
+    "产品经理",
+]
+
+
+def list_search_hotwords(db: Session, enabled_only: bool = False):
+    query = db.query(SearchHotword)
+    if enabled_only:
+        query = query.filter(SearchHotword.enabled.is_(True))
+    return query.order_by(SearchHotword.sort_order.asc(), SearchHotword.id.asc()).all()
+
+
+def create_search_hotword(db: Session, payload):
+    keyword = str(payload.keyword or "").strip()
+    if not keyword:
+        raise ValueError("热词不能为空")
+    obj = SearchHotword(
+        keyword=keyword[:64],
+        sort_order=int(payload.sort_order or 0),
+        enabled=bool(payload.enabled),
+    )
+    db.add(obj)
+    return obj
+
+
+def update_search_hotword(db: Session, item: SearchHotword, payload):
+    changes = payload.model_dump(exclude_unset=True)
+    if "keyword" in changes:
+        keyword = str(changes["keyword"] or "").strip()
+        if not keyword:
+            raise ValueError("热词不能为空")
+        changes["keyword"] = keyword[:64]
+    for key, value in changes.items():
+        setattr(item, key, value)
+    return item
+
+
+def delete_search_hotword(db: Session, item: SearchHotword):
+    db.delete(item)
+    return None
+
+
+def ensure_default_search_hotwords(db: Session) -> int:
+    """表为空时写入默认热词，返回新增条数。"""
+    if db.query(SearchHotword).count() > 0:
+        return 0
+    for idx, keyword in enumerate(DEFAULT_SEARCH_HOTWORDS):
+        db.add(SearchHotword(keyword=keyword, sort_order=idx * 10, enabled=True))
+    db.flush()
+    return len(DEFAULT_SEARCH_HOTWORDS)
 
 
 def create_notification(db: Session, payload):

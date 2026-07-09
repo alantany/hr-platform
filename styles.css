@@ -1191,6 +1191,10 @@ button, input, select { font: inherit; }
   font-weight: 800;
 }
 
+.tag-dictionary-hotword-row {
+  grid-template-columns: 1.6fr .6fr .6fr 1fr;
+}
+
 .tag-dictionary-config-actions {
   display: flex;
   flex-wrap: wrap;

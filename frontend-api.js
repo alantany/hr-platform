@@ -317,6 +317,19 @@ window.hrApi = {
   deleteTag(id) {
     return this.request(`/tags/${id}`, { method: "DELETE" });
   },
+  searchHotwords(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/search-hotwords${qs ? `?${qs}` : ""}`);
+  },
+  createSearchHotword(payload) {
+    return this.request("/search-hotwords", { method: "POST", body: JSON.stringify(payload) });
+  },
+  updateSearchHotword(id, payload) {
+    return this.request(`/search-hotwords/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  },
+  deleteSearchHotword(id) {
+    return this.request(`/search-hotwords/${id}`, { method: "DELETE" });
+  },
   notifications(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/notifications${qs ? `?${qs}` : ""}`);

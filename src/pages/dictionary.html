@@ -15,12 +15,12 @@
       <section class="tag-dictionary-page">
         <section class="tag-dictionary-warning">
           <span>⚠</span>
-          <div>标签管理现在维护的是“对象字段 -> 标签展示”配置。对象命中字段值后，会在候选人、岗位、项目和客户页面实时显示对应标签。</div>
+          <div>标签管理维护「对象字段 → 标签展示」配置；另可在「热词管理」中配置简历池「猜你想搜」热词（文案、排序、启用）。</div>
         </section>
 
         <nav class="tag-dictionary-tabs" data-tag-tabs></nav>
 
-        <section class="tag-dictionary-panel panel">
+        <section class="tag-dictionary-panel panel" data-tag-fields-panel>
           <div class="tag-dictionary-card-head">
             <div>
               <h3 data-tag-panel-title>候选人字段标签</h3>
@@ -55,7 +55,72 @@
             <div data-tag-config-list></div>
           </div>
         </section>
+
+        <section class="tag-dictionary-panel panel" data-hotword-panel style="display:none;">
+          <div class="tag-dictionary-card-head">
+            <div>
+              <h3>热词管理</h3>
+              <div class="section-sub">配置简历池「猜你想搜」热词：文案、排序、启用状态。仅启用项会显示在简历池。</div>
+            </div>
+            <button class="tag-dictionary-add-btn" type="button" data-action="open-hotword-modal">新增热词</button>
+          </div>
+          <div class="tag-dictionary-toolbar">
+            <div class="field-group">
+              <label>搜索热词</label>
+              <input class="input" data-hotword-filter-keyword placeholder="搜索热词文案..." />
+            </div>
+            <div class="field-group">
+              <label>状态</label>
+              <select class="input" data-hotword-filter-enabled>
+                <option value="">全部状态</option>
+                <option value="true">仅启用</option>
+                <option value="false">仅停用</option>
+              </select>
+            </div>
+          </div>
+          <div class="tag-dictionary-config-table tag-dictionary-hotword-table">
+            <div class="tag-dictionary-config-row is-head tag-dictionary-hotword-row">
+              <div>热词文案</div>
+              <div>排序</div>
+              <div>状态</div>
+              <div>操作</div>
+            </div>
+            <div data-hotword-list></div>
+          </div>
+        </section>
       </section>
+
+      <div class="modal" data-hotword-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
+        <div class="panel" style="max-width:520px; margin:12vh auto 0; background:#fff;">
+          <div class="section-head">
+            <div>
+              <h3 data-hotword-modal-title>新增热词</h3>
+              <div class="section-sub">热词会作为简历池「猜你想搜」可点击标签。</div>
+            </div>
+            <div class="hero-actions" style="margin-top:0;">
+              <button class="btn" type="button" data-action="close-hotword-modal">取消</button>
+              <button class="btn primary" type="button" data-action="save-hotword">保存</button>
+            </div>
+          </div>
+          <div class="list">
+            <div class="list-item">
+              <div class="item-top"><div><div class="item-title">热词文案</div><div class="item-meta">最多 64 字，如 Java、产品经理</div></div></div>
+              <input class="input" data-hotword-keyword maxlength="64" placeholder="请输入热词" />
+            </div>
+            <div class="list-item">
+              <div class="item-top"><div><div class="item-title">排序</div><div class="item-meta">数字越小越靠前</div></div></div>
+              <input class="input" data-hotword-sort-order type="number" min="0" step="10" value="0" />
+            </div>
+            <div class="list-item">
+              <div class="item-top"><div><div class="item-title">状态</div></div></div>
+              <select class="input" data-hotword-enabled>
+                <option value="true">启用</option>
+                <option value="false">停用</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="modal" data-tag-config-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:2000; padding:24px;">
         <div class="panel" style="max-width:860px; margin:8vh auto 0; background:#fff;">
@@ -206,7 +271,9 @@
     const state = {
       activeTab: 'candidate',
       rows: [],
+      hotwords: [],
       editingId: null,
+      editingHotwordId: null,
     };
 
     function escapeHtml(value) {
@@ -216,6 +283,10 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
+    }
+
+    function isHotwordTab() {
+      return state.activeTab === 'hotword';
     }
 
     function getObjectLabel(objectType) {
@@ -256,14 +327,42 @@
         .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.id - b.id);
     }
 
+    function getFilteredHotwords() {
+      const keyword = document.querySelector('[data-hotword-filter-keyword]')?.value?.trim().toLowerCase() || '';
+      const enabled = document.querySelector('[data-hotword-filter-enabled]')?.value || '';
+      return state.hotwords
+        .filter((row) => {
+          if (!keyword) return true;
+          return String(row.keyword || '').toLowerCase().includes(keyword);
+        })
+        .filter((row) => {
+          if (enabled === '') return true;
+          return String(Boolean(row.enabled)) === enabled;
+        })
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.id - b.id);
+    }
+
+    function syncPanelVisibility() {
+      const fieldsPanel = document.querySelector('[data-tag-fields-panel]');
+      const hotwordPanel = document.querySelector('[data-hotword-panel]');
+      if (fieldsPanel) fieldsPanel.style.display = isHotwordTab() ? 'none' : '';
+      if (hotwordPanel) hotwordPanel.style.display = isHotwordTab() ? '' : 'none';
+    }
+
     function renderTabs() {
       const host = document.querySelector('[data-tag-tabs]');
       if (!host) return;
-      host.innerHTML = OBJECT_TYPES.map((item) => `
+      const fieldTabs = OBJECT_TYPES.map((item) => `
         <button type="button" class="tag-dictionary-tab${state.activeTab === item.key ? ' is-active' : ''}" data-tag-tab="${item.key}">
           ${escapeHtml(item.label)}字段标签
         </button>
       `).join('');
+      const hotwordTab = `
+        <button type="button" class="tag-dictionary-tab${isHotwordTab() ? ' is-active' : ''}" data-tag-tab="hotword">
+          热词管理
+        </button>
+      `;
+      host.innerHTML = fieldTabs + hotwordTab;
     }
 
     function renderRows() {
@@ -272,7 +371,7 @@
       if (title) {
         title.textContent = `${getObjectLabel(state.activeTab)}字段标签`;
       }
-      if (!list) return;
+      if (!list || isHotwordTab()) return;
       const rows = getFilteredRows();
       if (!rows.length) {
         list.innerHTML = '<div class="tag-dictionary-config-empty">当前筛选下暂无字段配置。</div>';
@@ -298,9 +397,39 @@
       `).join('');
     }
 
+    function renderHotwords() {
+      const list = document.querySelector('[data-hotword-list]');
+      if (!list) return;
+      const rows = getFilteredHotwords();
+      if (!rows.length) {
+        list.innerHTML = '<div class="tag-dictionary-config-empty">当前筛选下暂无热词，可点击「新增热词」添加。</div>';
+        return;
+      }
+      list.innerHTML = rows.map((row) => `
+        <div class="tag-dictionary-config-row tag-dictionary-hotword-row">
+          <div>
+            <div class="tag-dictionary-dimension-name">${escapeHtml(row.keyword)}</div>
+            <div class="item-meta">简历池猜你想搜</div>
+          </div>
+          <div>${escapeHtml(row.sort_order)}</div>
+          <div><span class="chip ${row.enabled ? 'success' : 'neutral'}">${row.enabled ? '启用' : '停用'}</span></div>
+          <div class="tag-dictionary-config-actions">
+            <button type="button" class="tag-dictionary-link" data-hotword-edit="${row.id}">编辑</button>
+            <button type="button" class="tag-dictionary-link" data-hotword-toggle="${row.id}">${row.enabled ? '停用' : '启用'}</button>
+            <button type="button" class="tag-dictionary-link is-danger" data-hotword-delete="${row.id}">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
     function renderAll() {
       renderTabs();
-      renderRows();
+      syncPanelVisibility();
+      if (isHotwordTab()) {
+        renderHotwords();
+      } else {
+        renderRows();
+      }
     }
 
     function fillObjectTypeOptions() {
@@ -408,7 +537,43 @@
 
     async function loadRows() {
       state.rows = await window.hrApi.tags();
-      renderAll();
+      if (!isHotwordTab()) renderAll();
+    }
+
+    async function loadHotwords() {
+      state.hotwords = await window.hrApi.searchHotwords();
+      if (isHotwordTab()) renderAll();
+    }
+
+    function openHotwordModal(row = null) {
+      state.editingHotwordId = row?.id || null;
+      const modal = document.querySelector('[data-hotword-modal]');
+      const title = document.querySelector('[data-hotword-modal-title]');
+      if (title) title.textContent = row ? '编辑热词' : '新增热词';
+      document.querySelector('[data-hotword-keyword]').value = row?.keyword || '';
+      document.querySelector('[data-hotword-sort-order]').value = String(row?.sort_order ?? ((state.hotwords.length + 1) * 10));
+      document.querySelector('[data-hotword-enabled]').value = String(row?.enabled ?? true);
+      if (modal) modal.style.display = 'block';
+    }
+
+    function closeHotwordModal() {
+      state.editingHotwordId = null;
+      const modal = document.querySelector('[data-hotword-modal]');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function saveHotword() {
+      const keyword = document.querySelector('[data-hotword-keyword]')?.value?.trim() || '';
+      const sortOrder = Number(document.querySelector('[data-hotword-sort-order]')?.value || 0);
+      const enabled = document.querySelector('[data-hotword-enabled]')?.value !== 'false';
+      if (!keyword) throw new Error('请填写热词文案');
+      if (state.editingHotwordId) {
+        await window.hrApi.updateSearchHotword(state.editingHotwordId, { keyword, sort_order: sortOrder, enabled });
+      } else {
+        await window.hrApi.createSearchHotword({ keyword, sort_order: sortOrder, enabled });
+      }
+      closeHotwordModal();
+      await loadHotwords();
     }
 
     async function saveConfig() {
@@ -474,6 +639,23 @@
         }
         return;
       }
+      if (event.target.closest('[data-action="open-hotword-modal"]')) {
+        openHotwordModal();
+        return;
+      }
+      if (event.target.closest('[data-action="close-hotword-modal"]')) {
+        closeHotwordModal();
+        return;
+      }
+      if (event.target.closest('[data-action="save-hotword"]')) {
+        try {
+          await saveHotword();
+          window.showToast?.('热词已保存');
+        } catch (error) {
+          window.showToast?.(error.message || '保存失败');
+        }
+        return;
+      }
       const editBtn = event.target.closest('[data-tag-edit]');
       if (editBtn) {
         const row = state.rows.find((item) => item.id === Number(editBtn.dataset.tagEdit));
@@ -499,12 +681,41 @@
         window.hrTagSystem?.invalidate?.();
         await loadRows();
         window.showToast?.('字段标签配置已删除');
+        return;
+      }
+      const hotwordEdit = event.target.closest('[data-hotword-edit]');
+      if (hotwordEdit) {
+        const row = state.hotwords.find((item) => item.id === Number(hotwordEdit.dataset.hotwordEdit));
+        openHotwordModal(row);
+        return;
+      }
+      const hotwordToggle = event.target.closest('[data-hotword-toggle]');
+      if (hotwordToggle) {
+        const row = state.hotwords.find((item) => item.id === Number(hotwordToggle.dataset.hotwordToggle));
+        if (!row) return;
+        await window.hrApi.updateSearchHotword(row.id, { enabled: !row.enabled });
+        await loadHotwords();
+        window.showToast?.(`已${row.enabled ? '停用' : '启用'}热词`);
+        return;
+      }
+      const hotwordDelete = event.target.closest('[data-hotword-delete]');
+      if (hotwordDelete) {
+        const row = state.hotwords.find((item) => item.id === Number(hotwordDelete.dataset.hotwordDelete));
+        if (!row) return;
+        if (!window.confirm(`确认删除热词「${row.keyword}」吗？`)) return;
+        await window.hrApi.deleteSearchHotword(row.id);
+        await loadHotwords();
+        window.showToast?.('热词已删除');
       }
     });
 
     document.addEventListener('input', (event) => {
       if (event.target.matches('[data-tag-filter-keyword], [data-tag-filter-enabled]')) {
         renderRows();
+        return;
+      }
+      if (event.target.matches('[data-hotword-filter-keyword], [data-hotword-filter-enabled]')) {
+        renderHotwords();
         return;
       }
       if (event.target.matches('[data-tag-field-label], [data-tag-style-key], [data-tag-sort-order]')) {
@@ -523,6 +734,9 @@
       if (event.target.matches('[data-tag-style-key], [data-tag-enabled]')) {
         renderModalPreview();
       }
+      if (event.target.matches('[data-hotword-filter-enabled]')) {
+        renderHotwords();
+      }
     });
 
     window.addEventListener('DOMContentLoaded', async () => {
@@ -530,7 +744,8 @@
       try {
         fillObjectTypeOptions();
         fillStyleOptions();
-        await loadRows();
+        await Promise.all([loadRows(), loadHotwords()]);
+        renderAll();
       } catch (error) {
         console.warn(error);
         const list = document.querySelector('[data-tag-config-list]');

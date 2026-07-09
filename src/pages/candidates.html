@@ -88,14 +88,7 @@
         <div class="candidate-filter-hotkeys">
           <span class="candidate-filter-label">猜你想搜</span>
           <div class="skills" data-hotkey-container>
-            <span class="skill-tag" data-hotkey="销售" style="cursor:pointer; transition: all 0.15s;">销售</span>
-            <span class="skill-tag" data-hotkey="课程顾问" style="cursor:pointer; transition: all 0.15s;">课程顾问</span>
-            <span class="skill-tag" data-hotkey="招聘" style="cursor:pointer; transition: all 0.15s;">招聘</span>
-            <span class="skill-tag" data-hotkey="行政" style="cursor:pointer; transition: all 0.15s;">行政</span>
-            <span class="skill-tag" data-hotkey="客服" style="cursor:pointer; transition: all 0.15s;">客服</span>
-            <span class="skill-tag" data-hotkey="Java" style="cursor:pointer; transition: all 0.15s;">Java</span>
-            <span class="skill-tag" data-hotkey="前端" style="cursor:pointer; transition: all 0.15s;">前端</span>
-            <span class="skill-tag" data-hotkey="产品经理" style="cursor:pointer; transition: all 0.15s;">产品经理</span>
+            <span class="item-meta" data-hotkey-loading>加载热词中...</span>
           </div>
         </div>
         <div class="candidate-filter-selects">
@@ -758,6 +751,34 @@
         window.candidatesPageState.tagConfigs = tagConfigs;
         window.candidatesPageState.render();
       } catch (err) { console.warn(err); }
+
+      async function loadSearchHotwords() {
+        const container = document.querySelector('[data-hotkey-container]');
+        if (!container || !window.hrApi?.searchHotwords) return;
+        const escapeHtml = (value) => String(value ?? '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+        try {
+          const items = await window.hrApi.searchHotwords({ enabled_only: 'true' });
+          const keywords = (items || [])
+            .map((item) => String(item.keyword || '').trim())
+            .filter(Boolean);
+          if (!keywords.length) {
+            container.innerHTML = '<span class="item-meta">暂无启用热词，请到标签字典「热词管理」配置</span>';
+            return;
+          }
+          container.innerHTML = keywords.map((keyword) =>
+            `<span class="skill-tag" data-hotkey="${escapeHtml(keyword)}" style="cursor:pointer; transition: all 0.15s;">${escapeHtml(keyword)}</span>`
+          ).join('');
+        } catch (err) {
+          console.warn(err);
+          container.innerHTML = '<span class="item-meta">热词加载失败</span>';
+        }
+      }
+      loadSearchHotwords();
 
       // 城市二级联动及搜索数据字典（全国31个省、直辖市、自治区）
       const CITY_DATA = [

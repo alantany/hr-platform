@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from . import crud, models, schemas
 from .config import settings, DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL
 from .database import Base, SessionLocal, engine, get_db
-from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
+from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchHotword, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
 from . import security
 from .security import get_current_user
 from backend.seed import seed as seed_data
@@ -2168,6 +2168,62 @@ def remove_tag(tag_id: int, db: Session = Depends(get_db), user: User = Depends(
         raise HTTPException(status_code=404, detail="标签不存在")
     crud.delete_tag(db, obj)
     crud.add_audit(db, user.username, "标签字典", "删除标签字段", "tag", str(tag_id), detail=f"{obj.object_type}:{obj.field_key}")
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/api/search-hotwords", response_model=list[schemas.SearchHotwordOut])
+def get_search_hotwords(
+    enabled_only: bool = Query(default=False),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    # 简历池读取启用热词；管理页读全量需管理员
+    if not enabled_only:
+        security.require_admin(user)
+    crud.ensure_default_search_hotwords(db)
+    db.commit()
+    return crud.list_search_hotwords(db, enabled_only=enabled_only)
+
+
+@app.post("/api/search-hotwords", response_model=schemas.SearchHotwordOut)
+def add_search_hotword(payload: schemas.SearchHotwordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
+    try:
+        obj = crud.create_search_hotword(db, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    crud.add_audit(db, user.username, "标签字典", "新增搜索热词", "search_hotword", "new", detail=payload.keyword)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
+@app.patch("/api/search-hotwords/{hotword_id}", response_model=schemas.SearchHotwordOut)
+def edit_search_hotword(hotword_id: int, payload: schemas.SearchHotwordUpdate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
+    obj = db.get(SearchHotword, hotword_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="热词不存在")
+    try:
+        crud.update_search_hotword(db, obj, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    crud.add_audit(db, user.username, "标签字典", "更新搜索热词", "search_hotword", str(hotword_id), detail=obj.keyword)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
+@app.delete("/api/search-hotwords/{hotword_id}")
+def remove_search_hotword(hotword_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    security.require_admin(user)
+    obj = db.get(SearchHotword, hotword_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="热词不存在")
+    keyword = obj.keyword
+    crud.delete_search_hotword(db, obj)
+    crud.add_audit(db, user.username, "标签字典", "删除搜索热词", "search_hotword", str(hotword_id), detail=keyword)
     db.commit()
     return {"ok": True}
 

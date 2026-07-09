@@ -476,6 +476,15 @@ class TagDictionary(Base, TimestampMixin):
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
+class SearchHotword(Base, TimestampMixin):
+    """简历池「猜你想搜」热词，在标签字典页维护。"""
+    __tablename__ = "search_hotwords"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    keyword: Mapped[str] = mapped_column(String(64), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
 class ResumeParseTask(Base, TimestampMixin):
     __tablename__ = "resume_parse_tasks"
 
