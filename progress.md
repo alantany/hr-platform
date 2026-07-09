@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-09（完成 - AI 检索返回 Top5 按匹配度排序）
+
+- 后端 `ai_match_candidate` / `/api/candidates/ai-search`：LLM 返回最多 5 条并按匹配度排序；fallback 同步 Top5。
+- 前端列表展示 `AI #n` 与理由；弹窗文案同步。
+- 单测 `tests/test_candidate_ai_search.py` 验证 5 条顺序；与关键词分层单测合计 6 passed。
+
 ## 2026-07-09（完成 - 简历池关键词岗位分层匹配）
 
 - 按方案 1 + 用户选 A：关键词仅匹配岗位相关字段；期望岗位（`job_intention`）命中优先排序，L2 命中仍可出结果但排后。

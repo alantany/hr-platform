@@ -1244,23 +1244,40 @@ def ai_search_candidates(payload: schemas.CandidateAiSearchRequest, db: Session 
         raise HTTPException(status_code=404, detail="没有找到可参与 AI 检索的候选人")
 
     matched = ai_match_candidate(payload.job_description, candidates)
-    candidate = matched.get("candidate")
-    if not candidate:
+    match_rows = matched.get("matches") or []
+    if not match_rows:
         raise HTTPException(status_code=404, detail="未能匹配到候选人")
 
+    top = match_rows[0]
+    top_candidate = top.get("candidate")
     crud.add_audit(
         db,
         user.username,
         "求职者数据池",
         f"AI检索({matched.get('match_method', 'ai')})",
         "candidate",
-        str(candidate.id),
-        detail=candidate.name,
+        str(top_candidate.id) if top_candidate else "",
+        detail=f"{top_candidate.name if top_candidate else ''} · Top{len(match_rows)}",
     )
     db.commit()
+
+    matches_out = []
+    for row in match_rows:
+        cand = row.get("candidate")
+        if not cand:
+            continue
+        matches_out.append(
+            {
+                "candidate": schemas.CandidateOut.model_validate(cand, from_attributes=True).model_dump(),
+                "reason": row.get("reason", ""),
+                "rank": int(row.get("rank") or len(matches_out) + 1),
+            }
+        )
+    first = matches_out[0]
     return {
-        "candidate": schemas.CandidateOut.model_validate(candidate, from_attributes=True).model_dump(),
-        "reason": matched.get("reason", ""),
+        "matches": matches_out,
+        "candidate": first["candidate"],
+        "reason": first.get("reason", ""),
         "match_method": matched.get("match_method", "ai"),
         "examined_count": matched.get("examined_count", len(candidates)),
     }
@@ -2558,6 +2575,22 @@ def _candidate_keyword_score(job_description: str, candidate: Candidate) -> int:
     return score
 
 
+AI_SEARCH_TOP_N = 5
+AI_SEARCH_SHORTLIST_N = 20
+
+
+def _build_ai_match_rows(candidates: list[Candidate], reasons: list[str] | None = None) -> list[dict]:
+    rows = []
+    for idx, item in enumerate(candidates[:AI_SEARCH_TOP_N]):
+        reason = ""
+        if reasons and idx < len(reasons):
+            reason = str(reasons[idx] or "").strip()
+        if not reason:
+            reason = f"匹配度排名第 {idx + 1}"
+        rows.append({"candidate": item, "reason": reason, "rank": idx + 1})
+    return rows
+
+
 def _fallback_ai_match(job_description: str, candidates: list[Candidate]) -> dict:
     ranked = sorted(
         candidates,
@@ -2571,33 +2604,39 @@ def _fallback_ai_match(job_description: str, candidates: list[Candidate]) -> dic
         reverse=True,
     )
     if not ranked:
-        return {"candidate": None, "reason": "", "match_method": "fallback", "examined_count": 0}
-    best = ranked[0]
+        return {"matches": [], "candidate": None, "reason": "", "match_method": "fallback", "examined_count": 0}
+    top = ranked[:AI_SEARCH_TOP_N]
     keywords = _tokenize_job_description(job_description)[:5]
-    reason_bits = [f"命中关键词：{ '、'.join(keywords) }"] if keywords else []
-    if best.current_title:
-        reason_bits.append(f"当前职位为{best.current_title}")
-    if best.work_history:
-        reason_bits.append("工作经历与岗位要求有较强重合")
+    reasons = []
+    for item in top:
+        bits = [f"命中关键词：{'、'.join(keywords)}"] if keywords else []
+        if item.current_title:
+            bits.append(f"当前职位为{item.current_title}")
+        if item.job_intention:
+            bits.append(f"求职意向：{_truncate_text(item.job_intention, 40)}")
+        reasons.append("；".join(bits) or "基于基础筛选后的候选池规则匹配")
+    matches = _build_ai_match_rows(top, reasons)
     return {
-        "candidate": best,
-        "reason": "；".join(reason_bits) or "基于基础筛选后的候选池规则匹配",
+        "matches": matches,
+        "candidate": matches[0]["candidate"],
+        "reason": matches[0]["reason"],
         "match_method": "fallback",
         "examined_count": len(candidates),
     }
 
 
-def _call_llm_for_candidate_match(job_description: str, candidate_payloads: list[dict]) -> dict:
+def _call_llm_for_candidate_match(job_description: str, candidate_payloads: list[dict], top_n: int = AI_SEARCH_TOP_N) -> dict:
     if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY in ("your_api_key_here", "replace_with_your_openrouter_key"):
         raise ValueError("DeepSeek API Key is not configured. Please check your .env file.")
 
     system_prompt = (
         "你是资深猎头匹配专家。"
-        "你只允许在给定候选人列表中选出最匹配岗位描述的一位。"
-        "请综合岗位描述、工作经历、项目经历、证书、综合评价和求职意向进行判断。"
+        f"你只允许在给定候选人列表中，按与岗位描述的匹配度从高到低选出最多 {top_n} 位候选人并排序。"
+        "请综合岗位描述、求职意向、当前职位、工作经历、项目经历、证书和综合评价进行判断；"
+        "匹配度优先看期望岗位/求职意向与 JD 的契合，其次看经历与技能。"
         "必须返回严格 JSON，对象结构为："
-        '{"candidate_id": 1, "reason": "简短说明", "matched_points": ["..."], "risk_points": ["..."], "confidence": 0.0}'
-        "其中 candidate_id 必须是候选人列表中的 id。"
+        '{"matches":[{"candidate_id":1,"reason":"简短说明为何排在该位","matched_points":["..."],"risk_points":["..."]}],"confidence":0.0}'
+        f"matches 数组必须按匹配度从高到低排列，最多 {top_n} 条；candidate_id 必须来自候选人列表；不要编造列表外的人。"
     )
     client = get_openai_client()
     response = client.chat.completions.create(
@@ -2609,6 +2648,7 @@ def _call_llm_for_candidate_match(job_description: str, candidate_payloads: list
                 "content": json.dumps(
                     {
                         "job_description": job_description,
+                        "top_n": top_n,
                         "candidates": candidate_payloads,
                     },
                     ensure_ascii=False,
@@ -2627,7 +2667,7 @@ def _call_llm_for_candidate_match(job_description: str, candidate_payloads: list
 
 def ai_match_candidate(job_description: str, candidates: list[Candidate]) -> dict:
     if not candidates:
-        return {"candidate": None, "reason": "", "match_method": "empty", "examined_count": 0}
+        return {"matches": [], "candidate": None, "reason": "", "match_method": "empty", "examined_count": 0}
 
     ranked = sorted(
         candidates,
@@ -2639,7 +2679,7 @@ def ai_match_candidate(job_description: str, candidates: list[Candidate]) -> dic
         ),
         reverse=True,
     )
-    shortlist = ranked[: min(20, len(ranked))]
+    shortlist = ranked[: min(AI_SEARCH_SHORTLIST_N, len(ranked))]
     candidate_map = {item.id: item for item in shortlist}
     payloads = [
         {
@@ -2652,27 +2692,48 @@ def ai_match_candidate(job_description: str, candidates: list[Candidate]) -> dic
             "experience_years": item.experience_years,
             "source": item.source,
             "job_status": item.job_status,
+            "job_intention": item.job_intention,
             "summary": _candidate_ai_summary(item),
         }
         for item in shortlist
     ]
 
     try:
-        result = _call_llm_for_candidate_match(job_description, payloads)
-        candidate_id = result.get("candidate_id")
-        try:
-            candidate_id = int(candidate_id)
-        except (TypeError, ValueError):
-            candidate_id = None
-        candidate = candidate_map.get(candidate_id)
-        if not candidate:
+        result = _call_llm_for_candidate_match(job_description, payloads, top_n=AI_SEARCH_TOP_N)
+        raw_matches = result.get("matches")
+        if not isinstance(raw_matches, list) or not raw_matches:
+            # 兼容旧单条格式
+            if result.get("candidate_id") is not None:
+                raw_matches = [{"candidate_id": result.get("candidate_id"), "reason": result.get("reason")}]
+            else:
+                raise ValueError("AI 未返回 matches 列表")
+
+        ordered: list[Candidate] = []
+        reasons: list[str] = []
+        seen: set[int] = set()
+        for row in raw_matches:
+            if not isinstance(row, dict):
+                continue
+            try:
+                cid = int(row.get("candidate_id"))
+            except (TypeError, ValueError):
+                continue
+            if cid in seen or cid not in candidate_map:
+                continue
+            seen.add(cid)
+            ordered.append(candidate_map[cid])
+            reasons.append(str(row.get("reason") or "").strip())
+            if len(ordered) >= AI_SEARCH_TOP_N:
+                break
+
+        if not ordered:
             raise ValueError("AI 返回的候选人不在当前候选池中")
-        reason = str(result.get("reason") or "").strip()
-        if not reason:
-            reason = "AI 已在当前基础筛选后的候选池中选出最匹配记录"
+
+        matches = _build_ai_match_rows(ordered, reasons)
         return {
-            "candidate": candidate,
-            "reason": reason,
+            "matches": matches,
+            "candidate": matches[0]["candidate"],
+            "reason": matches[0]["reason"],
             "match_method": "ai",
             "examined_count": len(candidates),
         }

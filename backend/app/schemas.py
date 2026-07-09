@@ -297,8 +297,16 @@ class CandidateAiSearchRequest(BaseModel):
     record_keys: list[str] = Field(default_factory=list)
 
 
-class CandidateAiSearchOut(BaseModel):
+class CandidateAiSearchMatchOut(BaseModel):
     candidate: CandidateOut
+    reason: str = ""
+    rank: int = 1
+
+
+class CandidateAiSearchOut(BaseModel):
+    matches: list[CandidateAiSearchMatchOut] = Field(default_factory=list)
+    # 兼容旧前端：取匹配度最高的一条
+    candidate: CandidateOut | None = None
     reason: str = ""
     match_method: str = "ai"
     examined_count: int = 0

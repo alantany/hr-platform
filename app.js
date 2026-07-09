@@ -1489,14 +1489,24 @@ async function handleGlobalButton(button) {
         job_description: jobDescription,
         record_keys: recordKeys,
       });
-      if (!result?.candidate) throw new Error("AI 未能返回候选人结果");
+      const matchRows = Array.isArray(result?.matches) && result.matches.length
+        ? result.matches
+        : (result?.candidate ? [{ candidate: result.candidate, reason: result.reason || "", rank: 1 }] : []);
+      if (!matchRows.length) throw new Error("AI 未能返回候选人结果");
       if (window.candidatesPageState) {
-        window.candidatesPageState.list = [result.candidate];
+        window.candidatesPageState.list = matchRows.map((row, idx) => {
+          const candidate = { ...(row.candidate || {}) };
+          candidate.ai_match_rank = Number(row.rank) || idx + 1;
+          candidate.ai_match_reason = String(row.reason || "").trim();
+          candidate.record_key = candidate.record_key || `candidate:${candidate.id}`;
+          return candidate;
+        });
         window.candidatesPageState.currentPage = 1;
         window.candidatesPageState.renderOnly();
       }
       if (modal) modal.style.display = 'none';
-      showToast(result.reason ? `AI检索命中：${result.candidate.name} · ${result.reason}` : `AI检索命中：${result.candidate.name}`);
+      const topName = matchRows[0]?.candidate?.name || "候选人";
+      showToast(`AI检索完成：按匹配度返回 ${matchRows.length} 人，首位 ${topName}`);
     } finally {
       hideLoading();
     }

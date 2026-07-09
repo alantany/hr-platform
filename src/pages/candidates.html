@@ -312,7 +312,7 @@
           <div class="section-head">
             <div>
               <h3>AI检索</h3>
-              <div class="section-sub">粘贴岗位描述，系统会先使用当前筛选后的候选人池，再让 AI 选出最匹配的一条记录。</div>
+              <div class="section-sub">粘贴岗位描述，系统会先使用当前筛选后的候选人池，再由 AI 按匹配度选出最多 5 人并排序。</div>
             </div>
             <div class="hero-actions" style="margin-top:0">
               <button class="btn" data-action="close-ai-search-modal">取消</button>
@@ -333,7 +333,7 @@
               <div class="item-top">
                 <div>
                   <div class="item-title">检索范围</div>
-                  <div class="item-meta">仅基于当前页面已过滤后的候选人进行 AI 匹配</div>
+                  <div class="item-meta">仅基于当前页面已过滤后的候选人进行 AI 匹配，返回最多 5 条并按匹配度排序</div>
                 </div>
               </div>
               <div class="item-meta" data-ai-search-summary>当前候选池：0 条</div>
@@ -744,6 +744,14 @@
               const candidateTagsHtml = candidateFieldTags.length
                 ? window.hrTagSystem.renderTags(candidateFieldTags, { className: 'field-tag-list is-compact' })
                 : '';
+              const aiRank = Number(i.ai_match_rank) || 0;
+              const aiReason = String(i.ai_match_reason || '').trim();
+              const aiBadge = aiRank
+                ? `<span style="display:inline-flex;align-items:center;margin-left:6px;padding:1px 6px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:600;">AI #${aiRank}</span>`
+                : '';
+              const aiReasonHtml = aiReason
+                ? `<div class="row-sub" style="margin-top:4px;color:#64748b;max-width:280px;white-space:normal;line-height:1.4;">${aiReason}</div>`
+                : '';
 
               return `
                 <div class="table-row" data-row-key="${rowKey}" style="border-bottom: 1px solid #f1f5f9;">
@@ -752,8 +760,9 @@
                     <div class="row-title" style="margin-left: 0;">
                       <div class="avatar-sm" style="display:flex; align-items:center; justify-content:center; background:#f3f4f6;">${i.status === '锁定' ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#f59e0b;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#15803D;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>'}</div>
                       <div>
-                        <strong>${i.name || ''}</strong>
+                        <strong>${i.name || ''}</strong>${aiBadge}
                         ${candidateTagsHtml}
+                        ${aiReasonHtml}
                       </div>
                     </div>
                   </div>
