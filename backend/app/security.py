@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import secrets
 from functools import wraps
 from typing import Callable
@@ -20,6 +21,14 @@ ROLE_CODE_MAP = {
     "操作员": "OPERATOR",
     "OPERATOR": "OPERATOR",
 }
+
+
+def normalize_candidate_name(name: str | None) -> str:
+    """折叠姓名字符串中的连续重复字符，修复 wkhtmltopdf 等 PDF 逐字双写问题。"""
+    text = str(name or "").strip()
+    if not text:
+        return text
+    return re.sub(r"(.)\1+", r"\1", text)
 
 
 def hash_password(password: str) -> str:

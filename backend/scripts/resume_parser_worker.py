@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from backend.app.database import SessionLocal
 from backend.app.models import ResumeParseTask, Candidate
 from backend.app.config import DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL
+from backend.app import security
 from sqlalchemy import text
 
 load_dotenv(os.path.join(BASE_DIR, '.env'))
@@ -133,7 +134,9 @@ def process_pending_tasks():
                 
                 # 4. Save to Candidate
                 # If name is empty, fallback to candidate_name from DB
-                candidate_name = parsed_data.get("name") or result["candidate_name"] or "未知候选人"
+                candidate_name = security.normalize_candidate_name(
+                    parsed_data.get("name") or result["candidate_name"] or "未知候选人"
+                )
                 
                 phone = parsed_data.get("phone") or ""
                 email = parsed_data.get("email") or ""

@@ -2691,8 +2691,7 @@ def parse_and_create_candidate(db: Session, full_path: str, save_name: str, user
         raise Exception("无法从PDF中提取出任何文本内容。")
         
     parsed_data = call_llm_for_json(text_content)
-    candidate_name = parsed_data.get("name") or Path(full_path).stem
-    candidate_name = candidate_name.strip()
+    candidate_name = security.normalize_candidate_name(parsed_data.get("name") or Path(full_path).stem)
     
     duplicate = db.query(Candidate).filter(Candidate.name == candidate_name).order_by(Candidate.created_at.desc()).first()
     if duplicate:

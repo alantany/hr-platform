@@ -5,3 +5,6 @@ __pycache__/
 .pytest_cache/
 node_modules/
 .env
+
+# 本地诊断用简历样本，不同步
+袁太兴-ai大模型算法工程师.pdf

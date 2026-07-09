@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-09（wkhtmltopdf 简历姓名逐字重复）
+
+- **根因**：wkhtmltopdf 生成的 PDF 在 `pdfplumber.extract_text()` 下全文逐字双写；LLM 对内文会去重，但姓名常原样回写。
+- **修复**：仅对 `name` 落库前调用 `normalize_candidate_name()`（连续重复字符折叠），不改动其它字段解析逻辑。
+- **样本文件**：`袁太兴-ai大模型算法工程师.pdf` 仅作本地诊断，已加入 `.gitignore`。
+
 ## 2026-07-09（单设备登录）
 
 - **会话模型**：`users.session_token` 保存当前有效会话；登录调用 `rotate_user_session` 生成随机 token 并覆盖旧值，实现「后登录踢先登录」。

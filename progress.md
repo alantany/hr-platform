@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-09（完成 - 简历解析姓名去重 + 本地 PDF 忽略）
+
+- 新增 `security.normalize_candidate_name()`，折叠姓名字符串连续重复字符（如 wkhtmltopdf PDF 导致的「袁袁太太兴兴」→「袁太兴」）。
+- Worker 与手工导入路径落库前均应用姓名去重；`袁太兴-ai大模型算法工程师.pdf` 已加入 `.gitignore` 不同步。
+
 ## 2026-07-09（完成 - 单设备登录互踢）
 
 - 用户表新增 `session_token`；登录时生成新会话并写入库，Token 格式为 `user:{username}:{session_token}`。
