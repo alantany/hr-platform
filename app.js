@@ -1007,34 +1007,41 @@ function parseSearchKeywordGroups(keyword) {
     .filter((group) => group.length > 0);
 }
 
+function _joinSearchParts(parts) {
+  return parts.filter(Boolean).map((p) => String(p)).join(" ").toLowerCase();
+}
+
+/** L1：期望岗位 / 求职意向（最高优先） */
+function buildCandidateL1SearchText(item) {
+  if (!item) return "";
+  return _joinSearchParts([item.job_intention]);
+}
+
+/** L2：岗位相关补充字段（当前职位、经历、技能等） */
+function buildCandidateL2SearchText(item) {
+  if (!item) return "";
+  return _joinSearchParts([
+    item.current_title,
+    item.work_history,
+    item.project_history,
+    item.core_value,
+    item.certificates,
+  ]);
+}
+
+/** 岗位相关全文 = L1 + L2（姓名/手机/城市等不参与关键词匹配） */
 function buildCandidateSearchText(item) {
   if (!item) return "";
-  const parts = [
-    item.name,
-    item.phone,
-    item.email,
-    item.current_title,
-    item.education,
-    item.city,
-    item.source,
-    item.gender,
-    item.age != null && item.age !== "" ? String(item.age) : "",
-    item.experience_years != null && item.experience_years !== "" ? String(item.experience_years) : "",
-    item.expected_salary,
-    item.work_history,
-    item.education_detail,
-    item.job_intention,
-    item.project_history,
-    item.certificates,
-    item.comprehensive_evaluation,
-    item.core_value,
-    item.hukou_location,
-    item.job_status,
-  ];
-  if (item.tags) {
-    parts.push(typeof item.tags === "string" ? item.tags : JSON.stringify(item.tags));
-  }
-  return parts.filter(Boolean).join(" ").toLowerCase();
+  return _joinSearchParts([buildCandidateL1SearchText(item), buildCandidateL2SearchText(item)]);
+}
+
+function _countKeywordGroupHits(text, groups) {
+  if (!groups.length) return 0;
+  const hay = String(text || "").toLowerCase();
+  return groups.reduce(
+    (n, orTokens) => n + (orTokens.some((token) => hay.includes(token)) ? 1 : 0),
+    0
+  );
 }
 
 function matchesSearchKeywords(text, keyword) {
@@ -1043,9 +1050,30 @@ function matchesSearchKeywords(text, keyword) {
   return groups.every((orTokens) => orTokens.some((token) => text.includes(token)));
 }
 
+/** 相关性分：L1 命中组数优先，其次 L2；用于结果排序 */
+function scoreCandidateKeywordMatch(item, keyword) {
+  const groups = parseSearchKeywordGroups(keyword);
+  if (!groups.length) return { l1: 0, l2: 0, total: 0 };
+  const l1 = _countKeywordGroupHits(buildCandidateL1SearchText(item), groups);
+  const l2 = _countKeywordGroupHits(buildCandidateL2SearchText(item), groups);
+  return { l1, l2, total: l1 * 1000 + l2 };
+}
+
+function compareCandidateKeywordRelevance(a, b, keyword) {
+  const sa = scoreCandidateKeywordMatch(a, keyword);
+  const sb = scoreCandidateKeywordMatch(b, keyword);
+  if (sb.l1 !== sa.l1) return sb.l1 - sa.l1;
+  if (sb.l2 !== sa.l2) return sb.l2 - sa.l2;
+  return 0;
+}
+
 window.parseSearchKeywordGroups = parseSearchKeywordGroups;
+window.buildCandidateL1SearchText = buildCandidateL1SearchText;
+window.buildCandidateL2SearchText = buildCandidateL2SearchText;
 window.buildCandidateSearchText = buildCandidateSearchText;
 window.matchesSearchKeywords = matchesSearchKeywords;
+window.scoreCandidateKeywordMatch = scoreCandidateKeywordMatch;
+window.compareCandidateKeywordRelevance = compareCandidateKeywordRelevance;
 
 function getCandidateFilterSummary() {
   const keyword = document.querySelector('[data-field="candidate-keyword"]')?.value?.trim() || "";

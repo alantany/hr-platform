@@ -63,9 +63,9 @@
         </div>
         <div class="toolbar" style="margin-bottom:0; padding:0; border:0; box-shadow:none; background:transparent; display:flex; gap:12px; align-items:flex-start;">
           <div style="flex:3; min-width:0;">
-            <input class="input wide" data-field="candidate-keyword" placeholder="搜索姓名、职位、技能、工作经历等" style="width:100%;" />
+            <input class="input wide" data-field="candidate-keyword" placeholder="搜索期望岗位、当前职位、技能、工作经历等" style="width:100%;" />
             <div class="section-sub" style="margin:6px 0 0; font-size:12px; line-height:1.5; color:#64748b;">
-              多个关键词：<strong style="font-weight:600; color:#475569;">空格</strong> 表示且（都要匹配），<strong style="font-weight:600; color:#475569;">逗号</strong> 或 <strong style="font-weight:600; color:#475569;">|</strong> 表示或（匹配其一）。例：<span style="font-family:ui-monospace, monospace;">Java,Spring 北京</span> = (Java 或 Spring) 且 北京
+              优先匹配<strong style="font-weight:600; color:#475569;">期望岗位</strong>，其次当前职位/经历。多个关键词：<strong style="font-weight:600; color:#475569;">空格</strong> 表示且，<strong style="font-weight:600; color:#475569;">逗号</strong> 或 <strong style="font-weight:600; color:#475569;">|</strong> 表示或。例：<span style="font-family:ui-monospace, monospace;">Java,Spring 后端</span>
             </div>
           </div>
           <div class="city-selector-wrapper" style="position: relative; flex: 1; min-width: 220px;">
@@ -591,7 +591,7 @@
           
           let filtered = [...this.rawList];
 
-          // 关键词过滤：空格分隔多词，全部命中（AND，同智联/前程简历搜索）
+          // 关键词过滤：仅匹配岗位相关字段（期望岗位优先，其次当前职位/经历等）
           if (keyword) {
             filtered = filtered.filter(i =>
               window.matchesSearchKeywords(window.buildCandidateSearchText(i), keyword)
@@ -661,7 +661,7 @@
             filtered = filtered.filter(i => i.created_at && i.created_at.startsWith(todayPrefix));
           }
           
-          // 5. 点击的热词额外检索匹配（与关键词同为 AND）
+          // 5. 点击的热词额外检索匹配（与关键词同为 AND，仅岗位相关字段）
           if (activeHotkeys.length > 0) {
             filtered = filtered.filter(i => {
               const text = window.buildCandidateSearchText(i);
@@ -669,15 +669,23 @@
             });
           }
           
-          // 6. 排序
-          if (sortVal === 'created_desc') {
+          // 6. 排序：有关键词时默认按期望岗位命中优先；用户显式选时间/年龄时仍尊重
+          if (sortVal === 'age_asc') {
+            filtered.sort((a, b) => (Number(a.age) || 999) - (Number(b.age) || 999));
+          } else if (sortVal === 'created_desc') {
             filtered.sort((a, b) => {
               const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
               const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
               return tB - tA;
             });
-          } else if (sortVal === 'age_asc') {
-            filtered.sort((a, b) => (Number(a.age) || 999) - (Number(b.age) || 999));
+          } else if (keyword && typeof window.compareCandidateKeywordRelevance === 'function') {
+            filtered.sort((a, b) => {
+              const byRelevance = window.compareCandidateKeywordRelevance(a, b, keyword);
+              if (byRelevance !== 0) return byRelevance;
+              const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+              const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+              return tB - tA;
+            });
           } else {
             filtered.sort((a, b) => {
               const tA = a.created_at ? new Date(a.created_at).getTime() : 0;

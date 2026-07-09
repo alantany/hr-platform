@@ -556,6 +556,40 @@ def _parse_search_keyword_groups(keyword: str | None) -> list[list[str]]:
     return groups
 
 
+def _join_search_parts(parts: list) -> str:
+    return " ".join(str(p) for p in parts if p).lower()
+
+
+def _candidate_l1_search_text(item: dict) -> str:
+    """L1：期望岗位 / 求职意向（最高优先）。"""
+    return _join_search_parts([item.get("job_intention")])
+
+
+def _candidate_l2_search_text(item: dict) -> str:
+    """L2：当前职位、工作/项目经历、核心价值、证书。"""
+    return _join_search_parts(
+        [
+            item.get("current_title"),
+            item.get("work_history"),
+            item.get("project_history"),
+            item.get("core_value"),
+            item.get("certificates"),
+        ]
+    )
+
+
+def _candidate_search_text(item: dict) -> str:
+    """岗位相关全文 = L1 + L2；姓名/手机/城市等不参与关键词匹配。"""
+    return _join_search_parts([_candidate_l1_search_text(item), _candidate_l2_search_text(item)])
+
+
+def _count_keyword_group_hits(text: str, groups: list[list[str]]) -> int:
+    if not groups:
+        return 0
+    hay = (text or "").lower()
+    return sum(1 for or_tokens in groups if any(token in hay for token in or_tokens))
+
+
 def _matches_search_keyword(text: str, keyword: str | None) -> bool:
     groups = _parse_search_keyword_groups(keyword)
     if not groups:
@@ -563,36 +597,14 @@ def _matches_search_keyword(text: str, keyword: str | None) -> bool:
     return all(any(token in text for token in or_tokens) for or_tokens in groups)
 
 
-def _candidate_search_text(item: dict) -> str:
-    parts = [
-        item.get("name"),
-        item.get("phone"),
-        item.get("email"),
-        item.get("current_title"),
-        item.get("education"),
-        item.get("city"),
-        item.get("source"),
-        item.get("gender"),
-        str(item.get("age") or ""),
-        str(item.get("experience_years") or ""),
-        item.get("expected_salary"),
-        item.get("work_history"),
-        item.get("education_detail"),
-        item.get("job_intention"),
-        item.get("project_history"),
-        item.get("certificates"),
-        item.get("comprehensive_evaluation"),
-        item.get("core_value"),
-        item.get("hukou_location"),
-        item.get("job_status"),
-    ]
-    tags = item.get("tags")
-    if tags:
-        if isinstance(tags, dict):
-            parts.append(json.dumps(tags, ensure_ascii=False))
-        else:
-            parts.append(str(tags))
-    return " ".join(str(p) for p in parts if p).lower()
+def _score_candidate_keyword_match(item: dict, keyword: str | None) -> tuple[int, int]:
+    """返回 (L1命中组数, L2命中组数)，用于相关性排序。"""
+    groups = _parse_search_keyword_groups(keyword)
+    if not groups:
+        return (0, 0)
+    l1 = _count_keyword_group_hits(_candidate_l1_search_text(item), groups)
+    l2 = _count_keyword_group_hits(_candidate_l2_search_text(item), groups)
+    return (l1, l2)
 
 
 def create_candidate(db: Session, payload):
@@ -767,11 +779,18 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
         if current is None or _record_priority(item) > _record_priority(current):
             canonical_results[dedupe_key] = item
 
-    return sorted(
-        canonical_results.values(),
-        key=lambda item: (_created_at_score(item.get("created_at")), int(item.get("id") or 0)),
-        reverse=True,
-    )
+    def _sort_key(item: dict):
+        created = _created_at_score(item.get("created_at"))
+        cid = int(item.get("id") or 0)
+        if keyword:
+            l1, l2 = _score_candidate_keyword_match(item, keyword)
+            # 期望岗位命中优先，其次 L2，再按创建时间
+            return (l1, l2, created, cid)
+        return (created, cid)
+
+    return sorted(canonical_results.values(), key=_sort_key, reverse=True)
+
+
 def ensure_local_candidate(db: Session, candidate_id: int | str) -> Candidate | None:
     from .models import RecruitCandidateProfile, RecruitResumeDownload, Candidate
     import re

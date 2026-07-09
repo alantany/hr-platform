@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-09（完成 - 简历池关键词岗位分层匹配）
+
+- 按方案 1 + 用户选 A：关键词仅匹配岗位相关字段；期望岗位（`job_intention`）命中优先排序，L2 命中仍可出结果但排后。
+- 改动：`app.js`、`backend/app/crud.py`、`src/pages/candidates.html` 提示文案；新增 `tests/test_candidate_keyword_search.py`（5 通过）。
+- 同步：`findings.md`、`outputs/用户操作手册.md` 搜索说明。
+
 ## 2026-07-09（完成 - 用户操作手册）
 
 - 对照 `app.js` 导航、各业务页、`docs/prd/`、业务流程总览与 findings，编写 `outputs/用户操作手册.md`。
