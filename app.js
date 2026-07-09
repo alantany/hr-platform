@@ -426,7 +426,7 @@ const renderCompanyTableMarkup = (companies = [], projects = [], positions = [],
           <span class="chip ${chipClass}" style="width: 80px; text-align: center; display: inline-block; margin: 0 auto;">${computedStatus}</span>
         </div>
         <div class="table-actions" style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
-          <button class="btn-sm" data-action="view-company-projects" data-id="${company.id}" data-company-name="${escapeHtml(company.name)}">项目</button>
+          <button class="btn-sm" data-action="view-company-projects" data-id="${company.id}">项目</button>
           <button class="btn-sm" data-action="edit-company" data-id="${company.id}">编辑</button>
           <button class="btn-sm" data-action="delete-company" data-id="${company.id}">删除</button>
         </div>
@@ -4391,13 +4391,15 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     return;
   }
   if (button.dataset.action === "confirm-company-upload") {
-    const name = document.querySelector('[data-company-name]')?.value?.trim() || '';
-    const contactName = document.querySelector('[data-company-contact]')?.value?.trim() || '';
-    const contactPhone = document.querySelector('[data-company-phone]')?.value?.trim() || '';
-    const contactEmail = document.querySelector('[data-company-email]')?.value?.trim() || '';
-    const address = document.querySelector('[data-company-address]')?.value?.trim() || '';
-    const period = document.querySelector('[data-company-period]')?.value?.trim() || '';
-    const remark = document.querySelector('[data-company-remark]')?.value?.trim() || '';
+    const modal = document.querySelector('[data-company-modal]');
+    if (!modal) throw new Error('未找到新建客户弹窗');
+    const name = modal.querySelector('[data-company-name]')?.value?.trim() || '';
+    const contactName = modal.querySelector('[data-company-contact]')?.value?.trim() || '';
+    const contactPhone = modal.querySelector('[data-company-phone]')?.value?.trim() || '';
+    const contactEmail = modal.querySelector('[data-company-email]')?.value?.trim() || '';
+    const address = modal.querySelector('[data-company-address]')?.value?.trim() || '';
+    const period = modal.querySelector('[data-company-period]')?.value?.trim() || '';
+    const remark = modal.querySelector('[data-company-remark]')?.value?.trim() || '';
     if (!name) throw new Error('请先填写客户名称');
     const company = await window.hrApi.createCompany({
       name,
@@ -4408,8 +4410,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       cooperation_period: period,
       remark,
     });
-    const modal = document.querySelector('[data-company-modal]');
-    if (modal) modal.style.display = 'none';
+    modal.style.display = 'none';
     const list = document.querySelector('[data-company-list]');
     if (list) {
       const companies = await window.hrApi.companies();
