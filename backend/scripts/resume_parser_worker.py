@@ -16,17 +16,14 @@ from dotenv import load_dotenv
 
 from backend.app.database import SessionLocal
 from backend.app.models import ResumeParseTask, Candidate
+from backend.app.config import DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL
 from sqlalchemy import text
 
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
-OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o")
-
 client = OpenAI(
-    base_url=OPENROUTER_BASE_URL,
-    api_key=OPENROUTER_API_KEY,
+    base_url=DEEPSEEK_BASE_URL,
+    api_key=DEEPSEEK_API_KEY,
 )
 
 PROMPT_FILE_PATH = os.path.join(BASE_DIR, "outputs", "resume_parsing_prompt.md")
@@ -53,13 +50,13 @@ def extract_text_from_file(file_path: str) -> str:
     return text_content
 
 def call_llm_for_json(resume_text: str) -> dict:
-    if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "your_api_key_here":
-         raise ValueError("OpenRouter API Key is not configured. Please check your .env file.")
+    if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY in ("your_api_key_here", "replace_with_your_openrouter_key"):
+         raise ValueError("DeepSeek API Key is not configured. Please check your .env file.")
          
     system_prompt = get_system_prompt()
     
     response = client.chat.completions.create(
-        model=OPENROUTER_MODEL,
+        model=DEEPSEEK_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"请解析以下简历文本并严格返回要求的 JSON 格式：\n\n{resume_text}"}

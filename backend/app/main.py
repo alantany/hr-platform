@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from fastapi.responses import FileResponse
 from . import crud, models, schemas
-from .config import settings
+from .config import settings, DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL
 from .database import Base, SessionLocal, engine, get_db
 from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
 from . import security
@@ -2435,16 +2435,11 @@ def upsert_data_permission(payload: schemas.DataPermissionCreate, db: Session = 
     db.commit()
     db.refresh(obj)
     return obj
-OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o")
-
-
 @lru_cache(maxsize=1)
 def get_openai_client() -> OpenAI:
     return OpenAI(
-        base_url=OPENROUTER_BASE_URL,
-        api_key=OPENROUTER_API_KEY,
+        base_url=DEEPSEEK_BASE_URL,
+        api_key=DEEPSEEK_API_KEY,
     )
 
 PROMPT_FILE_PATH = os.path.join(ROOT_DIR, "outputs", "resume_parsing_prompt.md")
@@ -2456,14 +2451,14 @@ def get_system_prompt() -> str:
     return "You are an expert HR recruitment assistant. Please parse the resume text and return structured candidate JSON."
 
 def call_llm_for_json(resume_text: str) -> dict:
-    if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "your_api_key_here":
-         raise ValueError("OpenRouter API Key is not configured. Please check your .env file.")
+    if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY in ("your_api_key_here", "replace_with_your_openrouter_key"):
+         raise ValueError("DeepSeek API Key is not configured. Please check your .env file.")
          
     system_prompt = get_system_prompt()
     client = get_openai_client()
     
     response = client.chat.completions.create(
-        model=OPENROUTER_MODEL,
+        model=DEEPSEEK_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"请解析以下简历文本并严格返回要求的 JSON 格式：\n\n{resume_text}"}
@@ -2590,8 +2585,8 @@ def _fallback_ai_match(job_description: str, candidates: list[Candidate]) -> dic
 
 
 def _call_llm_for_candidate_match(job_description: str, candidate_payloads: list[dict]) -> dict:
-    if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "your_api_key_here":
-        raise ValueError("OpenRouter API Key is not configured. Please check your .env file.")
+    if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY in ("your_api_key_here", "replace_with_your_openrouter_key"):
+        raise ValueError("DeepSeek API Key is not configured. Please check your .env file.")
 
     system_prompt = (
         "你是资深猎头匹配专家。"
@@ -2603,7 +2598,7 @@ def _call_llm_for_candidate_match(job_description: str, candidate_payloads: list
     )
     client = get_openai_client()
     response = client.chat.completions.create(
-        model=OPENROUTER_MODEL,
+        model=DEEPSEEK_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
             {

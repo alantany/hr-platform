@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-09（完成 - AI 大模型切换为 DeepSeek 官方 API）
+
+- 将简历解析与 AI 能力中心的大模型网关从 OpenRouter 改为 DeepSeek 官方地址 `https://api.deepseek.com`，默认模型 `deepseek-v4-flash`。
+- 环境变量统一为 `DEEPSEEK_BASE_URL` / `DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL`（仍兼容旧 `OPENROUTER_*` 变量名）；已同步更新 `.env.example` 与本地 `.env`。
+
 ## 2026-07-09（完成 - 「我的项目」勾选移至标题旁）
 
 - 勾选框放在「项目列表 (共 N 个)」标题右侧同一行。

@@ -25,3 +25,12 @@ class Settings:
 
 
 settings = Settings()
+
+# DeepSeek 官方 API（兼容旧 OPENROUTER_* 环境变量名）
+DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL") or os.getenv(
+    "OPENROUTER_BASE_URL", "https://api.deepseek.com"
+)
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL") or os.getenv(
+    "OPENROUTER_MODEL", "deepseek-v4-flash"
+)
