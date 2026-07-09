@@ -491,8 +491,7 @@ async function renderProjectListFromState() {
 
   const projectTitle = document.querySelector('#project-list-title');
   if (projectTitle) {
-    const mineHint = window.projectFilters?.onlyMine ? ' · 我的项目' : '';
-    projectTitle.textContent = `项目列表 (共 ${filteredProjects.length} 个${mineHint})`;
+    projectTitle.textContent = `项目列表 (共 ${filteredProjects.length} 个)`;
   }
 
   projectList.innerHTML = renderProjectListMarkup(filteredProjects, tagConfigs);
