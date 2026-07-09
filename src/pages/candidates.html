@@ -62,7 +62,7 @@
           </div>
         </div>
         <div class="toolbar" style="margin-bottom:0; padding:0; border:0; box-shadow:none; background:transparent; display:flex; gap:12px;">
-          <input class="input wide" data-field="candidate-keyword" placeholder="搜索公司、职位、专业、学校、行业、技能等关键词" style="flex:3;" />
+          <input class="input wide" data-field="candidate-keyword" placeholder="多个关键词用空格分隔，需同时匹配（如：Java Spring 北京）" style="flex:3;" />
           <div class="city-selector-wrapper" style="position: relative; flex: 1; min-width: 220px;">
             <input class="input" data-field="candidate-city" placeholder="期望城市（如：北京、上海、深圳）" autocomplete="off" style="width: 100%;" />
             <div class="city-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1000; padding: 12px;">
@@ -586,22 +586,11 @@
           
           let filtered = [...this.rawList];
 
-          // 关键词过滤
+          // 关键词过滤：空格分隔多词，全部命中（AND，同智联/前程简历搜索）
           if (keyword) {
-            const kw = keyword.toLowerCase();
-            filtered = filtered.filter(i => {
-              return [
-                i.name,
-                i.current_title,
-                i.education,
-                i.city,
-                i.source,
-                i.gender,
-                i.age ? String(i.age) : '',
-                i.experience_years ? String(i.experience_years) : '',
-                i.expected_salary
-              ].join(" ").toLowerCase().includes(kw);
-            });
+            filtered = filtered.filter(i =>
+              window.matchesSearchKeywords(window.buildCandidateSearchText(i), keyword)
+            );
           }
 
           // 城市过滤
@@ -667,16 +656,10 @@
             filtered = filtered.filter(i => i.created_at && i.created_at.startsWith(todayPrefix));
           }
           
-          // 5. 点击的热词额外检索匹配
+          // 5. 点击的热词额外检索匹配（与关键词同为 AND）
           if (activeHotkeys.length > 0) {
             filtered = filtered.filter(i => {
-              const text = [
-                i.name,
-                i.current_title,
-                i.education,
-                i.city,
-                i.source
-              ].join(" ").toLowerCase();
+              const text = window.buildCandidateSearchText(i);
               return activeHotkeys.every(hk => text.includes(hk.toLowerCase()));
             });
           }

@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-岗位弹窗已去掉「薪酬规则」组件，薪酬仅用 `salary_min` / `salary_max`。维护流程：**改代码 → 更新 `task_plan.md` / `findings.md` / `progress.md` → commit → push**（每次修改完成后自动执行，无需用户另行提醒）。
+简历池搜索已改为空格分隔多关键词 AND 匹配（智联/前程口径）。维护流程：**改代码 → 更新 `task_plan.md` / `findings.md` / `progress.md` → commit → push**。
 
 ## Phases
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from pathlib import PurePosixPath
+import json
 import re
 import socket
 
@@ -522,6 +523,44 @@ def update_position(db: Session, position: Position, payload):
     return position
 
 
+def _tokenize_search_keywords(keyword: str | None) -> list[str]:
+    if not keyword:
+        return []
+    return [part for part in keyword.strip().lower().split() if part]
+
+
+def _candidate_search_text(item: dict) -> str:
+    parts = [
+        item.get("name"),
+        item.get("phone"),
+        item.get("email"),
+        item.get("current_title"),
+        item.get("education"),
+        item.get("city"),
+        item.get("source"),
+        item.get("gender"),
+        str(item.get("age") or ""),
+        str(item.get("experience_years") or ""),
+        item.get("expected_salary"),
+        item.get("work_history"),
+        item.get("education_detail"),
+        item.get("job_intention"),
+        item.get("project_history"),
+        item.get("certificates"),
+        item.get("comprehensive_evaluation"),
+        item.get("core_value"),
+        item.get("hukou_location"),
+        item.get("job_status"),
+    ]
+    tags = item.get("tags")
+    if tags:
+        if isinstance(tags, dict):
+            parts.append(json.dumps(tags, ensure_ascii=False))
+        else:
+            parts.append(str(tags))
+    return " ".join(str(p) for p in parts if p).lower()
+
+
 def create_candidate(db: Session, payload):
     obj = Candidate(**payload.model_dump(exclude={"record_key"}))
     db.add(obj)
@@ -675,15 +714,9 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
     filtered = []
     for item in merged_results:
         if keyword:
-            pattern = keyword.lower()
-            match = (
-                pattern in (item["name"] or "").lower() or
-                pattern in (item["phone"] or "").lower() or
-                pattern in (item["current_title"] or "").lower() or
-                pattern in (item["city"] or "").lower() or
-                pattern in (item["source"] or "").lower()
-            )
-            if not match:
+            tokens = _tokenize_search_keywords(keyword)
+            text = _candidate_search_text(item)
+            if tokens and not all(token in text for token in tokens):
                 continue
         if city:
             if item["city"] != city:

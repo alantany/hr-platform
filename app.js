@@ -991,6 +991,51 @@ async function withButtonBusy(button, task, label) {
 window.withButtonBusy = withButtonBusy;
 window.setButtonBusyLabel = setButtonBusyLabel;
 
+/** 空格分隔多关键词（智联/前程常见：全部命中 AND） */
+function tokenizeSearchKeywords(keyword) {
+  return String(keyword || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+}
+
+function buildCandidateSearchText(item) {
+  if (!item) return "";
+  const parts = [
+    item.name,
+    item.phone,
+    item.email,
+    item.current_title,
+    item.education,
+    item.city,
+    item.source,
+    item.gender,
+    item.age != null && item.age !== "" ? String(item.age) : "",
+    item.experience_years != null && item.experience_years !== "" ? String(item.experience_years) : "",
+    item.expected_salary,
+    item.work_history,
+    item.education_detail,
+    item.job_intention,
+    item.project_history,
+    item.certificates,
+    item.comprehensive_evaluation,
+    item.core_value,
+    item.hukou_location,
+    item.job_status,
+  ];
+  if (item.tags) {
+    parts.push(typeof item.tags === "string" ? item.tags : JSON.stringify(item.tags));
+  }
+  return parts.filter(Boolean).join(" ").toLowerCase();
+}
+
+function matchesSearchKeywords(text, keyword) {
+  const tokens = tokenizeSearchKeywords(keyword);
+  if (!tokens.length) return true;
+  return tokens.every((token) => text.includes(token));
+}
+
+window.tokenizeSearchKeywords = tokenizeSearchKeywords;
+window.buildCandidateSearchText = buildCandidateSearchText;
+window.matchesSearchKeywords = matchesSearchKeywords;
+
 function getCandidateFilterSummary() {
   const keyword = document.querySelector('[data-field="candidate-keyword"]')?.value?.trim() || "";
   const city = document.querySelector('[data-field="candidate-city"]')?.value?.trim() || "";
