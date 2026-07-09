@@ -1479,9 +1479,13 @@ async function handleGlobalButton(button) {
     const textarea = modal?.querySelector('[data-ai-search-textarea]');
     const jobDescription = textarea?.value?.trim() || "";
     if (!jobDescription) throw new Error("请输入岗位描述");
-    const list = window.candidatesPageState?.list || [];
+    const pageState = window.candidatesPageState;
+    const list = pageState?.list || [];
     if (!list.length) throw new Error("当前筛选条件下没有可检索的候选人");
     const recordKeys = list.map(item => String(item.record_key || `candidate:${item.id}`));
+    // 用当前列表做索引，AI 返回后合并匹配信息，保留 file_path 等原字段
+    const byRecordKey = new Map(list.map((item) => [String(item.record_key || `candidate:${item.id}`), item]));
+    const byId = new Map(list.map((item) => [String(item.id), item]));
     const hideLoading = showLoadingToast("AI深度匹配中...");
     try {
       await new Promise(resolve => requestAnimationFrame(() => resolve()));
@@ -1493,16 +1497,23 @@ async function handleGlobalButton(button) {
         ? result.matches
         : (result?.candidate ? [{ candidate: result.candidate, reason: result.reason || "", rank: 1 }] : []);
       if (!matchRows.length) throw new Error("AI 未能返回候选人结果");
-      if (window.candidatesPageState) {
-        window.candidatesPageState.list = matchRows.map((row, idx) => {
-          const candidate = { ...(row.candidate || {}) };
-          candidate.ai_match_rank = Number(row.rank) || idx + 1;
-          candidate.ai_match_reason = String(row.reason || "").trim();
-          candidate.record_key = candidate.record_key || `candidate:${candidate.id}`;
-          return candidate;
+      if (pageState) {
+        pageState.list = matchRows.map((row, idx) => {
+          const returned = row.candidate || {};
+          const recordKey = String(returned.record_key || `candidate:${returned.id}`);
+          const original = byRecordKey.get(recordKey) || byId.get(String(returned.id)) || {};
+          return {
+            ...original,
+            ...returned,
+            // 列表里已有的下载路径优先保留（简历库常挂在下载表上）
+            file_path: original.file_path || returned.file_path || "",
+            record_key: original.record_key || recordKey,
+            ai_match_rank: Number(row.rank) || idx + 1,
+            ai_match_reason: String(row.reason || "").trim(),
+          };
         });
-        window.candidatesPageState.currentPage = 1;
-        window.candidatesPageState.renderOnly();
+        pageState.currentPage = 1;
+        pageState.renderOnly();
       }
       if (modal) modal.style.display = 'none';
       const topName = matchRows[0]?.candidate?.name || "候选人";

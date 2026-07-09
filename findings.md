@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-09（AI 检索后下载按钮丢失）
+
+- **原因**：AI 检索成功后用接口返回的候选人**整表替换**列表；`CandidateOut` 只带 ORM 上的 `file_path`。简历库来源常把路径挂在 `recruit.resume_downloads`，主表为空，导致「下载」按钮条件 `i.file_path` 为假。
+- **修复**：前端按 `record_key`/`id` **合并原列表行**，保留原有 `file_path` 等字段，只叠加 `ai_match_rank` / `ai_match_reason` 并按匹配度重排；后端 AI 返回时若主表无路径，再按 `candidate_agent_id` 回查下载表补齐。
+
 ## 2026-07-09（AI 检索返回 Top5 并按匹配度排序）
 
 - **输出**：由「只返回 1 人」改为最多 **5 人**；接口字段 `matches[{candidate, reason, rank}]`，并保留顶层 `candidate`/`reason` 兼容旧调用。

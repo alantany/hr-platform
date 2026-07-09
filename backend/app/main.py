@@ -1261,14 +1261,33 @@ def ai_search_candidates(payload: schemas.CandidateAiSearchRequest, db: Session 
     )
     db.commit()
 
+    def _resolve_file_path(cand: Candidate) -> str | None:
+        path = (getattr(cand, "file_path", None) or "").strip()
+        if path:
+            return path
+        agent_id = getattr(cand, "candidate_agent_id", None)
+        if not agent_id:
+            return None
+        download = (
+            db.query(RecruitResumeDownload)
+            .filter(RecruitResumeDownload.candidate_agent_id == agent_id)
+            .order_by(RecruitResumeDownload.created_at.desc())
+            .first()
+        )
+        return (download.file_path if download and download.file_path else None) or None
+
     matches_out = []
     for row in match_rows:
         cand = row.get("candidate")
         if not cand:
             continue
+        payload_out = schemas.CandidateOut.model_validate(cand, from_attributes=True).model_dump()
+        if not payload_out.get("file_path"):
+            payload_out["file_path"] = _resolve_file_path(cand)
+        payload_out["record_key"] = payload_out.get("record_key") or f"candidate:{cand.id}"
         matches_out.append(
             {
-                "candidate": schemas.CandidateOut.model_validate(cand, from_attributes=True).model_dump(),
+                "candidate": payload_out,
                 "reason": row.get("reason", ""),
                 "rank": int(row.get("rank") or len(matches_out) + 1),
             }

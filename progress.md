@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-09（完成 - 修复 AI 检索后下载按钮丢失）
+
+- 前端：AI 结果与当前列表合并，保留 `file_path`，仅新增匹配排名/理由并重排。
+- 后端：AI 返回候选人时，主表无路径则从 `recruit.resume_downloads` 按 `candidate_agent_id` 补齐。
+
 ## 2026-07-09（完成 - AI 检索返回 Top5 按匹配度排序）
 
 - 后端 `ai_match_candidate` / `/api/candidates/ai-search`：LLM 返回最多 5 条并按匹配度排序；fallback 同步 Top5。
