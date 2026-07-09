@@ -2,8 +2,9 @@
 
 ## 2026-07-09（完成 - 简历解析姓名去重 + 本地 PDF 忽略）
 
-- 新增 `security.normalize_candidate_name()`，折叠姓名字符串连续重复字符（如 wkhtmltopdf PDF 导致的「袁袁太太兴兴」→「袁太兴」）。
-- Worker 与手工导入路径落库前均应用姓名去重；`袁太兴-ai大模型算法工程师.pdf` 已加入 `.gitignore` 不同步。
+- 新增 `security.normalize_candidate_name()`，折叠姓名字符串连续重复字符（如 wkhtmltopdf PDF 导致的「袁袁太太兴兴」→「袁太兴」）；仅作用于 `name` 字段，其它内文仍由 LLM 处理。
+- Worker 与手工导入路径落库前均应用；已加单测 `tests/test_normalize_candidate_name.py`。
+- 本地诊断样本 `袁太兴-ai大模型算法工程师.pdf` 已加入 `.gitignore`，不同步仓库。
 
 ## 2026-07-09（完成 - 单设备登录互踢）
 

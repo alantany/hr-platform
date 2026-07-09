@@ -3,7 +3,7 @@
 ## 2026-07-09（wkhtmltopdf 简历姓名逐字重复）
 
 - **根因**：wkhtmltopdf 生成的 PDF 在 `pdfplumber.extract_text()` 下全文逐字双写；LLM 对内文会去重，但姓名常原样回写。
-- **修复**：仅对 `name` 落库前调用 `normalize_candidate_name()`（连续重复字符折叠），不改动其它字段解析逻辑。
+- **修复**：仅对 `name` 落库前调用 `normalize_candidate_name()`（连续相同字符折叠为单个，如 `王双双`→`王双`；对 wkhtmltopdf 整名双写场景有效）。
 - **样本文件**：`袁太兴-ai大模型算法工程师.pdf` 仅作本地诊断，已加入 `.gitignore`。
 
 ## 2026-07-09（单设备登录）
