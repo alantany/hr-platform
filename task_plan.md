@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-岗位列表已去掉 JD 行内展示；远程 positions 缺列补丁脚本已推送。后续任务默认：改代码 → 更新三份 MD → commit → push。
+岗位弹窗已去掉「薪酬规则」组件，薪酬仅用 `salary_min` / `salary_max`。维护流程：**改代码 → 更新 `task_plan.md` / `findings.md` / `progress.md` → commit → push**（每次修改完成后自动执行，无需用户另行提醒）。
 
 ## Phases
 

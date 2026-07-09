@@ -4636,7 +4636,6 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       reset('[data-position-req-gender]', '不限');
       reset('[data-position-req-edu]', '不限');
       reset('[data-position-req-exp]', '不限');
-      reset('[data-position-req-salary]', '不限');
       reset('[data-position-req-status]', '不限');
       reset('[data-position-target-count]', '10');
 
@@ -4710,7 +4709,6 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       gender: document.querySelector('[data-position-req-gender]')?.value || '不限',
       education: document.querySelector('[data-position-req-edu]')?.value || '不限',
       experience: document.querySelector('[data-position-req-exp]')?.value || '不限',
-      salary: document.querySelector('[data-position-req-salary]')?.value || '不限',
       job_status: document.querySelector('[data-position-req-status]')?.value || '不限'
     };
     const targetResumeCount = 10;
@@ -4777,7 +4775,6 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     setVal('[data-position-edit-req-gender]', tags.gender || '不限');
     setVal('[data-position-edit-req-edu]', tags.education || '不限');
     setVal('[data-position-edit-req-exp]', tags.experience || '不限');
-    setVal('[data-position-edit-req-salary]', tags.salary || '不限');
     setVal('[data-position-edit-req-status]', tags.job_status || '不限');
     setVal('[data-position-edit-target-count]', '10');
 
@@ -4819,7 +4816,6 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       gender: document.querySelector('[data-position-edit-req-gender]')?.value || '不限',
       education: document.querySelector('[data-position-edit-req-edu]')?.value || '不限',
       experience: document.querySelector('[data-position-edit-req-exp]')?.value || '不限',
-      salary: document.querySelector('[data-position-edit-req-salary]')?.value || '不限',
       job_status: document.querySelector('[data-position-edit-req-status]')?.value || '不限'
     };
     const targetResumeCount = 10;

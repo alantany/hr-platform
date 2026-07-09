@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-09（岗位弹窗薪酬字段简化）
+
+- **去掉「薪酬规则」下拉**：创建/编辑岗位弹窗不再展示 `requirement_tags.salary` 对应的选择器；薪酬范围仅使用弹窗上方的 `salary_min` / `salary_max` 数值输入。
+- **写入口径**：新建/编辑保存时 `requirement_tags` 不再包含 `salary` 键；数据库 JSON 列结构不变，历史数据中的 `salary` 可保留只读。
+
 ## 2026-07-08（岗位 JD、候选人页布局与简历池推荐权限）
 
 - **岗位 JD 复用 `positions.description`**：数据库与 Schema 已具备该字段。创建/编辑弹窗可填写「岗位 JD」；**岗位列表不展示 JD**（多岗位列表不宜展开）；岗位候选人页展示完整 JD。
