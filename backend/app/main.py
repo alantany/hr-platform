@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -13,6 +14,8 @@ from sqlalchemy.orm import Session
 from fastapi.responses import FileResponse
 from . import crud, models, schemas
 from .config import settings, DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL
+
+logger = logging.getLogger(__name__)
 from .database import Base, SessionLocal, engine, get_db
 from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchHotword, SearchPreset, SystemConfig, TagDictionary, WarrantyRule, User, RecruitCandidateProfile, RecruitResumeDownload, ExportRecord, ImportRecord, RecruitEmployee, RecruitJobPosting, RecruitDailyTaskStat, ResumeParseTask
 from . import security
@@ -1017,8 +1020,15 @@ def parse_position_jd(payload: schemas.PositionJdParseRequest, user: User = Depe
         raw = call_llm_for_jd_parse(jd_text)
     except HTTPException:
         raise
-    except Exception:
-        raise HTTPException(status_code=502, detail="JD 解析失败，请稍后重试")
+    except Exception as exc:
+        logger.exception("JD parse LLM failed")
+        msg = str(exc) or ""
+        if "api key" in msg.lower() or "authentication" in msg.lower() or "401" in msg:
+            raise HTTPException(
+                status_code=502,
+                detail="大模型 API Key 无效或与网关不匹配，请在 .env 配置有效的 DEEPSEEK_API_KEY（DeepSeek 官方密钥）",
+            ) from exc
+        raise HTTPException(status_code=502, detail="JD 解析失败，请稍后重试") from exc
     if not isinstance(raw, dict):
         raise HTTPException(status_code=502, detail="JD 解析失败，请稍后重试")
     out = normalize_jd_parse_result(raw, jd_text)
@@ -2752,6 +2762,12 @@ def normalize_jd_parse_result(raw: dict, jd_text: str) -> dict:
 def call_llm_for_jd_parse(jd_text: str) -> dict:
     if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY in ("your_api_key_here", "replace_with_your_openrouter_key"):
         raise ValueError("DeepSeek API Key is not configured. Please check your .env file.")
+    # OpenRouter keys (sk-or-v1...) cannot authenticate against api.deepseek.com
+    if str(DEEPSEEK_API_KEY).startswith("sk-or-") and "deepseek.com" in str(DEEPSEEK_BASE_URL or ""):
+        raise ValueError(
+            "API Key 看起来是 OpenRouter 密钥，但 DEEPSEEK_BASE_URL 指向 DeepSeek 官方。"
+            "请到 https://platform.deepseek.com 申请密钥，写入 .env 的 DEEPSEEK_API_KEY 后重启后端。"
+        )
     client = get_openai_client()
     response = client.chat.completions.create(
         model=DEEPSEEK_MODEL,

@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-07-10（parse-jd 502 = LLM 鉴权失败）
+
+- `POST /api/positions/parse-jd` 的 502 来自 `except Exception` 包装 LLM 调用失败，不是网关本身挂了。
+- 本地实测：Key 前缀 `sk-or-v1`（OpenRouter）+ `DEEPSEEK_BASE_URL=https://api.deepseek.com` → 401 invalid api key。
+- 约定：项目已切 DeepSeek 官方；`.env` 必须使用 DeepSeek 平台密钥，不能继续用旧 OpenRouter Key。
+- 代码侧：检测到 `sk-or-` + deepseek.com 时直接提示换 Key；鉴权类异常返回可读 502 detail。
+
 ## 2026-07-10（JD 弹窗支持 txt/pdf 上传抽文本）
 
 - 新增 `POST /api/positions/extract-jd-text`（multipart `file`）：权限同 parse-jd；仅 `.txt`/`.pdf`；空/非法/抽不出字 → 400；上限 5MB。

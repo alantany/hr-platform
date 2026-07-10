@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-10（完成 - 诊断并提示 parse-jd 502 根因）
+
+- 复现：`call_llm_for_jd_parse` → DeepSeek 401 Authentication Fails；路由吞异常成泛化 502。
+- 根因：`.env` 的 `DEEPSEEK_API_KEY` 仍是 OpenRouter 格式（`sk-or-v1...`），`DEEPSEEK_BASE_URL` 为 `https://api.deepseek.com`。
+- 修复：Key/网关不匹配时提前抛清晰错误；502 对鉴权类异常返回明确文案；`logger.exception` 记录真实异常。需用户换成 DeepSeek 官方 Key 后重启后端。
+
 ## 2026-07-10（完成 - JD 弹窗增加 txt/pdf 上传）
 
 - 后端：`POST /api/positions/extract-jd-text` + `PositionJdExtractOut`；复用 pdfplumber 抽文本。
