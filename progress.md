@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-10（完成 - DeepSeek Key 改后仍 502：进程未重载 .env）
+
+- 用户已换成官方 `sk-...` Key，磁盘 `.env` 正确；实测新 Key 可调通 DeepSeek。
+- 运行中 uvicorn 仍持有启动时的旧 `DEEPSEEK_API_KEY`（及 `@lru_cache` 的 OpenAI client），故继续报 Key 不匹配。
+- 修复：`get_deepseek_config()` 每次 `load_dotenv(override=True)`；`get_openai_client` 取消永久缓存；JD/简历/匹配 LLM 路径用新鲜配置。
+
 ## 2026-07-10（完成 - 诊断并提示 parse-jd 502 根因）
 
 - 复现：`call_llm_for_jd_parse` → DeepSeek 401 Authentication Fails；路由吞异常成泛化 502。

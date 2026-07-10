@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from fastapi.responses import FileResponse
 from . import crud, models, schemas
-from .config import settings, DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL
+from .config import settings, DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL, get_deepseek_config
 
 logger = logging.getLogger(__name__)
 from .database import Base, SessionLocal, engine, get_db
@@ -2635,11 +2635,11 @@ def upsert_data_permission(payload: schemas.DataPermissionCreate, db: Session = 
     db.commit()
     db.refresh(obj)
     return obj
-@lru_cache(maxsize=1)
 def get_openai_client() -> OpenAI:
+    base_url, api_key, _model = get_deepseek_config()
     return OpenAI(
-        base_url=DEEPSEEK_BASE_URL,
-        api_key=DEEPSEEK_API_KEY,
+        base_url=base_url,
+        api_key=api_key,
     )
 
 PROMPT_FILE_PATH = os.path.join(ROOT_DIR, "outputs", "resume_parsing_prompt.md")
@@ -2760,17 +2760,18 @@ def normalize_jd_parse_result(raw: dict, jd_text: str) -> dict:
 
 
 def call_llm_for_jd_parse(jd_text: str) -> dict:
-    if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY in ("your_api_key_here", "replace_with_your_openrouter_key"):
+    base_url, api_key, model = get_deepseek_config()
+    if not api_key or api_key in ("your_api_key_here", "replace_with_your_openrouter_key", "replace_with_your_deepseek_key"):
         raise ValueError("DeepSeek API Key is not configured. Please check your .env file.")
     # OpenRouter keys (sk-or-v1...) cannot authenticate against api.deepseek.com
-    if str(DEEPSEEK_API_KEY).startswith("sk-or-") and "deepseek.com" in str(DEEPSEEK_BASE_URL or ""):
+    if str(api_key).startswith("sk-or-") and "deepseek.com" in str(base_url or ""):
         raise ValueError(
             "API Key 看起来是 OpenRouter 密钥，但 DEEPSEEK_BASE_URL 指向 DeepSeek 官方。"
             "请到 https://platform.deepseek.com 申请密钥，写入 .env 的 DEEPSEEK_API_KEY 后重启后端。"
         )
     client = get_openai_client()
     response = client.chat.completions.create(
-        model=DEEPSEEK_MODEL,
+        model=model,
         messages=[
             {"role": "system", "content": JD_PARSE_SYSTEM_PROMPT},
             {"role": "user", "content": f"请解析以下 JD 并严格返回 JSON：\n\n{jd_text}"},
@@ -2792,14 +2793,15 @@ def get_system_prompt() -> str:
     return "You are an expert HR recruitment assistant. Please parse the resume text and return structured candidate JSON."
 
 def call_llm_for_json(resume_text: str) -> dict:
-    if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY in ("your_api_key_here", "replace_with_your_openrouter_key"):
+    _base_url, api_key, model = get_deepseek_config()
+    if not api_key or api_key in ("your_api_key_here", "replace_with_your_openrouter_key", "replace_with_your_deepseek_key"):
          raise ValueError("DeepSeek API Key is not configured. Please check your .env file.")
          
     system_prompt = get_system_prompt()
     client = get_openai_client()
     
     response = client.chat.completions.create(
-        model=DEEPSEEK_MODEL,
+        model=model,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"请解析以下简历文本并严格返回要求的 JSON 格式：\n\n{resume_text}"}
@@ -2947,7 +2949,8 @@ def _fallback_ai_match(job_description: str, candidates: list[Candidate]) -> dic
 
 
 def _call_llm_for_candidate_match(job_description: str, candidate_payloads: list[dict], top_n: int = AI_SEARCH_TOP_N) -> dict:
-    if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY in ("your_api_key_here", "replace_with_your_openrouter_key"):
+    _base_url, api_key, model = get_deepseek_config()
+    if not api_key or api_key in ("your_api_key_here", "replace_with_your_openrouter_key", "replace_with_your_deepseek_key"):
         raise ValueError("DeepSeek API Key is not configured. Please check your .env file.")
 
     system_prompt = (
@@ -2961,7 +2964,7 @@ def _call_llm_for_candidate_match(job_description: str, candidate_payloads: list
     )
     client = get_openai_client()
     response = client.chat.completions.create(
-        model=DEEPSEEK_MODEL,
+        model=model,
         messages=[
             {"role": "system", "content": system_prompt},
             {

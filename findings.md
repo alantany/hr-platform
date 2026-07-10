@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（改 .env 后 LLM 仍用旧 Key）
+
+- uvicorn `--reload` 只监视代码文件，**不会**因 `.env` 变更自动重载环境变量。
+- 模块级 `DEEPSEEK_API_KEY` + `@lru_cache` 的 `get_openai_client` 会把旧 Key 钉死在进程里。
+- 约定：LLM 调用统一走 `get_deepseek_config()`（每次 override 读 `.env`）；改 Key 后即使不重启，下一次请求也会用新值。彻底重启后端仍是最稳妥做法。
+
 ## 2026-07-10（parse-jd 502 = LLM 鉴权失败）
 
 - `POST /api/positions/parse-jd` 的 502 来自 `except Exception` 包装 LLM 调用失败，不是网关本身挂了。

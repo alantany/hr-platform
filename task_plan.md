@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-JD单生成岗位可用；parse-jd 502 已定位为 DeepSeek API Key 与网关不匹配（OpenRouter Key 打 DeepSeek）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+JD parse：DeepSeek Key 已可用；修复「改 .env 不重载」导致的假 502。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
