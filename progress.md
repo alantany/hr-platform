@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-10（完成 - JD单生成岗位设计文档）
+
+- 用户确认方案 A；写入设计文档 `docs/superpowers/specs/2026-07-10-jd-parse-create-position-design.md`（Overview / Goals / Non-Goals / User Flow / UI / API / Field Mapping / Permissions / Error Handling / Out of Scope / Open Questions）。
+- 本轮仅文档，无实现代码。
+- 下一步：用户审阅 spec 后写实现计划。
+
 ## 2026-07-10（完成 - 项目列表岗位数可跳转）
 
 - 项目列表「岗位数」改为可点击链接（含 0），跳转 `projects.html?project_id=&company_id=&tab=position`。

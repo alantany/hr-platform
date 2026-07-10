@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-项目列表「岗位数」可点击跳转岗位 Tab 并按项目/公司过滤。维护流程：**改代码 → 更新三份 MD → commit → push**。
+JD生成岗位设计已确认，待用户审阅 spec 后写实现计划。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
@@ -433,3 +433,12 @@
 - [x] 岗位列表去掉 JD 行内展示（JD 仅在创建/编辑与岗位候选人页展示）
 - [x] 展开面板卡片化；评价无文字备注时不显示「暂无评价内容」
 - **Status:** complete
+
+### Phase 28 - JD单生成岗位（设计已确认，待实现）
+
+- [x] 确认方案 A：粘贴 JD → 解析预填 → 人确认后走现有创建岗位
+- [x] 写入设计文档 `docs/superpowers/specs/2026-07-10-jd-parse-create-position-design.md`
+- [ ] 用户审阅 spec
+- [ ] 编写实现计划
+- [ ] 前后端实现与验证
+- **Status:** design confirmed, awaiting spec review
