@@ -2683,6 +2683,46 @@ input[type="radio"],
   .ui-kit-swatch-grid { grid-template-columns: 1fr; }
 }
 
+/* ===== 任务看板折叠面板 ===== */
+.task-board-panel-head {
+  align-items: flex-start;
+  gap: 12px;
+}
+.task-board-toggle {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.task-board-toggle h3 {
+  margin: 0;
+}
+.task-board-toggle-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.task-board-panel.is-collapsed .task-board-panel-body {
+  display: none;
+}
+.task-board-panel-body {
+  margin-top: 12px;
+}
+
 /* ===== 侧边栏及顶栏布局升级样式 ===== */
 .sidebar {
   display: flex !important;

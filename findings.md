@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（任务看板默认折叠）
+
+- 任务看板页两块长列表（岗位分配待办、通知列表）默认折叠，避免信息过多占满首屏。
+- 交互：点击标题区切换展开/收起；刷新按钮独立，不触发展开。
+- 例外：`notifications.html?tab=position-tasks` 进入时自动展开岗位分配待办并滚动定位。
+
 ## 2026-07-10（平台岗位发布页退出失效）
 
 - `bindActionButtons` / 全局 click 曾写：`action.includes('recruit') || pathname.includes('recruit-')` 则 return；进入岗位发布相关页后 URL 含 `recruit-`，侧栏「退出」也被拦截。
