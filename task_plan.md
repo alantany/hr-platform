@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-任务看板折叠箭头 noop Toast 已修。维护流程：**改代码 → 更新三份 MD → commit → push**。
+标签字典 / 质保 API 已与 `page:dictionary` / `page:warranty` 菜单权限对齐。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

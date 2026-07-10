@@ -1,5 +1,13 @@
 # Progress
 
+## 2026-07-10（完成 - 标签/质保页权限与菜单对齐）
+
+- `security.user_has_permission` / `require_page_permission`：按 `role_permissions` 的 page key 放行（管理员默认通过）。
+- 接口：`/api/tags` 写、`/api/search-hotwords` 管理读写、`/api/warranty-rules` 全部改为 page 权限；用户/角色等仍 `require_admin`。
+- 前端：`warranty.html` 提示文案不再写「仅超管」。
+- 测试：`tests/test_tags_read_permission.py`、`tests/test_warranty_page_permission.py` + 热词 CRUD，6 项 PASS。
+- 未提交：`exports/`、`~$*.docx`。
+
 ## 2026-07-10（完成 - 任务看板折叠箭头 noop Toast）
 
 - 现象：点「岗位分配待办 / 通知列表」折叠箭头不展开，只 Toast「已点击：处理中」类消息。

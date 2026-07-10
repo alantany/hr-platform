@@ -2238,13 +2238,13 @@ def delete_evaluation_level(level_id: int, db: Session = Depends(get_db), user: 
 
 @app.get("/api/tags", response_model=list[schemas.TagOut])
 def get_tags(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    # 标签展示配置需全角色可读（简历池/岗位候选人列表渲染依赖）；增删改仍仅管理员
+    # 标签展示配置需全角色可读（简历池/岗位候选人列表渲染依赖）；增删改需 page:dictionary
     return crud.list_tags(db)
 
 
 @app.post("/api/tags", response_model=schemas.TagOut)
 def add_tag(payload: schemas.TagCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    security.require_page_permission(db, user, "page:dictionary")
     obj = crud.create_tag(db, payload)
     crud.add_audit(db, user.username, "标签字典", "新增标签字段", "tag", "new", detail=f"{payload.object_type}:{payload.field_key}")
     db.commit()
@@ -2254,7 +2254,7 @@ def add_tag(payload: schemas.TagCreate, db: Session = Depends(get_db), user: Use
 
 @app.patch("/api/tags/{tag_id}", response_model=schemas.TagOut)
 def edit_tag(tag_id: int, payload: schemas.TagUpdate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    security.require_page_permission(db, user, "page:dictionary")
     obj = db.get(TagDictionary, tag_id)
     if not obj:
         raise HTTPException(status_code=404, detail="标签不存在")
@@ -2267,7 +2267,7 @@ def edit_tag(tag_id: int, payload: schemas.TagUpdate, db: Session = Depends(get_
 
 @app.delete("/api/tags/{tag_id}")
 def remove_tag(tag_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    security.require_page_permission(db, user, "page:dictionary")
     obj = db.get(TagDictionary, tag_id)
     if not obj:
         raise HTTPException(status_code=404, detail="标签不存在")
@@ -2283,9 +2283,9 @@ def get_search_hotwords(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
-    # 简历池读取启用热词；管理页读全量需管理员
+    # 简历池读取启用热词；管理页读全量需 page:dictionary
     if not enabled_only:
-        security.require_admin(user)
+        security.require_page_permission(db, user, "page:dictionary")
     crud.ensure_default_search_hotwords(db)
     db.commit()
     return crud.list_search_hotwords(db, enabled_only=enabled_only)
@@ -2293,7 +2293,7 @@ def get_search_hotwords(
 
 @app.post("/api/search-hotwords", response_model=schemas.SearchHotwordOut)
 def add_search_hotword(payload: schemas.SearchHotwordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    security.require_page_permission(db, user, "page:dictionary")
     try:
         obj = crud.create_search_hotword(db, payload)
     except ValueError as exc:
@@ -2306,7 +2306,7 @@ def add_search_hotword(payload: schemas.SearchHotwordCreate, db: Session = Depen
 
 @app.patch("/api/search-hotwords/{hotword_id}", response_model=schemas.SearchHotwordOut)
 def edit_search_hotword(hotword_id: int, payload: schemas.SearchHotwordUpdate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    security.require_page_permission(db, user, "page:dictionary")
     obj = db.get(SearchHotword, hotword_id)
     if not obj:
         raise HTTPException(status_code=404, detail="热词不存在")
@@ -2322,7 +2322,7 @@ def edit_search_hotword(hotword_id: int, payload: schemas.SearchHotwordUpdate, d
 
 @app.delete("/api/search-hotwords/{hotword_id}")
 def remove_search_hotword(hotword_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    security.require_page_permission(db, user, "page:dictionary")
     obj = db.get(SearchHotword, hotword_id)
     if not obj:
         raise HTTPException(status_code=404, detail="热词不存在")
@@ -2387,13 +2387,13 @@ def batch_read_notifications(payload: list[int], db: Session = Depends(get_db), 
 
 @app.get("/api/warranty-rules", response_model=list[schemas.WarrantyRuleOut])
 def get_warranty_rules(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    security.require_page_permission(db, user, "page:warranty")
     return crud.list_warranty_rules(db)
 
 
 @app.post("/api/warranty-rules", response_model=schemas.WarrantyRuleOut)
 def add_warranty_rule(payload: schemas.WarrantyRuleCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    security.require_page_permission(db, user, "page:warranty")
     obj = crud.create_warranty_rule(db, payload)
     crud.add_audit(db, user.username, "质保期管理", "新增质保规则", "warranty_rule", "new", detail=payload.scope)
     db.commit()
@@ -2403,7 +2403,7 @@ def add_warranty_rule(payload: schemas.WarrantyRuleCreate, db: Session = Depends
 
 @app.put("/api/warranty-rules/{rule_id}", response_model=schemas.WarrantyRuleOut)
 def update_warranty_rule(rule_id: int, payload: schemas.WarrantyRuleCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    security.require_page_permission(db, user, "page:warranty")
     obj = db.get(WarrantyRule, rule_id)
     if not obj:
         raise HTTPException(status_code=404, detail="质保规则不存在")
@@ -2417,7 +2417,7 @@ def update_warranty_rule(rule_id: int, payload: schemas.WarrantyRuleCreate, db: 
 
 @app.delete("/api/warranty-rules/{rule_id}")
 def delete_warranty_rule(rule_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    security.require_page_permission(db, user, "page:warranty")
     obj = db.get(WarrantyRule, rule_id)
     if not obj:
         raise HTTPException(status_code=404, detail="质保规则不存在")

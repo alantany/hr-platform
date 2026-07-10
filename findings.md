@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-07-10（标签字典 / 质保：菜单可见 vs API 仅超管）
+
+- 现象：给组长开了 `page:dictionary` / `page:warranty` 后侧栏可见，但页内写操作报「仅超级管理员可执行该操作」。
+- 根因：菜单按 `role_permissions` 的 `page:xxx` 过滤；标签写、热词管理、质保规则 API 仍调用 `security.require_admin`。
+- 约定：这两模块的读写（标签 GET 仍全角色可读）改为 `require_page_permission(db, user, "page:dictionary"|"page:warranty")`——管理员或拥有对应 page 权限即可；用户/角色/权限管理等仍仅超管。
+- 前端：`warranty.html` 去掉「仅超级管理员可访问」提示文案。
+
 ## 2026-07-10（任务看板折叠箭头 → noop Toast）
 
 - 根因：`notifications.html` 折叠按钮用 `data-action="toggle-task-panel"`，被 `app.js` 捕获阶段全局点击 → `handleGlobalButton`；该 action 未登记，落到底部「已点击：…」Toast。

@@ -10,7 +10,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from .config import settings
-from .models import Candidate, Company, DataPermission, Position, Project, Recommendation, User
+from .models import Candidate, Company, DataPermission, Position, Project, Recommendation, RolePermission, User
 
 
 ROLE_CODE_MAP = {
@@ -119,6 +119,32 @@ def require_admin(user: User) -> User:
 
 def require_super_admin(user: User) -> User:
     return require_admin(user)
+
+
+def user_has_permission(db: Session, user: User, permission_key: str) -> bool:
+    """管理员默认放行；其余角色按 role_permissions 中启用的 permission_key 判定。"""
+    if is_admin(user):
+        return True
+    role_code = get_role_code(user.role)
+    if not role_code or not permission_key:
+        return False
+    return (
+        db.query(RolePermission)
+        .filter(
+            RolePermission.role_code == role_code,
+            RolePermission.permission_key == permission_key,
+            RolePermission.enabled.is_(True),
+        )
+        .first()
+        is not None
+    )
+
+
+def require_page_permission(db: Session, user: User, permission_key: str) -> User:
+    """有对应 page 权限（或管理员）即可操作该模块；与菜单可见性对齐。"""
+    if user_has_permission(db, user, permission_key):
+        return user
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权执行该操作")
 
 
 def _active_permissions(db: Session, user: User) -> list[DataPermission]:
