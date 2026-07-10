@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-11（SPA 跳转后筛选要刷新才生效）
+
+- 现象：角色用户数点进用户列表，URL 已带 `?role=`，但列表未过滤；整页刷新后正常。
+- 根因：`loadPage` 里 `runSpaPageScripts` 不 await 页面异步 `DOMContentLoaded`，随后又 `await render()`，把页内已按 role 填好的表格冲掉（或与数据加载竞态）。
+- 约定：`runSpaPageScripts` 收集并 await 所有 mock DOMContentLoaded；仅当页面脚本未调用 `render` 时才兜底二次 render；用 `__SPA_RENDER_EPOCH__` 判断。
+
 ## 2026-07-11（角色列表用户数 → 用户列表按角色筛选）
 
 - 角色「用户数」= 该角色名称下的用户人数（非下属人数）。

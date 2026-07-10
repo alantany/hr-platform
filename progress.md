@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-11（完成 - 修复 SPA 跳转后角色筛选需刷新）
+
+- `runSpaPageScripts` 改为 await 页面 DOMContentLoaded（含异步加载）。
+- `loadPage` 仅在页面未 render 时兜底二次 render，避免冲掉 `?role=` 筛选结果。
+- 用户页每次加载都从 URL 同步 `roleFilter`。
+
 ## 2026-07-11（完成 - 角色用户数跳转用户列表并按角色筛选）
 
 - `roles.html`：用户数 > 0 时可点，链到 `users.html?role=角色名`。

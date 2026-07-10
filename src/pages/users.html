@@ -292,11 +292,9 @@
       userPageState.users = users;
       userPageState.roles = roles;
       userPageState.loginLogs = Array.isArray(logs) ? logs : [];
-      // 从角色列表用户数跳转：?role=组长 / ?role=操作员
+      // 从角色列表用户数跳转：?role=组长 / ?role=操作员（每次加载都同步，避免 SPA 残留）
       const roleFromUrl = new URLSearchParams(location.search).get('role');
-      if (roleFromUrl) {
-        userPageState.roleFilter = roleFromUrl;
-      }
+      userPageState.roleFilter = roleFromUrl || '';
       renderUserRoleOptions();
       renderManagerOptions();
       renderUsersTable();

@@ -833,6 +833,7 @@ window.updateTopNoticeBadge = updateTopNoticeBadge;
 window.refreshTopNoticeBadge = refreshTopNoticeBadge;
 
 async function render() {
+  window.__SPA_RENDER_EPOCH__ = (window.__SPA_RENDER_EPOCH__ || 0) + 1;
   const page = location.pathname.split("/").pop() || "dashboard.html";
   const key = page.replace(".html", "");
   const el = document.getElementById("app");
@@ -5596,6 +5597,7 @@ function extractPageBodyFromHtml(htmlText) {
 }
 
 function runSpaPageScripts(scripts) {
+  const readyTasks = [];
   scripts.forEach((code) => {
     if (!String(code || "").trim()) return;
     const wrappedCode = `
@@ -5603,13 +5605,12 @@ function runSpaPageScripts(scripts) {
         const originalWindowAddEventListener = window.addEventListener;
         const originalDocumentAddEventListener = document.addEventListener;
         const fireDomReady = function(cb) {
-          try {
-            Promise.resolve(cb()).catch(function(e) {
+          const task = Promise.resolve()
+            .then(function() { return cb(); })
+            .catch(function(e) {
               console.error("DOMContentLoaded Mock 执行异常:", e);
             });
-          } catch (e) {
-            console.error("DOMContentLoaded Mock 执行异常:", e);
-          }
+          window.__SPA_READY_TASKS__.push(task);
         };
         window.addEventListener = function(event, cb, opts) {
           if (event === 'DOMContentLoaded') return fireDomReady(cb);
@@ -5629,11 +5630,13 @@ function runSpaPageScripts(scripts) {
         }
       })();
     `;
+    window.__SPA_READY_TASKS__ = readyTasks;
     const newScript = document.createElement("script");
     newScript.textContent = wrappedCode;
     document.body.appendChild(newScript);
     newScript.remove();
   });
+  return Promise.all(readyTasks);
 }
 
 async function loadPage(url, push = true) {
@@ -5664,10 +5667,13 @@ async function loadPage(url, push = true) {
     }
 
     window.__PAGE_BODY__ = bodyHtml || window.__PAGE_BODY__ || "";
-    // 页面脚本会设置 __PAGE_BODY__，并在 DOMContentLoaded 中调用 renderApp
-    runSpaPageScripts(scripts);
-    // 兜底：若脚本未触发 render，再渲染一次右侧内容
-    await render();
+    const renderEpochBefore = window.__SPA_RENDER_EPOCH__ || 0;
+    // 等页面 DOMContentLoaded（含异步 loadXxx）全部跑完，避免后面二次 render 冲掉筛选结果
+    await runSpaPageScripts(scripts);
+    // 兜底：仅当页面脚本没有调用过 renderApp/render 时再渲染壳层
+    if ((window.__SPA_RENDER_EPOCH__ || 0) === renderEpochBefore) {
+      await render();
+    }
     syncActiveNav(pathOnly);
 
     const content = document.querySelector(".content");
