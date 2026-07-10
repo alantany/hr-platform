@@ -610,6 +610,13 @@ button, input, select { font: inherit; }
   gap: 14px;
 }
 
+.dashboard-main-row {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(360px, 1.25fr);
+  gap: 14px;
+  align-items: start;
+}
+
 .dashboard-kanban-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -619,26 +626,26 @@ button, input, select { font: inherit; }
 .dashboard-kanban-card {
   position: relative;
   overflow: hidden;
-  min-height: 136px;
-  padding: 22px 22px 20px;
-  border-radius: 20px;
+  min-height: 112px;
+  padding: 16px 16px 14px;
+  border-radius: 14px;
   background: #fff;
   border: 1px solid rgba(214, 222, 232, 0.92);
-  box-shadow: 0 12px 34px rgba(32, 56, 85, 0.07);
+  box-shadow: 0 8px 22px rgba(32, 56, 85, 0.06);
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dashboard-kanban-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 40px rgba(32, 56, 85, 0.12);
+  box-shadow: 0 12px 28px rgba(32, 56, 85, 0.1);
 }
 
 .dashboard-kanban-card::before {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
-  width: 5px;
-  border-radius: 20px 0 0 20px;
+  width: 4px;
+  border-radius: 14px 0 0 14px;
   background: var(--primary);
 }
 
@@ -659,12 +666,12 @@ button, input, select { font: inherit; }
   justify-content: space-between;
   align-items: flex-end;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 14px;
 }
 
 .dashboard-kanban-body strong {
   font-family: var(--font-mono);
-  font-size: clamp(31px, 2.8vw, 42px);
+  font-size: clamp(24px, 2.2vw, 32px);
   line-height: 1;
   color: #28343b;
 }
@@ -680,89 +687,95 @@ button, input, select { font: inherit; }
 
 .dashboard-calendar-panel,
 .dashboard-month-panel {
-  padding: 18px 20px 20px;
+  padding: 14px 16px 16px;
 }
 
 .dashboard-section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 12px;
 }
 
 .dashboard-section-head h3 {
   margin: 0;
-  font-size: 26px;
-  line-height: 1.1;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.dashboard-section-head .panel-sub {
+  margin: 4px 0 0;
+  font-size: 12px;
 }
 
 .dashboard-calendar-toolbar {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
 }
 
 .dashboard-calendar-nav {
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   border: 1px solid rgba(220, 227, 235, 0.95);
-  border-radius: 14px;
+  border-radius: 8px;
   background: #fff;
   color: #8fa0ac;
-  font-size: 24px;
+  font-size: 18px;
+  line-height: 1;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .dashboard-calendar-month,
 .dashboard-month-caption {
-  min-width: 128px;
+  min-width: 96px;
   text-align: center;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
   color: #2d3941;
 }
 
 .dashboard-calendar-summary {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .dashboard-calendar-board {
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .dashboard-summary-chip {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 16px;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
   background: #eff6ff;
   border: 1px solid #dbeafe;
 }
 
 .dashboard-summary-chip strong {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 14px;
   color: #2563eb;
 }
 
 .dashboard-summary-chip span {
   color: #73818c;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 
 .dashboard-calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 18px;
+  gap: 6px;
+  margin-top: 12px;
   color: #a6b3bd;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   text-align: center;
 }
@@ -770,19 +783,19 @@ button, input, select { font: inherit; }
 .dashboard-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 14px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .dashboard-calendar-cell {
   display: grid;
-  gap: 10px;
+  gap: 4px;
   justify-items: center;
-  align-content: start;
-  min-height: 104px;
-  padding: 16px 10px 14px;
+  align-content: center;
+  min-height: 54px;
+  padding: 6px 4px;
   border: 1px solid rgba(230, 236, 242, 0.96);
-  border-radius: 18px;
+  border-radius: 10px;
   background: #fff;
   color: #60707a;
   cursor: pointer;
@@ -792,7 +805,7 @@ button, input, select { font: inherit; }
 .dashboard-calendar-cell:hover {
   transform: translateY(-1px);
   border-color: #bfdbfe;
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.08);
 }
 
 .dashboard-calendar-cell.is-outside {
@@ -809,16 +822,16 @@ button, input, select { font: inherit; }
   border-color: #2563EB;
   background: var(--primary);
   color: #fff;
-  box-shadow: 0 18px 32px rgba(37, 99, 235, 0.22);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.18);
 }
 
 .dashboard-calendar-date {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .dashboard-calendar-count {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   color: #35c8a6;
 }
@@ -829,31 +842,31 @@ button, input, select { font: inherit; }
 
 .dashboard-calendar-detail {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
-  margin-top: 18px;
-  padding: 16px 18px;
-  border-radius: 18px;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
   background: #f7fafb;
   border: 1px solid #e3ebef;
 }
 
 .dashboard-calendar-detail-title {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
   color: #2b3941;
 }
 
 .dashboard-calendar-detail-meta {
-  margin-top: 4px;
+  margin-top: 2px;
   color: #7f8c97;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .dashboard-calendar-detail-tags {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -861,12 +874,12 @@ button, input, select { font: inherit; }
 .dashboard-operator-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
-  padding: 6px 12px;
+  min-height: 26px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: #eff6ff;
   color: #2563EB;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -877,18 +890,18 @@ button, input, select { font: inherit; }
 
 .dashboard-month-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .dashboard-month-card {
-  min-height: 152px;
-  padding: 20px;
-  border-radius: 20px;
+  min-height: 108px;
+  padding: 14px;
+  border-radius: 12px;
   border: 1px solid rgba(222, 229, 236, 0.95);
   background: #fff;
-  box-shadow: 0 10px 28px rgba(32, 56, 85, 0.06);
+  box-shadow: 0 6px 16px rgba(32, 56, 85, 0.05);
 }
 
 .dashboard-month-card-label {
@@ -898,19 +911,19 @@ button, input, select { font: inherit; }
 }
 
 .dashboard-month-card-value {
-  margin-top: 18px;
+  margin-top: 12px;
   font-family: var(--font-mono);
-  font-size: 34px;
+  font-size: 26px;
   line-height: 1;
   font-weight: 800;
   color: #26323a;
 }
 
 .dashboard-month-card-note {
-  margin-top: 14px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 11px;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.45;
   color: #2dc9a5;
 }
 
@@ -919,6 +932,9 @@ button, input, select { font: inherit; }
 .dashboard-month-card.tone-primary .dashboard-month-card-note { color: #2563EB; }
 
 @media (max-width: 1200px) {
+  .dashboard-main-row {
+    grid-template-columns: 1fr;
+  }
   .dashboard-kanban-grid,
   .dashboard-month-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -937,12 +953,12 @@ button, input, select { font: inherit; }
   }
 
   .dashboard-calendar-grid {
-    gap: 8px;
+    gap: 6px;
   }
 
   .dashboard-calendar-cell {
-    min-height: 94px;
-    padding: 14px 8px 12px;
+    min-height: 48px;
+    padding: 6px 4px;
   }
 }
 

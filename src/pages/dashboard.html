@@ -15,35 +15,37 @@
       <section class="dashboard-redesign">
         <section class="dashboard-kanban-grid" data-dashboard-top-cards></section>
 
-        <section class="dashboard-calendar-panel panel">
-          <div class="dashboard-section-head">
-            <div>
-              <h3>推荐日历</h3>
-              <p class="panel-sub">按推荐交付节奏展示每天推荐给客户的候选人数量。</p>
+        <section class="dashboard-main-row">
+          <section class="dashboard-calendar-panel panel">
+            <div class="dashboard-section-head">
+              <div>
+                <h3>推荐日历</h3>
+                <p class="panel-sub">按天查看推荐节奏与顾问分组。</p>
+              </div>
+              <div class="dashboard-calendar-toolbar">
+                <button class="dashboard-calendar-nav" type="button" data-calendar-nav="-1" aria-label="上一个月">‹</button>
+                <div class="dashboard-calendar-month" data-calendar-month-label>--</div>
+                <button class="dashboard-calendar-nav" type="button" data-calendar-nav="1" aria-label="下一个月">›</button>
+              </div>
             </div>
-            <div class="dashboard-calendar-toolbar">
-              <button class="dashboard-calendar-nav" type="button" data-calendar-nav="-1" aria-label="上一个月">‹</button>
-              <div class="dashboard-calendar-month" data-calendar-month-label>--</div>
-              <button class="dashboard-calendar-nav" type="button" data-calendar-nav="1" aria-label="下一个月">›</button>
+            <div class="dashboard-calendar-summary" data-calendar-summary></div>
+            <div class="dashboard-calendar-board">
+              <div class="dashboard-calendar-weekdays" data-calendar-weekdays></div>
+              <div class="dashboard-calendar-grid" data-calendar-grid></div>
             </div>
-          </div>
-          <div class="dashboard-calendar-summary" data-calendar-summary></div>
-          <div class="dashboard-calendar-board">
-            <div class="dashboard-calendar-weekdays" data-calendar-weekdays></div>
-            <div class="dashboard-calendar-grid" data-calendar-grid></div>
-          </div>
-          <div class="dashboard-calendar-detail" data-calendar-detail></div>
-        </section>
+            <div class="dashboard-calendar-detail" data-calendar-detail></div>
+          </section>
 
-        <section class="dashboard-month-panel panel">
-          <div class="dashboard-section-head">
-            <div>
-              <h3>月度数据看板</h3>
-              <p class="panel-sub">围绕当前展示月份汇总推荐、面试、入职和客户反馈表现。</p>
+          <section class="dashboard-month-panel panel">
+            <div class="dashboard-section-head">
+              <div>
+                <h3>月度数据看板</h3>
+                <p class="panel-sub">汇总本月推荐、面试、入职与客户反馈。</p>
+              </div>
+              <div class="dashboard-month-caption" data-month-caption>--</div>
             </div>
-            <div class="dashboard-month-caption" data-month-caption>--</div>
-          </div>
-          <div class="dashboard-month-grid" data-dashboard-month-cards></div>
+            <div class="dashboard-month-grid" data-dashboard-month-cards></div>
+          </section>
         </section>
       </section>
     `;
