@@ -1,5 +1,13 @@
 # Findings
 
+## 2026-07-10（JD单生成岗位 — 实现计划已就绪）
+
+- **计划**：`docs/superpowers/plans/2026-07-10-jd-parse-create-position.md`（5 Tasks：API 骨架 → LLM/枚举清洗 → 小弹窗 → 预填 → 权限/冒烟/文档）。
+- **紧急程度权威值**：创建弹窗 DOM 为 `紧急`/`正常`（非列表筛选的高/中/低）；计划与实现以此为准。
+- **常量锁定**：`jd_text` 上限 20000；空文本 400；LLM 失败 502；完全不可用 422；权限同创建岗位。
+- **LLM**：新增 `call_llm_for_jd_parse`（不改简历用的 `call_llm_for_json`）；测试一律 mock，不写库。
+- **前端映射**：API 字段名与 `[data-position-*]` 一一对应；`description` 用粘贴原文；客户/项目不预填；锁定上限保持 10。
+
 ## 2026-07-10（JD单生成岗位 — 方案 A 已确认）
 
 - **目标**：粘贴 JD 文本 → AI 解析预填「创建岗位」弹窗 → 人确认后才 `POST /api/positions`；公司/项目不由 AI 推断。

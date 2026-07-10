@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-JD生成岗位设计已确认，待用户审阅 spec 后写实现计划。维护流程：**改代码 → 更新三份 MD → commit → push**。
+JD生成岗位实现计划已就绪，待用户选择执行方式（subagent-driven / inline）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
@@ -434,11 +434,11 @@ JD生成岗位设计已确认，待用户审阅 spec 后写实现计划。维护
 - [x] 展开面板卡片化；评价无文字备注时不显示「暂无评价内容」
 - **Status:** complete
 
-### Phase 28 - JD单生成岗位（设计已确认，待实现）
+### Phase 28 - JD单生成岗位（实现计划已就绪）
 
 - [x] 确认方案 A：粘贴 JD → 解析预填 → 人确认后走现有创建岗位
 - [x] 写入设计文档 `docs/superpowers/specs/2026-07-10-jd-parse-create-position-design.md`
-- [ ] 用户审阅 spec
-- [ ] 编写实现计划
+- [x] 用户审阅 spec
+- [x] 编写实现计划 `docs/superpowers/plans/2026-07-10-jd-parse-create-position.md`
 - [ ] 前后端实现与验证
-- **Status:** design confirmed, awaiting spec review
+- **Status:** plan ready, awaiting execution choice

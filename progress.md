@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-07-10（完成 - JD单生成岗位实现计划）
+
+- 按 writing-plans 写完实现计划：`docs/superpowers/plans/2026-07-10-jd-parse-create-position.md`。
+- 调研对齐：`projects.html` 创建弹窗紧急程度为「紧急/正常」；入口仍为 `noop`；LLM 在 `main.py` 的 `get_openai_client` / `call_llm_for_json`；测法参考 `tests/test_candidate_ai_search.py` mock。
+- Spec 状态改为「已确认，实现计划已就绪」；`task_plan` Current Phase 待用户选执行方式。
+- 本轮无业务实现代码。
+
 ## 2026-07-10（完成 - JD单生成岗位设计文档）
 
 - 用户确认方案 A；写入设计文档 `docs/superpowers/specs/2026-07-10-jd-parse-create-position-design.md`（Overview / Goals / Non-Goals / User Flow / UI / API / Field Mapping / Permissions / Error Handling / Out of Scope / Open Questions）。
