@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-JD生成岗位 Task 1 已完成（parse-jd 路由骨架 + mock LLM + 权限/空文本校验）。下一步 Task 2：真实 LLM 解析。维护流程：**改代码 → 更新三份 MD → commit → push**。
+JD生成岗位 Task 2 已完成（真实 LLM + normalize 枚举清洗 + 不可用 422）。下一步 Task 3（前端入口/预填，若计划有）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

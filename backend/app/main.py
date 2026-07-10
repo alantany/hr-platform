@@ -968,20 +968,9 @@ def parse_position_jd(payload: schemas.PositionJdParseRequest, user: User = Depe
         raise HTTPException(status_code=502, detail="JD 解析失败，请稍后重试")
     if not isinstance(raw, dict):
         raise HTTPException(status_code=502, detail="JD 解析失败，请稍后重试")
-    out = {
-        "name": str(raw.get("name") or "").strip(),
-        "description": jd_text,
-        "urgency": raw.get("urgency") or "正常",
-        "hiring_count": raw.get("hiring_count", 1),
-        "salary_min": raw.get("salary_min"),
-        "salary_max": raw.get("salary_max"),
-        "location": str(raw.get("location") or "").strip(),
-        "age_requirement": raw.get("age_requirement") or "不限",
-        "gender_requirement": raw.get("gender_requirement") or "不限",
-        "education_requirement": raw.get("education_requirement") or "不限",
-        "experience_requirement": raw.get("experience_requirement") or "不限",
-        "job_status_requirement": raw.get("job_status_requirement") or "不限",
-    }
+    out = normalize_jd_parse_result(raw, jd_text)
+    if out.pop("_unusable", False):
+        raise HTTPException(status_code=422, detail="未能从 JD 中解析出可用字段")
     return out
 
 
@@ -2594,10 +2583,137 @@ PROMPT_FILE_PATH = os.path.join(ROOT_DIR, "outputs", "resume_parsing_prompt.md")
 
 JD_PARSE_MAX_CHARS = 20000
 
+JD_URGENCY_VALUES = {"紧急", "正常"}
+JD_AGE_VALUES = {"不限", "20-30岁", "30-40岁"}
+JD_GENDER_VALUES = {"不限", "男", "女"}
+JD_EDU_VALUES = {"不限", "本科", "大专", "硕士"}
+JD_EXP_VALUES = {"不限", "应届生", "1-3年", "3-5年", "5年以上"}
+JD_STATUS_VALUES = {"不限", "离职", "在职"}
+
+JD_PARSE_SYSTEM_PROMPT = """你是猎头招聘助手。只从用户粘贴的 JD 文本中抽取岗位字段，严格返回 JSON 对象。
+禁止推断或输出公司名、项目名、客户 ID。
+字段与取值约束：
+- name: 岗位名称字符串，抽不到则 ""
+- urgency: 只能是 "紧急" 或 "正常"；不确定则 "正常"
+- hiring_count: 正整数；抽不到则 null
+- salary_min / salary_max: 月薪 K 的整数（如 20 表示 20K）；抽不到则 null
+- location: 工作城市/地点；抽不到则 ""
+- age_requirement: 只能是 "不限" | "20-30岁" | "30-40岁"
+- gender_requirement: 只能是 "不限" | "男" | "女"
+- education_requirement: 只能是 "不限" | "本科" | "大专" | "硕士"
+- experience_requirement: 只能是 "不限" | "应届生" | "1-3年" | "3-5年" | "5年以上"
+- job_status_requirement: 只能是 "不限" | "离职" | "在职"
+枚举对不上时用 "不限"（urgency 对不上用 "正常"）。
+不要返回 description，不要改写 JD 原文。"""
+
+
+def _coerce_optional_int(value):
+    if value is None or value == "":
+        return None
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _pick_enum(value: str, allowed: set[str], default: str, aliases: dict[str, str] | None = None) -> str:
+    text = str(value or "").strip()
+    if text in allowed:
+        return text
+    aliases = aliases or {}
+    if text in aliases and aliases[text] in allowed:
+        return aliases[text]
+    for key, mapped in aliases.items():
+        if key and key in text and mapped in allowed:
+            return mapped
+    for item in allowed:
+        if item != default and item in text:
+            return item
+    return default
+
+
+def normalize_jd_parse_result(raw: dict, jd_text: str) -> dict:
+    urgency_aliases = {
+        "高": "紧急",
+        "紧急招聘": "紧急",
+        "低": "正常",
+        "中": "正常",
+        "一般": "正常",
+        "常规": "正常",
+    }
+    age_aliases = {"20-30": "20-30岁", "30-40": "30-40岁", "30到40": "30-40岁", "20到30": "20-30岁"}
+    gender_aliases = {"男性": "男", "女性": "女", "男女不限": "不限"}
+    edu_aliases = {"本科及以上": "本科", "本科以上": "本科", "大专及以上": "大专", "硕士及以上": "硕士", "研究生": "硕士"}
+    exp_aliases = {
+        "五年以上": "5年以上",
+        "5年及以上": "5年以上",
+        "三到五年": "3-5年",
+        "1到3年": "1-3年",
+        "应届": "应届生",
+    }
+    status_aliases = {"已离职": "离职", "在职看机会": "在职"}
+
+    name = str(raw.get("name") or "").strip()
+    location = str(raw.get("location") or "").strip()
+    hiring_count = _coerce_optional_int(raw.get("hiring_count"))
+    if hiring_count is not None and hiring_count < 1:
+        hiring_count = None
+    salary_min = _coerce_optional_int(raw.get("salary_min"))
+    salary_max = _coerce_optional_int(raw.get("salary_max"))
+
+    out = {
+        "name": name,
+        "description": jd_text,
+        "urgency": _pick_enum(raw.get("urgency"), JD_URGENCY_VALUES, "正常", urgency_aliases),
+        "hiring_count": hiring_count if hiring_count is not None else 1,
+        "salary_min": salary_min,
+        "salary_max": salary_max,
+        "location": location,
+        "age_requirement": _pick_enum(raw.get("age_requirement"), JD_AGE_VALUES, "不限", age_aliases),
+        "gender_requirement": _pick_enum(raw.get("gender_requirement"), JD_GENDER_VALUES, "不限", gender_aliases),
+        "education_requirement": _pick_enum(raw.get("education_requirement"), JD_EDU_VALUES, "不限", edu_aliases),
+        "experience_requirement": _pick_enum(raw.get("experience_requirement"), JD_EXP_VALUES, "不限", exp_aliases),
+        "job_status_requirement": _pick_enum(raw.get("job_status_requirement"), JD_STATUS_VALUES, "不限", status_aliases),
+    }
+
+    has_signal = bool(name or location or salary_min is not None or salary_max is not None)
+    if hiring_count is not None and hiring_count != 1:
+        has_signal = True
+    if out["urgency"] == "紧急":
+        has_signal = True
+    if out["age_requirement"] != "不限":
+        has_signal = True
+    if out["gender_requirement"] != "不限":
+        has_signal = True
+    if out["education_requirement"] != "不限":
+        has_signal = True
+    if out["experience_requirement"] != "不限":
+        has_signal = True
+    if out["job_status_requirement"] != "不限":
+        has_signal = True
+    if not has_signal:
+        out["_unusable"] = True
+    return out
+
 
 def call_llm_for_jd_parse(jd_text: str) -> dict:
-    """Parse JD text into position fields. Task 2 replaces body with real LLM call."""
-    raise NotImplementedError("call_llm_for_jd_parse not implemented")
+    if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY in ("your_api_key_here", "replace_with_your_openrouter_key"):
+        raise ValueError("DeepSeek API Key is not configured. Please check your .env file.")
+    client = get_openai_client()
+    response = client.chat.completions.create(
+        model=DEEPSEEK_MODEL,
+        messages=[
+            {"role": "system", "content": JD_PARSE_SYSTEM_PROMPT},
+            {"role": "user", "content": f"请解析以下 JD 并严格返回 JSON：\n\n{jd_text}"},
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.1,
+    )
+    raw_response = response.choices[0].message.content or ""
+    parsed = json.loads(_strip_json_fence(raw_response))
+    if not isinstance(parsed, dict):
+        raise ValueError("LLM did not return a JSON object")
+    return parsed
 
 
 def get_system_prompt() -> str:

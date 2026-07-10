@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-07-10（完成 - Task 2 LLM prompt + 枚举清洗）
+
+- 实现 `call_llm_for_jd_parse`（DeepSeek JSON）与 `normalize_jd_parse_result`（枚举别名/类型清洗/`_unusable`）。
+- 路由：normalize 后若不可用返回 422「未能从 JD 中解析出可用字段」；`_unusable` 在返回前 pop。
+- 测试：`tests/test_position_parse_jd.py` 8 项通过（含 normalize 单测、422、空 name 但有信号 200）；HTTP 仍 mock LLM。
+- 注：计划用例写「高→正常」，与别名表「高→紧急」冲突，断言已按别名表改为「紧急」。
+
 ## 2026-07-10（完成 - Task 1 Schema + parse-jd 路由骨架）
 
 - 新增 `POST /api/positions/parse-jd`：组长/管理员可调；空文本 400；LLM 异常 502；`call_llm_for_jd_parse` 仍为 stub（Task 2 接真 LLM）。

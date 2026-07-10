@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（JD parse-jd Task 2 — LLM + normalize）
+
+- `normalize_jd_parse_result`：枚举别名映射 + int 清洗；`hiring_count` 缺省为 1，但 `_unusable` 信号用清洗前的 `hiring_count`（仅非 1 才算信号）。
+- 无 name/location/薪资且其余枚举全默认 → `_unusable`；路由 pop 后 422。
+- urgency 别名「高」→「紧急」（与计划测试草稿「高→正常」不一致，以别名表为准）。
+
 ## 2026-07-10（JD parse-jd Task 1 — 路由骨架）
 
 - `POST /api/positions/parse-jd` 已落地：权限同创建岗位（组长/管理员）；空/空白文本 400「请先粘贴 JD」；超长 20000 字 400；LLM 异常或非 dict 502。
