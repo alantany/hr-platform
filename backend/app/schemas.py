@@ -225,6 +225,25 @@ class PositionUpdate(BaseModel):
     owner_user_id: int | None = None
 
 
+class PositionJdParseRequest(BaseModel):
+    jd_text: str
+
+
+class PositionJdParseOut(BaseModel):
+    name: str = ""
+    description: str = ""
+    urgency: str = "正常"
+    hiring_count: int | None = 1
+    salary_min: int | None = None
+    salary_max: int | None = None
+    location: str = ""
+    age_requirement: str = "不限"
+    gender_requirement: str = "不限"
+    education_requirement: str = "不限"
+    experience_requirement: str = "不限"
+    job_status_requirement: str = "不限"
+
+
 class PositionAssignPayload(BaseModel):
     user_ids: list[int]
 

@@ -951,6 +951,40 @@ def add_position(payload: schemas.PositionCreate, db: Session = Depends(get_db),
     return obj
 
 
+@app.post("/api/positions/parse-jd", response_model=schemas.PositionJdParseOut)
+def parse_position_jd(payload: schemas.PositionJdParseRequest, user: User = Depends(require_user)):
+    if not security.is_admin(user) and not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长及系统管理员有权解析 JD 生成岗位")
+    jd_text = (payload.jd_text or "").strip()
+    if not jd_text:
+        raise HTTPException(status_code=400, detail="请先粘贴 JD")
+    if len(jd_text) > JD_PARSE_MAX_CHARS:
+        raise HTTPException(status_code=400, detail=f"JD 文本过长，请控制在 {JD_PARSE_MAX_CHARS} 字以内")
+    try:
+        raw = call_llm_for_jd_parse(jd_text)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="JD 解析失败，请稍后重试")
+    if not isinstance(raw, dict):
+        raise HTTPException(status_code=502, detail="JD 解析失败，请稍后重试")
+    out = {
+        "name": str(raw.get("name") or "").strip(),
+        "description": jd_text,
+        "urgency": raw.get("urgency") or "正常",
+        "hiring_count": raw.get("hiring_count", 1),
+        "salary_min": raw.get("salary_min"),
+        "salary_max": raw.get("salary_max"),
+        "location": str(raw.get("location") or "").strip(),
+        "age_requirement": raw.get("age_requirement") or "不限",
+        "gender_requirement": raw.get("gender_requirement") or "不限",
+        "education_requirement": raw.get("education_requirement") or "不限",
+        "experience_requirement": raw.get("experience_requirement") or "不限",
+        "job_status_requirement": raw.get("job_status_requirement") or "不限",
+    }
+    return out
+
+
 @app.patch("/api/positions/{position_id}", response_model=schemas.PositionOut)
 def edit_position(position_id: int, payload: schemas.PositionUpdate, db: Session = Depends(get_db), user: User = Depends(require_user)):
     obj = db.get(Position, position_id)
@@ -2557,6 +2591,14 @@ def get_openai_client() -> OpenAI:
     )
 
 PROMPT_FILE_PATH = os.path.join(ROOT_DIR, "outputs", "resume_parsing_prompt.md")
+
+JD_PARSE_MAX_CHARS = 20000
+
+
+def call_llm_for_jd_parse(jd_text: str) -> dict:
+    """Parse JD text into position fields. Task 2 replaces body with real LLM call."""
+    raise NotImplementedError("call_llm_for_jd_parse not implemented")
+
 
 def get_system_prompt() -> str:
     if os.path.exists(PROMPT_FILE_PATH):

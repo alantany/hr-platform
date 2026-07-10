@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-JD生成岗位实现计划已就绪，待用户选择执行方式（subagent-driven / inline）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+JD生成岗位 Task 1 已完成（parse-jd 路由骨架 + mock LLM + 权限/空文本校验）。下一步 Task 2：真实 LLM 解析。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
