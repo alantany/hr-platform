@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>求职者数据池</title>
-  <link rel="stylesheet" href="../../styles.css?v=1" />
+  <link rel="stylesheet" href="../../styles.css?v=20260710-metric-tones" />
   <style>
     .province-item, .city-item, .search-result-item {
       padding: 8px 12px;
@@ -33,17 +33,17 @@
   <script>
     window.__PAGE_BODY__ = `
       <section class="metrics" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-        <div class="metric-card" onclick="filterCandidatesByExclude('', false)" style="cursor: pointer;">
+        <div class="metric-card tone-primary" onclick="filterCandidatesByExclude('', false)" style="cursor: pointer;">
           <div class="metric-top"><div><div class="section-sub">候选人总数</div></div><div class="metric-icon">○</div></div>
           <div class="metric-value" data-candidate-total>0</div>
           <div class="metric-label">覆盖全部简历资源</div>
         </div>
-        <div class="metric-card" onclick="filterCandidatesByExclude('', true)" style="cursor: pointer;">
+        <div class="metric-card tone-success" onclick="filterCandidatesByExclude('', true)" style="cursor: pointer;">
           <div class="metric-top"><div><div class="section-sub">今日新增</div></div><div class="metric-icon">△</div></div>
           <div class="metric-value" data-candidate-new>0</div>
           <div class="metric-label">比昨日增加 3.2%</div>
         </div>
-        <div class="metric-card" onclick="filterCandidatesByExclude('locked', false)" style="cursor: pointer;">
+        <div class="metric-card tone-warning" onclick="filterCandidatesByExclude('locked', false)" style="cursor: pointer;">
           <div class="metric-top"><div><div class="section-sub">已锁定候选人</div></div><div class="metric-icon">◌</div></div>
           <div class="metric-value" data-candidate-locked>0</div>
           <div class="metric-label">当前被项目占用</div>

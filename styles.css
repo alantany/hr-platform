@@ -294,6 +294,8 @@ button, input, select { font: inherit; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; margin-bottom: 14px; }
 .metric-card {
+  position: relative;
+  overflow: hidden;
   padding: 13px;
   display: block;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -302,6 +304,27 @@ button, input, select { font: inherit; }
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
+.metric-card.tone-primary::before,
+.metric-card.tone-success::before,
+.metric-card.tone-warning::before,
+.metric-card.tone-danger::before,
+.metric-card.tone-neutral::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 12px 0 0 12px;
+}
+.metric-card.tone-primary::before { background: #2563eb; }
+.metric-card.tone-success::before { background: #20b58f; }
+.metric-card.tone-warning::before { background: #ff9c43; }
+.metric-card.tone-danger::before { background: #ff5d8f; }
+.metric-card.tone-neutral::before { background: #64748b; }
+.metric-card.tone-primary .metric-value { color: #2563eb !important; }
+.metric-card.tone-success .metric-value { color: #0f9f78 !important; }
+.metric-card.tone-warning .metric-value { color: #e67e22 !important; }
+.metric-card.tone-danger .metric-value { color: #e11d48 !important; }
+.metric-card.tone-neutral .metric-value { color: #475569 !important; }
 .metric-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .metric-icon {
   width: 32px; height: 32px; border-radius: 10px;
