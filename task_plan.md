@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-用户自助修改密码。维护流程：**改代码 → 更新三份 MD → commit → push**。
+项目列表「岗位数」可点击跳转岗位 Tab 并按项目/公司过滤。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

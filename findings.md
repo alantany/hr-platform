@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-07-10（项目列表岗位数跳转）
+
+- 「岗位列表」不是独立主入口页，而是 `projects.html` 内的 `position-tab` 子页签（与客户列表数量跳转约定一致）。
+- 跳转约定：`projects.html?project_id=&company_id=&tab=position`；进入后写入 `positionFilters.projectId` / `companyId`，并同步岗位搜索下拉。
+- 仅有 `project_id` 时：从项目数据推导 `company_id`；`tab` 缺省为 `position`。
+- SPA：`loadPage` 须在跑页面脚本前 `pushState` 写入含 query 的 URL，否则 `URLSearchParams(location.search)` 读不到过滤参数。
+
 ## 2026-07-10（用户自助修改密码）
 
 - 管理员重置密码：`POST /api/users/{id}/reset-password`（`require_admin_user`）保持不变，不对普通用户开放。

@@ -342,7 +342,7 @@ const renderProjectListMarkup = (projects = [], tagConfigs = []) => {
           <div style="text-align: center;">${levelBadge}</div>
           <div style="color: #475569; font-size: 13px; text-align: center;">${project.hiring_count || 0}人</div>
           <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project.work_location || '')}">${escapeHtml(project.work_location || '--')}</div>
-          <div style="color: #475569; font-size: 13px; text-align: center;">${project.position_count || 0}</div>
+          <div style="text-align: center;"><a href="./projects.html?project_id=${encodeURIComponent(project.id)}&company_id=${encodeURIComponent(project.company_id || '')}&tab=position" style="color: #2563EB; font-size: 13px; font-weight: 600; text-decoration: none;">${project.position_count || 0}</a></div>
           <div style="color: #475569; font-size: 13px;">${formatDate(project.created_at)}</div>
           <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end;">
             <button class="btn-sm" data-action="noop" data-title="项目岗位列表" onclick="const tab = document.querySelector('[data-subtab=position-tab]'); if(tab){tab.click(); const select = document.querySelector('#search-position-project'); if(select){select.value='${project.id}'; document.querySelector('#btn-position-search').click();}}">岗位</button>
@@ -5430,16 +5430,18 @@ function runSpaPageScripts(scripts) {
 async function loadPage(url, push = true) {
   try {
     const pageName = normalizePageName(url);
-    if (pageName.includes("login.html")) {
-      location.href = `./${pageName}`;
+    const pathOnly = pageName.split("?")[0] || pageName;
+    const search = pageName.includes("?") ? `?${pageName.split("?").slice(1).join("?")}` : "";
+    if (pathOnly.includes("login.html")) {
+      location.href = `./${pathOnly}${search}`;
       return;
     }
     if (!document.querySelector(".sidebar") || !document.querySelector(".content")) {
-      location.href = `./${pageName}`;
+      location.href = `./${pathOnly}${search}`;
       return;
     }
 
-    const res = await fetch(`./${pageName}`);
+    const res = await fetch(`./${pathOnly}`);
     if (!res.ok) throw new Error(`加载页面失败: ${res.status}`);
     const htmlText = await res.text();
     const { bodyHtml, scripts } = extractPageBodyFromHtml(htmlText);
@@ -5447,22 +5449,25 @@ async function loadPage(url, push = true) {
       throw new Error("页面无可渲染内容");
     }
 
+    // 先写入 URL（含 query），再跑页面脚本，确保 URLSearchParams 能读到过滤参数
+    if (push) {
+      history.pushState(null, "", `./${pathOnly}${search}`);
+    }
+
     window.__PAGE_BODY__ = bodyHtml || window.__PAGE_BODY__ || "";
     // 页面脚本会设置 __PAGE_BODY__，并在 DOMContentLoaded 中调用 renderApp
     runSpaPageScripts(scripts);
     // 兜底：若脚本未触发 render，再渲染一次右侧内容
     await render();
-    syncActiveNav(pageName);
+    syncActiveNav(pathOnly);
 
-    if (push) {
-      history.pushState(null, "", `./${pageName}`);
-    }
     const content = document.querySelector(".content");
     if (content) content.scrollTop = 0;
     window.scrollTo(0, 0);
   } catch (err) {
     console.error("SPA路由加载失败，降级整页跳转:", err);
-    location.href = `./${normalizePageName(url)}`;
+    const fallback = normalizePageName(url);
+    location.href = `./${fallback}`;
   }
 }
 

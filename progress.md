@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-10（完成 - 项目列表岗位数可跳转）
+
+- 项目列表「岗位数」改为可点击链接（含 0），跳转 `projects.html?project_id=&company_id=&tab=position`。
+- `projects.html` 读取 `project_id`（及公司）后切到岗位 Tab 并过滤；无 `company_id` 时从项目推导。
+- 顺带修复 `loadPage`：先写入带 query 的 URL 再执行页面脚本，保证 SPA 跳转也能应用过滤。
+
 ## 2026-07-10（完成 - 用户自助修改密码）
 
 - 后端：`ChangePasswordRequest` + `POST /api/me/change-password`（校验当前密码、更新 hash、写审计）。

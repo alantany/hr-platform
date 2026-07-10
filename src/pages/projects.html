@@ -573,19 +573,29 @@ window.addEventListener('DOMContentLoaded', async () => {
       createPosCompany.addEventListener('change', (e) => fillCreatePosProjects(e.target.value));
     }
 
-    // URL ?company_id=&tab= 进入时按客户过滤，并可切到岗位列表
+    // URL ?company_id=&project_id=&tab= 进入时按客户/项目过滤，并可切到岗位列表
     const urlParams = new URLSearchParams(window.location.search);
-    const urlCompanyId = urlParams.get('company_id') || '';
-    const urlTab = (urlParams.get('tab') || 'project').toLowerCase();
-    if (urlCompanyId) {
+    const urlProjectId = urlParams.get('project_id') || '';
+    const urlProject = urlProjectId
+      ? projects.find((p) => String(p.id) === String(urlProjectId))
+      : null;
+    const urlCompanyId = urlParams.get('company_id') || (urlProject ? String(urlProject.company_id) : '');
+    const urlTab = (urlParams.get('tab') || (urlProjectId ? 'position' : 'project')).toLowerCase();
+    if (urlCompanyId || urlProjectId) {
       window.projectFilters = window.projectFilters || { name: '', companyId: '', status: '', level: '', onlyMine: false };
-      window.projectFilters.companyId = urlCompanyId;
       window.positionFilters = window.positionFilters || { name: '', companyId: '', projectId: '', urgency: '', salaryRange: '' };
-      window.positionFilters.companyId = urlCompanyId;
-      if (searchProjComp) searchProjComp.value = urlCompanyId;
-      if (searchPosComp) {
-        searchPosComp.value = urlCompanyId;
-        updateSearchPosProjectOptions(urlCompanyId);
+      if (urlCompanyId) {
+        window.projectFilters.companyId = urlCompanyId;
+        window.positionFilters.companyId = urlCompanyId;
+        if (searchProjComp) searchProjComp.value = urlCompanyId;
+        if (searchPosComp) {
+          searchPosComp.value = urlCompanyId;
+          updateSearchPosProjectOptions(urlCompanyId);
+        }
+      }
+      if (urlProjectId) {
+        window.positionFilters.projectId = urlProjectId;
+        if (searchPosProject) searchPosProject.value = urlProjectId;
       }
     }
 
