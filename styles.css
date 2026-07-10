@@ -2688,10 +2688,34 @@ input[type="radio"],
   display: flex !important;
   flex-direction: column !important;
   justify-content: flex-start !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  position: sticky !important;
+  top: 0 !important;
+}
+
+.sidebar-nav-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.7) transparent;
+}
+
+.sidebar-nav-list::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-nav-list::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
 }
 
 .sidebar-footer {
-  margin-top: 24px !important;
+  margin-top: auto !important;
+  flex: 0 0 auto !important;
   padding-top: 16px !important;
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
   display: flex !important;

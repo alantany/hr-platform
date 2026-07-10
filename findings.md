@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（左侧导航 SPA 与滚动）
+
+- 多数业务页 HTML 只有 `#app` + `__PAGE_BODY__`，没有预渲染 `.content`；旧 `loadPage` 找不到 `.content` 就 `location.href` 整页跳转。
+- 正确路径：fetch 页面 → 解析 `__PAGE_BODY__` → 执行内联脚本（mock `DOMContentLoaded`）→ `render()` 只换右侧 → 侧栏保留。
+- 侧栏：`.sidebar-nav-list` 独立 `overflow-y:auto`；激活项 `scrollIntoView({block:'nearest'})`，靠下菜单点击后仍可见。
+
 ## 2026-07-10（全站看板数字配色范围）
 
 - 看板类醒目数字统一 tone：蓝 primary / 绿 success / 橙 warning / 红 danger / 灰 neutral。

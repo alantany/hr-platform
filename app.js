@@ -841,8 +841,14 @@ async function render() {
     el.querySelectorAll(".nav-item").forEach((item) => {
       const itemHref = item.getAttribute("href").split("/").pop() || "";
       const baseHref = itemHref.split("?")[0];
-      item.classList.toggle("active", baseHref === page);
+      item.classList.toggle("active", baseHref === page || itemHref === page);
     });
+    const activeNav = el.querySelector(".nav-item.active");
+    if (activeNav) {
+      requestAnimationFrame(() => {
+        activeNav.scrollIntoView({ block: "nearest", inline: "nearest" });
+      });
+    }
   } else {
     el.innerHTML = shell(key, window.__PAGE_BODY__ || "", currentUser, unreadCount);
   }
@@ -5295,114 +5301,142 @@ document.addEventListener("change", async (event) => {
 });
 
 // ----------------------------------------------------
-// 局部加载/SPA 单页路由控制
+// 局部加载/SPA 单页路由控制（左侧导航不整页刷新）
 // ----------------------------------------------------
+function normalizePageName(url) {
+  const raw = String(url || "").split("/").pop() || "dashboard.html";
+  return raw.split("#")[0] || "dashboard.html";
+}
+
+function syncActiveNav(pageName) {
+  const basePage = pageName.split("?")[0];
+  let activeItem = null;
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    const itemHref = (item.getAttribute("href") || "").split("/").pop() || "";
+    const itemBase = itemHref.split("?")[0];
+    const isActive = itemHref === pageName || itemBase === basePage;
+    item.classList.toggle("active", isActive);
+    if (isActive) activeItem = item;
+  });
+  if (activeItem) {
+    requestAnimationFrame(() => {
+      activeItem.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+    });
+  }
+}
+
+function extractPageBodyFromHtml(htmlText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlText, "text/html");
+  const readyContent = doc.querySelector(".content");
+  if (readyContent) return { bodyHtml: readyContent.innerHTML, scripts: [] };
+
+  let pageBody = "";
+  const inlineScripts = [];
+  doc.querySelectorAll("script").forEach((script) => {
+    if (script.src) return;
+    const code = script.textContent || "";
+    inlineScripts.push(code);
+    const match = code.match(/window\.__PAGE_BODY__\s*=\s*([`'"])([\s\S]*?)\1\s*;?/);
+    if (match) pageBody = match[2];
+  });
+  return { bodyHtml: pageBody, scripts: inlineScripts };
+}
+
+function runSpaPageScripts(scripts) {
+  scripts.forEach((code) => {
+    if (!String(code || "").trim()) return;
+    const wrappedCode = `
+      (function() {
+        const originalWindowAddEventListener = window.addEventListener;
+        const originalDocumentAddEventListener = document.addEventListener;
+        const fireDomReady = function(cb) {
+          try {
+            Promise.resolve(cb()).catch(function(e) {
+              console.error("DOMContentLoaded Mock 执行异常:", e);
+            });
+          } catch (e) {
+            console.error("DOMContentLoaded Mock 执行异常:", e);
+          }
+        };
+        window.addEventListener = function(event, cb, opts) {
+          if (event === 'DOMContentLoaded') return fireDomReady(cb);
+          return originalWindowAddEventListener.call(window, event, cb, opts);
+        };
+        document.addEventListener = function(event, cb, opts) {
+          if (event === 'DOMContentLoaded') return fireDomReady(cb);
+          return originalDocumentAddEventListener.call(document, event, cb, opts);
+        };
+        try {
+          ${code}
+        } catch (err) {
+          console.error("SPA页面脚本内部执行失败:", err);
+        } finally {
+          window.addEventListener = originalWindowAddEventListener;
+          document.addEventListener = originalDocumentAddEventListener;
+        }
+      })();
+    `;
+    const newScript = document.createElement("script");
+    newScript.textContent = wrappedCode;
+    document.body.appendChild(newScript);
+    newScript.remove();
+  });
+}
+
 async function loadPage(url, push = true) {
   try {
-    const pageName = url.split("/").pop() || "dashboard.html";
+    const pageName = normalizePageName(url);
     if (pageName.includes("login.html")) {
       location.href = `./${pageName}`;
       return;
     }
-    
-    const res = await fetch(`./${pageName}`);
-    if (!res.ok) throw new Error(`加载页面失败: ${res.status}`);
-    const htmlText = await res.text();
-    
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, "text/html");
-    
-    const newContent = doc.querySelector(".content");
-    const currentContent = document.querySelector(".content");
-    if (!newContent || !currentContent) {
+    if (!document.querySelector(".sidebar") || !document.querySelector(".content")) {
       location.href = `./${pageName}`;
       return;
     }
-    
-    currentContent.innerHTML = newContent.innerHTML;
-    
+
+    const res = await fetch(`./${pageName}`);
+    if (!res.ok) throw new Error(`加载页面失败: ${res.status}`);
+    const htmlText = await res.text();
+    const { bodyHtml, scripts } = extractPageBodyFromHtml(htmlText);
+    if (!bodyHtml && !scripts.length) {
+      throw new Error("页面无可渲染内容");
+    }
+
+    window.__PAGE_BODY__ = bodyHtml || window.__PAGE_BODY__ || "";
+    // 页面脚本会设置 __PAGE_BODY__，并在 DOMContentLoaded 中调用 renderApp
+    runSpaPageScripts(scripts);
+    // 兜底：若脚本未触发 render，再渲染一次右侧内容
+    await render();
+    syncActiveNav(pageName);
+
     if (push) {
       history.pushState(null, "", `./${pageName}`);
     }
-    
-    document.querySelectorAll(".nav-item").forEach((item) => {
-      const itemHref = item.getAttribute("href").split("/").pop() || "";
-      item.classList.toggle("active", itemHref === pageName);
-    });
-
-    doc.querySelectorAll("script").forEach((script) => {
-      if (script.src) return;
-      
-      const wrappedCode = `
-        (function() {
-          const originalAddEventListener = window.addEventListener;
-          const originalDocumentAddEventListener = document.addEventListener;
-          
-          const mockAddEventListener = function(event, cb, opts) {
-            if (event === 'DOMContentLoaded') {
-              try { cb(); } catch(e) { console.error("DOMContentLoaded Mock 执行异常:", e); }
-            } else {
-              originalAddEventListener.call(window, event, cb, opts);
-            }
-          };
-          
-          const mockDocumentAddEventListener = function(event, cb, opts) {
-            if (event === 'DOMContentLoaded') {
-              try { cb(); } catch(e) { console.error("DOMContentLoaded Document Mock 执行异常:", e); }
-            } else {
-              originalDocumentAddEventListener.call(document, event, cb, opts);
-            }
-          };
-          
-          const addEventListener = mockAddEventListener;
-          const windowMock = { addEventListener: mockAddEventListener };
-          document.addEventListener = mockDocumentAddEventListener;
-          const renderApp = window.renderApp;
-          
-          try {
-            ${script.textContent}
-          } catch(err) {
-            console.error("SPA页面脚本内部执行失败:", err);
-          } finally {
-            document.addEventListener = originalDocumentAddEventListener;
-          }
-        })();
-      `;
-      
-      const newScript = document.createElement("script");
-      newScript.textContent = wrappedCode;
-      document.body.appendChild(newScript);
-      newScript.remove();
-    });
-    
-    if (typeof bindActionButtons === "function") {
-      bindActionButtons();
-    }
-    
+    const content = document.querySelector(".content");
+    if (content) content.scrollTop = 0;
     window.scrollTo(0, 0);
   } catch (err) {
     console.error("SPA路由加载失败，降级整页跳转:", err);
-    location.href = `./${url.split("/").pop()}`;
+    location.href = `./${normalizePageName(url)}`;
   }
 }
 
 document.addEventListener("click", (event) => {
   const a = event.target.closest("a");
-  if (a) {
-    const href = a.getAttribute("href");
-    if (href && !href.startsWith("http") && !href.startsWith("javascript:") && href.endsWith(".html") && a.target !== "_blank") {
-      if (href.includes("login.html") || location.pathname.includes("login.html")) {
-        return;
-      }
-      event.preventDefault();
-      loadPage(href);
-    }
-  }
+  if (!a) return;
+  const href = a.getAttribute("href");
+  if (!href || href.startsWith("http") || href.startsWith("javascript:") || a.target === "_blank") return;
+  if (!/\.html(\?|#|$)/.test(href)) return;
+  if (href.includes("login.html") || location.pathname.includes("login.html")) return;
+  event.preventDefault();
+  loadPage(href);
 });
 
 window.addEventListener("popstate", () => {
   const page = location.pathname.split("/").pop() || "dashboard.html";
-  loadPage(page, false);
+  loadPage(`${page}${location.search || ""}`, false);
 });
 
 // 城市二级联动及搜索数据字典（全国31个省、直辖市、自治区）
