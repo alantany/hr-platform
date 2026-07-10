@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-10（简历池标签仅超管可见）
+
+- **原因**：`GET /api/tags` 调用了 `require_admin`，组长/操作员拉不到字段标签配置，`hrTagSystem.extractTags` 结果为空。
+- **修复**：标签配置改为登录用户可读；`POST/PATCH/DELETE /api/tags` 仍仅管理员。标签字典管理页入口权限不变。
+
 ## 2026-07-10（猜你想搜与搜索框匹配一致）
 
 - **原差异**：搜索框走 `matchesSearchKeywords`（岗位 L1/L2、短词边界）；热词仅用全文 `includes`，会误命中经历里的子串且不区分期望岗位优先。

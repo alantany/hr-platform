@@ -2133,7 +2133,7 @@ def delete_evaluation_level(level_id: int, db: Session = Depends(get_db), user: 
 
 @app.get("/api/tags", response_model=list[schemas.TagOut])
 def get_tags(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    security.require_admin(user)
+    # 标签展示配置需全角色可读（简历池/岗位候选人列表渲染依赖）；增删改仍仅管理员
     return crud.list_tags(db)
 
 
