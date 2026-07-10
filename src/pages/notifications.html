@@ -216,12 +216,8 @@
     document.addEventListener('click', async (event) => {
       const btn = event.target.closest('[data-action]');
       if (!btn) return;
-      if (btn.dataset.action === 'toggle-task-panel') {
-        const panel = btn.closest('[data-collapsible-panel]');
-        const collapsed = !panel?.classList.contains('is-collapsed');
-        setPanelCollapsed(panel, collapsed);
-        return;
-      }
+      // toggle-task-panel 由 app.js handleGlobalButton 统一处理，避免捕获阶段 + 页内各切一次互相抵消
+      if (btn.dataset.action === 'toggle-task-panel') return;
       if (btn.dataset.action === 'refresh-notifications') {
         await loadNotifications().catch((err) => console.warn(err));
         showToast('通知已刷新');

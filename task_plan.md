@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-JD parse：DeepSeek Key 已可用；修复「改 .env 不重载」导致的假 502。维护流程：**改代码 → 更新三份 MD → commit → push**。
+任务看板折叠箭头 noop Toast 已修。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

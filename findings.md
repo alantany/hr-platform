@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-07-10（任务看板折叠箭头 → noop Toast）
+
+- 根因：`notifications.html` 折叠按钮用 `data-action="toggle-task-panel"`，被 `app.js` 捕获阶段全局点击 → `handleGlobalButton`；该 action 未登记，落到底部「已点击：…」Toast。
+- `shouldShowButtonBusy` 对 `toggle-*` 会套 busy，文案变成「处理中...」，故 Toast 常显示「已点击：处理中」。
+- 约定：折叠用专用 action，在 `handleGlobalButton` 内处理并 `return`；排除 busy；页内勿再切一次（否则捕获 + 冒泡双重 toggle 互相抵消）。
+- `?tab=position-tasks` 自动展开仍由页内 `DOMContentLoaded` / SPA mock 逻辑负责。
+
 ## 2026-07-10（改 .env 后 LLM 仍用旧 Key）
 
 - uvicorn `--reload` 只监视代码文件，**不会**因 `.env` 变更自动重载环境变量。

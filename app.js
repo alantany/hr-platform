@@ -963,6 +963,7 @@ function shouldShowButtonBusy(button) {
   const action = button?.dataset?.action || "";
   if (!action || button?.dataset?.busy === "true") return false;
   if (action === "toggle-customer-project-preview") return false;
+  if (action === "toggle-task-panel") return false;
   if (["logout", "refresh-page"].includes(action)) return false;
   if (action.startsWith("close-") || action.startsWith("nav-")) return false;
   return Boolean(
@@ -1322,6 +1323,20 @@ async function handleGlobalButton(button) {
     "confirm-position-edit",
     "delete-position",
   ].includes(button.dataset.action || "")) {
+    return;
+  }
+  // 任务看板折叠：专用 action，勿落入底部 noop Toast
+  if (button.dataset.action === "toggle-task-panel") {
+    const panel = button.closest("[data-collapsible-panel]");
+    if (!panel) return;
+    const body = panel.querySelector(".task-board-panel-body");
+    const icon = panel.querySelector(".task-board-toggle-icon");
+    const collapsed = !panel.classList.contains("is-collapsed");
+    panel.classList.toggle("is-collapsed", collapsed);
+    panel.classList.toggle("is-expanded", !collapsed);
+    if (body) body.hidden = collapsed;
+    button.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    if (icon) icon.textContent = collapsed ? "▸" : "▾";
     return;
   }
   if (button.dataset.action === "logout") {

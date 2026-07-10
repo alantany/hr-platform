@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-07-10（完成 - 任务看板折叠箭头 noop Toast）
+
+- 现象：点「岗位分配待办 / 通知列表」折叠箭头不展开，只 Toast「已点击：处理中」类消息。
+- 修复：`app.js` 的 `handleGlobalButton` 处理 `toggle-task-panel`；`shouldShowButtonBusy` 排除该 action；页内去掉重复 toggle，避免双重切换。
+- 验证：读代码确认点击路径不再落入 noop Toast；`?tab=position-tasks` 自动展开逻辑保留。
+- 未提交：`exports/`、`~$*.docx`。
+
 ## 2026-07-10（完成 - DeepSeek Key 改后仍 502：进程未重载 .env）
 
 - 用户已换成官方 `sk-...` Key，磁盘 `.env` 正确；实测新 Key 可调通 DeepSeek。
