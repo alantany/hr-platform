@@ -195,18 +195,24 @@
     function renderRolesTable() {
       const body = document.querySelector('[data-role-table-body]');
       if (!body) return;
-      body.innerHTML = rolePageState.roles.map((role) => `
+      body.innerHTML = rolePageState.roles.map((role) => {
+        const count = getUserCount(role);
+        const countHtml = count > 0
+          ? `<a href="./users.html?role=${encodeURIComponent(role.name)}" style="color:#2563EB;font-weight:600;text-decoration:none;">${count}</a>`
+          : '0';
+        return `
         <div class="admin-table-row admin-role-grid">
           <div class="admin-row-strong">${escapeHtml(role.name)}</div>
           <div><span class="admin-pill ${getRoleTone(role.code, role.name)}">${escapeHtml(role.code)}</span></div>
-          <div>${getUserCount(role)}</div>
+          <div>${countHtml}</div>
           <div>${escapeHtml(getPermissionSummary(role))}</div>
           <div>${escapeHtml(formatDateTime(getRoleCreatedAt(role)))}</div>
           <div class="admin-inline-actions">
             <button type="button" class="admin-text-link" data-role-page-edit="${role.id}">编辑与授权</button>
           </div>
         </div>
-      `).join('') || '<div class="admin-empty-state">暂无角色记录。</div>';
+      `;
+      }).join('') || '<div class="admin-empty-state">暂无角色记录。</div>';
     }
 
     async function loadRolePageData() {
