@@ -516,6 +516,10 @@ class RecommendationCreate(BaseModel):
 
 class RecommendationOut(RecommendationCreate):
     id: int
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecommendationBatchCreate(BaseModel):

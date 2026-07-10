@@ -130,24 +130,40 @@
       });
     }
 
+    function getEmploymentMonthDate(row) {
+      return parseDateValue(row.onboard_date) || parseDateValue(row.created_at);
+    }
+
     function getMonthlyMetrics(monthDate) {
-      const monthlyRecommendations = getMonthRows(dashboardState.recommendations, 'created_at', monthDate);
-      const monthlyDeliveries = getMonthRows(dashboardState.deliveries, 'delivered_at', monthDate);
-      const monthlyInterviews = getMonthRows(dashboardState.interviews, 'created_at', monthDate);
-      const monthlyEmployments = getMonthRows(
-        dashboardState.employments,
-        'created_at',
+      // 面试：当前状态为安排面试/面试中，且进入该状态时间（updated_at）在本月
+      const monthlyInterviews = getMonthRows(
+        dashboardState.recommendations,
+        'updated_at',
         monthDate,
-        (row) => row.status === '已入职'
+        (row) => ['安排面试', '面试中'].includes(row.status)
       );
+      // 推荐：当前状态为已推荐，且 updated_at 在本月
+      const monthlyRecommended = getMonthRows(
+        dashboardState.recommendations,
+        'updated_at',
+        monthDate,
+        (row) => row.status === '已推荐'
+      );
+      const monthlyDeliveries = getMonthRows(dashboardState.deliveries, 'delivered_at', monthDate);
+      // 入职：已入职记录，优先按 onboard_date，无则回退 created_at
+      const monthlyEmployments = (dashboardState.employments || []).filter((row) => {
+        if (row.status !== '已入职') return false;
+        const date = getEmploymentMonthDate(row);
+        return date && sameMonth(date, monthDate);
+      });
       const monthlyPositions = getMonthRows(dashboardState.positions, 'created_at', monthDate);
       const monthlyCalendarEvents = getCalendarEvents().filter((row) => sameMonth(row.date, monthDate));
       const activeProjects = dashboardState.projects.filter((row) => row.status !== '招聘完毕').length;
       const activeOperators = new Set(monthlyCalendarEvents.map((row) => row.operator || '未署名顾问')).size;
       return {
-        monthlyRecommendations,
-        monthlyDeliveries,
         monthlyInterviews,
+        monthlyRecommended,
+        monthlyDeliveries,
         monthlyEmployments,
         monthlyPositions,
         monthlyCalendarEvents,
@@ -312,23 +328,29 @@
       const metrics = getMonthlyMetrics(monthDate);
       const container = document.querySelector('[data-dashboard-month-cards]');
       if (!container) return;
+      const interviewArrangeCount = metrics.monthlyInterviews.filter((row) => row.status === '安排面试').length;
+      const interviewOngoingCount = metrics.monthlyInterviews.filter((row) => row.status === '面试中').length;
       const cards = [
         {
           title: '本月面试数量',
           value: metrics.monthlyInterviews.length,
-          note: `安排面试状态 ${metrics.monthlyRecommendations.filter((row) => row.status === '安排面试').length} 条`,
+          note: metrics.monthlyInterviews.length
+            ? `安排面试 ${interviewArrangeCount} · 面试中 ${interviewOngoingCount}`
+            : '本月暂无安排面试/面试中',
           tone: 'primary',
         },
         {
           title: '本月推荐数量',
-          value: metrics.monthlyRecommendations.length || metrics.monthlyCalendarEvents.length,
-          note: metrics.monthlyDeliveries.length ? `已形成 ${metrics.monthlyDeliveries.length} 条交付记录` : '本月暂未形成交付记录',
+          value: metrics.monthlyRecommended.length,
+          note: metrics.monthlyRecommended.length
+            ? `当前状态为已推荐 ${metrics.monthlyRecommended.length} 条`
+            : '本月暂无已推荐记录',
           tone: 'success',
         },
         {
           title: '本月入职数量',
           value: metrics.monthlyEmployments.length,
-          note: metrics.monthlyEmployments.length ? '已入职记录已纳入统计' : '本月暂无入职转化',
+          note: metrics.monthlyEmployments.length ? '按入职日期统计已入职' : '本月暂无入职转化',
           tone: 'warning',
         },
         {
