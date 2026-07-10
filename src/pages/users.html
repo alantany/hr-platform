@@ -300,6 +300,19 @@
       renderUsersTable();
     }
 
+    window.applyUserRoleFilterFromUrl = function applyUserRoleFilterFromUrl() {
+      const roleFromUrl = new URLSearchParams(location.search).get('role') || '';
+      userPageState.roleFilter = roleFromUrl;
+      const filter = document.querySelector('[data-user-role-filter]');
+      if (filter) {
+        if (![...filter.options].some((opt) => opt.value === roleFromUrl) && roleFromUrl) {
+          filter.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(roleFromUrl)}">${escapeHtml(roleFromUrl)}</option>`);
+        }
+        filter.value = roleFromUrl;
+      }
+      if (userPageState.users.length) renderUsersTable();
+    };
+
     async function handleCreateUser() {
       const payload = {
         username: document.querySelector('[data-user-form-username]').value.trim(),

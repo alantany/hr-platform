@@ -5674,6 +5674,9 @@ async function loadPage(url, push = true) {
     if ((window.__SPA_RENDER_EPOCH__ || 0) === renderEpochBefore) {
       await render();
     }
+    if (pathOnly === "users.html" && typeof window.applyUserRoleFilterFromUrl === "function") {
+      window.applyUserRoleFilterFromUrl();
+    }
     syncActiveNav(pathOnly);
 
     const content = document.querySelector(".content");
@@ -5694,6 +5697,8 @@ document.addEventListener("click", (event) => {
   if (!/\.html(\?|#|$)/.test(href)) return;
   // 登录页必须整页跳转，不能走 SPA 局部加载
   if (href.includes("login.html") || location.pathname.includes("login.html")) return;
+  // 带筛选参数的用户列表走整页跳转，避免 SPA 丢 ?role= 过滤（强刷才生效的问题）
+  if (/users\.html\?/i.test(href)) return;
   event.preventDefault();
   loadPage(href);
 });

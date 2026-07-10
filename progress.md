@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-11（完成 - 角色用户数跳转改为整页加载保证过滤）
+
+- 根因复核：SPA 路径偶发/缓存导致 `?role=` 未落到筛选；强刷整页则正常。
+- 修复：点击拦截对 `users.html?*` 放行整页跳转；用户页增加 `applyUserRoleFilterFromUrl`。
+- 浏览器验证：从角色列表点「操作员」用户数，首屏角色下拉即为「操作员」，列表仅操作员。
+
 ## 2026-07-11（完成 - 修复 SPA 跳转后角色筛选需刷新）
 
 - `runSpaPageScripts` 改为 await 页面 DOMContentLoaded（含异步加载）。
