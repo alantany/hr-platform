@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-10（完成 - 简历池列表薪资改入池时间）
+
+- 表头「薪资」→「入池时间」；单元格展示 `created_at`。
+- API：有 recruit 下载记录时优先用 `resume_downloads.created_at`，否则用交付表创建时间。
+- 测试：`tests/test_candidate_pool_time.py` PASS。
+
 ## 2026-07-10（完成 - 铃铛未读数与消息同步）
 
 - 根因：管理员未读接口返回全站通知；全局 `read-notification` 抢跑且不刷新角标。

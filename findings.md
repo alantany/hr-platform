@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（简历池列表：薪资 → 入池时间）
+
+- 列表「薪资」原展示 `candidates.expected_salary`，业务价值低。
+- 入池时间口径：recruit 抓取优先用 `recruit.resume_downloads.created_at`；上传/手创用交付表 `candidates.created_at`（接口字段仍为 `created_at`）。
+- 详情页「期望薪资」保留，仅改列表列。
+
 ## 2026-07-10（铃铛未读数与消息不同步）
 
 - 现象：确认岗位分配或点「未读」后，右上角铃铛数字有时不降。

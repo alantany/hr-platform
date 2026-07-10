@@ -737,7 +737,8 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "project_history": c.project_history,
                 "candidate_agent_id": d.candidate_agent_id,
                 "record_key": f"candidate:{c.id}",
-                "created_at": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else d.created_at,
+                # 入池时间：优先用 recruit 抓取下载时间，否则用交付表创建时间
+                "created_at": d.created_at or (c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else None),
                 "file_path": getattr(c, "file_path", None) or d.file_path
             })
         else:

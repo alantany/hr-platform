@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-铃铛未读数与个人消息同步已修复。维护流程：**改代码 → 更新三份 MD → commit → push**。
+简历池列表「薪资」已改为「入池时间」。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

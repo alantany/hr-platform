@@ -1672,7 +1672,7 @@ async function handleGlobalButton(button) {
               </div>
               <div>${i.current_title || '--'}</div>
               <div>${i.city || '--'}</div>
-              <div class="mono">${i.expected_salary || '--'}</div>
+              <div class="mono">${i.created_at || '--'}</div>
               <div>${i.source || '--'}</div>
               <div>${i.age ? i.age + '岁' : '--'}</div>
               <div>
@@ -2679,7 +2679,7 @@ async function handleGlobalButton(button) {
               </div>
               <div>${i.current_title || '--'}</div>
               <div>${i.city || '--'}</div>
-              <div class="mono">${i.expected_salary || '--'}</div>
+              <div class="mono">${i.created_at || '--'}</div>
               <div>${i.source || '--'}</div>
               <div><span class="state ${i.status === '锁定' ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
               <div>
@@ -2745,7 +2745,7 @@ async function handleGlobalButton(button) {
               </div>
               <div>${i.current_title || '--'}</div>
               <div>${i.city || '--'}</div>
-              <div class="mono">${i.expected_salary || '--'}</div>
+              <div class="mono">${i.created_at || '--'}</div>
               <div>${i.source || '--'}</div>
               <div><span class="state ${i.status === '锁定' ? 'locked' : 'active'}">${i.status || '未知'}</span></div>
               <div>
