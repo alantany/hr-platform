@@ -238,7 +238,7 @@
         {
           title: '求职者总数',
           value: dashboardState.summary.candidate_count,
-          note: `本月有 ${metrics.monthlyCalendarEvents.length} 次推荐推进`,
+          note: `本月推荐 ${metrics.monthlyRecommendedCount} 人`,
           tone: 'primary',
           link: './candidates.html',
         },
@@ -252,7 +252,7 @@
         {
           title: '总推荐数',
           value: dashboardState.summary.recommendation_count,
-          note: `本月已交付 ${metrics.monthlyDeliveries.length} 次`,
+          note: `本月入职 ${metrics.monthlyEmploymentCount} 人`,
           tone: 'warning',
           link: './projects.html',
         },
