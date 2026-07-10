@@ -696,6 +696,7 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
     const baseHref = p.split("?")[0];
     return baseHref === `${pageKey}.html` || (pageKey === "index" && baseHref === "dashboard.html");
   };
+  const isDashboardScreen = pageKey === "statistics";
   const visible = getNavVisibility(currentUser?.role || currentUser?.role_name || "超级管理员", currentUser?.permissions);
   const navHtml = navGroups.map((group) => {
     const items = group.items.filter(({ href }) => {
@@ -714,8 +715,26 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
       </div>`;
   }).join("");
   const firstChar = (currentUser?.full_name || "管")[0];
+  const noticeBtn = `
+          <a class="top-notice-btn" aria-label="未读通知" href="./notifications.html">
+            <svg class="bell-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            ${unreadCount > 0 ? `<span class="badge">${unreadCount}</span>` : ""}
+          </a>`;
+  const topbarHtml = isDashboardScreen
+    ? `<div class="topbar topbar-dashboard-screen"><div class="top-actions top-actions-only">${noticeBtn}</div></div>`
+    : `<div class="topbar">
+        <div>
+          <div class="crumbs">${renderCrumbsHtml(pageKey)}</div>
+          <h2 class="page-title" style="margin-top:0;">${pages[pageKey]?.title || "AI招聘管理平台"}</h2>
+          ${pages[pageKey]?.desc ? `<p class="page-lede">${pages[pageKey].desc}</p>` : ""}
+        </div>
+        <div class="top-actions">${noticeBtn}</div>
+      </div>`;
   return `
-  <div class="app-shell">
+  <div class="app-shell${isDashboardScreen ? " app-shell-dashboard-screen" : ""}">
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark">招</div>
@@ -746,22 +765,7 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
       </div>
     </aside>
     <main class="content">
-      <div class="topbar">
-        <div>
-          <div class="crumbs">${renderCrumbsHtml(pageKey)}</div>
-          <h2 class="page-title" style="margin-top:0;">${pages[pageKey]?.title || "AI招聘管理平台"}</h2>
-          ${pages[pageKey]?.desc ? `<p class="page-lede">${pages[pageKey].desc}</p>` : ""}
-        </div>
-        <div class="top-actions">
-          <a class="top-notice-btn" aria-label="未读通知" href="./notifications.html">
-            <svg class="bell-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-            </svg>
-            ${unreadCount > 0 ? `<span class="badge">${unreadCount}</span>` : ""}
-          </a>
-        </div>
-      </div>
+      ${topbarHtml}
       ${body}
     </main>
   </div>`;

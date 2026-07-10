@@ -12,32 +12,34 @@
     .content {
       background: #0b0f19 !important;
       color: #f3f4f6 !important;
+      padding: 0 !important;
+      position: relative;
     }
-    .content .crumbs {
-      color: rgba(255, 255, 255, 0.45) !important;
+    .content .topbar-dashboard-screen {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      z-index: 20;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      border-radius: 0 !important;
+      width: auto;
+      justify-content: flex-end;
     }
-    .content .page-title {
-      color: #ffffff !important;
-      text-shadow: 0 0 10px rgba(37, 99, 235, 0.3) !important;
-    }
-    .content .page-lede {
-      color: rgba(255, 255, 255, 0.55) !important;
-    }
-    .content .topbar {
-      background: rgba(17, 24, 39, 0.8) !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-      padding: 20px 24px !important;
-      border-radius: 12px 12px 0 0;
-      margin-bottom: 16px;
+    .content .topbar-dashboard-screen .top-actions-only {
+      margin-left: auto;
     }
     .content .top-notice-btn {
-      background: rgba(31, 41, 55, 0.8) !important;
-      border-color: rgba(255, 255, 255, 0.1) !important;
+      background: rgba(31, 41, 55, 0.88) !important;
+      border-color: rgba(255, 255, 255, 0.14) !important;
       color: #f3f4f6 !important;
+      backdrop-filter: blur(8px);
     }
     .content .top-notice-btn:hover {
-      background: rgba(55, 65, 81, 0.9) !important;
-      border-color: rgba(255, 255, 255, 0.2) !important;
+      background: rgba(55, 65, 81, 0.95) !important;
+      border-color: rgba(255, 255, 255, 0.28) !important;
       color: #ffffff !important;
     }
     .content .top-notice-btn .badge {
@@ -48,10 +50,10 @@
     .dashboard-dark-container {
       background: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #1f2937 100%);
       color: #f3f4f6;
-      border-radius: 12px;
+      border-radius: 0;
       padding: 24px;
-      min-height: calc(100vh - 120px);
-      box-shadow: inset 0 2px 20px rgba(0, 0, 0, 0.5);
+      min-height: 100vh;
+      box-shadow: none;
     }
 
     .dashboard-dark-container .card {
