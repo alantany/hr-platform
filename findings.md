@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（JD parse-jd Task 1 — 路由骨架）
+
+- `POST /api/positions/parse-jd` 已落地：权限同创建岗位（组长/管理员）；空/空白文本 400「请先粘贴 JD」；超长 20000 字 400；LLM 异常或非 dict 502。
+- `call_llm_for_jd_parse` 仍为 `NotImplementedError` stub，测试用 mock。
+- `description` 返回 **strip 后** 的 JD 文本（校验与回填一致），测试断言用 `SAMPLE_JD.strip()`。
+
 ## 2026-07-10（JD单生成岗位 — 实现计划已就绪）
 
 - **计划**：`docs/superpowers/plans/2026-07-10-jd-parse-create-position.md`（5 Tasks：API 骨架 → LLM/枚举清洗 → 小弹窗 → 预填 → 权限/冒烟/文档）。

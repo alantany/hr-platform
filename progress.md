@@ -5,6 +5,7 @@
 - 新增 `POST /api/positions/parse-jd`：组长/管理员可调；空文本 400；LLM 异常 502；`call_llm_for_jd_parse` 仍为 stub（Task 2 接真 LLM）。
 - Schema：`PositionJdParseRequest` / `PositionJdParseOut`；`description` 使用 strip 后的 JD 文本。
 - 测试：`tests/test_position_parse_jd.py` 4 项全部通过（mock LLM）。
+- 同步：`findings.md` / `task_plan.md` Current Phase 已更新。
 
 ## 2026-07-10（完成 - JD单生成岗位实现计划）
 
