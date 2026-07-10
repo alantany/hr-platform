@@ -573,12 +573,15 @@ window.addEventListener('DOMContentLoaded', async () => {
       createPosCompany.addEventListener('change', (e) => fillCreatePosProjects(e.target.value));
     }
 
-    // URL ?company_id= 进入时按客户过滤项目列表
+    // URL ?company_id=&tab= 进入时按客户过滤，并可切到岗位列表
     const urlParams = new URLSearchParams(window.location.search);
     const urlCompanyId = urlParams.get('company_id') || '';
+    const urlTab = (urlParams.get('tab') || 'project').toLowerCase();
     if (urlCompanyId) {
-      window.projectFilters = window.projectFilters || { name: '', companyId: '', status: '', level: '' };
+      window.projectFilters = window.projectFilters || { name: '', companyId: '', status: '', level: '', onlyMine: false };
       window.projectFilters.companyId = urlCompanyId;
+      window.positionFilters = window.positionFilters || { name: '', companyId: '', projectId: '', urgency: '', salaryRange: '' };
+      window.positionFilters.companyId = urlCompanyId;
       if (searchProjComp) searchProjComp.value = urlCompanyId;
       if (searchPosComp) {
         searchPosComp.value = urlCompanyId;
@@ -593,31 +596,36 @@ window.addEventListener('DOMContentLoaded', async () => {
     const projectPanel = document.querySelector('#project-panel');
     const positionPanel = document.querySelector('#position-panel');
 
+    const activateSubTab = (mode) => {
+      const targetMode = mode === 'position-tab' || mode === 'position' ? 'position-tab' : 'project-tab';
+      tabs.forEach((t) => {
+        const active = t.dataset.subtab === targetMode;
+        t.classList.toggle('active', active);
+        t.style.color = active ? '#2563EB' : '#64748b';
+        t.style.borderBottomColor = active ? '#2563EB' : 'transparent';
+      });
+      if (targetMode === 'project-tab') {
+        if (projectSearchForm) projectSearchForm.style.display = 'flex';
+        if (projectPanel) projectPanel.style.display = 'block';
+        if (positionSearchForm) positionSearchForm.style.display = 'none';
+        if (positionPanel) positionPanel.style.display = 'none';
+      } else {
+        if (projectSearchForm) projectSearchForm.style.display = 'none';
+        if (projectPanel) projectPanel.style.display = 'none';
+        if (positionSearchForm) positionSearchForm.style.display = 'flex';
+        if (positionPanel) positionPanel.style.display = 'block';
+      }
+    };
+
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
-        tabs.forEach(t => {
-          t.classList.remove('active');
-          t.style.color = '#64748b';
-          t.style.borderBottomColor = 'transparent';
-        });
-        tab.classList.add('active');
-        tab.style.color = '#2563EB';
-        tab.style.borderBottomColor = '#2563EB';
-
-        const mode = tab.dataset.subtab;
-        if (mode === 'project-tab') {
-          projectSearchForm.style.display = 'flex';
-          projectPanel.style.display = 'block';
-          positionSearchForm.style.display = 'none';
-          positionPanel.style.display = 'none';
-        } else {
-          projectSearchForm.style.display = 'none';
-          projectPanel.style.display = 'none';
-          positionSearchForm.style.display = 'flex';
-          positionPanel.style.display = 'block';
-        }
+        activateSubTab(tab.dataset.subtab);
       });
     });
+
+    if (urlTab === 'position' || urlTab === 'position-tab') {
+      activateSubTab('position-tab');
+    }
 
     // 搜索与重置逻辑：项目列表
     document.querySelector('#btn-project-search')?.addEventListener('click', () => {

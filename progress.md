@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-10（完成 - 客户列表项目数/岗位数可跳转）
+
+- 客户公司列表「项目数」「岗位数」改为可点击链接。
+- 项目数 → `projects.html?company_id=&tab=project`，岗位数 → `tab=position`。
+- `projects.html` 读取 URL 后同步过滤项目/岗位，并按 `tab` 切换子页签。
+
 ## 2026-07-10（完成 - 删除用户解绑推荐等外键）
 
 - 根因：`delete_user` 未解绑 `recommendations.recommender_user_id` 等可空 FK，导致 500。

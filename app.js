@@ -426,8 +426,12 @@ const renderCompanyTableMarkup = (companies = [], projects = [], positions = [],
         <div style="color: #475569; font-size: 13px;">${escapeHtml(company.contact_name || '--')}</div>
         <div style="color: #475569; font-size: 13px;">${escapeHtml(company.contact_phone || '--')}</div>
         <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(company.address || '')}">${escapeHtml(company.address || '--')}</div>
-        <div style="color: #475569; font-size: 13px; text-align: center;">${company.project_count || 0}</div>
-        <div style="color: #475569; font-size: 13px; text-align: center;">${company.position_count || 0}</div>
+        <div style="text-align: center;">
+          <a href="./projects.html?company_id=${encodeURIComponent(company.id)}&tab=project" style="color: #2563EB; font-size: 13px; font-weight: 600; text-decoration: none;">${company.project_count || 0}</a>
+        </div>
+        <div style="text-align: center;">
+          <a href="./projects.html?company_id=${encodeURIComponent(company.id)}&tab=position" style="color: #2563EB; font-size: 13px; font-weight: 600; text-decoration: none;">${company.position_count || 0}</a>
+        </div>
         <div style="text-align: center;">
           <span class="chip ${chipClass}" style="width: 80px; text-align: center; display: inline-block; margin: 0 auto;">${computedStatus}</span>
         </div>
@@ -4740,7 +4744,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
   if (button.dataset.action === "view-company-projects") {
     const companyId = button.dataset.id || '';
     if (!companyId) throw new Error('未找到客户');
-    location.href = `./projects.html?company_id=${encodeURIComponent(companyId)}`;
+    location.href = `./projects.html?company_id=${encodeURIComponent(companyId)}&tab=project`;
     return;
   }
   if (button.dataset.action === "open-position-modal") {

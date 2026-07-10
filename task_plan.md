@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-修复管理员删除用户时的 FK 冲突：删除前解绑推荐等可空 `users.id` 外键。维护流程：**改代码 → 更新三份 MD → commit → push**。
+客户列表「项目数/岗位数」可点击跳转到 `projects.html` 并按公司过滤。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

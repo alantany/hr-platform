@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-10（客户列表数量跳转）
+
+- 客户列表项目/岗位均在 `projects.html` 的子 Tab（`project-tab` / `position-tab`），无独立岗位列表主入口。
+- 跳转约定：`?company_id=` 过滤客户；`?tab=project|position` 切换子页签；进入时同时写入 `projectFilters` 与 `positionFilters` 的 `companyId`。
+
 ## 2026-07-10（删除用户 FK 冲突）
 
 - **根因**：`DELETE /api/users/{id}` 直接删 `users` 行，未处理指向 `users.id` 的外键；`recommendations.recommender_user_id` 等仍引用该用户，触发 `ForeignKeyViolation` → 500。
