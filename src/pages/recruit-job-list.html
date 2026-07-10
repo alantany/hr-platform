@@ -159,20 +159,23 @@
       document.addEventListener("click", async (event) => {
         const btn = event.target.closest("[data-action]");
         if (!btn) return;
-        if (btn.dataset.action === "refresh-recruit-jobs") {
+        const action = btn.dataset.action || "";
+        // 只处理本页 recruit 动作，避免拦截侧栏「退出」等全局按钮
+        if (!action.includes("recruit") || action === "logout") return;
+        if (action === "refresh-recruit-jobs") {
           await window.withButtonBusy(btn, loadJobs, "刷新中...");
           return;
         }
-        if (btn.dataset.action === "close-recruit-edit") {
+        if (action === "close-recruit-edit") {
           document.querySelector("[data-recruit-edit-modal]").style.display = "none";
           return;
         }
-        if (btn.dataset.action === "edit-recruit-job") {
+        if (action === "edit-recruit-job") {
           const job = recruitJobState.jobs.find((item) => String(item.id) === String(btn.dataset.id));
           if (job) fillEdit(job);
           return;
         }
-        if (btn.dataset.action === "toggle-recruit-job") {
+        if (action === "toggle-recruit-job") {
           const job = recruitJobState.jobs.find((item) => String(item.id) === String(btn.dataset.id));
           if (!job) return;
           await window.withButtonBusy(btn, async () => {
@@ -182,7 +185,7 @@
           });
           return;
         }
-        if (btn.dataset.action === "delete-recruit-job") {
+        if (action === "delete-recruit-job") {
           const jobTitle = btn.dataset.title || "该岗位";
           if (!confirm(`确认删除「${jobTitle}」？删除后无法恢复。`)) return;
           try {
@@ -196,7 +199,7 @@
           }
           return;
         }
-        if (btn.dataset.action === "save-recruit-edit") {
+        if (action === "save-recruit-edit") {
           if (!recruitJobState.editingId) return;
           try {
             await window.withButtonBusy(btn, async () => {

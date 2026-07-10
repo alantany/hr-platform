@@ -2,9 +2,9 @@
 
 ## 2026-07-10（平台岗位发布页退出失效）
 
-- `bindActionButtons` / 全局 click 曾写：`action.includes('recruit') || pathname.includes('recruit-')` 则 return。
-- 进入岗位发布/列表/每日任务后 URL 含 `recruit-`，导致侧栏「退出」也被拦截，页面自有 handler 又不处理 logout。
-- 约束：仅按 `data-action` 是否含 `recruit` 放行页面逻辑，禁止用 pathname 屏蔽整页全局按钮。
+- `bindActionButtons` / 全局 click 曾写：`action.includes('recruit') || pathname.includes('recruit-')` 则 return；进入岗位发布相关页后 URL 含 `recruit-`，侧栏「退出」也被拦截。
+- 另：`recruit-job-list.html` / `recruit-daily-tasks.html` 用 `document.addEventListener('click')` 匹配任意 `[data-action]`，经 SPA 多次进入会叠加监听，可能继续干扰 logout。
+- 约束：页面级点击监听必须限定 `action.includes('recruit')`；`logout` 由全局捕获阶段处理，并用 `location.replace('./login.html')`，禁止走 SPA `loadPage`；禁止用 pathname 屏蔽整页全局按钮。
 
 ## 2026-07-10（左侧导航 SPA 与滚动）
 

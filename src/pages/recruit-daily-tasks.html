@@ -96,10 +96,13 @@
       document.addEventListener("click", async (event) => {
         const btn = event.target.closest("[data-action]");
         if (!btn) return;
-        if (btn.dataset.action === "load-recruit-task-stats") {
+        const action = btn.dataset.action || "";
+        // 只处理本页 recruit 动作，避免拦截侧栏「退出」等全局按钮
+        if (!action.includes("recruit") || action === "logout") return;
+        if (action === "load-recruit-task-stats") {
           await window.withButtonBusy(btn, loadStats, "查询中...");
         }
-        if (btn.dataset.action === "reset-recruit-task-date") {
+        if (action === "reset-recruit-task-date") {
           document.querySelector("[data-task-date]").value = todayValue();
           await window.withButtonBusy(btn, loadStats, "查询中...");
         }

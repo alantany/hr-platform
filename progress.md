@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-10（完成 - 平台岗位发布页退出失效加固）
+
+- 补充根因：岗位列表/每日任务在 `document` 上监听所有 `[data-action]`，SPA 反复进入后会干扰侧栏「退出」。
+- 加固：页面监听仅处理含 `recruit` 的动作；退出改为捕获阶段优先处理，并用 `location.replace` 整页进登录页。
+
 ## 2026-07-10（完成 - 平台岗位发布页无法退出）
 
 - 根因：全局按钮处理用 `location.pathname.includes('recruit-')` 直接 return，退出按钮也被跳过。

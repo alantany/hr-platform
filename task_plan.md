@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-修复平台岗位发布页退出按钮被 pathname 拦截。维护流程：**改代码 → 更新三份 MD → commit → push**。
+加固平台岗位发布相关页「退出」：页面监听不拦截 logout，捕获阶段强制跳转登录。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

@@ -1209,9 +1209,12 @@ async function handleGlobalButton(button) {
     } catch (err) {
       console.warn(err);
     }
-    localStorage.removeItem("hr_token");
-    window.hrApi.token = "";
-    location.href = "./login.html";
+    try {
+      localStorage.removeItem("hr_token");
+      if (window.hrApi) window.hrApi.token = "";
+    } catch (_) {}
+    // 强制整页跳转登录，避免 SPA 路由把 login 当业务页局部加载
+    window.location.replace("./login.html");
     return;
   }
   const uniq = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -5110,6 +5113,13 @@ document.addEventListener("click", (event) => {
   if (!btn) return;
 
   const explicitAction = btn.dataset.action || "";
+  // 退出始终优先，不受页面局部监听影响
+  if (explicitAction === "logout") {
+    event.preventDefault();
+    event.stopPropagation();
+    withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));
+    return;
+  }
   // 不要用 pathname.includes('recruit-') 拦截整页按钮，否则退出等全局动作会失效
   if (explicitAction.includes("recruit")) {
     return;
@@ -5120,7 +5130,7 @@ document.addEventListener("click", (event) => {
   if (btn.dataset.bound === "true") return;
   event.preventDefault();
   withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));
-});
+}, true);
 
 document.addEventListener("focusout", (event) => {
   const target = event.target;
@@ -5431,6 +5441,7 @@ document.addEventListener("click", (event) => {
   const href = a.getAttribute("href");
   if (!href || href.startsWith("http") || href.startsWith("javascript:") || a.target === "_blank") return;
   if (!/\.html(\?|#|$)/.test(href)) return;
+  // 登录页必须整页跳转，不能走 SPA 局部加载
   if (href.includes("login.html") || location.pathname.includes("login.html")) return;
   event.preventDefault();
   loadPage(href);
