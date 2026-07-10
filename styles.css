@@ -1880,6 +1880,92 @@ button.customer-preview-position:focus-visible { outline: 2px solid rgba(102, 87
 .candidate-table-card .table-row {
   grid-template-columns: 40px 2.2fr 1fr 1fr 1fr 1fr 0.8fr 1.2fr;
 }
+.candidate-search-toolbar {
+  border: 1px solid #dbe4f0;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 48%, #ffffff 100%);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+.candidate-search-toolbar-head h3 {
+  color: #1e3a8a;
+}
+.candidate-search-toolbar .candidate-search-btn {
+  border-color: #93c5fd !important;
+  background: var(--primary-soft) !important;
+  color: #1d4ed8 !important;
+  font-weight: 600;
+}
+.candidate-search-toolbar .candidate-search-btn:hover {
+  border-color: var(--primary) !important;
+  background: #dbeafe !important;
+}
+.candidate-search-fields {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.candidate-search-keyword {
+  flex: 3;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #dbeafe;
+  background: var(--primary-soft);
+}
+.candidate-search-city {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #a5f3fc;
+  background: #ecfeff;
+}
+.candidate-search-field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.candidate-search-field-label--keyword { color: #1d4ed8; }
+.candidate-search-field-label--city { color: #0f766e; }
+.candidate-search-keyword .input,
+.candidate-search-city .input {
+  width: 100%;
+  background: #fff !important;
+  border-color: #cbd5e1 !important;
+}
+.candidate-search-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+}
+.candidate-search-hint strong {
+  font-weight: 600;
+  color: #1d4ed8;
+}
+.candidate-search-hint code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #fff;
+  color: #0f766e;
+  border: 1px solid #a5f3fc;
+}
+@media (max-width: 900px) {
+  .candidate-search-fields {
+    flex-direction: column;
+  }
+  .candidate-search-city {
+    min-width: 0;
+    width: 100%;
+  }
+}
 .candidate-filter-compact {
   display: grid;
   gap: 12px;

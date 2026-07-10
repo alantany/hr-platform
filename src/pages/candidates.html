@@ -50,26 +50,28 @@
         </div>
       </section>
 
-      <section class="panel">
-        <div class="section-head">
+      <section class="panel candidate-search-toolbar">
+        <div class="section-head candidate-search-toolbar-head">
           <div>
             <h3>搜索工具栏</h3>
             <div class="section-sub">关键词、城市组合搜索，快速定位候选人。</div>
           </div>
           <div class="hero-actions" style="margin-top:0">
-            <button class="btn" data-action="search-candidates">搜索</button>
+            <button class="btn candidate-search-btn" data-action="search-candidates">搜索</button>
             <button class="btn primary" data-action="open-ai-search-modal">AI检索</button>
           </div>
         </div>
-        <div class="toolbar" style="margin-bottom:0; padding:0; border:0; box-shadow:none; background:transparent; display:flex; gap:12px; align-items:flex-start;">
-          <div style="flex:3; min-width:0;">
-            <input class="input wide" data-field="candidate-keyword" placeholder="搜索期望岗位、当前职位、技能、工作经历等" style="width:100%;" />
-            <div class="section-sub" style="margin:6px 0 0; font-size:12px; line-height:1.5; color:#64748b;">
-              优先匹配<strong style="font-weight:600; color:#475569;">期望岗位</strong>，其次当前职位/经历。多个关键词：<strong style="font-weight:600; color:#475569;">空格</strong> 表示且，<strong style="font-weight:600; color:#475569;">逗号</strong> 或 <strong style="font-weight:600; color:#475569;">|</strong> 表示或。例：<span style="font-family:ui-monospace, monospace;">Java,Spring 后端</span>
+        <div class="toolbar candidate-search-fields">
+          <div class="candidate-search-keyword">
+            <label class="candidate-search-field-label candidate-search-field-label--keyword">关键词</label>
+            <input class="input wide" data-field="candidate-keyword" placeholder="搜索期望岗位、当前职位、技能、工作经历等" />
+            <div class="candidate-search-hint">
+              优先匹配<strong>期望岗位</strong>，其次当前职位/经历。多个关键词：<strong>空格</strong> 表示且，<strong>逗号</strong> 或 <strong>|</strong> 表示或。例：<code>Java,Spring 后端</code>
             </div>
           </div>
-          <div class="city-selector-wrapper" style="position: relative; flex: 1; min-width: 220px;">
-            <input class="input" data-field="candidate-city" placeholder="期望城市（如：北京、上海、深圳）" autocomplete="off" style="width: 100%;" />
+          <div class="city-selector-wrapper candidate-search-city">
+            <label class="candidate-search-field-label candidate-search-field-label--city">期望城市</label>
+            <input class="input" data-field="candidate-city" placeholder="如：北京、上海、深圳" autocomplete="off" />
             <div class="city-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1000; padding: 12px;">
               <div class="city-search-results" style="display: none; max-height: 240px; overflow-y: auto;">
               </div>
