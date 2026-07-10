@@ -5,14 +5,18 @@
 - 「批量推荐至岗位」弹窗在 `candidates.html` 的 `[data-recommend-modal] > .panel`，原先仅有 `max-width` 与 `margin:12vh`，无高度上限，矮屏时底部字段不可见。
 - 约束：弹窗内容区需 `max-height: min(90vh, calc(100vh - 48px))` + `overflow-y: auto`，保证小视口可滚到全部表单项。
 
-## 2026-07-10（首页月度看板统计口径）
+## 2026-07-10（首页月度看板漏斗累计口径）
 
-- **本月**按「进入该状态的时间」落在当月：推荐侧用 `updated_at` 近似；入职侧优先 `onboard_date`，无则 `created_at`。
-- **本月面试**：推荐状态 ∈ `{安排面试, 面试中}`（出筛后各轮统一归面试中）。
-- **本月推荐**：推荐状态 = `已推荐`。
-- **本月入职**：入职记录 `status=已入职`。
-- **本月新增岗位**：岗位 `created_at` 本月（不变）。
-- 约束：`RecommendationOut` 必须返回 `created_at/updated_at`，否则前端按月过滤会筛空；状态再变更后旧状态不再计入历史月（无独立状态变更历史表）。
+- 按候选人去重，保证漏斗单调：`本月推荐 ≥ 本月面试 ≥ 本月入职`。
+- **本月入职**：`employment_records`，`status=已入职`，时间优先 `onboard_date`，无则 `created_at`。
+- **本月面试**（并集）：
+  1. `candidate_tracking_events` 有面试轮次/面试日，且 `interview_date|created_at` 在本月
+  2. `interview_records`，`interview_time|created_at` 在本月
+  3. `recommendations` 当前仍为 `安排面试|面试中` 且 `updated_at` 在本月
+  4. **并入本月入职候选人**（入职后推荐状态会变成 `已入职`，不能只看当前面试状态）
+- **本月推荐**（并集）：本月新建推荐（`created_at`）∪ 当前仍为 `已推荐`（`updated_at`）∪ 本月面试候选人。
+- **本月新增岗位**：`positions.created_at` 本月（不变）。
+- 约束：`RecommendationOut` 需返回 `created_at/updated_at`；首页需加载 `candidateTrackingEvents()`。
 
 ## 2026-07-10（岗位列表候选人漏斗跳转）
 
