@@ -1259,6 +1259,15 @@ def respond_position_assignment_task(
             read=False,
             target_path="./notifications.html?tab=position-tasks",
         ))
+    # 确认/拒绝后，把发给操作员的对应「岗位分配」未读通知一并标已读，避免铃铛数字悬空
+    related_notices = db.query(Notification).filter(
+        Notification.user == user.username,
+        Notification.type == "岗位分配",
+        Notification.read.is_(False),
+        Notification.title.contains(position.name),
+    ).all()
+    for notice in related_notices:
+        notice.read = True
     crud.add_audit(
         db, user.username, "岗位管理", response_text + "岗位分配", "position_assignment_task", str(task.id),
         detail=f"{position.name}{note_suffix}",
@@ -2343,10 +2352,10 @@ def get_notifications(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
+    # 铃铛角标与通知列表均只看「发给当前用户」的消息（含管理员），避免全站未读把角标撑住
     items = crud.list_notifications(db, type=type, read=read, keyword=keyword, date_from=date_from, date_to=date_to)
-    if security.is_admin(user):
-        return items
-    return [item for item in items if item.user in {user.username, user.full_name}]
+    recipients = {user.username, user.full_name}
+    return [item for item in items if item.user in recipients]
 
 
 @app.post("/api/notifications", response_model=schemas.NotificationOut)

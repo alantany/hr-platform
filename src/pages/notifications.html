@@ -91,9 +91,16 @@
       const items = await window.hrApi.notifications(buildParams());
       state.items = items;
       document.querySelector('[data-notice-total]').textContent = String(items.length);
-      document.querySelector('[data-notice-unread]').textContent = String(items.filter((item) => !item.read).length);
+      // 未读卡片与铃铛统一口径：始终取当前用户全部未读，不受列表筛选影响
+      const unreadAll = await window.hrApi.notifications({ read: false });
+      document.querySelector('[data-notice-unread]').textContent = String(unreadAll.length);
       document.querySelector('[data-notice-types]').textContent = String(new Set(items.map((item) => item.type || '通知')).size);
       document.querySelector('[data-notification-list]').innerHTML = items.length ? renderRows(items) : '<div class="list-item"><div class="item-meta">当前筛选条件下没有通知。</div></div>';
+      if (typeof window.updateTopNoticeBadge === 'function') {
+        window.updateTopNoticeBadge(unreadAll.length);
+      } else if (typeof window.refreshTopNoticeBadge === 'function') {
+        await window.refreshTopNoticeBadge();
+      }
     }
 
     async function loadPositionTasks() {

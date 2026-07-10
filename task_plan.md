@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-去掉全局「已点击」兜底 Toast；未处理 action 静默。维护流程：**改代码 → 更新三份 MD → commit → push**。
+铃铛未读数与个人消息同步已修复。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

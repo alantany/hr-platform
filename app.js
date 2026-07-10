@@ -803,6 +803,35 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
   </div>`;
 }
 
+function updateTopNoticeBadge(count) {
+  const btn = document.querySelector(".top-notice-btn");
+  if (!btn) return;
+  let badge = btn.querySelector(".badge");
+  const n = Number(count) || 0;
+  if (n > 0) {
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "badge";
+      btn.appendChild(badge);
+    }
+    badge.textContent = String(n);
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
+async function refreshTopNoticeBadge() {
+  try {
+    const notices = await window.hrApi.notifications({ read: false });
+    updateTopNoticeBadge(notices.length);
+  } catch (err) {
+    console.warn(err);
+  }
+}
+
+window.updateTopNoticeBadge = updateTopNoticeBadge;
+window.refreshTopNoticeBadge = refreshTopNoticeBadge;
+
 async function render() {
   const page = location.pathname.split("/").pop() || "dashboard.html";
   const key = page.replace(".html", "");
@@ -1325,6 +1354,17 @@ async function handleGlobalButton(button) {
   ].includes(button.dataset.action || "")) {
     return;
   }
+  // 通知页本地处理：已读/刷新/岗位确认，避免全局 handler 抢跑且不刷新铃铛
+  if (page === "notifications.html" && [
+    "refresh-notifications",
+    "read-notification",
+    "view-notification",
+    "refresh-position-tasks",
+    "accept-position-task",
+    "reject-position-task",
+  ].includes(button.dataset.action || "")) {
+    return;
+  }
   // 任务看板折叠：专用 action，勿落入底部 noop Toast
   if (button.dataset.action === "toggle-task-panel") {
     const panel = button.closest("[data-collapsible-panel]");
@@ -1549,8 +1589,12 @@ async function handleGlobalButton(button) {
       `).join('') : '<div class="list-item"><div class="item-meta">当前筛选条件下没有通知。</div></div>';
     }
     if (total) total.textContent = String(items.length);
-    if (unread) unread.textContent = String(items.filter((item) => !item.read).length);
     if (types) types.textContent = String(new Set(items.map((item) => item.type || '通知')).size);
+    await refreshTopNoticeBadge();
+    if (unread) {
+      const unreadItems = await window.hrApi.notifications({ read: false });
+      unread.textContent = String(unreadItems.length);
+    }
     showToast('通知已刷新');
     return;
   }
@@ -1589,6 +1633,12 @@ async function handleGlobalButton(button) {
           </div>
         </div>
       `).join('') : '<div class="list-item"><div class="item-meta">当前筛选条件下没有通知。</div></div>';
+    }
+    await refreshTopNoticeBadge();
+    const unread = document.querySelector('[data-notice-unread]');
+    if (unread) {
+      const unreadItems = await window.hrApi.notifications({ read: false });
+      unread.textContent = String(unreadItems.length);
     }
     if (item.target_path) location.href = item.target_path;
     return;

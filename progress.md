@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-10（完成 - 铃铛未读数与消息同步）
+
+- 根因：管理员未读接口返回全站通知；全局 `read-notification` 抢跑且不刷新角标。
+- 修复：`GET /api/notifications` 对所有角色（含管理员）只返回发给当前用户的通知；通知页本地 action 从全局 handler 放行；未读卡片与铃铛统一用个人未读数。
+- 测试：`tests/test_notification_badge_scope.py` + 岗位分配/权限/phase2 相关 6 项 PASS。
+
 ## 2026-07-10（完成 - 去掉「已点击」兜底 Toast）
 
 - 根因：`handleGlobalButton` 末尾对未登记/`noop` 按钮 `showToast('已点击：…')`，与真实操作 Toast 叠在一起。

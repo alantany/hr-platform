@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-07-10（铃铛未读数与消息不同步）
+
+- 现象：确认岗位分配或点「未读」后，右上角铃铛数字有时不降。
+- 根因 1：`GET /api/notifications` 对管理员返回**全站**通知；铃铛用 `read=false` 计数，把别人的未读也算进去，自己处理一条几乎看不出变化。
+- 根因 2：`app.js` 捕获阶段抢跑 `read-notification` / `refresh-notifications`，且旧路径不调用 `refreshTopNoticeBadge`；与 `notifications.html` 页内逻辑双轨。
+- 约定（对齐 PRD「查看/管理自己的通知」）：列表与铃铛一律只返回发给当前用户（username / full_name）的通知；通知页本地 action 由页内处理；未读卡片与铃铛共用「当前用户全部未读」口径。
+
 ## 2026-07-10（去掉「已点击」兜底 Toast）
 
 - `handleGlobalButton` 末尾曾对任意未匹配 BUTTON / `noop` 弹出 `已点击：…`，属原型调试残留。

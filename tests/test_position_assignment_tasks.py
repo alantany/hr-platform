@@ -61,6 +61,8 @@ def test_position_assignment_requires_operator_confirmation_and_notifies_leader(
     tasks = client.get("/api/position-assignment-tasks", headers=operator_headers).json()
     assert len(tasks) == 1
     assert tasks[0]["status"] == "pending"
+    assign_notices_before = client.get("/api/notifications?type=岗位分配&read=false", headers=operator_headers).json()
+    assert any(position["name"] in item["title"] for item in assign_notices_before)
     accepted = client.post(
         f"/api/position-assignment-tasks/{tasks[0]['id']}/respond",
         json={"action": "accept"},
@@ -69,6 +71,8 @@ def test_position_assignment_requires_operator_confirmation_and_notifies_leader(
     assert accepted.status_code == 200
     assert accepted.json()["status"] == "accepted"
     assert client.get("/api/dashboard/todos", headers=operator_headers).json() == []
+    assign_notices_after = client.get("/api/notifications?type=岗位分配&read=false", headers=operator_headers).json()
+    assert not any(position["name"] in item["title"] for item in assign_notices_after)
 
     permission = next(
         item for item in client.get(f"/api/data-permissions?user_id={operator['id']}", headers=admin_headers).json()
@@ -100,15 +104,24 @@ def test_rejected_position_assignment_does_not_enable_permission():
     project = client.post("/api/projects", json={"company_id": company["id"], "name": f"拒绝岗位项目-{suffix}"}, headers=leader_headers).json()
     position = client.post("/api/positions", json={"project_id": project["id"], "name": f"拒绝岗位-{suffix}"}, headers=leader_headers).json()
     client.post(f"/api/positions/{position['id']}/assign", json={"user_ids": [operator["id"]]}, headers=leader_headers)
-    task = client.get("/api/position-assignment-tasks", headers=headers(operator_username, "operator123")).json()[0]
+    operator_headers = headers(operator_username, "operator123")
+    task = client.get("/api/position-assignment-tasks", headers=operator_headers).json()[0]
+    assert any(
+        position["name"] in item["title"]
+        for item in client.get("/api/notifications?type=岗位分配&read=false", headers=operator_headers).json()
+    )
 
     rejected = client.post(
         f"/api/position-assignment-tasks/{task['id']}/respond",
         json={"action": "reject", "note": "当前任务已满"},
-        headers=headers(operator_username, "operator123"),
+        headers=operator_headers,
     )
     assert rejected.status_code == 200
     assert rejected.json()["status"] == "rejected"
+    assert not any(
+        position["name"] in item["title"]
+        for item in client.get("/api/notifications?type=岗位分配&read=false", headers=operator_headers).json()
+    )
     permission = next(
         item for item in client.get(f"/api/data-permissions?user_id={operator['id']}", headers=admin_headers).json()
         if item["scope_type"] == "position" and item["scope_id"] == str(position["id"])
