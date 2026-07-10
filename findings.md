@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（全站看板数字配色范围）
+
+- 看板类醒目数字统一 tone：蓝 primary / 绿 success / 橙 warning / 红 danger / 灰 neutral。
+- 覆盖：首页顶部看板、月度看板、推荐日历汇总；客户/项目/简历池/任务通知；操作日志；Recruit 岗位与每日任务；岗位候选人摘要。
+- 统计大屏 `statistics.html` 已有独立彩色卡片，不重复改。
+
 ## 2026-07-10（业务页指标卡配色）
 
 - 与首页看板一致的 tone：`primary` 蓝、`success` 绿、`warning` 橙、`danger` 红、`neutral` 灰。

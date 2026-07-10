@@ -335,7 +335,7 @@
             data-day-key="${cell.key}"
           >
             <span class="dashboard-calendar-date">${cell.date.getDate()}</span>
-            <span class="dashboard-calendar-count">${cell.count ? `${cell.count}条` : '0条'}</span>
+            <span class="dashboard-calendar-count${cell.count ? ' has-data' : ''}">${cell.count ? `${cell.count}条` : '0条'}</span>
           </button>
         `).join('');
       }
@@ -347,11 +347,11 @@
       const summary = document.querySelector('[data-calendar-summary]');
       if (summary) {
         summary.innerHTML = `
-          <div class="dashboard-summary-chip">
+          <div class="dashboard-summary-chip tone-primary">
             <strong>${formatNumber(total)}</strong>
             <span>本月累计推荐</span>
           </div>
-          <div class="dashboard-summary-chip">
+          <div class="dashboard-summary-chip tone-warning">
             <strong>${peak && peak.count ? formatDayLabel(peak.date) : '--'}</strong>
             <span>${peak && peak.count ? `单日峰值 ${peak.count} 条` : '暂无推荐峰值'}</span>
           </div>
