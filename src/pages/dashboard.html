@@ -226,6 +226,10 @@
       };
     }
 
+    function colorizeNote(note, tone) {
+      return String(note || '').replace(/(\d[\d,]*)/g, `<em class="dashboard-kanban-note-num tone-${tone}">$1</em>`);
+    }
+
     function renderTopCards() {
       const container = document.querySelector('[data-dashboard-top-cards]');
       if (!container || !dashboardState.summary) return;
@@ -271,8 +275,8 @@
         <a href="${card.link}" class="dashboard-kanban-card tone-${card.tone}" style="display: block; text-decoration: none;">
           <div class="dashboard-kanban-title">${card.title}</div>
           <div class="dashboard-kanban-body">
-            <strong>${formatNumber(card.value)}</strong>
-            <span style="color: #64748b;">${card.note}</span>
+            <strong class="dashboard-kanban-value tone-${card.tone}">${formatNumber(card.value)}</strong>
+            <span class="dashboard-kanban-note">${colorizeNote(card.note, card.tone)}</span>
           </div>
         </a>
       `).join('');

@@ -50,8 +50,8 @@ const parseId = (val) => {
 const pages = {
   dashboard: {
     crumbs: "首页 / 数据看板",
-    title: "招聘交付驾驶舱",
-    desc: "围绕客户项目、岗位推进与候选人流转的一体化管理视图。重点呈现交付漏斗、团队效率与待办风险。",
+    title: "统计数据看板",
+    desc: "汇总求职者、客户、推荐与待办等核心指标，便于快速掌握当前招聘进展。",
   },
   candidates: {
     crumbs: "求职者 / 数据池",

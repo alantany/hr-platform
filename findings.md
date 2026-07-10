@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（首页文案与看板配色）
+
+- 首页标题不宜用「招聘交付驾驶舱」（偏统计分析大屏语感）；统一为「统计数据看板」。
+- 顶部看板数字配色：`primary` 蓝、`success` 绿、`warning` 橙、`danger` 红、`neutral` 灰；主数字与副文案数字同色，左侧色条同步。
+- 注意：全局样式曾用 `!important` 把所有看板左侧条强制成 primary 蓝，需按 tone 覆盖。
+
 ## 2026-07-10（简历池批量推荐弹窗视口约束）
 
 - 「批量推荐至岗位」弹窗在 `candidates.html` 的 `[data-recommend-modal]`。
