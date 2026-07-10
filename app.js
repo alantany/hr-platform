@@ -291,7 +291,12 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagC
           <div style="color:#475569;font-size:13px;text-align:center;">${position.hiring_count || 1}人</div>
           <div style="color:#475569;font-size:13px;text-align:center;">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
           <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(position.location || '')}">${escapeHtml(position.location || '--')}</div>
-          <div style="display:flex;gap:8px;font-size:12px;font-weight:600;white-space:nowrap;"><span>候选人 <strong style="color:#2563EB;">${stats.total}</strong></span><span>选中 <strong style="color:#15803D;">${stats.selected}</strong></span><span>未选 <strong>${stats.unselected}</strong></span><span>淘汰 <strong style="color:#ef4444;">${stats.rejected}</strong></span></div>
+          <div style="display:flex;gap:8px;font-size:12px;font-weight:600;white-space:nowrap;">
+            <span>候选人 <button type="button" data-action="show-position-candidates" data-position-id="${position.id}" style="background:none;border:none;padding:0;font:inherit;font-weight:700;color:#2563EB;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${stats.total}</button></span>
+            <span>选中 <button type="button" data-action="show-position-candidates" data-position-id="${position.id}" data-funnel="selected" style="background:none;border:none;padding:0;font:inherit;font-weight:700;color:#15803D;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${stats.selected}</button></span>
+            <span>未选 <button type="button" data-action="show-position-candidates" data-position-id="${position.id}" data-funnel="unselected" style="background:none;border:none;padding:0;font:inherit;font-weight:700;color:#0f172a;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${stats.unselected}</button></span>
+            <span>淘汰 <button type="button" data-action="show-position-candidates" data-position-id="${position.id}" data-funnel="rejected" style="background:none;border:none;padding:0;font:inherit;font-weight:700;color:#ef4444;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${stats.rejected}</button></span>
+          </div>
           <div class="table-actions" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">${actionsHtml}</div>
         </div>
       </div>`;
@@ -4988,7 +4993,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
 
   if (button.dataset.action === "show-position-candidates") {
     const positionId = button.dataset.positionId || '0';
-    location.href = './position-candidates.html?position_id=' + positionId;
+    const funnel = button.dataset.funnel || '';
+    let url = './position-candidates.html?position_id=' + encodeURIComponent(positionId);
+    if (funnel) url += '&funnel=' + encodeURIComponent(funnel);
+    location.href = url;
     return;
   }
   if (button.dataset.action === "view-project-positions") {

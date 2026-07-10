@@ -42,6 +42,7 @@
           <div class="position-candidates-filter-bar">
             <label class="position-filter-field position-filter-keyword"><span>候选人姓名</span><input class="input" type="search" placeholder="搜索候选人" data-position-filter-keyword /></label>
             <label class="position-filter-field"><span>流程状态</span><select class="input" data-position-filter-status><option value="">全部</option><option value="已推荐">已推荐</option><option value="面试中">面试中</option><option value="已入职">已入职</option><option value="未录用">未录用</option></select></label>
+            <label class="position-filter-field"><span>漏斗分桶</span><select class="input" data-position-filter-funnel><option value="">全部</option><option value="selected">选中</option><option value="unselected">未选</option><option value="rejected">淘汰</option></select></label>
             <label class="position-filter-field"><span>匹配度</span><select class="input" data-position-filter-match><option value="">全部</option><option value="90">90%以上</option><option value="80">80%-90%</option><option value="70">70%-80%</option><option value="below70">70%以下</option></select></label>
             <div class="position-filter-actions">
               <button class="btn primary" type="button" onclick="applyPositionCandidateFilters()">搜索</button>
@@ -411,7 +412,16 @@
           return item.candidate?.id;
         }).filter(Boolean).map(String);
 
-        renderPositionCandidateRows(candidateDetails);
+        const funnel = params.get('funnel') || '';
+        const funnelSelect = document.querySelector('[data-position-filter-funnel]');
+        if (funnelSelect && ['selected', 'unselected', 'rejected'].includes(funnel)) {
+          funnelSelect.value = funnel;
+        }
+        if (funnelSelect?.value || document.querySelector('[data-position-filter-status]')?.value || document.querySelector('[data-position-filter-keyword]')?.value) {
+          applyPositionCandidateFilters();
+        } else {
+          renderPositionCandidateRows(candidateDetails);
+        }
       } catch (err) {
         console.warn(err);
         const list = document.querySelector('[data-candidate-list]');
@@ -429,6 +439,14 @@
       return '待推荐';
     }
 
+    // 与岗位列表漏斗统计同一套分桶：选中 / 未选 / 淘汰
+    function getPositionFunnelBucket(item) {
+      const status = String(item?.status || '');
+      if (['合适', '已入职', '面试中'].includes(status)) return 'selected';
+      if (['不合适', '淘汰', '放弃'].includes(status)) return 'rejected';
+      return 'unselected';
+    }
+
     function getRecommendationMatchScore(item) {
       const raw = item?.match_score ?? item?.match_degree ?? item?.candidate?.match_score ?? item?.candidate?.match_degree;
       if (raw === null || raw === undefined || raw === '') return null;
@@ -440,7 +458,7 @@
       const list = document.querySelector('[data-candidate-list]');
       if (!list) return;
       if (!candidateDetails.length) {
-        const hasFilters = Boolean(document.querySelector('[data-position-filter-keyword]')?.value || document.querySelector('[data-position-filter-status]')?.value || document.querySelector('[data-position-filter-match]')?.value);
+        const hasFilters = Boolean(document.querySelector('[data-position-filter-keyword]')?.value || document.querySelector('[data-position-filter-status]')?.value || document.querySelector('[data-position-filter-funnel]')?.value || document.querySelector('[data-position-filter-match]')?.value);
         list.innerHTML = '<div class="list-item"><div class="item-meta">' + (hasFilters ? '没有符合筛选条件的候选人。' : '该岗位暂无推荐候选人。') + '</div></div>';
         return;
       }
@@ -503,18 +521,20 @@
     function applyPositionCandidateFilters() {
       const keyword = document.querySelector('[data-position-filter-keyword]')?.value.trim().toLowerCase() || '';
       const status = document.querySelector('[data-position-filter-status]')?.value || '';
+      const funnel = document.querySelector('[data-position-filter-funnel]')?.value || '';
       const matchBand = document.querySelector('[data-position-filter-match]')?.value || '';
       const rows = (window.__positionCandidateRows || []).filter(function(item) {
         const nameMatches = !keyword || String(item.candidate?.name || '').toLowerCase().includes(keyword);
         const normalizedStatus = item.candidate?.delivery_status === '已入职' ? '已入职' : normalizeRecommendationStatus(item.status);
         const statusMatches = !status || normalizedStatus === status;
+        const funnelMatches = !funnel || getPositionFunnelBucket(item) === funnel;
         const score = getRecommendationMatchScore(item);
         let matchMatches = !matchBand;
         if (matchBand === '90') matchMatches = score !== null && score >= 90;
         if (matchBand === '80') matchMatches = score !== null && score >= 80 && score < 90;
         if (matchBand === '70') matchMatches = score !== null && score >= 70 && score < 80;
         if (matchBand === 'below70') matchMatches = score !== null && score < 70;
-        return nameMatches && statusMatches && matchMatches;
+        return nameMatches && statusMatches && funnelMatches && matchMatches;
       });
       renderPositionCandidateRows(rows);
     }
@@ -522,9 +542,11 @@
     function resetPositionCandidateFilters() {
       const keyword = document.querySelector('[data-position-filter-keyword]');
       const status = document.querySelector('[data-position-filter-status]');
+      const funnel = document.querySelector('[data-position-filter-funnel]');
       const match = document.querySelector('[data-position-filter-match]');
       if (keyword) keyword.value = '';
       if (status) status.value = '';
+      if (funnel) funnel.value = '';
       if (match) match.value = '';
       renderPositionCandidateRows(window.__positionCandidateRows || []);
     }

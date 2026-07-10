@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-客户列表「项目数/岗位数」可点击跳转到 `projects.html` 并按公司过滤。维护流程：**改代码 → 更新三份 MD → commit → push**。
+岗位列表候选人漏斗数字可跳转并按分桶过滤。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

@@ -1,5 +1,13 @@
 # Findings
 
+## 2026-07-10（岗位列表候选人漏斗跳转）
+
+- 岗位列表漏斗分桶（与 `renderPositionListFromState` 一致）：
+  - **选中**：`合适` / `已入职` / `面试中`
+  - **淘汰**：`不合适` / `淘汰` / `放弃`
+  - **未选**：其余状态
+- 跳转约定：`position-candidates.html?position_id=` 必填；`?funnel=selected|unselected|rejected` 可选，对应漏斗分桶过滤（与页面「流程状态」下拉是两套维度，互不替代）。
+
 ## 2026-07-10（客户列表数量跳转）
 
 - 客户列表项目/岗位均在 `projects.html` 的子 Tab（`project-tab` / `position-tab`），无独立岗位列表主入口。
