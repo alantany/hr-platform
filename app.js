@@ -5220,12 +5220,12 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     if (modal) modal.style.display = 'none';
     return;
   }
+  // noop / 未登记的 data-action：静默返回，不再 Toast「已点击」（原型调试残留）
   if (button.dataset.action === "noop") {
-    showToast(`已点击：${text || "操作"}`);
     return;
   }
-  if (button.tagName === "BUTTON") {
-    showToast(`已点击：${text || "按钮"}`);
+  if (button.dataset.action) {
+    console.warn("[hr] unhandled data-action:", button.dataset.action);
   }
 }
 

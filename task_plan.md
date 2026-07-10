@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-标签字典 / 质保 API 已与 `page:dictionary` / `page:warranty` 菜单权限对齐。维护流程：**改代码 → 更新三份 MD → commit → push**。
+去掉全局「已点击」兜底 Toast；未处理 action 静默。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

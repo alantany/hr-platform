@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（去掉「已点击」兜底 Toast）
+
+- `handleGlobalButton` 末尾曾对任意未匹配 BUTTON / `noop` 弹出 `已点击：…`，属原型调试残留。
+- 与页内真实成功 Toast 叠显；busy 时文案还会变成「已点击：处理中」。
+- 约定：未登记 action 只 `console.warn`，不向用户 Toast；真实反馈仅由各业务分支的成功/失败提示承担。
+
 ## 2026-07-10（标签字典 / 质保：菜单可见 vs API 仅超管）
 
 - 现象：给组长开了 `page:dictionary` / `page:warranty` 后侧栏可见，但页内写操作报「仅超级管理员可执行该操作」。

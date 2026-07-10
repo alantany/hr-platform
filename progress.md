@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-10（完成 - 去掉「已点击」兜底 Toast）
+
+- 根因：`handleGlobalButton` 末尾对未登记/`noop` 按钮 `showToast('已点击：…')`，与真实操作 Toast 叠在一起。
+- 修复：noop 与未处理 action 静默返回，仅 `console.warn`；不再向用户展示「已点击」。
+
 ## 2026-07-10（完成 - 标签/质保页权限与菜单对齐）
 
 - `security.user_has_permission` / `require_page_permission`：按 `role_permissions` 的 page key 放行（管理员默认通过）。
