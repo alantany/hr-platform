@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-JD生成岗位 Task 2 已完成（真实 LLM + normalize 枚举清洗 + 不可用 422）。下一步 Task 3（前端入口/预填，若计划有）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+JD生成岗位 Task 3+4 已完成（前端 JD 粘贴弹窗 + parseJd + 创建岗位预填）。下一步 Task 5（权限/冒烟/文档收尾，若计划有）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
@@ -440,5 +440,7 @@ JD生成岗位 Task 2 已完成（真实 LLM + normalize 枚举清洗 + 不可�
 - [x] 写入设计文档 `docs/superpowers/specs/2026-07-10-jd-parse-create-position-design.md`
 - [x] 用户审阅 spec
 - [x] 编写实现计划 `docs/superpowers/plans/2026-07-10-jd-parse-create-position.md`
-- [ ] 前后端实现与验证
-- **Status:** plan ready, awaiting execution choice
+- [x] Task 1–2：parse-jd API + LLM/normalize
+- [x] Task 3–4：JD 粘贴弹窗 + 创建岗位预填
+- [ ] Task 5：权限/冒烟/文档收尾
+- **Status:** frontend entry + prefill done; Task 5 pending

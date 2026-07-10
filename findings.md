@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（JD parse Task 3+4 — 前端入口与预填）
+
+- 入口已从 `noop` 改为 `open-jd-parse-modal`；不再落入全局 noop Toast。
+- 解析成功路径：关 JD 小窗 → `applyJdParseToPositionModal` → 复用 `[data-position-modal]`；客户/项目保持空；`description` 用粘贴原文；`target-count` 固定 10。
+- 「新建岗位」与 JD 预填共用 `openPositionCreateModalBlank`（含公司/项目下拉填充）。
+
 ## 2026-07-10（JD parse-jd Task 2 — LLM + normalize）
 
 - `normalize_jd_parse_result`：枚举别名映射 + int 清洗；`hiring_count` 缺省为 1，但 `_unusable` 信号用清洗前的 `hiring_count`（仅非 1 才算信号）。

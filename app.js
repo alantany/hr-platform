@@ -1212,6 +1212,104 @@ function renderExportCard(c) {
   </div>`;
 }
 
+async function openPositionCreateModalBlank() {
+  const modal = document.querySelector("[data-position-modal]");
+  if (!modal) throw new Error("未找到创建岗位弹窗");
+  const reset = (selector, val) => {
+    const el = document.querySelector(selector);
+    if (el) el.value = val;
+  };
+  reset("[data-position-company]", "");
+  reset("[data-position-project]", "");
+  reset("[data-position-name]", "");
+  reset("[data-position-description]", "");
+  reset("[data-position-urgency]", "正常");
+  reset("[data-position-count]", "1");
+  reset("[data-position-salary-min]", "");
+  reset("[data-position-salary-max]", "");
+  reset("[data-position-location]", "");
+  reset("[data-position-req-age]", "不限");
+  reset("[data-position-req-gender]", "不限");
+  reset("[data-position-req-edu]", "不限");
+  reset("[data-position-req-exp]", "不限");
+  reset("[data-position-req-status]", "不限");
+  reset("[data-position-target-count]", "10");
+
+  const createPosCompany = modal.querySelector("[data-position-company]");
+  const createPosProject = modal.querySelector("[data-position-project]");
+  if (createPosCompany && createPosProject) {
+    createPosCompany.innerHTML = '<option value="">加载中...</option>';
+    createPosProject.innerHTML = '<option value="">请先选择客户</option>';
+    createPosProject.disabled = true;
+    try {
+      const [companies, projects] = await Promise.all([
+        window.hrApi.companies(),
+        window.hrApi.projects(),
+      ]);
+      createPosCompany.innerHTML =
+        '<option value="">请选择客户</option>' +
+        companies
+          .map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`)
+          .join("");
+      const fillProjects = () => {
+        const companyId = Number(createPosCompany.value || 0);
+        const filtered = companyId ? projects.filter((p) => p.company_id === companyId) : [];
+        createPosProject.disabled = !companyId;
+        createPosProject.innerHTML = companyId
+          ? '<option value="">请选择项目</option>' +
+            filtered.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("")
+          : '<option value="">请先选择客户</option>';
+      };
+      createPosCompany.onchange = fillProjects;
+      fillProjects();
+    } catch (err) {
+      console.warn("Failed to populate company/project selects in position modal:", err);
+      createPosCompany.innerHTML = '<option value="">获取客户失败</option>';
+      createPosProject.innerHTML = '<option value="">获取项目失败</option>';
+    }
+  }
+
+  modal.style.display = "block";
+  if (!window.__positionCityInitialized) {
+    initCitySelector("[data-position-modal]");
+    window.__positionCityInitialized = true;
+  }
+  return modal;
+}
+
+async function applyJdParseToPositionModal(jdText, parsed) {
+  await openPositionCreateModalBlank();
+  const setVal = (selector, val) => {
+    const el = document.querySelector(selector);
+    if (el && val !== undefined && val !== null) el.value = String(val);
+  };
+  // 客户/项目故意不填
+  setVal("[data-position-name]", parsed.name || "");
+  setVal("[data-position-description]", jdText || parsed.description || "");
+  setVal("[data-position-urgency]", parsed.urgency || "正常");
+  setVal(
+    "[data-position-count]",
+    parsed.hiring_count === null || parsed.hiring_count === undefined ? "1" : parsed.hiring_count
+  );
+  setVal(
+    "[data-position-salary-min]",
+    parsed.salary_min === null || parsed.salary_min === undefined ? "" : parsed.salary_min
+  );
+  setVal(
+    "[data-position-salary-max]",
+    parsed.salary_max === null || parsed.salary_max === undefined ? "" : parsed.salary_max
+  );
+  setVal("[data-position-location]", parsed.location || "");
+  setVal("[data-position-req-age]", parsed.age_requirement || "不限");
+  setVal("[data-position-req-gender]", parsed.gender_requirement || "不限");
+  setVal("[data-position-req-edu]", parsed.education_requirement || "不限");
+  setVal("[data-position-req-exp]", parsed.experience_requirement || "不限");
+  setVal("[data-position-req-status]", parsed.job_status_requirement || "不限");
+  // 锁定上限保持 10，不覆盖为其它值
+  setVal("[data-position-target-count]", "10");
+}
+window.applyJdParseToPositionModal = applyJdParseToPositionModal;
+
 async function handleGlobalButton(button) {
   const text = (button.textContent || "").trim();
   const page = location.pathname.split("/").pop() || "";
@@ -4792,69 +4890,40 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     location.href = `./projects.html?company_id=${encodeURIComponent(companyId)}&tab=project`;
     return;
   }
-  if (button.dataset.action === "open-position-modal") {
-    const modal = document.querySelector('[data-position-modal]');
-    if (modal) {
-      const reset = (selector, val) => { const el = document.querySelector(selector); if (el) el.value = val; };
-      reset('[data-position-company]', '');
-      reset('[data-position-project]', '');
-      reset('[data-position-name]', '');
-      reset('[data-position-description]', '');
-      reset('[data-position-urgency]', '正常');
-      reset('[data-position-count]', '1');
-      reset('[data-position-salary-min]', '');
-      reset('[data-position-salary-max]', '');
-      reset('[data-position-location]', '');
-      reset('[data-position-req-age]', '不限');
-      reset('[data-position-req-gender]', '不限');
-      reset('[data-position-req-edu]', '不限');
-      reset('[data-position-req-exp]', '不限');
-      reset('[data-position-req-status]', '不限');
-      reset('[data-position-target-count]', '10');
-
-      const createPosCompany = modal.querySelector('[data-position-company]');
-      const createPosProject = modal.querySelector('[data-position-project]');
-      if (createPosCompany && createPosProject) {
-        createPosCompany.innerHTML = '<option value="">加载中...</option>';
-        createPosProject.innerHTML = '<option value="">请先选择客户</option>';
-        createPosProject.disabled = true;
-        (async () => {
-          try {
-            const [companies, projects] = await Promise.all([
-              window.hrApi.companies(),
-              window.hrApi.projects(),
-            ]);
-            createPosCompany.innerHTML = '<option value="">请选择客户</option>' + companies.map((c) => `
-              <option value="${c.id}">${escapeHtml(c.name)}</option>
-            `).join('');
-            const fillProjects = () => {
-              const companyId = Number(createPosCompany.value || 0);
-              const filtered = companyId
-                ? projects.filter((p) => p.company_id === companyId)
-                : [];
-              createPosProject.disabled = !companyId;
-              createPosProject.innerHTML = companyId
-                ? ('<option value="">请选择项目</option>' + filtered.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(''))
-                : '<option value="">请先选择客户</option>';
-            };
-            createPosCompany.onchange = fillProjects;
-            fillProjects();
-          } catch (err) {
-            console.warn("Failed to populate company/project selects in position modal:", err);
-            createPosCompany.innerHTML = '<option value="">获取客户失败</option>';
-            createPosProject.innerHTML = '<option value="">获取项目失败</option>';
-          }
-        })();
+  if (button.dataset.action === "open-jd-parse-modal") {
+    const modal = document.querySelector("[data-jd-parse-modal]");
+    const textarea = modal?.querySelector("[data-jd-parse-textarea]");
+    if (textarea) textarea.value = "";
+    if (modal) modal.style.display = "block";
+    return;
+  }
+  if (button.dataset.action === "close-jd-parse-modal") {
+    const modal = document.querySelector("[data-jd-parse-modal]");
+    if (modal) modal.style.display = "none";
+    return;
+  }
+  if (button.dataset.action === "confirm-jd-parse") {
+    const modal = document.querySelector("[data-jd-parse-modal]");
+    const textarea = modal?.querySelector("[data-jd-parse-textarea]");
+    const jdText = textarea?.value?.trim() || "";
+    if (!jdText) throw new Error("请先粘贴 JD");
+    const hideLoading = showLoadingToast("JD 解析中...");
+    try {
+      await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+      const parsed = await window.hrApi.parseJd({ jd_text: jdText });
+      window.__jdParseDraft = { jdText, parsed };
+      if (modal) modal.style.display = "none";
+      showToast("已预填创建岗位表单，请选择客户与项目");
+      if (typeof window.applyJdParseToPositionModal === "function") {
+        await window.applyJdParseToPositionModal(jdText, parsed);
       }
-
-      modal.style.display = 'block';
-
-      // Initialize city picker if not done yet
-      if (!window.__positionCityInitialized) {
-        initCitySelector('[data-position-modal]');
-        window.__positionCityInitialized = true;
-      }
+    } finally {
+      hideLoading();
     }
+    return;
+  }
+  if (button.dataset.action === "open-position-modal") {
+    await openPositionCreateModalBlank();
     return;
   }
   if (button.dataset.action === "close-position-modal") {

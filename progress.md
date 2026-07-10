@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-07-10（完成 - Task 3+4 JD 粘贴弹窗与创建预填）
+
+- 按钮 `noop` → `open-jd-parse-modal`；新增 JD 小弹窗；`hrApi.parseJd`；操作员隐藏选择器同步。
+- `app.js`：open/close/confirm-jd-parse；抽出 `openPositionCreateModalBlank`；`applyJdParseToPositionModal` 预填（description=原文，客户/项目不填，锁定上限 10）。
+- 验证点：点 JD 不再 Toast「已点击」；空内容 →「请先粘贴 JD」；解析成功关小窗并打开创建弹窗预填。
+- 未提交：`exports/`、`~$*.docx`。
+
 ## 2026-07-10（完成 - Task 2 LLM prompt + 枚举清洗）
 
 - 实现 `call_llm_for_jd_parse`（DeepSeek JSON）与 `normalize_jd_parse_result`（枚举别名/类型清洗/`_unusable`）。

@@ -121,6 +121,9 @@ window.hrApi = {
   createPosition(payload) {
     return this.request("/positions", { method: "POST", body: JSON.stringify(payload) });
   },
+  parseJd(payload) {
+    return this.request("/positions/parse-jd", { method: "POST", body: JSON.stringify(payload) });
+  },
   updatePosition(id, payload) {
     return this.request(`/positions/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
   },
