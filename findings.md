@@ -1,5 +1,16 @@
 # Findings
 
+## 2026-07-10（删除用户 FK 冲突）
+
+- **根因**：`DELETE /api/users/{id}` 直接删 `users` 行，未处理指向 `users.id` 的外键；`recommendations.recommender_user_id` 等仍引用该用户，触发 `ForeignKeyViolation` → 500。
+- **models 中真正的 DB FK（`ForeignKey("users.id")`）**：
+  - `recommendations.recommender_user_id`（可空）
+  - `interview_records.creator_user_id`（可空）
+  - `salary_records.operator_user_id`（可空）
+  - `employment_records.operator_user_id`（可空）
+- **策略（业务优先）**：历史推荐/面试/谈薪/入职记录保留，不级联删；可空 FK 在删除前统一 `SET NULL`；文案字段（如 `recommender`）保留便于追溯。当前无不可空指向 `users.id` 的 DB FK；`owner_user_id` / `manager_user_id` / `assignee_user_id` 等仅为 Integer 软引用，不触发 FK 约束。
+- **实现**：`crud.delete_user` 删除前批量解绑上述四列。
+
 ## 2026-07-10（简历池标签仅超管可见）
 
 - **原因**：`GET /api/tags` 调用了 `require_admin`，组长/操作员拉不到字段标签配置，`hrTagSystem.extractTags` 结果为空。

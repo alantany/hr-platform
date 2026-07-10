@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-10（完成 - 删除用户解绑推荐等外键）
+
+- 根因：`delete_user` 未解绑 `recommendations.recommender_user_id` 等可空 FK，导致 500。
+- 修复：`crud.delete_user` 删除前对推荐/面试/谈薪/入职四类可空 user FK 置 NULL，保留业务历史。
+- 测试：`tests/test_delete_user_unbind_fks.py` 通过。
+
 ## 2026-07-10（完成 - 标签配置全角色可读）
 
 - `GET /api/tags` 去掉管理员限制，组长/操作员可在简历池看到字段标签。

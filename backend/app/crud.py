@@ -478,6 +478,21 @@ def reset_user_password(db: Session, user: User, payload):
 
 
 def delete_user(db: Session, user: User):
+    """删除用户前解绑所有指向 users.id 的可空外键，保留业务历史记录。"""
+    uid = user.id
+    # 可空 FK：置 NULL，不级联删业务数据
+    db.query(Recommendation).filter(Recommendation.recommender_user_id == uid).update(
+        {Recommendation.recommender_user_id: None}, synchronize_session=False
+    )
+    db.query(InterviewRecord).filter(InterviewRecord.creator_user_id == uid).update(
+        {InterviewRecord.creator_user_id: None}, synchronize_session=False
+    )
+    db.query(SalaryRecord).filter(SalaryRecord.operator_user_id == uid).update(
+        {SalaryRecord.operator_user_id: None}, synchronize_session=False
+    )
+    db.query(EmploymentRecord).filter(EmploymentRecord.operator_user_id == uid).update(
+        {EmploymentRecord.operator_user_id: None}, synchronize_session=False
+    )
     db.delete(user)
     return True
 
