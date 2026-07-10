@@ -424,9 +424,9 @@
 
 
 
-      <div class="modal" data-recommend-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:3000; padding:24px; overflow-y:auto; -webkit-overflow-scrolling:touch;">
-        <div class="panel" style="max-width:540px; margin:24px auto; background:#fff; max-height:calc(100vh - 48px); display:flex; flex-direction:column; overflow:hidden;">
-          <div class="section-head" style="flex:0 0 auto; position:sticky; top:0; background:#fff; z-index:1;">
+      <div class="modal" data-recommend-modal style="display:none; position:fixed; inset:0; background:rgba(14,22,34,.45); z-index:3000; padding:24px;">
+        <div class="panel recommend-modal-panel" style="max-width:540px; margin:24px auto; background:#fff;">
+          <div class="section-head">
             <div>
               <h3>批量推荐至岗位</h3>
               <div class="section-sub" data-recommend-selected-summary>请选择候选人后发起推荐</div>
@@ -436,7 +436,7 @@
               <button class="btn primary" data-action="confirm-recommend">确认推荐</button>
             </div>
           </div>
-          <div class="list" style="flex:1 1 auto; min-height:0; overflow-y:scroll; overscroll-behavior:contain;">
+          <div class="list recommend-modal-body">
             <div class="list-item" data-recommend-candidate-summary></div>
             <div class="list-item">
               <div class="item-top"><div><div class="item-title">选择客户公司</div></div></div>

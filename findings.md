@@ -2,9 +2,9 @@
 
 ## 2026-07-10（简历池批量推荐弹窗视口约束）
 
-- 「批量推荐至岗位」弹窗在 `candidates.html` 的 `[data-recommend-modal] > .panel`。
-- 仅给 `.panel` 加 `overflow-y:auto` 不够：若 `margin-top:12vh` + `max-height:90vh` 超过视口，内容被遮罩裁切，面板不溢出，滚动条不出现。
-- 稳妥做法：遮罩 `overflow-y:auto`；面板 `max-height: calc(100vh - 48px)` + flex 列布局；表单列表 `overflow-y:scroll`（需要时可见滚动条）。
+- 「批量推荐至岗位」弹窗在 `candidates.html` 的 `[data-recommend-modal]`。
+- 用户期望：内容区右侧常显滚动条（不是仅矮屏溢出时才出现）。
+- 实现：`.recommend-modal-body` 固定 `max-height: min(420px, calc(100vh - 220px))` + `overflow-y: scroll`，并设置 `scrollbar-width` / `::-webkit-scrollbar` 样式。
 
 ## 2026-07-10（首页月度看板漏斗累计口径）
 

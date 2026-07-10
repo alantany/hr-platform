@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-简历池批量推荐弹窗滚动条可见修复。维护流程：**改代码 → 更新三份 MD → commit → push**。
+批量推荐弹窗内容区右侧常显滚动条。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

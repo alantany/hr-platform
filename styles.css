@@ -2340,6 +2340,40 @@ input:disabled, select:disabled, textarea:disabled { background: #f3f4f6; color:
 .modal { background: rgba(26,29,31,.42) !important; }
 .modal > .panel { border: 1px solid var(--border) !important; border-radius: 12px !important; background: #fff !important; box-shadow: 0 12px 32px rgba(0,0,0,.12) !important; }
 .modal .panel .panel { box-shadow: none !important; }
+
+/* 批量推荐弹窗：表单区固定限高，右侧常显滚动条（标注位置） */
+.recommend-modal-panel {
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.recommend-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(420px, calc(100vh - 220px));
+  overflow-y: scroll !important;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #e2e8f0;
+}
+.recommend-modal-body::-webkit-scrollbar {
+  width: 10px;
+}
+.recommend-modal-body::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 8px;
+}
+.recommend-modal-body::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+}
+.recommend-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
 .dashboard-kanban-grid { gap: 16px; }
 .dashboard-kanban-card { min-height: 136px; padding: 24px; border-radius: 12px; box-shadow: var(--shadow-sm); }
 .dashboard-kanban-card::before { width: 3px; background: var(--primary) !important; }
