@@ -2812,6 +2812,28 @@ input[type="radio"],
   margin-top: 2px !important;
 }
 
+.sidebar-settings-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  height: 34px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 13px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.sidebar-settings-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  color: #fff !important;
+}
+
 .sidebar-logout-btn {
   display: flex !important;
   align-items: center !important;

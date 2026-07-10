@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>设置</title>
+  <link rel="stylesheet" href="../../styles.css" />
+  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.__PAGE_BODY__ = `
+      <section class="panel" style="max-width:520px;">
+        <div class="section-head">
+          <div>
+            <h3>修改密码</h3>
+            <div class="section-sub">请输入当前密码并设置新密码。忘记密码请联系管理员重置。</div>
+          </div>
+        </div>
+        <div class="list" style="gap:12px;">
+          <div class="list-item" style="flex-direction:column;align-items:stretch;gap:6px;">
+            <div class="item-title">当前密码</div>
+            <input class="input" type="password" data-current-password autocomplete="current-password" placeholder="请输入当前密码" />
+          </div>
+          <div class="list-item" style="flex-direction:column;align-items:stretch;gap:6px;">
+            <div class="item-title">新密码</div>
+            <input class="input" type="password" data-new-password autocomplete="new-password" placeholder="至少 4 位" />
+          </div>
+          <div class="list-item" style="flex-direction:column;align-items:stretch;gap:6px;">
+            <div class="item-title">确认新密码</div>
+            <input class="input" type="password" data-confirm-password autocomplete="new-password" placeholder="再次输入新密码" />
+          </div>
+        </div>
+        <div class="hero-actions" style="margin-top:16px;">
+          <button class="btn primary" type="button" data-action="submit-change-password">确认修改</button>
+        </div>
+      </section>
+    `;
+
+    function parseApiError(err) {
+      const raw = String(err?.message || err || "");
+      try {
+        const body = JSON.parse(raw);
+        if (body.detail) return String(body.detail);
+      } catch (_) {}
+      return raw || "修改失败";
+    }
+
+    function clearPasswordForm() {
+      const current = document.querySelector("[data-current-password]");
+      const next = document.querySelector("[data-new-password]");
+      const confirm = document.querySelector("[data-confirm-password]");
+      if (current) current.value = "";
+      if (next) next.value = "";
+      if (confirm) confirm.value = "";
+    }
+
+    async function submitChangePassword() {
+      const currentPassword = String(document.querySelector("[data-current-password]")?.value || "");
+      const newPassword = String(document.querySelector("[data-new-password]")?.value || "");
+      const confirmPassword = String(document.querySelector("[data-confirm-password]")?.value || "");
+      if (!currentPassword || !newPassword) {
+        showToast("请填写当前密码和新密码");
+        return;
+      }
+      if (newPassword.length < 4) {
+        showToast("新密码至少 4 位");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showToast("两次输入的新密码不一致");
+        return;
+      }
+      try {
+        await window.hrApi.changePassword({
+          current_password: currentPassword,
+          new_password: newPassword,
+        });
+        clearPasswordForm();
+        showToast("密码已修改");
+      } catch (err) {
+        showToast(parseApiError(err));
+      }
+    }
+
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest('[data-action="submit-change-password"]');
+      if (!button) return;
+      event.preventDefault();
+      submitChangePassword();
+    });
+  </script>
+</body>
+</html>

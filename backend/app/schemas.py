@@ -54,6 +54,11 @@ class UserResetPassword(BaseModel):
     password_hash: str
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
 class RoleCreate(BaseModel):
     code: str
     name: str

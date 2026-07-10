@@ -136,6 +136,11 @@ const pages = {
     title: "统一 UI 样板",
     desc: "集中展示 v0 蓝色设计令牌、组件状态和标签色板，作为新增页面的视觉验收基准。"
   },
+  settings: {
+    crumbs: "个人设置 / 修改密码",
+    title: "设置",
+    desc: "管理个人账号安全设置。忘记密码请联系管理员重置。",
+  },
 };
 
 const icons = {
@@ -595,7 +600,7 @@ window.refreshManagementPage = async () => {
 function getNavVisibility(role, permissions = null) {
   const permissionSet = permissions ? new Set(permissions) : null;
   // Detail pages accessible from other pages, not in sidebar
-  const detailPages = new Set(["position-candidates.html", "notifications.html"]);
+  const detailPages = new Set(["position-candidates.html", "notifications.html", "settings.html"]);
   if (permissionSet?.has("all")) {
     const result = new Set(navItems.map(({ href }) => href));
     detailPages.forEach(p => result.add(p));
@@ -631,6 +636,7 @@ function getNavVisibility(role, permissions = null) {
       "statistics.html",
       "db-explorer.html",
       "position-candidates.html",
+      "settings.html",
     ]);
   }
   return new Set([
@@ -646,6 +652,7 @@ function getNavVisibility(role, permissions = null) {
       "notifications.html",
     "db-explorer.html",
     "position-candidates.html",
+    "settings.html",
   ]);
 }
 
@@ -683,6 +690,8 @@ const crumbHrefMap = {
   "数据探针": "./db-explorer.html",
   "开发工具": "./ui-kit.html",
   "UI 样板": "./ui-kit.html",
+  "个人设置": "./settings.html",
+  "修改密码": "./settings.html",
 };
 
 function renderCrumbsHtml(pageKey) {
@@ -763,6 +772,20 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
             <div class="sidebar-role">${currentUser?.role || "超级管理员"}</div>
           </div>
         </div>
+        <button class="sidebar-settings-btn" data-action="open-settings" title="个人设置">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="M4.93 4.93l1.41 1.41"></path>
+            <path d="M17.66 17.66l1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="M4.93 19.07l1.41-1.41"></path>
+            <path d="M17.66 6.34l1.41-1.41"></path>
+          </svg>
+          <span>设置</span>
+        </button>
         <button class="sidebar-logout-btn" data-action="logout" title="退出系统">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -1215,6 +1238,14 @@ async function handleGlobalButton(button) {
     } catch (_) {}
     // 强制整页跳转登录，避免 SPA 路由把 login 当业务页局部加载
     window.location.replace("./login.html");
+    return;
+  }
+  if (button.dataset.action === "open-settings") {
+    if (typeof loadPage === "function") {
+      await loadPage("./settings.html");
+    } else {
+      location.href = "./settings.html";
+    }
     return;
   }
   const uniq = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;

@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-首页顶部副文案与月度看板推荐/入职口径对齐。维护流程：**改代码 → 更新三份 MD → commit → push**。
+用户自助修改密码。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

@@ -34,6 +34,9 @@ window.hrApi = {
   me() {
     return this.request("/me");
   },
+  changePassword(payload) {
+    return this.request("/me/change-password", { method: "POST", body: JSON.stringify(payload) });
+  },
   myAssignedProjectIds() {
     return this.request("/me/assigned-project-ids");
   },

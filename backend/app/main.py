@@ -615,6 +615,25 @@ def me(user: User = Depends(require_user), db: Session = Depends(get_db)):
     )
 
 
+@app.post("/api/me/change-password")
+def change_my_password(
+    payload: schemas.ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    if not security.verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="当前密码不正确")
+    new_password = (payload.new_password or "").strip()
+    if len(new_password) < 4:
+        raise HTTPException(status_code=400, detail="新密码至少 4 位")
+    if security.verify_password(new_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="新密码不能与当前密码相同")
+    user.password_hash = security.hash_password(new_password)
+    crud.add_audit(db, user.username, "个人设置", "修改密码", "user", str(user.id), detail=user.username)
+    db.commit()
+    return {"ok": True}
+
+
 @app.get("/api/me/assigned-project-ids", response_model=schemas.AssignedProjectIdsOut)
 def my_assigned_project_ids(db: Session = Depends(get_db), user: User = Depends(require_user)):
     return schemas.AssignedProjectIdsOut(project_ids=crud.assigned_project_ids_for_user(db, user.id))

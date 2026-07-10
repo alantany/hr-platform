@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-07-10（完成 - 用户自助修改密码）
+
+- 后端：`ChangePasswordRequest` + `POST /api/me/change-password`（校验当前密码、更新 hash、写审计）。
+- 前端：`hrApi.changePassword`；新建 `settings.html`；侧栏 footer「设置」入口；`getNavVisibility` 全角色可访问。
+- 测试：`tests/test_change_password.py`（错误当前密码 400、改密成功、新密码可登录；临时用户测完删除）通过。
+- 管理员重置密码接口未改动。
+
 ## 2026-07-10（完成 - 首页顶部副文案与月度看板口径对齐）
 
 - 问题：顶部「本月推荐推进」用日历（仅 status=已推荐）=2；月度「本月推荐」用漏斗累计=7。顶部「本月已交付」查交付表=0；月度「本月入职」查入职记录=2。
