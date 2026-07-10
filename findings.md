@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（平台岗位发布页退出失效）
+
+- `bindActionButtons` / 全局 click 曾写：`action.includes('recruit') || pathname.includes('recruit-')` 则 return。
+- 进入岗位发布/列表/每日任务后 URL 含 `recruit-`，导致侧栏「退出」也被拦截，页面自有 handler 又不处理 logout。
+- 约束：仅按 `data-action` 是否含 `recruit` 放行页面逻辑，禁止用 pathname 屏蔽整页全局按钮。
+
 ## 2026-07-10（左侧导航 SPA 与滚动）
 
 - 多数业务页 HTML 只有 `#app` + `__PAGE_BODY__`，没有预渲染 `.content`；旧 `loadPage` 找不到 `.content` 就 `location.href` 整页跳转。

@@ -5095,8 +5095,9 @@ function bindActionButtons() {
     btn.dataset.bound = "true";
     btn.addEventListener("click", (event) => {
       const explicitAction = btn.dataset.action || "";
-      if (explicitAction.includes("recruit") || location.pathname.includes("recruit-")) {
-        return; // 放行，不执行 preventDefault 和 handleGlobalButton
+      // 仅放行页面自有的 recruit 操作；logout 等全局动作仍走统一处理
+      if (explicitAction.includes("recruit") && explicitAction !== "logout") {
+        return;
       }
       event.preventDefault();
       withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));
@@ -5109,7 +5110,8 @@ document.addEventListener("click", (event) => {
   if (!btn) return;
 
   const explicitAction = btn.dataset.action || "";
-  if (explicitAction.includes("recruit") || location.pathname.includes("recruit-")) {
+  // 不要用 pathname.includes('recruit-') 拦截整页按钮，否则退出等全局动作会失效
+  if (explicitAction.includes("recruit")) {
     return;
   }
 

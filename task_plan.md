@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-左侧导航点击后局部刷新右侧，激活项保持可见。维护流程：**改代码 → 更新三份 MD → commit → push**。
+修复平台岗位发布页退出按钮被 pathname 拦截。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
