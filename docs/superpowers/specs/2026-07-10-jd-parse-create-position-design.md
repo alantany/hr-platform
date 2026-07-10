@@ -1,8 +1,8 @@
 # JD 单生成岗位 — 产品设计（方案 A）
 
 - **日期**：2026-07-10
-- **状态**：已确认，实现计划已就绪（实现见 `docs/superpowers/plans/2026-07-10-jd-parse-create-position.md`）
-- **范围**：设计文档；实现按计划推进
+- **状态**：已实现（实现见 `docs/superpowers/plans/2026-07-10-jd-parse-create-position.md`）
+- **范围**：设计文档；前后端已按计划落地
 
 ---
 

@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-10（JD parse Task 5 — 收尾核对）
+
+- 补测：`test_parse_jd_success_as_admin`、`test_parse_jd_too_long_returns_400`；套件共 10 项。
+- Task 3+4 代码核对符合设计：入口非 noop、有 JD 小弹窗、confirm→parseJd→apply；客户/项目不预填；description=原文；target-count=10；操作员隐藏选择器已同步。
+- Spec 状态改为「已实现」；Phase 28 complete。
+
 ## 2026-07-10（JD parse Task 3+4 — 前端入口与预填）
 
 - 入口已从 `noop` 改为 `open-jd-parse-modal`；不再落入全局 noop Toast。

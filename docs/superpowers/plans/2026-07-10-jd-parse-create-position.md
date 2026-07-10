@@ -907,7 +907,7 @@ EOF
 - Modify: `docs/superpowers/specs/2026-07-10-jd-parse-create-position-design.md`（状态）
 - Modify: `findings.md` / `progress.md` / `task_plan.md`
 
-- [ ] **Step 1: Add admin success + oversize text tests**
+- [x] **Step 1: Add admin success + oversize text tests**
 
 追加到 `tests/test_position_parse_jd.py`：
 
@@ -950,7 +950,7 @@ def test_parse_jd_too_long_returns_400():
         assert "20000" in res.text
 ```
 
-- [ ] **Step 2: Run full parse-jd suite**
+- [x] **Step 2: Run full parse-jd suite**
 
 Run:
 
@@ -960,7 +960,7 @@ cd /Users/huaiyuan/Desktop/workspace/hr-plateform && python -m pytest tests/test
 
 Expected: 全部 PASS。`tests/conftest.py` 会在每测后清理库；本接口不写库，无需额外 finally。
 
-- [ ] **Step 3: Frontend permission smoke**
+- [x] **Step 3: Frontend permission smoke**
 
 1. 操作员登录 → `projects.html` 岗位 Tab →「JD单生成岗位」与「新建岗位」均不可见  
 2. 组长登录 → 两按钮可见；直接 `POST /api/positions/parse-jd`（可用 curl + operator token）应 403  
@@ -979,40 +979,15 @@ cat /tmp/parse_jd_out.txt
 
 Expected: HTTP `403`
 
-- [ ] **Step 4: Update design spec status**
+- [x] **Step 4: Update design spec status**
 
-将 `docs/superpowers/specs/2026-07-10-jd-parse-create-position-design.md` 顶部状态改为：
+设计文档顶部状态已改为「已实现」。
 
-```markdown
-- **状态**：已确认，实现计划已就绪（实现见 `docs/superpowers/plans/2026-07-10-jd-parse-create-position.md`）
-```
+- [x] **Step 5: Update task MD files**
 
-实现全部完成后，再改为「已实现」。
+`task_plan.md` / `findings.md` / `progress.md` 已在 Task 5 收尾时更新；Phase 28 标记完成。
 
-- [ ] **Step 5: Update task MD files**
-
-`task_plan.md` Current Phase：
-
-```markdown
-## Current Phase
-
-JD生成岗位实现计划已就绪，待用户选择执行方式（subagent-driven / inline）。维护流程：**改代码 → 更新三份 MD → commit → push**。
-```
-
-Phase 28：
-
-```markdown
-### Phase 28 - JD单生成岗位（实现计划已就绪）
-
-- [x] 确认方案 A：粘贴 JD → 解析预填 → 人确认后走现有创建岗位
-- [x] 写入设计文档 `docs/superpowers/specs/2026-07-10-jd-parse-create-position-design.md`
-- [x] 用户审阅 spec
-- [x] 编写实现计划 `docs/superpowers/plans/2026-07-10-jd-parse-create-position.md`
-- [ ] 前后端实现与验证
-- **Status:** plan ready, awaiting execution choice
-```
-
-- [ ] **Step 6: Final commit for this task’s code/docs**
+- [x] **Step 6: Final commit for this task’s code/docs**
 
 ```bash
 git add tests/test_position_parse_jd.py docs/superpowers/specs/2026-07-10-jd-parse-create-position-design.md findings.md progress.md task_plan.md

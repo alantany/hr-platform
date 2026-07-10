@@ -193,3 +193,41 @@ def test_parse_jd_empty_name_but_other_fields_ok(mock_llm):
         assert res.status_code == 200, res.text
         assert res.json()["name"] == ""
         assert res.json()["location"] == "深圳"
+
+
+@patch("backend.app.main.call_llm_for_jd_parse")
+def test_parse_jd_success_as_admin(mock_llm):
+    mock_llm.return_value = {
+        "name": "测试岗",
+        "urgency": "正常",
+        "hiring_count": 1,
+        "salary_min": None,
+        "salary_max": None,
+        "location": "杭州",
+        "age_requirement": "不限",
+        "gender_requirement": "不限",
+        "education_requirement": "不限",
+        "experience_requirement": "不限",
+        "job_status_requirement": "不限",
+    }
+    with TestClient(app) as client:
+        headers = login_headers(client, "admin")
+        res = client.post(
+            "/api/positions/parse-jd",
+            json={"jd_text": "岗位：测试岗\n地点：杭州"},
+            headers=headers,
+        )
+        assert res.status_code == 200
+        assert res.json()["location"] == "杭州"
+
+
+def test_parse_jd_too_long_returns_400():
+    with TestClient(app) as client:
+        headers = login_headers(client, "admin")
+        res = client.post(
+            "/api/positions/parse-jd",
+            json={"jd_text": "A" * 20001},
+            headers=headers,
+        )
+        assert res.status_code == 400
+        assert "20000" in res.text

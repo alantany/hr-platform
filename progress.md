@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-07-10（完成 - Task 5 JD parse 权限/冒烟/文档收尾）
+
+- 追加 `test_parse_jd_success_as_admin`、`test_parse_jd_too_long_returns_400`；`pytest tests/test_position_parse_jd.py -v` 10 项全部 PASS。
+- Spec 状态 → 已实现；计划 Task 5 checkbox 勾选；Phase 28 complete。
+- 前端读代码核对 Task 3+4：符合设计，无缺口。
+- 未提交：`exports/`、`~$*.docx`。
+
 ## 2026-07-10（完成 - Task 3+4 JD 粘贴弹窗与创建预填）
 
 - 按钮 `noop` → `open-jd-parse-modal`；新增 JD 小弹窗；`hrApi.parseJd`；操作员隐藏选择器同步。
