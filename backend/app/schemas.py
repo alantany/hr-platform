@@ -229,6 +229,10 @@ class PositionJdParseRequest(BaseModel):
     jd_text: str
 
 
+class PositionJdExtractOut(BaseModel):
+    jd_text: str
+
+
 class PositionJdParseOut(BaseModel):
     name: str = ""
     description: str = ""

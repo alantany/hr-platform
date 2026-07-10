@@ -365,7 +365,7 @@ window.__PAGE_BODY__ = `
       <div class="section-head">
         <div>
           <h3>JD单生成岗位</h3>
-          <div class="section-sub">粘贴完整 JD 文本，系统解析后预填创建岗位表单；客户与项目需人工选择。</div>
+          <div class="section-sub">粘贴文本或上传 txt/pdf，系统解析后预填创建岗位表单；客户与项目需人工选择。</div>
         </div>
         <div class="hero-actions" style="margin-top:0">
           <button class="btn" data-action="close-jd-parse-modal">取消</button>
@@ -377,8 +377,16 @@ window.__PAGE_BODY__ = `
           <div class="item-top">
             <div>
               <div class="item-title">JD 原文</div>
-              <div class="item-meta">支持直接粘贴完整岗位描述；解析成功后将打开创建岗位弹窗并预填</div>
+              <div class="item-meta">支持粘贴文本，或上传 .txt / .pdf（不支持 doc/docx）；解析成功后将打开创建岗位弹窗并预填</div>
             </div>
+          </div>
+          <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <button type="button" class="btn-sm primary" data-jd-parse-mode="paste" data-action="switch-jd-parse-mode">粘贴文本</button>
+            <button type="button" class="btn-sm" data-jd-parse-mode="upload" data-action="switch-jd-parse-mode">上传文件</button>
+          </div>
+          <div data-jd-parse-pane="upload" style="display:none; margin-bottom:10px;">
+            <input type="file" accept=".txt,.pdf,text/plain,application/pdf" data-jd-parse-file />
+            <div class="item-meta" style="margin-top:8px;">仅支持 .txt / .pdf；选文件后文本填入下方，可再编辑后点「开始解析」（不会自动解析）</div>
           </div>
           <textarea class="input" rows="12" data-jd-parse-textarea placeholder="请粘贴完整 JD 文本…" style="width:100%; border:1px solid #e2e8f0; border-radius:8px; padding:12px; font-size:13px; outline:none; resize:vertical;"></textarea>
         </div>

@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-07-10（JD 弹窗支持 txt/pdf 上传抽文本）
+
+- 新增 `POST /api/positions/extract-jd-text`（multipart `file`）：权限同 parse-jd；仅 `.txt`/`.pdf`；空/非法/抽不出字 → 400；上限 5MB。
+- `.txt`：utf-8 / utf-8-sig / gb18030 / latin-1 解码；`.pdf`：`pdfplumber` + `BytesIO`（`extract_text_from_pdf_bytes`）。
+- 前端：JD 小弹窗「粘贴文本 / 上传文件」分段切换，共用同一 textarea，切换不清空；txt 用 FileReader，pdf 调 extract 填框；**不**选完文件就调 LLM；「开始解析」仍走 `parse-jd`。
+- 不支持 doc/docx；操作员仍 403 / 按钮隐藏。
+
 ## 2026-07-10（JD parse Task 5 — 收尾核对）
 
 - 补测：`test_parse_jd_success_as_admin`、`test_parse_jd_too_long_returns_400`；套件共 10 项。

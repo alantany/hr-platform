@@ -1,5 +1,13 @@
 # Progress
 
+## 2026-07-10（完成 - JD 弹窗增加 txt/pdf 上传）
+
+- 后端：`POST /api/positions/extract-jd-text` + `PositionJdExtractOut`；复用 pdfplumber 抽文本。
+- 前端：`projects.html` 分段控件；`hrApi.extractJdText`；`app.js` 文件 change / 模式切换；解析逻辑仍基于最终文本。
+- Spec Non-Goals 改为「支持 txt/pdf 上传抽文本，不支持 doc/docx」。
+- 测试：`tests/test_position_parse_jd.py` 16 项通过（含 txt 成功、docx 400、空 400、403、pdf mock 成功/空）。
+- 未提交：`exports/`、`~$*.docx`。
+
 ## 2026-07-10（完成 - Task 5 JD parse 权限/冒烟/文档收尾）
 
 - 追加 `test_parse_jd_success_as_admin`、`test_parse_jd_too_long_returns_400`；`pytest tests/test_position_parse_jd.py -v` 10 项全部 PASS。

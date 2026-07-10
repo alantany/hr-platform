@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-JD单生成岗位 Phase 28 已完成（Task 1–5：parse-jd API + 前端弹窗预填 + 权限/冒烟/文档收尾）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+JD单生成岗位：已支持粘贴 + txt/pdf 上传抽文本（extract-jd-text → 填框 → parse-jd）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
@@ -443,4 +443,5 @@ JD单生成岗位 Phase 28 已完成（Task 1–5：parse-jd API + 前端弹窗�
 - [x] Task 1–2：parse-jd API + LLM/normalize
 - [x] Task 3–4：JD 粘贴弹窗 + 创建岗位预填
 - [x] Task 5：权限/冒烟/文档收尾
+- [x] 扩展：上传 txt/pdf 抽文本（`extract-jd-text`），不自动调 LLM
 - **Status:** complete

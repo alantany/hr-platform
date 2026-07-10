@@ -4893,8 +4893,30 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
   if (button.dataset.action === "open-jd-parse-modal") {
     const modal = document.querySelector("[data-jd-parse-modal]");
     const textarea = modal?.querySelector("[data-jd-parse-textarea]");
+    const fileInput = modal?.querySelector("[data-jd-parse-file]");
     if (textarea) textarea.value = "";
-    if (modal) modal.style.display = "block";
+    if (fileInput) fileInput.value = "";
+    if (modal) {
+      modal.dataset.jdMode = "paste";
+      modal.querySelectorAll("[data-jd-parse-mode]").forEach((btn) => {
+        btn.classList.toggle("primary", btn.dataset.jdParseMode === "paste");
+      });
+      const uploadPane = modal.querySelector('[data-jd-parse-pane="upload"]');
+      if (uploadPane) uploadPane.style.display = "none";
+      modal.style.display = "block";
+    }
+    return;
+  }
+  if (button.dataset.action === "switch-jd-parse-mode") {
+    const modal = document.querySelector("[data-jd-parse-modal]");
+    if (!modal) return;
+    const mode = button.dataset.jdParseMode || "paste";
+    modal.dataset.jdMode = mode;
+    modal.querySelectorAll("[data-jd-parse-mode]").forEach((btn) => {
+      btn.classList.toggle("primary", btn.dataset.jdParseMode === mode);
+    });
+    const uploadPane = modal.querySelector('[data-jd-parse-pane="upload"]');
+    if (uploadPane) uploadPane.style.display = mode === "upload" ? "block" : "none";
     return;
   }
   if (button.dataset.action === "close-jd-parse-modal") {
@@ -4906,7 +4928,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     const modal = document.querySelector("[data-jd-parse-modal]");
     const textarea = modal?.querySelector("[data-jd-parse-textarea]");
     const jdText = textarea?.value?.trim() || "";
-    if (!jdText) throw new Error("请先粘贴 JD");
+    if (!jdText) throw new Error("请先粘贴或上传 JD");
     const hideLoading = showLoadingToast("JD 解析中...");
     try {
       await new Promise((resolve) => requestAnimationFrame(() => resolve()));
@@ -5369,6 +5391,59 @@ window.fetchCandidatePanels = async function(candidateId, container) {
 document.addEventListener("change", async (event) => {
   const target = event.target;
   if (!target) return;
+
+  if (target.matches("[data-jd-parse-file]")) {
+    const file = target.files && target.files[0];
+    if (!file) return;
+    const modal = document.querySelector("[data-jd-parse-modal]");
+    const textarea = modal?.querySelector("[data-jd-parse-textarea]");
+    const name = (file.name || "").toLowerCase();
+    const isTxt = name.endsWith(".txt");
+    const isPdf = name.endsWith(".pdf");
+    if (!isTxt && !isPdf) {
+      target.value = "";
+      showToast("仅支持 .txt 或 .pdf 文件");
+      return;
+    }
+    if (file.size === 0) {
+      target.value = "";
+      showToast("文件为空，请重新选择");
+      return;
+    }
+    try {
+      if (isTxt) {
+        const text = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(new Error("读取文件失败"));
+          reader.readAsText(file);
+        });
+        if (!String(text).trim()) {
+          showToast("文件为空，请重新选择");
+          return;
+        }
+        if (textarea) textarea.value = text;
+        showToast("已载入文本，可编辑后点「开始解析」");
+      } else {
+        const hideLoading = showLoadingToast("正在提取 PDF 文本...");
+        try {
+          const result = await window.hrApi.extractJdText(file);
+          if (textarea) textarea.value = result.jd_text || "";
+          showToast("已提取文本，可编辑后点「开始解析」");
+        } finally {
+          hideLoading();
+        }
+      }
+    } catch (err) {
+      let msg = err?.message || "提取失败";
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed?.detail) msg = parsed.detail;
+      } catch (_) {}
+      showToast(typeof msg === "string" ? msg : "提取失败");
+    }
+    return;
+  }
 
   if (target.matches('[data-recommend-company-select]')) {
     const companyId = target.value;

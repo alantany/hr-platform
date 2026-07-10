@@ -124,6 +124,18 @@ window.hrApi = {
   parseJd(payload) {
     return this.request("/positions/parse-jd", { method: "POST", body: JSON.stringify(payload) });
   },
+  extractJdText(file) {
+    const form = new FormData();
+    form.append("file", file);
+    return fetch(`${this.baseUrl}/positions/extract-jd-text`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${this.token}` },
+      body: form,
+    }).then(async (res) => {
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    });
+  },
   updatePosition(id, payload) {
     return this.request(`/positions/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
   },

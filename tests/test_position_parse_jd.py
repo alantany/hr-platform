@@ -231,3 +231,79 @@ def test_parse_jd_too_long_returns_400():
         )
         assert res.status_code == 400
         assert "20000" in res.text
+
+
+def test_extract_jd_text_from_txt_success():
+    with TestClient(app) as client:
+        headers = login_headers(client, "leader")
+        res = client.post(
+            "/api/positions/extract-jd-text",
+            files={"file": ("jd.txt", SAMPLE_JD.encode("utf-8"), "text/plain")},
+            headers=headers,
+        )
+        assert res.status_code == 200, res.text
+        assert res.json()["jd_text"] == SAMPLE_JD.strip()
+
+
+def test_extract_jd_text_rejects_docx():
+    with TestClient(app) as client:
+        headers = login_headers(client, "admin")
+        res = client.post(
+            "/api/positions/extract-jd-text",
+            files={"file": ("jd.docx", b"fake-docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+            headers=headers,
+        )
+        assert res.status_code == 400
+        assert ".txt" in res.text or ".pdf" in res.text
+
+
+def test_extract_jd_text_empty_file_returns_400():
+    with TestClient(app) as client:
+        headers = login_headers(client, "admin")
+        res = client.post(
+            "/api/positions/extract-jd-text",
+            files={"file": ("empty.txt", b"", "text/plain")},
+            headers=headers,
+        )
+        assert res.status_code == 400
+        assert "空" in res.text
+
+
+def test_extract_jd_text_operator_forbidden():
+    with TestClient(app) as client:
+        headers = login_headers(client, "operator")
+        res = client.post(
+            "/api/positions/extract-jd-text",
+            files={"file": ("jd.txt", SAMPLE_JD.encode("utf-8"), "text/plain")},
+            headers=headers,
+        )
+        assert res.status_code == 403
+
+
+@patch("backend.app.main.extract_text_from_pdf_bytes")
+def test_extract_jd_text_from_pdf_success(mock_pdf):
+    mock_pdf.return_value = "岗位名称：PDF 测试岗\n地点：北京"
+    with TestClient(app) as client:
+        headers = login_headers(client, "admin")
+        res = client.post(
+            "/api/positions/extract-jd-text",
+            files={"file": ("jd.pdf", b"%PDF-1.4 fake", "application/pdf")},
+            headers=headers,
+        )
+        assert res.status_code == 200, res.text
+        assert "PDF 测试岗" in res.json()["jd_text"]
+        mock_pdf.assert_called_once()
+
+
+@patch("backend.app.main.extract_text_from_pdf_bytes")
+def test_extract_jd_text_pdf_empty_returns_400(mock_pdf):
+    mock_pdf.return_value = "   \n"
+    with TestClient(app) as client:
+        headers = login_headers(client, "admin")
+        res = client.post(
+            "/api/positions/extract-jd-text",
+            files={"file": ("jd.pdf", b"%PDF-1.4 fake", "application/pdf")},
+            headers=headers,
+        )
+        assert res.status_code == 400
+        assert "未能从文件中提取出文本" in res.text

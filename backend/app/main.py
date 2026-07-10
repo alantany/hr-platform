@@ -951,6 +951,59 @@ def add_position(payload: schemas.PositionCreate, db: Session = Depends(get_db),
     return obj
 
 
+JD_EXTRACT_MAX_BYTES = 5 * 1024 * 1024
+JD_EXTRACT_ALLOWED_EXT = {".txt", ".pdf"}
+
+
+def decode_jd_txt_bytes(raw: bytes) -> str:
+    for encoding in ("utf-8", "utf-8-sig", "gb18030", "latin-1"):
+        try:
+            return raw.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return raw.decode("utf-8", errors="ignore")
+
+
+def extract_text_from_pdf_bytes(raw: bytes) -> str:
+    from io import BytesIO
+
+    text_content = ""
+    with pdfplumber.open(BytesIO(raw)) as pdf:
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text_content += page_text + "\n"
+    return text_content
+
+
+@app.post("/api/positions/extract-jd-text", response_model=schemas.PositionJdExtractOut)
+async def extract_position_jd_text(file: UploadFile = File(...), user: User = Depends(require_user)):
+    if not security.is_admin(user) and not security.is_leader(user):
+        raise HTTPException(status_code=403, detail="仅组长及系统管理员有权解析 JD 生成岗位")
+    filename = (file.filename or "").strip()
+    suffix = Path(filename).suffix.lower()
+    if suffix not in JD_EXTRACT_ALLOWED_EXT:
+        raise HTTPException(status_code=400, detail="仅支持 .txt 或 .pdf 文件")
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="文件为空，请重新选择")
+    if len(raw) > JD_EXTRACT_MAX_BYTES:
+        raise HTTPException(status_code=400, detail="文件过大，请控制在 5MB 以内")
+    try:
+        if suffix == ".txt":
+            jd_text = decode_jd_txt_bytes(raw)
+        else:
+            jd_text = extract_text_from_pdf_bytes(raw)
+    except Exception:
+        raise HTTPException(status_code=400, detail="无法从文件中提取文本")
+    jd_text = (jd_text or "").strip()
+    if not jd_text:
+        raise HTTPException(status_code=400, detail="未能从文件中提取出文本")
+    if len(jd_text) > JD_PARSE_MAX_CHARS:
+        raise HTTPException(status_code=400, detail=f"JD 文本过长，请控制在 {JD_PARSE_MAX_CHARS} 字以内")
+    return {"jd_text": jd_text}
+
+
 @app.post("/api/positions/parse-jd", response_model=schemas.PositionJdParseOut)
 def parse_position_jd(payload: schemas.PositionJdParseRequest, user: User = Depends(require_user)):
     if not security.is_admin(user) and not security.is_leader(user):
