@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-角色列表用户数可跳转用户列表并按角色筛选。维护流程：**改代码 → 更新三份 MD → commit → push**。
+用户列表组长可展开查看组员。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

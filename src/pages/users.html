@@ -152,6 +152,7 @@
       editingId: null,
       passwordUserId: null,
       confirmAction: null,
+      expandedLeaderIds: new Set(),
     };
 
     function escapeHtml(value) {
@@ -169,6 +170,15 @@
       if (String(role).includes('超级') || String(role).toUpperCase().includes('ADMIN')) return 'tone-pink';
       if (String(role).includes('组长') || String(role).toUpperCase().includes('LEADER')) return 'tone-orange';
       return 'tone-violet';
+    }
+
+    function isLeaderRole(role) {
+      const text = String(role || '');
+      return text.includes('组长') || text.includes('主管') || text.toUpperCase().includes('LEADER');
+    }
+
+    function getMembersOfLeader(leaderId) {
+      return userPageState.users.filter((item) => Number(item.manager_user_id) === Number(leaderId));
     }
 
     function getManagerName(user) {
@@ -228,7 +238,7 @@
     }
 
     function renderManagerOptions() {
-      const leaders = userPageState.users.filter((item) => String(item.role).includes('组长') || String(item.role).includes('主管'));
+      const leaders = userPageState.users.filter((item) => isLeaderRole(item.role));
       const options = ['<option value="">无</option>']
         .concat(leaders.map((item) => `<option value="${item.id}">${escapeHtml(item.full_name)} / ${escapeHtml(item.username)}</option>`))
         .join('');
@@ -238,28 +248,59 @@
       });
     }
 
-    function renderUsersTable() {
-      const body = document.querySelector('[data-user-table-body]');
-      if (!body) return;
-      const lastLoginMap = getLastLoginMap();
-      const rows = getFilteredUsers().map((user) => `
-        <div class="admin-table-row admin-user-grid">
-          <div><input type="checkbox" class="admin-checkbox" /></div>
+    function renderMemberPanel(leader, lastLoginMap) {
+      const members = getMembersOfLeader(leader.id);
+      if (!members.length) {
+        return `<div class="admin-member-panel"><div class="admin-empty-state" style="padding:12px 16px;">该组长下暂无组员。</div></div>`;
+      }
+      const rows = members.map((user) => `
+        <div class="admin-member-row">
           <div class="admin-row-strong">${escapeHtml(user.username)}</div>
           <div>${escapeHtml(user.full_name)}</div>
           <div><span class="admin-pill ${getRoleTone(user.role)}">${escapeHtml(user.role)}</span></div>
           <div><span class="admin-row-muted">${escapeHtml(getUserContact(user))}</span></div>
-          <div><span class="admin-row-muted">${escapeHtml(getUserEmail(user))}</span></div>
           <div><span class="admin-pill ${user.is_active ? 'tone-green' : 'tone-slate'}">${user.is_active ? '启用' : '停用'}</span></div>
-          <div>${escapeHtml(formatDateTime(lastLoginMap.get(user.id)))}</div>
           <div class="admin-inline-actions">
             <button type="button" class="admin-text-link" data-user-page-edit="${user.id}">编辑</button>
-            <button type="button" class="admin-text-link" data-user-page-password="${user.id}">重置密码</button>
-            <button type="button" class="admin-text-link ${user.is_active ? 'danger' : ''}" data-user-page-toggle="${user.id}">${user.is_active ? '禁用' : '启用'}</button>
-            <button type="button" class="admin-text-link danger" data-user-page-delete="${user.id}">删除</button>
           </div>
         </div>
       `).join('');
+      return `<div class="admin-member-panel"><div class="admin-member-head">直属组员（${members.length}）</div>${rows}</div>`;
+    }
+
+    function renderUsersTable() {
+      const body = document.querySelector('[data-user-table-body]');
+      if (!body) return;
+      const lastLoginMap = getLastLoginMap();
+      const rows = getFilteredUsers().map((user) => {
+        const leader = isLeaderRole(user.role);
+        const memberCount = leader ? getMembersOfLeader(user.id).length : 0;
+        const expanded = userPageState.expandedLeaderIds.has(Number(user.id));
+        const toggleHtml = leader
+          ? `<button type="button" class="admin-text-link admin-leader-toggle" data-user-page-toggle-members="${user.id}" aria-expanded="${expanded ? 'true' : 'false'}">${expanded ? '▾' : '▸'} 组员 ${memberCount}</button>`
+          : '';
+        return `
+        <div class="admin-user-block">
+          <div class="admin-table-row admin-user-grid">
+            <div><input type="checkbox" class="admin-checkbox" /></div>
+            <div class="admin-row-strong">${escapeHtml(user.username)}</div>
+            <div>${escapeHtml(user.full_name)}${toggleHtml ? `<div style="margin-top:4px;">${toggleHtml}</div>` : ''}</div>
+            <div><span class="admin-pill ${getRoleTone(user.role)}">${escapeHtml(user.role)}</span></div>
+            <div><span class="admin-row-muted">${escapeHtml(getUserContact(user))}</span></div>
+            <div><span class="admin-row-muted">${escapeHtml(getUserEmail(user))}</span></div>
+            <div><span class="admin-pill ${user.is_active ? 'tone-green' : 'tone-slate'}">${user.is_active ? '启用' : '停用'}</span></div>
+            <div>${escapeHtml(formatDateTime(lastLoginMap.get(user.id)))}</div>
+            <div class="admin-inline-actions">
+              <button type="button" class="admin-text-link" data-user-page-edit="${user.id}">编辑</button>
+              <button type="button" class="admin-text-link" data-user-page-password="${user.id}">重置密码</button>
+              <button type="button" class="admin-text-link ${user.is_active ? 'danger' : ''}" data-user-page-toggle="${user.id}">${user.is_active ? '禁用' : '启用'}</button>
+              <button type="button" class="admin-text-link danger" data-user-page-delete="${user.id}">删除</button>
+            </div>
+          </div>
+          ${leader && expanded ? renderMemberPanel(user, lastLoginMap) : ''}
+        </div>
+      `;
+      }).join('');
       body.innerHTML = rows || '<div class="admin-empty-state">暂无符合条件的用户。</div>';
     }
 
@@ -455,6 +496,14 @@
         if (editButton) return openEditModal(editButton.dataset.userPageEdit);
         const passwordButton = event.target.closest('[data-user-page-password]');
         if (passwordButton) return openPasswordModal(passwordButton.dataset.userPagePassword);
+        const membersToggle = event.target.closest('[data-user-page-toggle-members]');
+        if (membersToggle) {
+          const leaderId = Number(membersToggle.dataset.userPageToggleMembers);
+          if (userPageState.expandedLeaderIds.has(leaderId)) userPageState.expandedLeaderIds.delete(leaderId);
+          else userPageState.expandedLeaderIds.add(leaderId);
+          renderUsersTable();
+          return;
+        }
         const toggleButton = event.target.closest('[data-user-page-toggle]');
         if (toggleButton) return openConfirmModal(toggleButton.dataset.userPageToggle);
         const deleteButton = event.target.closest('[data-user-page-delete]');

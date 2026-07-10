@@ -1559,6 +1559,44 @@ button, input, select { font: inherit; }
   grid-template-columns: 54px 1.05fr 1fr .9fr 1fr 1fr .68fr .9fr 1.1fr;
 }
 
+.admin-user-block + .admin-user-block .admin-table-row {
+  border-top: 1px solid rgba(236, 240, 244, 0.96);
+}
+
+.admin-leader-toggle {
+  font-size: 12px !important;
+  font-weight: 600;
+}
+
+.admin-member-panel {
+  margin: 0 16px 12px 54px;
+  padding: 8px 12px 10px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.admin-member-head {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.admin-member-row {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr .9fr 1fr .7fr .9fr;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 4px;
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
+  font-size: 13px;
+}
+
+.admin-member-row:first-of-type {
+  border-top: none;
+}
+
 .admin-role-grid {
   grid-template-columns: 1fr 1fr .58fr 1.9fr .85fr .95fr;
 }
