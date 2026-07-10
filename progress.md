@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-10（完成 - 简历池批量推荐弹窗可滚动）
+
+- 问题：矮屏/小视口下「批量推荐至岗位」弹窗底部表单被裁切，无法看到全部字段。
+- 修复：`candidates.html` 中该弹窗 `.panel` 增加 `max-height: min(90vh, calc(100vh - 48px))` 与 `overflow-y: auto`，内容可纵向滚动。
+
 ## 2026-07-10（完成 - 首页月度看板按推荐状态口径统计）
 
 - 根因：`RecommendationOut` 缺 `created_at/updated_at`，按月过滤失效；面试/推荐卡口径也不对。

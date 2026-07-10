@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-10（简历池批量推荐弹窗视口约束）
+
+- 「批量推荐至岗位」弹窗在 `candidates.html` 的 `[data-recommend-modal] > .panel`，原先仅有 `max-width` 与 `margin:12vh`，无高度上限，矮屏时底部字段不可见。
+- 约束：弹窗内容区需 `max-height: min(90vh, calc(100vh - 48px))` + `overflow-y: auto`，保证小视口可滚到全部表单项。
+
 ## 2026-07-10（首页月度看板统计口径）
 
 - **本月**按「进入该状态的时间」落在当月：推荐侧用 `updated_at` 近似；入职侧优先 `onboard_date`，无则 `created_at`。
