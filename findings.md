@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-10（猜你想搜与搜索框匹配一致）
+
+- **原差异**：搜索框走 `matchesSearchKeywords`（岗位 L1/L2、短词边界）；热词仅用全文 `includes`，会误命中经历里的子串且不区分期望岗位优先。
+- **现规则**：每个已选热词同样调用 `matchesSearchKeywords(buildCandidateSearchText(item), hotword)`；多热词之间仍为 AND；排序时热词与搜索框词一并计入相关性。
+
 ## 2026-07-09（标签字典热词管理）
 
 - **范围（方案 A）**：热词仅维护文案、排序、启用/停用。

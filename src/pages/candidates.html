@@ -612,15 +612,18 @@
             filtered = filtered.filter(i => i.created_at && i.created_at.startsWith(todayPrefix));
           }
           
-          // 5. 点击的热词额外检索匹配（与关键词同为 AND，仅岗位相关字段）
+          // 5. 猜你想搜热词：与搜索框同一套岗位字段匹配逻辑（L1/L2 + 短词边界）
           if (activeHotkeys.length > 0) {
             filtered = filtered.filter(i => {
               const text = window.buildCandidateSearchText(i);
-              return activeHotkeys.every(hk => text.includes(hk.toLowerCase()));
+              return activeHotkeys.every(hk => window.matchesSearchKeywords(text, hk));
             });
           }
+
+          // 用于相关性排序：搜索框词 + 已选热词（空格拼接，组间 AND）
+          const relevanceKeyword = [keyword, ...activeHotkeys].filter(Boolean).join(" ").trim();
           
-          // 6. 排序：有关键词时默认按期望岗位命中优先；用户显式选时间/年龄时仍尊重
+          // 6. 排序：有关键词/热词时默认按期望岗位命中优先；用户显式选时间/年龄时仍尊重
           if (sortVal === 'age_asc') {
             filtered.sort((a, b) => (Number(a.age) || 999) - (Number(b.age) || 999));
           } else if (sortVal === 'created_desc') {
@@ -629,9 +632,9 @@
               const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
               return tB - tA;
             });
-          } else if (keyword && typeof window.compareCandidateKeywordRelevance === 'function') {
+          } else if (relevanceKeyword && typeof window.compareCandidateKeywordRelevance === 'function') {
             filtered.sort((a, b) => {
-              const byRelevance = window.compareCandidateKeywordRelevance(a, b, keyword);
+              const byRelevance = window.compareCandidateKeywordRelevance(a, b, relevanceKeyword);
               if (byRelevance !== 0) return byRelevance;
               const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
               const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
