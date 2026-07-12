@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-13（数字看板过滤选中态）
+
+- 可过滤的 `metric-card` 用 `data-metric-filter-group` / `data-metric-filter-key` + `applyMetricFilterToggle`。
+- 交互：点选高亮并过滤；再点同一卡片取消过滤并去掉高亮；点「总数」类清空条件。
+- 仅导航跳转、无过滤的看板卡片不套此逻辑。
+
 ## 2026-07-13（项目管理紧急岗位卡片 404）
 
 - `positions.html` 已并入 `projects.html` 的「岗位列表」子 Tab，独立页面不存在。

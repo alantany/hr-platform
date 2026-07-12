@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-13（完成 - 数字看板过滤卡片选中态切换）
+
+- 共享 `applyMetricFilterToggle`：再点同一条件取消过滤；同组互斥高亮。
+- 样式：`metric-card.is-filter-active` 描边 + 角标脉冲。
+- 已覆盖：项目管理、求职者池、通知、操作日志、Recruit 岗位列表。
+
 ## 2026-07-13（完成 - 修复项目管理「紧急岗位」404）
 
 - 根因：卡片仍链到已删除的 `positions.html`。

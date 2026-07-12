@@ -33,17 +33,17 @@
   <script>
     window.__PAGE_BODY__ = `
       <section class="metrics" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-        <div class="metric-card tone-primary" onclick="filterCandidatesByExclude('', false)" style="cursor: pointer;">
+        <div class="metric-card tone-primary" data-metric-filter-group="candidate-metric" data-metric-filter-key="all" onclick="filterCandidatesByExclude('all')" style="cursor: pointer;">
           <div class="metric-top"><div><div class="section-sub">候选人总数</div></div><div class="metric-icon">○</div></div>
           <div class="metric-value" data-candidate-total>0</div>
           <div class="metric-label">覆盖全部简历资源</div>
         </div>
-        <div class="metric-card tone-success" onclick="filterCandidatesByExclude('', true)" style="cursor: pointer;">
+        <div class="metric-card tone-success" data-metric-filter-group="candidate-metric" data-metric-filter-key="today" onclick="filterCandidatesByExclude('today')" style="cursor: pointer;">
           <div class="metric-top"><div><div class="section-sub">今日新增</div></div><div class="metric-icon">△</div></div>
           <div class="metric-value" data-candidate-new>0</div>
           <div class="metric-label">比昨日增加 3.2%</div>
         </div>
-        <div class="metric-card tone-warning" onclick="filterCandidatesByExclude('locked', false)" style="cursor: pointer;">
+        <div class="metric-card tone-warning" data-metric-filter-group="candidate-metric" data-metric-filter-key="locked" onclick="filterCandidatesByExclude('locked')" style="cursor: pointer;">
           <div class="metric-top"><div><div class="section-sub">已锁定候选人</div></div><div class="metric-icon">◌</div></div>
           <div class="metric-value" data-candidate-locked>0</div>
           <div class="metric-label">当前被项目占用</div>
@@ -1366,12 +1366,15 @@
       });
     });
 
-    window.filterCandidatesByExclude = function(val, onlyToday) {
-      window.candidatesOnlyToday = onlyToday || false;
+    window.filterCandidatesByExclude = function(mode) {
+      const applied = window.applyMetricFilterToggle
+        ? window.applyMetricFilterToggle('candidate-metric', mode || 'all', 'all')
+        : (mode || 'all');
+      const onlyToday = applied === 'today';
+      const excludeVal = applied === 'locked' ? 'locked' : '';
+      window.candidatesOnlyToday = onlyToday;
       const excludeSelect = document.querySelector('[data-filter-exclude]');
-      if (excludeSelect) {
-        excludeSelect.value = val || '';
-      }
+      if (excludeSelect) excludeSelect.value = excludeVal;
       if (window.candidatesPageState) {
         window.candidatesPageState.applyFilters();
       }

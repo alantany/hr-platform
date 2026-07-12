@@ -132,8 +132,8 @@
         </div>
       </section>
       <section class="metrics">
-        <div class="metric-card tone-primary" onclick="filterNotices('', null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">通知总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-notice-total>0</div><div class="metric-label">当前筛选结果</div></div>
-        <div class="metric-card tone-danger" onclick="filterNotices('false', null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">未读通知</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-notice-unread>0</div><div class="metric-label">需要处理的消息</div></div>
+        <div class="metric-card tone-primary" data-metric-filter-group="notice-metric" data-metric-filter-key="" onclick="filterNotices('')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">通知总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-notice-total>0</div><div class="metric-label">当前筛选结果</div></div>
+        <div class="metric-card tone-danger" data-metric-filter-group="notice-metric" data-metric-filter-key="false" onclick="filterNotices('false')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">未读通知</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-notice-unread>0</div><div class="metric-label">需要处理的消息</div></div>
         <div class="metric-card tone-warning"><div class="metric-top"><div><div class="section-sub">通知类型</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-notice-types>0</div><div class="metric-label">导入 / 项目 / 评价 / 质保 / 系统</div></div>
         <div class="metric-card tone-success"><div class="metric-top"><div><div class="section-sub">跳转目标</div></div><div class="metric-icon">◌</div></div><div class="metric-value">直达</div><div class="metric-label">点击可回到业务页面</div></div>
       </section>
@@ -267,15 +267,12 @@
       loadNotifications().catch((err) => console.warn(err));
     });
 
-    window.filterNotices = function(read, type) {
+    window.filterNotices = function(read) {
+      const applied = window.applyMetricFilterToggle
+        ? window.applyMetricFilterToggle('notice-metric', read || '', '')
+        : (read || '');
       const readSelect = document.querySelector('[data-notice-read]');
-      if (readSelect) {
-        readSelect.value = read !== null && read !== undefined ? String(read) : '';
-      }
-      const typeInput = document.querySelector('[data-notice-type]');
-      if (typeInput) {
-        typeInput.value = type || '';
-      }
+      if (readSelect) readSelect.value = applied || '';
       if (window.loadNotifications) {
         window.loadNotifications().catch((err) => console.warn(err));
       }

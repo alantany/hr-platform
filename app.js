@@ -940,6 +940,43 @@ function showToast(message) {
   setTimeout(() => toast.remove(), 2200);
 }
 
+/**
+ * 数字看板过滤卡片：同组互斥高亮；再点同一条件则取消过滤。
+ * @returns {string} 实际应套用的过滤 key
+ */
+window.applyMetricFilterToggle = function(group, nextKey, clearKey = "") {
+  const norm = (value) => String(value ?? clearKey);
+  const target = norm(nextKey);
+  const clear = norm(clearKey);
+  const cards = document.querySelectorAll(`[data-metric-filter-group="${group}"]`);
+  const active = [...cards].find((card) => card.classList.contains("is-filter-active"));
+  const activeKey = active ? norm(active.getAttribute("data-metric-filter-key")) : null;
+
+  let applied = target;
+  if (target === clear) {
+    applied = clearKey;
+  } else if (activeKey === target) {
+    applied = clearKey;
+  }
+
+  const appliedNorm = norm(applied);
+  cards.forEach((card) => {
+    const key = norm(card.getAttribute("data-metric-filter-key"));
+    card.classList.toggle("is-filter-active", appliedNorm !== clear && key === appliedNorm);
+  });
+  return applied;
+};
+
+window.syncMetricFilterActive = function(group, activeKey, clearKey = "") {
+  const norm = (value) => String(value ?? clearKey);
+  const clear = norm(clearKey);
+  const appliedNorm = norm(activeKey);
+  document.querySelectorAll(`[data-metric-filter-group="${group}"]`).forEach((card) => {
+    const key = norm(card.getAttribute("data-metric-filter-key"));
+    card.classList.toggle("is-filter-active", appliedNorm !== clear && key === appliedNorm);
+  });
+};
+
 function showLoadingToast(message) {
   const host = ensureToastHost();
   const toast = document.createElement("div");

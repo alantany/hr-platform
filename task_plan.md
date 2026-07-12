@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-修复项目管理「紧急岗位」卡片 404。维护流程：**改代码 → 更新三份 MD → commit → push**。
+数字看板过滤卡片选中态切换。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

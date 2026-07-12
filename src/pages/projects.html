@@ -13,10 +13,10 @@
 <script>
 window.__PAGE_BODY__ = `
   <section class="metrics">
-    <div class="metric-card tone-primary" onclick="filterProjectsByStatus(null)" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">项目总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-project-total>0</div><div class="metric-label">客户招聘包</div></div>
-    <div class="metric-card tone-success" onclick="filterProjectsByStatus('招聘中')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">招聘中</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-project-active>0</div><div class="metric-label">持续推进中</div></div>
-    <div class="metric-card tone-neutral" onclick="filterProjectsByStatus('招聘完毕')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">招聘完毕</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-project-finished>0</div><div class="metric-label">已完成交付</div></div>
-    <div class="metric-card tone-danger" onclick="filterPositionsByUrgency('高')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-project-urgent>0</div><div class="metric-label">需要优先匹配</div></div>
+    <div class="metric-card tone-primary" data-metric-filter-group="project-status" data-metric-filter-key="" onclick="filterProjectsByStatus('')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">项目总数</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-project-total>0</div><div class="metric-label">客户招聘包</div></div>
+    <div class="metric-card tone-success" data-metric-filter-group="project-status" data-metric-filter-key="招聘中" onclick="filterProjectsByStatus('招聘中')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">招聘中</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-project-active>0</div><div class="metric-label">持续推进中</div></div>
+    <div class="metric-card tone-neutral" data-metric-filter-group="project-status" data-metric-filter-key="招聘完毕" onclick="filterProjectsByStatus('招聘完毕')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">招聘完毕</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-project-finished>0</div><div class="metric-label">已完成交付</div></div>
+    <div class="metric-card tone-danger" data-metric-filter-group="position-urgency" data-metric-filter-key="高" onclick="filterPositionsByUrgency('高')" style="cursor: pointer;"><div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-project-urgent>0</div><div class="metric-label">需要优先匹配</div></div>
   </section>
 
   <!-- 子标签页导航 -->
@@ -728,30 +728,34 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 window.filterProjectsByStatus = function(status) {
+  const applied = window.applyMetricFilterToggle
+    ? window.applyMetricFilterToggle('project-status', status || '', '')
+    : (status || '');
+  // 切回项目列表时清掉紧急岗位选中态（不同 Tab）
+  if (window.syncMetricFilterActive) window.syncMetricFilterActive('position-urgency', '');
   const statusSelect = document.querySelector('#search-project-status');
-  if (statusSelect) {
-    statusSelect.value = status || '';
-  }
+  if (statusSelect) statusSelect.value = applied || '';
   window.projectFilters = window.projectFilters || {};
-  window.projectFilters.status = status || '';
-  if (window.refreshManagementPage) {
-    window.refreshManagementPage();
-  }
+  window.projectFilters.status = applied || '';
+  const tab = document.querySelector('[data-subtab="project-tab"]');
+  if (tab) tab.click();
+  if (window.refreshManagementPage) window.refreshManagementPage();
 };
 
 window.filterPositionsByUrgency = function(urgency) {
-  // 岗位已并入本页，不再跳转已删除的 positions.html
+  const applied = window.applyMetricFilterToggle
+    ? window.applyMetricFilterToggle('position-urgency', urgency || '', '')
+    : (urgency || '');
+  if (window.syncMetricFilterActive) window.syncMetricFilterActive('project-status', '');
   const tab = document.querySelector('[data-subtab="position-tab"]');
   if (tab) tab.click();
   const urgencySelect = document.querySelector('#search-position-urgency');
-  if (urgencySelect) urgencySelect.value = urgency || '';
+  if (urgencySelect) urgencySelect.value = applied || '';
   window.positionFilters = window.positionFilters || {
     name: '', companyId: '', projectId: '', urgency: '', salaryRange: '',
   };
-  window.positionFilters.urgency = urgency || '';
-  if (window.refreshManagementPage) {
-    window.refreshManagementPage();
-  }
+  window.positionFilters.urgency = applied || '';
+  if (window.refreshManagementPage) window.refreshManagementPage();
 };
 </script>
 </body>
