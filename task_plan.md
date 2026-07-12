@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-数字看板过滤卡片选中态切换。维护流程：**改代码 → 更新三份 MD → commit → push**。
+首页总推荐数下钻已推荐候选人。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

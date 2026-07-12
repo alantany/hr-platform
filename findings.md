@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-13（首页总推荐数下钻）
+
+- 旧链到 `projects.html` 无过滤，与指标语义不符。
+- 约定：跳转 `candidates.html?exclude=recommended`，列表筛 `delivery_status` 已发生推荐（排除未推荐/待推荐），与 `recommended_at` 口径对齐。
+
 ## 2026-07-13（数字看板过滤选中态）
 
 - 可过滤的 `metric-card` 用 `data-metric-filter-group` / `data-metric-filter-key` + `applyMetricFilterToggle`。

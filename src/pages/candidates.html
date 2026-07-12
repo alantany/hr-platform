@@ -137,6 +137,7 @@
             <span>状态</span>
             <select class="input" data-filter-exclude>
               <option value="">不限</option>
+              <option value="recommended">已推荐</option>
               <option value="unlocked">未锁定</option>
               <option value="locked">已锁定</option>
               <option value="self_locked">自己锁定</option>
@@ -593,9 +594,15 @@
             });
           }
           
-          // 4. 状态过滤 (unlocked / locked / never_interviewed)
+          // 4. 状态过滤 (recommended / unlocked / locked / never_interviewed)
           if (excludeVal) {
-            if (excludeVal === 'unlocked') {
+            if (excludeVal === 'recommended') {
+              // 与总推荐数口径一致：已发生推荐（非未推荐/待推荐）
+              filtered = filtered.filter((i) => {
+                const status = String(i.delivery_status || '').trim();
+                return status && status !== '未推荐' && status !== '待推荐';
+              });
+            } else if (excludeVal === 'unlocked') {
               filtered = filtered.filter(i => !i.locked && i.status !== '锁定');
             } else if (excludeVal === 'locked') {
               filtered = filtered.filter(i => i.locked || i.status === '锁定');
@@ -1072,7 +1079,7 @@
           const activeHotkeys = Array.from(document.querySelectorAll('[data-hotkey].active')).map(el => el.getAttribute('data-hotkey'));
           
           const sortTexts = { "default": "默认", "created_desc": "更新时间降序", "age_asc": "年龄升序" };
-          const excludeTexts = { "": "不限", "unlocked": "未锁定", "locked": "已锁定", "self_locked": "自己锁定", "never_interviewed": "未面试" };
+          const excludeTexts = { "": "不限", "recommended": "已推荐", "unlocked": "未锁定", "locked": "已锁定", "self_locked": "自己锁定", "never_interviewed": "未面试" };
           
           const parts = [
             `关键词：${kw}`,

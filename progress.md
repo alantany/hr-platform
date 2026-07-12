@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-13（完成 - 首页总推荐数跳转已推荐候选人）
+
+- 看板「总推荐数」改为 `candidates.html?exclude=recommended`。
+- 求职者池新增状态「已推荐」：delivery_status 非未推荐/待推荐；支持 URL 入参套用。
+
 ## 2026-07-13（完成 - 数字看板过滤卡片选中态切换）
 
 - 共享 `applyMetricFilterToggle`：再点同一条件取消过滤；同组互斥高亮。
