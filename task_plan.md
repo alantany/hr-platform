@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-已推荐口径统一（`recommended_at` + 面试自动回写）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+修复项目管理「紧急岗位」卡片 404。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
