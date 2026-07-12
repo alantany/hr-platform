@@ -354,7 +354,10 @@ def dashboard_summary(db: Session) -> dict:
         "project_count": db.query(func.count(Project.id)).scalar() or 0,
         "position_count": db.query(func.count(Position.id)).scalar() or 0,
         "user_count": db.query(func.count(User.id)).scalar() or 0,
-        "recommendation_count": db.query(func.count(Recommendation.id)).scalar() or 0,
+        # 已推荐口径：曾经变为已推荐（recommended_at 有值）；待推荐不计
+        "recommendation_count": db.query(func.count(Recommendation.id)).filter(
+            Recommendation.recommended_at.isnot(None)
+        ).scalar() or 0,
         "delivery_count": db.query(func.count(Delivery.id)).scalar() or 0,
         "audit_log_count": db.query(func.count(AuditLog.id)).scalar() or 0,
     }
@@ -1229,6 +1232,73 @@ def create_recommendation(db: Session, payload):
     obj = Recommendation(**payload.model_dump())
     db.add(obj)
     return obj
+
+
+def is_client_interview_round(interview_round: str | None) -> bool:
+    """初筛是内部判断，不算客户侧面试；第N轮等才触发自动已推荐。"""
+    value = str(interview_round or "").strip()
+    if not value or value == "初筛":
+        return False
+    return True
+
+
+def mark_recommendation_recommended(
+    db: Session,
+    recommendation: Recommendation,
+    *,
+    status: str = "已推荐",
+    at: datetime | None = None,
+) -> Recommendation:
+    """将待推荐升为已推荐，并写入 recommended_at（只写一次）。"""
+    now = at or datetime.now(timezone.utc)
+    if recommendation.status == "待推荐":
+        recommendation.status = status
+    if recommendation.recommended_at is None and recommendation.status != "待推荐":
+        recommendation.recommended_at = now
+    db.add(recommendation)
+    return recommendation
+
+
+def resolve_recommendation_for_interview(
+    db: Session,
+    *,
+    candidate_id: int,
+    recommendation_id: int | None = None,
+    position_id: int | None = None,
+) -> Recommendation | None:
+    if recommendation_id:
+        obj = db.get(Recommendation, recommendation_id)
+        if obj and obj.candidate_id == candidate_id:
+            return obj
+    query = db.query(Recommendation).filter(Recommendation.candidate_id == candidate_id)
+    if position_id:
+        query = query.filter(Recommendation.position_id == position_id)
+    return query.order_by(Recommendation.created_at.desc(), Recommendation.id.desc()).first()
+
+
+def promote_recommendation_on_interview(
+    db: Session,
+    *,
+    candidate_id: int,
+    interview_round: str | None = None,
+    recommendation_id: int | None = None,
+    position_id: int | None = None,
+) -> Recommendation | None:
+    if not is_client_interview_round(interview_round):
+        return None
+    recommendation = resolve_recommendation_for_interview(
+        db,
+        candidate_id=candidate_id,
+        recommendation_id=recommendation_id,
+        position_id=position_id,
+    )
+    if not recommendation:
+        return None
+    mark_recommendation_recommended(db, recommendation, status="已推荐")
+    candidate = db.get(Candidate, candidate_id)
+    if candidate:
+        sync_candidate_recommendation_state(db, candidate)
+    return recommendation
 
 
 def list_recommendations(db: Session, candidate_id: int | None = None, position_id: int | None = None):

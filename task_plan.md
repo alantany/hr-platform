@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-用户列表组长可展开查看组员。维护流程：**改代码 → 更新三份 MD → commit → push**。
+已推荐口径统一（`recommended_at` + 面试自动回写）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

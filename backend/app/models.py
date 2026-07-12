@@ -212,6 +212,8 @@ class Recommendation(Base, TimestampMixin):
     recommender: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     recommender_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="已推荐", nullable=False)
+    # 首次变为「已推荐」（或越过待推荐）的时间；待推荐时为 None，用于总数/本月口径
+    recommended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     feedback: Mapped[str] = mapped_column(Text, default="", nullable=False)
     customer_comment: Mapped[str] = mapped_column(Text, default="", nullable=False)
 

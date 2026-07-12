@@ -189,25 +189,12 @@
         ...hiredCandidateIds,
       ]);
 
-      // 推荐：本月新建推荐，或当前仍为已推荐，并并入本月面试（保证 推荐 ≥ 面试 ≥ 入职）
-      const createdRecommendIds = new Set(
-        getMonthRows(dashboardState.recommendations, 'created_at', monthDate)
-          .map((row) => Number(row.candidate_id))
-          .filter(Boolean)
-      );
-      const statusRecommendedIds = new Set(
-        getMonthRows(
-          dashboardState.recommendations,
-          'updated_at',
-          monthDate,
-          (row) => row.status === '已推荐'
-        ).map((row) => Number(row.candidate_id)).filter(Boolean)
-      );
-      const recommendedCandidateIds = new Set([
-        ...createdRecommendIds,
-        ...statusRecommendedIds,
-        ...interviewCandidateIds,
-      ]);
+      // 本月推荐数：recommended_at 落在本月的推荐记录条数（待推荐不计）
+      const monthlyRecommendedCount = getMonthRows(
+        dashboardState.recommendations,
+        'recommended_at',
+        monthDate
+      ).length;
 
       const monthlyDeliveries = getMonthRows(dashboardState.deliveries, 'delivered_at', monthDate);
       const monthlyPositions = getMonthRows(dashboardState.positions, 'created_at', monthDate);
@@ -216,7 +203,7 @@
       const activeOperators = new Set(monthlyCalendarEvents.map((row) => row.operator || '未署名顾问')).size;
       return {
         monthlyInterviewCount: interviewCandidateIds.size,
-        monthlyRecommendedCount: recommendedCandidateIds.size,
+        monthlyRecommendedCount,
         monthlyEmploymentCount: hiredCandidateIds.size,
         monthlyDeliveries,
         monthlyPositions,
@@ -399,7 +386,7 @@
           title: '本月推荐数量',
           value: metrics.monthlyRecommendedCount,
           note: metrics.monthlyRecommendedCount
-            ? `本月进入推荐漏斗 ${metrics.monthlyRecommendedCount} 人`
+            ? `本月变为已推荐 ${metrics.monthlyRecommendedCount} 条`
             : '本月暂无推荐记录',
           tone: 'success',
         },

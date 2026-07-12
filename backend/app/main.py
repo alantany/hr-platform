@@ -55,6 +55,13 @@ def ensure_schema() -> None:
         rec_cols = {col['name'] for col in inspector.get_columns("recommendations")}
         if "customer_comment" not in rec_cols:
             conn.execute(text("ALTER TABLE recommendations ADD COLUMN customer_comment TEXT NOT NULL DEFAULT ''"))
+        if "recommended_at" not in rec_cols:
+            conn.execute(text("ALTER TABLE recommendations ADD COLUMN recommended_at TIMESTAMP"))
+        # 历史/直写 ORM：非待推荐且无 recommended_at 时回填
+        conn.execute(text(
+            "UPDATE recommendations SET recommended_at = COALESCE(updated_at, created_at) "
+            "WHERE recommended_at IS NULL AND status IS NOT NULL AND status != '待推荐'"
+        ))
 
         # evaluations
         eval_cols = {col['name'] for col in inspector.get_columns("evaluations")}
@@ -677,12 +684,12 @@ def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User 
     query = (
         db.query(Recommendation, User)
         .join(User, User.id == Recommendation.recommender_user_id)
-        .filter(Recommendation.status == "已推荐")
+        .filter(Recommendation.recommended_at.isnot(None))
     )
     if not security.is_admin(user):
         visible_user_ids = security.visible_owner_user_ids(db, user)
         query = query.filter(Recommendation.recommender_user_id.in_(visible_user_ids))
-    rows = query.order_by(Recommendation.created_at.asc()).all()
+    rows = query.order_by(Recommendation.recommended_at.asc()).all()
     users_by_id = {item.id: item for item in db.query(User).all()}
 
     def resolve_group_leader(recommender: User) -> str:
@@ -697,7 +704,7 @@ def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User 
 
     return [
         {
-            "date": recommendation.created_at,
+            "date": recommendation.recommended_at,
             "operator": recommender.full_name or recommender.username,
             "group_leader": resolve_group_leader(recommender),
         }
@@ -1508,6 +1515,13 @@ def add_candidate_tracking_event(payload: schemas.CandidateTrackingEventCreate, 
         payload.operator = user.full_name or user.username
         
     obj = crud.create_tracking_event(db, payload)
+    crud.promote_recommendation_on_interview(
+        db,
+        candidate_id=candidate.id,
+        interview_round=payload.interview_round,
+        recommendation_id=payload.recommendation_id,
+        position_id=payload.position_id,
+    )
     crud.add_audit(db, user.username, "候选人跟踪", payload.event_type, "candidate_tracking_event", str(candidate.id), detail=payload.interview_round)
     db.commit()
     db.refresh(obj)
@@ -1531,6 +1545,13 @@ def update_candidate_tracking_event(event_id: int, payload: schemas.CandidateTra
         payload.operator = user.full_name or user.username
         
     updated_obj = crud.update_tracking_event(db, obj, payload)
+    crud.promote_recommendation_on_interview(
+        db,
+        candidate_id=candidate.id,
+        interview_round=payload.interview_round,
+        recommendation_id=payload.recommendation_id or updated_obj.recommendation_id,
+        position_id=payload.position_id or updated_obj.position_id,
+    )
     crud.add_audit(db, user.username, "候选人跟踪", payload.event_type, "candidate_tracking_event", str(candidate.id), detail=f"编辑: {payload.interview_round}")
     db.commit()
     db.refresh(updated_obj)
@@ -1569,6 +1590,11 @@ def list_interview_records(candidate_id: int | None = None, db: Session = Depend
 def add_interview_record(payload: schemas.InterviewRecordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
     obj = crud.create_interview_record(db, payload)
     obj.creator_user_id = user.id
+    crud.promote_recommendation_on_interview(
+        db,
+        candidate_id=payload.candidate_id,
+        interview_round=payload.round_name,
+    )
     crud.add_audit(db, user.username, "候选人跟踪", "新增面试记录", "interview_record", str(payload.candidate_id), detail=payload.round_name)
     db.commit()
     db.refresh(obj)
@@ -2009,6 +2035,7 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
     if not obj:
         raise HTTPException(status_code=404, detail="推荐记录不存在")
     enforce_recommendation_access(db, user, obj)
+    status_changed = False
     for key, value in payload.model_dump(exclude_unset=True).items():
         if key == "status":
             valid_transitions = {
@@ -2028,9 +2055,13 @@ def update_recommendation(recommendation_id: int, payload: schemas.Recommendatio
             allowed = valid_transitions.get(obj.status, [])
             if obj.status in valid_transitions and value not in allowed:
                 raise HTTPException(status_code=400, detail=f"无法从 {obj.status} 流转到 {value}")
+            status_changed = True
         setattr(obj, key, value)
-        
-    if "status" in payload.model_dump(exclude_unset=True):
+
+    if status_changed:
+        # 离开待推荐即记推荐发生时间；后续状态变更不覆盖 recommended_at
+        if obj.status != "待推荐" and obj.recommended_at is None:
+            obj.recommended_at = datetime.now(timezone.utc)
         cand = db.get(Candidate, obj.candidate_id)
         if cand:
             db.flush()
@@ -2455,7 +2486,7 @@ def analytics_summary(db: Session = Depends(get_db), user: User = Depends(requir
             "company_count": len(allowed_company_ids),
             "project_count": len(allowed_project_ids),
             "position_count": len(allowed_position_ids),
-            "recommendation_count": len(recommendations),
+            "recommendation_count": len([item for item in recommendations if item.recommended_at is not None]),
             "delivery_count": db.query(Delivery).filter(Delivery.recommendation_id.in_([r.id for r in recommendations] or [0])).count(),
         }
     recommender_stats: dict[str, dict[str, int]] = {}

@@ -1,5 +1,7 @@
 from uuid import uuid4
 
+from datetime import datetime, timezone
+
 from fastapi.testclient import TestClient
 
 from backend.app.database import SessionLocal
@@ -64,10 +66,10 @@ def test_recommendation_calendar_uses_recommended_status_and_user_hierarchy():
         db.add_all(candidates)
         db.flush()
         db.add_all([
-            Recommendation(candidate_id=candidates[0].id, position_id=position.id, recommender=leader.username, recommender_user_id=leader.id, status="已推荐"),
-            Recommendation(candidate_id=candidates[1].id, position_id=position.id, recommender=operator.username, recommender_user_id=operator.id, status="已推荐"),
+            Recommendation(candidate_id=candidates[0].id, position_id=position.id, recommender=leader.username, recommender_user_id=leader.id, status="已推荐", recommended_at=datetime.now(timezone.utc)),
+            Recommendation(candidate_id=candidates[1].id, position_id=position.id, recommender=operator.username, recommender_user_id=operator.id, status="已推荐", recommended_at=datetime.now(timezone.utc)),
             Recommendation(candidate_id=candidates[2].id, position_id=position.id, recommender=operator.username, recommender_user_id=operator.id, status="待推荐"),
-            Recommendation(candidate_id=candidates[3].id, position_id=position.id, recommender=outsider.username, recommender_user_id=outsider.id, status="已推荐"),
+            Recommendation(candidate_id=candidates[3].id, position_id=position.id, recommender=outsider.username, recommender_user_id=outsider.id, status="已推荐", recommended_at=datetime.now(timezone.utc)),
         ])
         db.commit()
         leader_username = leader.username
