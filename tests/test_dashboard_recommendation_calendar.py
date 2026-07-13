@@ -167,3 +167,118 @@ def test_recommendation_calendar_includes_rows_without_recommender_user() -> Non
     matched = [row for row in rows if row.get("operator") == "legacy-operator"]
     assert matched
     assert all(row.get("group_leader") == "未分组" for row in matched)
+
+
+def test_recommendation_calendar_hired_falls_back_to_candidate_owner_group() -> None:
+    """已入职且推荐人 ID 缺失时，按候选人归属操作员追溯到组长。"""
+    suffix = uuid4().hex[:8]
+    db = SessionLocal()
+    try:
+        leader = User(
+            username=f"temp_hired_leader_{suffix}",
+            full_name="吕航",
+            password_hash=hash_password("test"),
+            role="组长",
+            is_active=True,
+        )
+        db.add(leader)
+        db.flush()
+        operator = User(
+            username=f"temp_hired_operator_{suffix}",
+            full_name="组内操作员",
+            password_hash=hash_password("test"),
+            role="操作员",
+            is_active=True,
+            manager_user_id=leader.id,
+        )
+        db.add(operator)
+        db.flush()
+        company = Company(name=f"入职追溯客户-{suffix}", owner_user_id=leader.id)
+        db.add(company)
+        db.flush()
+        project = Project(company_id=company.id, name=f"入职追溯项目-{suffix}", owner_user_id=leader.id)
+        db.add(project)
+        db.flush()
+        position = Position(project_id=project.id, name=f"入职追溯岗位-{suffix}", owner_user_id=leader.id)
+        db.add(position)
+        db.flush()
+        candidate = Candidate(name=f"李佳恒-{suffix}", owner_user_id=operator.id)
+        db.add(candidate)
+        db.flush()
+        db.add(
+            Recommendation(
+                candidate_id=candidate.id,
+                position_id=position.id,
+                recommender="System Auto-Match",
+                recommender_user_id=None,
+                status="已入职",
+                recommended_at=datetime.now(timezone.utc),
+            )
+        )
+        db.commit()
+        candidate_name = candidate.name
+    finally:
+        db.close()
+
+    rows = client.get("/api/dashboard/recommendation-calendar", headers=headers("admin")).json()
+    # 通过 recommendation 关联候选人名不好拿，直接断言存在吕航组且含本条 Auto-Match
+    matched = [row for row in rows if row.get("group_leader") == "吕航" and row.get("operator") == "System Auto-Match"]
+    assert matched, f"expected hired Auto-Match under 吕航, rows={rows}"
+    assert all(row.get("group_leader") == "吕航" for row in matched)
+
+
+def test_recommendation_calendar_admin_uid_falls_back_to_owner_group() -> None:
+    """推荐人挂在超管上时，仍可用候选人归属操作员追溯到组长。"""
+    suffix = uuid4().hex[:8]
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.username == "admin").first()
+        assert admin is not None
+        leader = User(
+            username=f"temp_admin_fb_leader_{suffix}",
+            full_name="追溯组长",
+            password_hash=hash_password("test"),
+            role="组长",
+            is_active=True,
+        )
+        db.add(leader)
+        db.flush()
+        operator = User(
+            username=f"temp_admin_fb_op_{suffix}",
+            full_name="归属操作员",
+            password_hash=hash_password("test"),
+            role="操作员",
+            is_active=True,
+            manager_user_id=leader.id,
+        )
+        db.add(operator)
+        db.flush()
+        company = Company(name=f"超管回退客户-{suffix}", owner_user_id=leader.id)
+        db.add(company)
+        db.flush()
+        project = Project(company_id=company.id, name=f"超管回退项目-{suffix}", owner_user_id=leader.id)
+        db.add(project)
+        db.flush()
+        position = Position(project_id=project.id, name=f"超管回退岗位-{suffix}", owner_user_id=leader.id)
+        db.add(position)
+        db.flush()
+        candidate = Candidate(name=f"超管回退候选人-{suffix}", owner_user_id=operator.id)
+        db.add(candidate)
+        db.flush()
+        db.add(
+            Recommendation(
+                candidate_id=candidate.id,
+                position_id=position.id,
+                recommender="System Auto-Match",
+                recommender_user_id=admin.id,
+                status="已入职",
+                recommended_at=datetime.now(timezone.utc),
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    rows = client.get("/api/dashboard/recommendation-calendar", headers=headers("admin")).json()
+    matched = [row for row in rows if row.get("group_leader") == "追溯组长"]
+    assert matched, f"expected owner-group fallback, rows={[(r.get('operator'), r.get('group_leader')) for r in rows]}"

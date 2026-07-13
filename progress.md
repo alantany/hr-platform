@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-13（完成 - 已入职推荐按归属操作员追溯组长）
+
+- 日历分组：推荐人缺失/超管时回退候选人 `owner_user_id`，再找组长；已入职与其它状态同一规则。
+- 测试新增入职回退、超管 UID 回退；`test_dashboard_recommendation_calendar.py` 5 PASS。
+
 ## 2026-07-13（完成 - 日历分组按推荐 ID 对齐组长）
 
 - 日历 API 增加 `recommendation_id`；首页按 ID 取 `group_leader`，避免 Auto-Match/姓名不一致导致「未分组」。

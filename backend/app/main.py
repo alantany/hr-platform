@@ -701,33 +701,80 @@ def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User 
         )
     rows = query.order_by(Recommendation.recommended_at.asc()).all()
     users_by_id = {item.id: item for item in db.query(User).all()}
+    users_by_username = {
+        (item.username or "").strip(): item
+        for item in users_by_id.values()
+        if (item.username or "").strip()
+    }
+    users_by_fullname = {}
+    for item in users_by_id.values():
+        full_name = (item.full_name or "").strip()
+        if full_name and full_name not in users_by_fullname:
+            users_by_fullname[full_name] = item
+    candidate_ids = {recommendation.candidate_id for recommendation, _ in rows}
+    candidates_by_id = {
+        item.id: item
+        for item in (
+            db.query(Candidate).filter(Candidate.id.in_(candidate_ids)).all()
+            if candidate_ids else []
+        )
+    }
+    placeholder_recommenders = {
+        "",
+        "system auto-match",
+        "系统自动匹配",
+        "未署名顾问",
+    }
 
-    def resolve_group_leader(recommender: User | None) -> str:
-        # 业务统计单位仅为「组长」；超管/无上级链的操作员不单独成组
-        if not recommender:
-            return "未分组"
-        current = recommender
+    def walk_to_leader_name(start: User | None) -> str | None:
+        current = start
         visited: set[int] = set()
         while current and current.id not in visited:
             visited.add(current.id)
             if security.is_leader(current):
                 return current.full_name or current.username
             current = users_by_id.get(current.manager_user_id)
+        return None
+
+    def resolve_operator_user(recommendation: Recommendation, joined_user: User | None) -> User | None:
+        if joined_user:
+            return joined_user
+        name = (recommendation.recommender or "").strip()
+        if not name or name.lower() in placeholder_recommenders or name == "System Auto-Match":
+            return None
+        return users_by_username.get(name) or users_by_fullname.get(name)
+
+    def resolve_group_leader(recommendation: Recommendation, joined_user: User | None) -> str:
+        # 业务：操作员→所属组长；组长本人→自己组。已入职不改变归属。
+        # 推荐人 ID 缺失时：用 recommender 文案反查用户；仍无则用候选人归属操作员追溯。
+        operator_user = resolve_operator_user(recommendation, joined_user)
+        leader_name = walk_to_leader_name(operator_user)
+        if leader_name:
+            return leader_name
+        candidate = candidates_by_id.get(recommendation.candidate_id)
+        owner = users_by_id.get(candidate.owner_user_id) if candidate and candidate.owner_user_id else None
+        if owner and (not operator_user or owner.id != operator_user.id):
+            leader_name = walk_to_leader_name(owner)
+            if leader_name:
+                return leader_name
         return "未分组"
 
-    return [
-        {
-            "date": recommendation.recommended_at,
-            "operator": (
-                (recommender.full_name or recommender.username)
-                if recommender
-                else (recommendation.recommender or "未署名顾问")
-            ),
-            "group_leader": resolve_group_leader(recommender),
-            "recommendation_id": recommendation.id,
-        }
-        for recommendation, recommender in rows
-    ]
+    result = []
+    for recommendation, recommender in rows:
+        operator_user = resolve_operator_user(recommendation, recommender)
+        result.append(
+            {
+                "date": recommendation.recommended_at,
+                "operator": (
+                    (operator_user.full_name or operator_user.username)
+                    if operator_user
+                    else (recommendation.recommender or "未署名顾问")
+                ),
+                "group_leader": resolve_group_leader(recommendation, recommender),
+                "recommendation_id": recommendation.id,
+            }
+        )
+    return result
 
 
 @app.get("/api/audit-logs", response_model=list[schemas.AuditLogOut])

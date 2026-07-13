@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-日历分组按推荐 ID 对齐组长（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+已入职推荐按归属操作员追溯组长（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
