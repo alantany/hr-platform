@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-07-13（首页日历/月度看板同区明细列表）
+
+- 日历选日、月度面试/推荐/入职/新增岗位均在看板下方同一明细区展示，不再对新增岗位单独跳转。
+- 候选人类按人去重；岗位类按 `positions.created_at` 本月逐条，与看板数字同源。
+- 默认空态；触发源互斥；切月或点「清空」回空态；再点同一指标取消选中。
+- 设计文档：`docs/superpowers/specs/2026-07-13-dashboard-detail-list-design.md`。
+
 ## 2026-07-13（月度推荐 vs 日历不一致）
 
 - 月度看板按推荐列表 `recommended_at` 计数；日历曾 INNER JOIN 用户，会漏无 `recommender_user_id` 的记录。

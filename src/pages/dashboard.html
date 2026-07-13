@@ -45,6 +45,7 @@
               <div class="dashboard-month-caption" data-month-caption>--</div>
             </div>
             <div class="dashboard-month-grid" data-dashboard-month-cards></div>
+            <div class="dashboard-candidate-panel" data-dashboard-candidate-list></div>
           </section>
         </section>
       </section>
@@ -60,9 +61,12 @@
       interviews: [],
       trackingEvents: [],
       employments: [],
+      candidates: [],
       recommendationCalendar: [],
       calendarMonth: null,
       selectedDayKey: '',
+      // '' | day | interview | recommend | employment | position
+      detailListSource: '',
     };
 
     const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
@@ -121,6 +125,9 @@
     function getCalendarEvents() {
       // 与月度「本月推荐」同一口径：recommended_at 有值的推荐记录
       const calendarMeta = dashboardState.recommendationCalendar || [];
+      const positionNameById = new Map(
+        (dashboardState.positions || []).map((row) => [Number(row.id), row.name || ''])
+      );
       return (dashboardState.recommendations || []).map((row) => {
         const date = parseDateValue(row.recommended_at);
         if (!date) return null;
@@ -135,8 +142,200 @@
           operator: meta?.operator || operator,
           groupLeader: meta?.group_leader || meta?.operator || operator,
           source: 'recommendation',
+          candidateId: Number(row.candidate_id) || null,
+          recommendationId: row.id,
+          recommendationStatus: row.status || '',
+          positionId: Number(row.position_id) || null,
+          positionName: positionNameById.get(Number(row.position_id)) || '',
         };
       }).filter(Boolean);
+    }
+
+    function getCandidateById(candidateId) {
+      const id = Number(candidateId);
+      if (!id) return null;
+      return (dashboardState.candidates || []).find((row) => Number(row.id) === id) || null;
+    }
+
+    function getProjectById(projectId) {
+      const id = Number(projectId);
+      if (!id) return null;
+      return (dashboardState.projects || []).find((row) => Number(row.id) === id) || null;
+    }
+
+    function fallbackCandidateName(candidateId) {
+      const id = Number(candidateId);
+      if (!id) return '';
+      const fromRec = (dashboardState.recommendations || []).find((row) => Number(row.candidate_id) === id);
+      if (fromRec?.candidate_name) return fromRec.candidate_name;
+      const fromEmp = (dashboardState.employments || []).find((row) => Number(row.candidate_id) === id);
+      if (fromEmp?.candidate_name) return fromEmp.candidate_name;
+      return '';
+    }
+
+    function buildCandidateListRows(entries) {
+      // entries: [{ candidateId, meta?, recommendationStatus?, fallbackName? }]；按候选人去重
+      const seen = new Set();
+      const rows = [];
+      (entries || []).forEach((entry) => {
+        const candidateId = Number(entry.candidateId) || null;
+        if (!candidateId || seen.has(candidateId)) return;
+        seen.add(candidateId);
+        const candidate = getCandidateById(candidateId);
+        rows.push({
+          kind: 'candidate',
+          candidateId,
+          title: candidate?.name || entry.fallbackName || fallbackCandidateName(candidateId) || `候选人 #${candidateId}`,
+          subtitle: [candidate?.city, candidate?.phone].filter(Boolean).join(' · ') || '暂无城市/手机',
+          meta: entry.meta || '',
+          chip: candidate?.delivery_status || entry.recommendationStatus || '候选人',
+          tone: 'primary',
+        });
+      });
+      return rows;
+    }
+
+    function buildPositionListRows(positions) {
+      return (positions || []).map((position) => {
+        const project = getProjectById(position.project_id);
+        const created = parseDateValue(position.created_at);
+        const createdLabel = created ? formatDayLabel(created) : '--';
+        return {
+          kind: 'position',
+          positionId: Number(position.id) || null,
+          title: position.name || `岗位 #${position.id}`,
+          subtitle: [project?.name || '未关联项目', position.location || '地点未填'].filter(Boolean).join(' · '),
+          meta: [project?.company_name || '未知公司', `创建 ${createdLabel}`, `招聘 ${position.hiring_count || 0} 人`].join(' · '),
+          chip: position.urgency || '中',
+          tone: position.urgency === '高' ? 'danger' : (position.urgency === '低' ? 'neutral' : 'warning'),
+        };
+      });
+    }
+
+    function clearDetailList() {
+      dashboardState.detailListSource = '';
+      renderMonthCards();
+      renderDetailPanel();
+    }
+
+    function setDetailListSource(source) {
+      dashboardState.detailListSource = source || '';
+      renderMonthCards();
+      renderCalendar();
+      renderDetailPanel();
+    }
+
+    function collectDetailPanelModel() {
+      const monthDate = dashboardState.calendarMonth || monthStart(new Date());
+      const metrics = getMonthlyMetrics(monthDate);
+      const source = dashboardState.detailListSource;
+      if (!source) {
+        return {
+          active: false,
+          title: '',
+          hint: '',
+          rows: [],
+        };
+      }
+      if (source === 'day') {
+        const dayEvents = getCalendarEvents().filter((row) => dayKey(row.date) === dashboardState.selectedDayKey);
+        const selectedDate = parseDateValue(dashboardState.selectedDayKey) || monthDate;
+        const rows = buildCandidateListRows(dayEvents.map((row) => ({
+          candidateId: row.candidateId,
+          recommendationStatus: row.recommendationStatus,
+          meta: [row.positionName ? `推荐岗位：${row.positionName}` : '', `${formatDayLabel(row.date)}推荐`].filter(Boolean).join(' · '),
+        })));
+        return {
+          active: true,
+          title: `${formatDayLabel(selectedDate)}推荐候选人 · ${rows.length}`,
+          hint: '与日历当日推荐同一口径，按候选人去重',
+          rows,
+        };
+      }
+      if (source === 'interview') {
+        const rows = buildCandidateListRows([...metrics.interviewCandidateIds].map((id) => ({
+          candidateId: id,
+          meta: '本月面试活动（跟踪/面试记录/面试中推荐/本月入职）',
+        })));
+        return {
+          active: true,
+          title: `本月面试候选人 · ${rows.length}`,
+          hint: '与「本月面试数量」同一口径，按候选人去重',
+          rows,
+        };
+      }
+      if (source === 'recommend') {
+        const rows = buildCandidateListRows(metrics.monthlyCalendarEvents.map((row) => ({
+          candidateId: row.candidateId,
+          recommendationStatus: row.recommendationStatus,
+          meta: [row.positionName ? `推荐岗位：${row.positionName}` : '', row.date ? `${formatDayLabel(row.date)}推荐` : ''].filter(Boolean).join(' · '),
+        })));
+        return {
+          active: true,
+          title: `本月推荐候选人 · ${rows.length}`,
+          hint: '与「本月推荐数量」同源（recommended_at），列表按候选人去重',
+          rows,
+        };
+      }
+      if (source === 'employment') {
+        const rows = buildCandidateListRows([...metrics.hiredCandidateIds].map((id) => ({
+          candidateId: id,
+          recommendationStatus: '已入职',
+          meta: '本月入职（按入职日）',
+        })));
+        return {
+          active: true,
+          title: `本月入职候选人 · ${rows.length}`,
+          hint: '与「本月入职数量」同一口径，按候选人去重',
+          rows,
+        };
+      }
+      if (source === 'position') {
+        const rows = buildPositionListRows(metrics.monthlyPositions);
+        return {
+          active: true,
+          title: `本月新增岗位 · ${rows.length}`,
+          hint: '与「本月新增岗位」同一口径（positions.created_at 本月）',
+          rows,
+        };
+      }
+      return { active: false, title: '', hint: '', rows: [] };
+    }
+
+    function renderDetailPanel() {
+      const container = document.querySelector('[data-dashboard-candidate-list]');
+      if (!container) return;
+      const model = collectDetailPanelModel();
+      if (!model.active) {
+        container.innerHTML = `
+          <div class="dashboard-detail-empty">
+            点击上方指标或左侧日历日期，在此查看明细
+          </div>
+        `;
+        return;
+      }
+      const rowsHtml = model.rows.length
+        ? model.rows.map((row) => `
+            <div class="dashboard-detail-row">
+              <div class="dashboard-detail-row-main">
+                <div class="dashboard-detail-row-title">${escapeHtml(row.title)}</div>
+                <div class="dashboard-detail-row-subtitle">${escapeHtml(row.subtitle)}</div>
+                <div class="dashboard-detail-row-meta">${escapeHtml(row.meta || '—')}</div>
+              </div>
+              <span class="dashboard-detail-chip tone-${row.tone || 'neutral'}">${escapeHtml(row.chip || '')}</span>
+            </div>
+          `).join('')
+        : `<div class="dashboard-detail-empty is-inline">当前条件下暂无数据</div>`;
+      container.innerHTML = `
+        <div class="dashboard-detail-head">
+          <div>
+            <div class="dashboard-detail-title">${escapeHtml(model.title)}</div>
+            <div class="dashboard-detail-hint">${escapeHtml(model.hint)}</div>
+          </div>
+          <button type="button" class="btn secondary dashboard-detail-clear" data-detail-clear>清空</button>
+        </div>
+        <div class="dashboard-detail-list">${rowsHtml}</div>
+      `;
     }
 
     function getMonthRows(rows, picker, monthDate, predicate = null) {
@@ -217,6 +416,8 @@
         monthlyInterviewCount: interviewCandidateIds.size,
         monthlyRecommendedCount,
         monthlyEmploymentCount: hiredCandidateIds.size,
+        interviewCandidateIds,
+        hiredCandidateIds,
         monthlyDeliveries,
         monthlyPositions,
         monthlyCalendarEvents,
@@ -387,6 +588,7 @@
       if (!container) return;
       const cards = [
         {
+          key: 'interview',
           title: '本月面试数量',
           value: metrics.monthlyInterviewCount,
           note: metrics.monthlyInterviewCount
@@ -395,6 +597,7 @@
           tone: 'primary',
         },
         {
+          key: 'recommend',
           title: '本月推荐数量',
           value: metrics.monthlyRecommendedCount,
           note: metrics.monthlyRecommendedCount
@@ -403,25 +606,34 @@
           tone: 'success',
         },
         {
+          key: 'employment',
           title: '本月入职数量',
           value: metrics.monthlyEmploymentCount,
           note: metrics.monthlyEmploymentCount ? '按入职日期统计已入职' : '本月暂无入职转化',
           tone: 'warning',
         },
         {
+          key: 'position',
           title: '本月新增岗位',
           value: metrics.monthlyPositions.length,
           note: metrics.monthlyPositions.length ? `本月累计创建 ${metrics.monthlyPositions.length} 个岗位` : '本月暂无新增岗位',
           tone: 'danger',
         },
       ];
-      container.innerHTML = cards.map((card) => `
-        <article class="dashboard-month-card tone-${card.tone}">
+      container.innerHTML = cards.map((card) => {
+        const active = dashboardState.detailListSource === card.key ? ' is-filter-active' : '';
+        return `
+        <button
+          type="button"
+          class="dashboard-month-card tone-${card.tone}${active}"
+          data-month-metric="${card.key}"
+        >
           <div class="dashboard-month-card-label">${card.title}</div>
           <div class="dashboard-month-card-value">${formatNumber(card.value)}</div>
           <div class="dashboard-month-card-note">${card.note}</div>
-        </article>
-      `).join('');
+        </button>
+      `;
+      }).join('');
 
       const caption = document.querySelector('[data-month-caption]');
       if (caption) caption.textContent = formatMonthLabel(monthDate);
@@ -442,19 +654,38 @@
 
     function bindCalendarEvents() {
       document.addEventListener('click', (event) => {
+        const clearButton = event.target.closest('[data-detail-clear]');
+        if (clearButton) {
+          clearDetailList();
+          return;
+        }
+
+        const metricButton = event.target.closest('[data-month-metric]');
+        if (metricButton) {
+          const key = metricButton.dataset.monthMetric || '';
+          if (dashboardState.detailListSource === key) {
+            clearDetailList();
+          } else {
+            setDetailListSource(key);
+          }
+          return;
+        }
+
         const navButton = event.target.closest('[data-calendar-nav]');
         if (navButton) {
           dashboardState.calendarMonth = addMonths(dashboardState.calendarMonth, Number(navButton.dataset.calendarNav || 0));
+          dashboardState.detailListSource = '';
           ensureSelectedDay();
           renderTopCards();
           renderCalendar();
           renderMonthCards();
+          renderDetailPanel();
           return;
         }
         const dayButton = event.target.closest('[data-day-key]');
         if (!dayButton) return;
         dashboardState.selectedDayKey = dayButton.dataset.dayKey || dashboardState.selectedDayKey;
-        renderCalendar();
+        setDetailListSource('day');
       });
     }
 
@@ -470,6 +701,7 @@
         window.hrApi.candidateTrackingEvents(),
         window.hrApi.employmentRecords(),
         window.hrApi.dashboardRecommendationCalendar(),
+        window.hrApi.candidates(),
       ]);
       const [
         summaryResult,
@@ -482,6 +714,7 @@
         trackingResult,
         employmentsResult,
         recommendationCalendarResult,
+        candidatesResult,
       ] = requests;
 
       dashboardState.summary = summaryResult.status === 'fulfilled' ? summaryResult.value : {
@@ -499,6 +732,7 @@
       dashboardState.trackingEvents = trackingResult.status === 'fulfilled' ? trackingResult.value : [];
       dashboardState.employments = employmentsResult.status === 'fulfilled' ? employmentsResult.value : [];
       dashboardState.recommendationCalendar = recommendationCalendarResult.status === 'fulfilled' ? recommendationCalendarResult.value : [];
+      dashboardState.candidates = candidatesResult.status === 'fulfilled' ? candidatesResult.value : [];
 
       const latestActivity =
         getLatestDate(getCalendarEvents(), ['date']) ||
@@ -520,8 +754,10 @@
         renderTopCards();
         renderCalendar();
         renderMonthCards();
+        renderDetailPanel();
       } catch (error) {
         console.warn('dashboard load failed', error);
+        renderDetailPanel();
       }
     });
   </script>

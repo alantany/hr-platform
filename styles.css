@@ -975,6 +975,37 @@ button, input, select { font: inherit; }
   border: 1px solid rgba(222, 229, 236, 0.95);
   background: #fff;
   box-shadow: 0 6px 16px rgba(32, 56, 85, 0.05);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.dashboard-month-card:hover {
+  border-color: rgba(148, 163, 184, 0.9);
+  box-shadow: 0 8px 18px rgba(32, 56, 85, 0.08);
+}
+
+.dashboard-month-card.is-filter-active {
+  position: relative;
+}
+
+.dashboard-month-card.tone-primary.is-filter-active {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35), 0 6px 16px rgba(32, 56, 85, 0.05);
+  border-color: #93c5fd;
+}
+.dashboard-month-card.tone-success.is-filter-active {
+  box-shadow: 0 0 0 2px rgba(15, 159, 120, 0.35), 0 6px 16px rgba(32, 56, 85, 0.05);
+  border-color: #6ee7b7;
+}
+.dashboard-month-card.tone-warning.is-filter-active {
+  box-shadow: 0 0 0 2px rgba(230, 126, 34, 0.35), 0 6px 16px rgba(32, 56, 85, 0.05);
+  border-color: #fdba74;
+}
+.dashboard-month-card.tone-danger.is-filter-active {
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.35), 0 6px 16px rgba(32, 56, 85, 0.05);
+  border-color: #fda4af;
 }
 
 .dashboard-month-card-label {
@@ -1011,6 +1042,130 @@ button, input, select { font: inherit; }
 .dashboard-month-card.tone-warning .dashboard-month-card-note { color: #e67e22; }
 .dashboard-month-card.tone-danger .dashboard-month-card-note { color: #e11d48; }
 .dashboard-month-card.tone-neutral .dashboard-month-card-note { color: #475569; }
+
+.dashboard-candidate-panel {
+  margin-top: 14px;
+  border: 1px solid rgba(222, 229, 236, 0.95);
+  border-radius: 12px;
+  background: #f8fafc;
+  min-height: 180px;
+  overflow: hidden;
+}
+
+.dashboard-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.dashboard-detail-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
+.dashboard-detail-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.dashboard-detail-clear {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.dashboard-detail-list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.dashboard-detail-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.dashboard-detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.dashboard-detail-row-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.dashboard-detail-row-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.dashboard-detail-row-subtitle {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.dashboard-detail-row-meta {
+  margin-top: 3px;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.dashboard-detail-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.dashboard-detail-chip.tone-primary { background: #eff6ff; color: #2563eb; }
+.dashboard-detail-chip.tone-success { background: #ecfdf5; color: #0f9f78; }
+.dashboard-detail-chip.tone-warning { background: #fff7ed; color: #e67e22; }
+.dashboard-detail-chip.tone-danger { background: #fff1f2; color: #e11d48; }
+.dashboard-detail-chip.tone-neutral { background: #f1f5f9; color: #64748b; }
+
+.dashboard-detail-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  padding: 24px 16px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dashboard-detail-empty.is-inline {
+  min-height: 88px;
+}
 
 .dashboard-summary-chip.tone-primary {
   background: #eff6ff;

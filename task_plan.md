@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-月度推荐与日历口径统一。维护流程：**改代码 → 更新三份 MD → commit → push**。
+首页日历/月度看板同区明细列表（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
@@ -444,4 +444,12 @@
 - [x] Task 3–4：JD 粘贴弹窗 + 创建岗位预填
 - [x] Task 5：权限/冒烟/文档收尾
 - [x] 扩展：上传 txt/pdf 抽文本（`extract-jd-text`），不自动调 LLM
+- **Status:** complete
+
+### Phase 29 - 首页日历/月度看板同区明细列表（已完成）
+
+- [x] 确认交互：日历选日 + 面试/推荐/入职/新增岗位均页内明细区展示
+- [x] 候选人去重一人一行；岗位与看板数字同源逐条展示
+- [x] 统一行 UI、空态、清空、指标选中态与切月重置
+- [x] 设计文档 `docs/superpowers/specs/2026-07-13-dashboard-detail-list-design.md`
 - **Status:** complete
