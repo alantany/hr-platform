@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-13（项目列表 → 客户列表下钻）
+
+- 项目「所属公司」原链 `customers.html` 无过滤。
+- 约定：`customers.html?company_id=`，列表按公司 ID 精确过滤。
+
 ## 2026-07-13（首页总推荐数下钻）
 
 - 旧链到 `projects.html` 无过滤，与指标语义不符。

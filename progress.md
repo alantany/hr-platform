@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-13（完成 - 项目列表公司名跳转按客户过滤）
+
+- 所属公司链接改为 `customers.html?company_id=`。
+- 客户列表读取 URL 参数，只展示对应公司。
+
 ## 2026-07-13（完成 - 首页总推荐数跳转已推荐候选人）
 
 - 看板「总推荐数」改为 `candidates.html?exclude=recommended`。

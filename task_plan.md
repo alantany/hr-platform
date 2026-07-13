@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-首页总推荐数下钻已推荐候选人。维护流程：**改代码 → 更新三份 MD → commit → push**。
+项目列表公司名跳转按客户过滤。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
