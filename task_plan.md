@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-首页日历/月度看板同区明细列表（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+日历分组仅认组长（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

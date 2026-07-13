@@ -87,6 +87,47 @@ def test_recommendation_calendar_uses_recommended_status_and_user_hierarchy():
     assert [row["operator"] for row in operator_rows] == ["直属操作员"]
     assert [row["group_leader"] for row in operator_rows] == ["日历组长"]
     assert [row["operator"] for row in outsider_rows] == ["外组操作员"]
+    assert [row["group_leader"] for row in outsider_rows] == ["未分组"]
+
+
+def test_recommendation_calendar_admin_recommender_is_ungrouped() -> None:
+    """超级管理员推荐不单独成组，统计单位仅为组长。"""
+    suffix = uuid4().hex[:8]
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.username == "admin").first()
+        assert admin is not None
+        admin_label = admin.full_name or admin.username
+        company = Company(name=f"超管推荐客户-{suffix}", owner_user_id=admin.id)
+        db.add(company)
+        db.flush()
+        project = Project(company_id=company.id, name=f"超管推荐项目-{suffix}", owner_user_id=admin.id)
+        db.add(project)
+        db.flush()
+        position = Position(project_id=project.id, name=f"超管推荐岗位-{suffix}", owner_user_id=admin.id)
+        db.add(position)
+        db.flush()
+        candidate = Candidate(name=f"超管推荐候选人-{suffix}", owner_user_id=admin.id)
+        db.add(candidate)
+        db.flush()
+        db.add(
+            Recommendation(
+                candidate_id=candidate.id,
+                position_id=position.id,
+                recommender=admin.username,
+                recommender_user_id=admin.id,
+                status="已推荐",
+                recommended_at=datetime.now(timezone.utc),
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    rows = client.get("/api/dashboard/recommendation-calendar", headers=headers("admin")).json()
+    matched = [row for row in rows if row.get("operator") == admin_label]
+    assert matched, f"expected admin recommendation in calendar, operators={[r.get('operator') for r in rows]}"
+    assert all(row.get("group_leader") == "未分组" for row in matched)
 
 
 def test_recommendation_calendar_includes_rows_without_recommender_user() -> None:
@@ -122,4 +163,6 @@ def test_recommendation_calendar_includes_rows_without_recommender_user() -> Non
 
     admin = login_headers(client, "admin")
     rows = client.get("/api/dashboard/recommendation-calendar", headers=admin).json()
-    assert any(row.get("operator") == "legacy-operator" for row in rows)
+    matched = [row for row in rows if row.get("operator") == "legacy-operator"]
+    assert matched
+    assert all(row.get("group_leader") == "未分组" for row in matched)

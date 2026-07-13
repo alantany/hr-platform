@@ -140,7 +140,8 @@
         return {
           date,
           operator: meta?.operator || operator,
-          groupLeader: meta?.group_leader || meta?.operator || operator,
+          // 只认后端解析出的组长；禁止回退到推荐人（否则超管会显示成「admin组」）
+          groupLeader: meta?.group_leader || '未分组',
           source: 'recommendation',
           candidateId: Number(row.candidate_id) || null,
           recommendationId: row.id,
@@ -575,7 +576,12 @@
             </div>
           </div>
           <div class="dashboard-calendar-detail-tags">
-            ${groupCounts.map((group) => `<span class="dashboard-operator-chip">${escapeHtml(group.name)}组 推荐 ${group.count} 人</span>`).join('') || '<span class="dashboard-operator-chip is-muted">暂无分组推荐记录</span>'}
+            ${groupCounts.map((group) => {
+              const label = group.name === '未分组'
+                ? `未分组推荐 ${group.count} 人`
+                : `${escapeHtml(group.name)}组 推荐 ${group.count} 人`;
+              return `<span class="dashboard-operator-chip">${label}</span>`;
+            }).join('') || '<span class="dashboard-operator-chip is-muted">暂无分组推荐记录</span>'}
           </div>
         `;
       }

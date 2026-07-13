@@ -702,9 +702,10 @@ def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User 
     rows = query.order_by(Recommendation.recommended_at.asc()).all()
     users_by_id = {item.id: item for item in db.query(User).all()}
 
-    def resolve_group_leader(recommender: User | None, fallback: str) -> str:
+    def resolve_group_leader(recommender: User | None) -> str:
+        # 业务统计单位仅为「组长」；超管/无上级链的操作员不单独成组
         if not recommender:
-            return fallback
+            return "未分组"
         current = recommender
         visited: set[int] = set()
         while current and current.id not in visited:
@@ -712,7 +713,7 @@ def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User 
             if security.is_leader(current):
                 return current.full_name or current.username
             current = users_by_id.get(current.manager_user_id)
-        return recommender.full_name or recommender.username or fallback
+        return "未分组"
 
     return [
         {
@@ -722,10 +723,7 @@ def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User 
                 if recommender
                 else (recommendation.recommender or "未署名顾问")
             ),
-            "group_leader": resolve_group_leader(
-                recommender,
-                recommendation.recommender or "未分组",
-            ),
+            "group_leader": resolve_group_leader(recommender),
         }
         for recommendation, recommender in rows
     ]
