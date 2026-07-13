@@ -231,39 +231,23 @@
       const metrics = getMonthlyMetrics(monthDate);
       const source = dashboardState.detailListSource;
       if (!source) {
-        return {
-          active: false,
-          title: '',
-          hint: '',
-          rows: [],
-        };
+        return { active: false, rows: [] };
       }
       if (source === 'day') {
         const dayEvents = getCalendarEvents().filter((row) => dayKey(row.date) === dashboardState.selectedDayKey);
-        const selectedDate = parseDateValue(dashboardState.selectedDayKey) || monthDate;
         const rows = buildCandidateListRows(dayEvents.map((row) => ({
           candidateId: row.candidateId,
           recommendationStatus: row.recommendationStatus,
           meta: [row.positionName ? `推荐岗位：${row.positionName}` : '', `${formatDayLabel(row.date)}推荐`].filter(Boolean).join(' · '),
         })));
-        return {
-          active: true,
-          title: `${formatDayLabel(selectedDate)}推荐候选人 · ${rows.length}`,
-          hint: '与日历当日推荐同一口径，按候选人去重',
-          rows,
-        };
+        return { active: true, rows };
       }
       if (source === 'interview') {
         const rows = buildCandidateListRows([...metrics.interviewCandidateIds].map((id) => ({
           candidateId: id,
           meta: '本月面试活动（跟踪/面试记录/面试中推荐/本月入职）',
         })));
-        return {
-          active: true,
-          title: `本月面试候选人 · ${rows.length}`,
-          hint: '与「本月面试数量」同一口径，按候选人去重',
-          rows,
-        };
+        return { active: true, rows };
       }
       if (source === 'recommend') {
         const rows = buildCandidateListRows(metrics.monthlyCalendarEvents.map((row) => ({
@@ -271,12 +255,7 @@
           recommendationStatus: row.recommendationStatus,
           meta: [row.positionName ? `推荐岗位：${row.positionName}` : '', row.date ? `${formatDayLabel(row.date)}推荐` : ''].filter(Boolean).join(' · '),
         })));
-        return {
-          active: true,
-          title: `本月推荐候选人 · ${rows.length}`,
-          hint: '与「本月推荐数量」同源（recommended_at），列表按候选人去重',
-          rows,
-        };
+        return { active: true, rows };
       }
       if (source === 'employment') {
         const rows = buildCandidateListRows([...metrics.hiredCandidateIds].map((id) => ({
@@ -284,23 +263,12 @@
           recommendationStatus: '已入职',
           meta: '本月入职（按入职日）',
         })));
-        return {
-          active: true,
-          title: `本月入职候选人 · ${rows.length}`,
-          hint: '与「本月入职数量」同一口径，按候选人去重',
-          rows,
-        };
+        return { active: true, rows };
       }
       if (source === 'position') {
-        const rows = buildPositionListRows(metrics.monthlyPositions);
-        return {
-          active: true,
-          title: `本月新增岗位 · ${rows.length}`,
-          hint: '与「本月新增岗位」同一口径（positions.created_at 本月）',
-          rows,
-        };
+        return { active: true, rows: buildPositionListRows(metrics.monthlyPositions) };
       }
-      return { active: false, title: '', hint: '', rows: [] };
+      return { active: false, rows: [] };
     }
 
     function renderDetailPanel() {
@@ -315,8 +283,13 @@
         `;
         return;
       }
-      const rowsHtml = model.rows.length
-        ? model.rows.map((row) => `
+      if (!model.rows.length) {
+        container.innerHTML = `<div class="dashboard-detail-empty">当前条件下暂无数据</div>`;
+        return;
+      }
+      container.innerHTML = `
+        <div class="dashboard-detail-list">
+          ${model.rows.map((row) => `
             <div class="dashboard-detail-row">
               <div class="dashboard-detail-row-main">
                 <div class="dashboard-detail-row-title">${escapeHtml(row.title)}</div>
@@ -325,17 +298,8 @@
               </div>
               <span class="dashboard-detail-chip tone-${row.tone || 'neutral'}">${escapeHtml(row.chip || '')}</span>
             </div>
-          `).join('')
-        : `<div class="dashboard-detail-empty is-inline">当前条件下暂无数据</div>`;
-      container.innerHTML = `
-        <div class="dashboard-detail-head">
-          <div>
-            <div class="dashboard-detail-title">${escapeHtml(model.title)}</div>
-            <div class="dashboard-detail-hint">${escapeHtml(model.hint)}</div>
-          </div>
-          <button type="button" class="btn secondary dashboard-detail-clear" data-detail-clear>清空</button>
+          `).join('')}
         </div>
-        <div class="dashboard-detail-list">${rowsHtml}</div>
       `;
     }
 
@@ -660,12 +624,6 @@
 
     function bindCalendarEvents() {
       document.addEventListener('click', (event) => {
-        const clearButton = event.target.closest('[data-detail-clear]');
-        if (clearButton) {
-          clearDetailList();
-          return;
-        }
-
         const metricButton = event.target.closest('[data-month-metric]');
         if (metricButton) {
           const key = metricButton.dataset.monthMetric || '';
