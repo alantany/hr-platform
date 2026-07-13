@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-13（完成 - 首页求职者总数对齐简历池）
+
+- `dashboard_summary.candidate_count` 改为 `len(list_candidates(db))`，与简历池同一口径。
+- 简历池顶部三卡按 `rawList` 全量统计，不受当前筛选影响。
+- 测试：`test_dashboard_candidate_count_matches_pool.py` PASS。
+
 ## 2026-07-13（完成 - 项目所属公司下钻真正生效）
 
 - 补 `open-company-from-project` 跳转；客户页按 `?company_id=` 过滤列表；副标题可回「查看全部客户」。

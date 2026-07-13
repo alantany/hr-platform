@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-项目列表公司名跳转按客户过滤。维护流程：**改代码 → 更新三份 MD → commit → push**。
+首页求职者总数对齐简历池。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

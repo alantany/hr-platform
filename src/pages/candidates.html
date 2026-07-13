@@ -673,7 +673,9 @@
           const totalNode = document.querySelector('[data-candidate-total]');
           const newNode = document.querySelector('[data-candidate-new]');
           const lockedNode = document.querySelector('[data-candidate-locked]');
-          if (totalNode) totalNode.textContent = String(total);
+          // 顶部三卡与首页对齐：始终按简历池全量 rawList，不受当前筛选影响
+          const pool = this.rawList || [];
+          if (totalNode) totalNode.textContent = String(pool.length);
           
           const localDate = new Date();
           const year = localDate.getFullYear();
@@ -681,8 +683,8 @@
           const day = String(localDate.getDate()).padStart(2, '0');
           const todayPrefix = `${year}-${month}-${day}`;
           
-          if (newNode) newNode.textContent = String(this.list.filter(i => i.created_at && i.created_at.startsWith(todayPrefix)).length);
-          if (lockedNode) lockedNode.textContent = String(this.list.filter(i => i.locked).length);
+          if (newNode) newNode.textContent = String(pool.filter(i => i.created_at && i.created_at.startsWith(todayPrefix)).length);
+          if (lockedNode) lockedNode.textContent = String(pool.filter(i => i.locked).length);
 
           const footNode = document.querySelector('[data-candidate-foot]');
           const pageIndicator = document.querySelector('[data-page-indicator]');

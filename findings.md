@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-13（求职者总数口径）
+
+- 权威来源：简历池 `list_candidates` 结果集（不是裸 `COUNT(candidates)`）。
+- 首页「求职者总数」= 该列表长度；简历池「候选人总数」= 同一列表全量。
+
 ## 2026-07-13（项目所属公司下钻真正生效）
 
 - 仅改链接不够：客户页曾忽略 query；`open-company-from-project` 也曾无 handler。

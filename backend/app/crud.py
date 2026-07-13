@@ -348,8 +348,9 @@ def assigned_project_ids_for_user(db: Session, user_id: int) -> list[int]:
 
 
 def dashboard_summary(db: Session) -> dict:
+    # 求职者总数以简历池列表口径为准（Recruit 下载 + 上传等 list_candidates 结果）
     return {
-        "candidate_count": db.query(func.count(Candidate.id)).scalar() or 0,
+        "candidate_count": len(list_candidates(db)),
         "company_count": db.query(func.count(Company.id)).scalar() or 0,
         "project_count": db.query(func.count(Project.id)).scalar() or 0,
         "position_count": db.query(func.count(Position.id)).scalar() or 0,
