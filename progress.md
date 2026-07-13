@@ -1,5 +1,9 @@
 # Progress
 
+## 2026-07-13（完成 - 补齐求职者池 URL exclude 套用）
+
+- `candidates.html` 启动时读取 `?exclude=`，写入状态筛选项后再渲染。
+
 ## 2026-07-13（完成 - 项目列表公司名跳转按客户过滤）
 
 - 所属公司链接改为 `customers.html?company_id=`。

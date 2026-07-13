@@ -761,6 +761,13 @@
         ]);
         window.candidatesPageState.rawList = candidates;
         window.candidatesPageState.tagConfigs = tagConfigs;
+        // 首页等入口：?exclude=recommended 进入时套用状态过滤
+        const bootParams = new URLSearchParams(location.search);
+        const excludeFromUrl = bootParams.get('exclude');
+        if (excludeFromUrl) {
+          const excludeSelect = document.querySelector('[data-filter-exclude]');
+          if (excludeSelect) excludeSelect.value = excludeFromUrl;
+        }
         window.candidatesPageState.render();
       } catch (err) { console.warn(err); }
 
