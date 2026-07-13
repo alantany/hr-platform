@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-13（完成 - 月度推荐与日历口径统一）
+
+- 正确口径：`recommended_at` 落在本月的推荐记录。
+- 日历事件改为由推荐列表生成（与月度看板同源）；日历 API 改为 outerjoin，无推荐人用户 ID 也计入。
+- 日期解析统一按 UTC，避免两边月界不一致。
+
 ## 2026-07-13（完成 - 首页求职者总数对齐简历池）
 
 - `dashboard_summary.candidate_count` 改为 `len(list_candidates(db))`，与简历池同一口径。

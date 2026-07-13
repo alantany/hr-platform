@@ -681,18 +681,30 @@ def dashboard_todos(db: Session = Depends(get_db), user: User = Depends(require_
 
 @app.get("/api/dashboard/recommendation-calendar", response_model=list[schemas.DashboardRecommendationCalendarOut])
 def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    # outerjoin：无 recommender_user_id 的已推荐记录也要进日历，与月度看板 recommended_at 口径一致
     query = (
         db.query(Recommendation, User)
-        .join(User, User.id == Recommendation.recommender_user_id)
+        .outerjoin(User, User.id == Recommendation.recommender_user_id)
         .filter(Recommendation.recommended_at.isnot(None))
     )
     if not security.is_admin(user):
+        from sqlalchemy import and_, or_
         visible_user_ids = security.visible_owner_user_ids(db, user)
-        query = query.filter(Recommendation.recommender_user_id.in_(visible_user_ids))
+        query = query.filter(
+            or_(
+                Recommendation.recommender_user_id.in_(visible_user_ids),
+                and_(
+                    Recommendation.recommender_user_id.is_(None),
+                    Recommendation.recommender == user.username,
+                ),
+            )
+        )
     rows = query.order_by(Recommendation.recommended_at.asc()).all()
     users_by_id = {item.id: item for item in db.query(User).all()}
 
-    def resolve_group_leader(recommender: User) -> str:
+    def resolve_group_leader(recommender: User | None, fallback: str) -> str:
+        if not recommender:
+            return fallback
         current = recommender
         visited: set[int] = set()
         while current and current.id not in visited:
@@ -700,13 +712,20 @@ def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User 
             if security.is_leader(current):
                 return current.full_name or current.username
             current = users_by_id.get(current.manager_user_id)
-        return recommender.full_name or recommender.username
+        return recommender.full_name or recommender.username or fallback
 
     return [
         {
             "date": recommendation.recommended_at,
-            "operator": recommender.full_name or recommender.username,
-            "group_leader": resolve_group_leader(recommender),
+            "operator": (
+                (recommender.full_name or recommender.username)
+                if recommender
+                else (recommendation.recommender or "未署名顾问")
+            ),
+            "group_leader": resolve_group_leader(
+                recommender,
+                recommendation.recommender or "未分组",
+            ),
         }
         for recommendation, recommender in rows
     ]

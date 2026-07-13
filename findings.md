@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-13（月度推荐 vs 日历不一致）
+
+- 月度看板按推荐列表 `recommended_at` 计数；日历曾 INNER JOIN 用户，会漏无 `recommender_user_id` 的记录。
+- 约定：两边都以「本月 `recommended_at` 推荐记录」为准；前端日历事件从推荐列表生成，日历 API 仅补充组长信息。
+
 ## 2026-07-13（求职者总数口径）
 
 - 权威来源：简历池 `list_candidates` 结果集（不是裸 `COUNT(candidates)`）。

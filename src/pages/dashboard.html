@@ -70,7 +70,11 @@
     function parseDateValue(value) {
       if (!value) return null;
       if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
-      const normalized = typeof value === 'string' && value.includes(' ') ? value.replace(' ', 'T') : value;
+      let normalized = typeof value === 'string' && value.includes(' ') ? value.replace(' ', 'T') : value;
+      // 后端多为 UTC 无时区串；按 UTC 解析，避免与日历/月度看板各算各的
+      if (typeof normalized === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(normalized) && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(normalized)) {
+        normalized = `${normalized}Z`;
+      }
       const date = new Date(normalized);
       return Number.isNaN(date.getTime()) ? null : date;
     }
@@ -115,12 +119,24 @@
     }
 
     function getCalendarEvents() {
-      return dashboardState.recommendationCalendar.map((item) => ({
-        date: parseDateValue(item.date),
-        operator: item.operator || '未署名顾问',
-        groupLeader: item.group_leader || item.operator || '未分组',
-        source: 'recommendation',
-      })).filter((item) => item.date);
+      // 与月度「本月推荐」同一口径：recommended_at 有值的推荐记录
+      const calendarMeta = dashboardState.recommendationCalendar || [];
+      return (dashboardState.recommendations || []).map((row) => {
+        const date = parseDateValue(row.recommended_at);
+        if (!date) return null;
+        const operator = row.recommender || '未署名顾问';
+        const day = dayKey(date);
+        const meta = calendarMeta.find((item) => {
+          const itemDate = parseDateValue(item.date);
+          return itemDate && dayKey(itemDate) === day && (item.operator === operator || !row.recommender);
+        });
+        return {
+          date,
+          operator: meta?.operator || operator,
+          groupLeader: meta?.group_leader || meta?.operator || operator,
+          source: 'recommendation',
+        };
+      }).filter(Boolean);
     }
 
     function getMonthRows(rows, picker, monthDate, predicate = null) {
@@ -189,16 +205,12 @@
         ...hiredCandidateIds,
       ]);
 
-      // 本月推荐数：recommended_at 落在本月的推荐记录条数（待推荐不计）
-      const monthlyRecommendedCount = getMonthRows(
-        dashboardState.recommendations,
-        'recommended_at',
-        monthDate
-      ).length;
+      // 本月推荐数：与日历同一批事件（recommended_at 落在本月）
+      const monthlyCalendarEvents = getCalendarEvents().filter((row) => sameMonth(row.date, monthDate));
+      const monthlyRecommendedCount = monthlyCalendarEvents.length;
 
       const monthlyDeliveries = getMonthRows(dashboardState.deliveries, 'delivered_at', monthDate);
       const monthlyPositions = getMonthRows(dashboardState.positions, 'created_at', monthDate);
-      const monthlyCalendarEvents = getCalendarEvents().filter((row) => sameMonth(row.date, monthDate));
       const activeProjects = dashboardState.projects.filter((row) => row.status !== '招聘完毕').length;
       const activeOperators = new Set(monthlyCalendarEvents.map((row) => row.operator || '未署名顾问')).size;
       return {

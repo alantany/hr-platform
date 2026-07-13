@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-首页求职者总数对齐简历池。维护流程：**改代码 → 更新三份 MD → commit → push**。
+月度推荐与日历口径统一。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

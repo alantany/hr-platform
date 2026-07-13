@@ -87,3 +87,39 @@ def test_recommendation_calendar_uses_recommended_status_and_user_hierarchy():
     assert [row["operator"] for row in operator_rows] == ["直属操作员"]
     assert [row["group_leader"] for row in operator_rows] == ["日历组长"]
     assert [row["operator"] for row in outsider_rows] == ["外组操作员"]
+
+
+def test_recommendation_calendar_includes_rows_without_recommender_user() -> None:
+    """无 recommender_user_id 的已推荐记录也应进入日历（与月度 recommended_at 口径一致）。"""
+    suffix = uuid4().hex[:8]
+    db = SessionLocal()
+    try:
+        company = Company(name=f"无推荐人客户-{suffix}")
+        db.add(company)
+        db.flush()
+        project = Project(company_id=company.id, name=f"无推荐人项目-{suffix}")
+        db.add(project)
+        db.flush()
+        position = Position(project_id=project.id, name=f"无推荐人岗位-{suffix}")
+        db.add(position)
+        db.flush()
+        candidate = Candidate(name=f"无推荐人候选人-{suffix}")
+        db.add(candidate)
+        db.flush()
+        db.add(
+            Recommendation(
+                candidate_id=candidate.id,
+                position_id=position.id,
+                recommender="legacy-operator",
+                recommender_user_id=None,
+                status="已推荐",
+                recommended_at=datetime.now(timezone.utc),
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    admin = login_headers(client, "admin")
+    rows = client.get("/api/dashboard/recommendation-calendar", headers=admin).json()
+    assert any(row.get("operator") == "legacy-operator" for row in rows)
