@@ -123,6 +123,7 @@ class DashboardRecommendationCalendarOut(BaseModel):
     date: datetime
     operator: str
     group_leader: str
+    recommendation_id: int | None = None
 
 
 class CompanyCreate(BaseModel):

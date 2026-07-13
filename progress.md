@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-13（完成 - 日历分组按推荐 ID 对齐组长）
+
+- 日历 API 增加 `recommendation_id`；首页按 ID 取 `group_leader`，避免 Auto-Match/姓名不一致导致「未分组」。
+- 测试：`tests/test_dashboard_recommendation_calendar.py` PASS。
+
 ## 2026-07-13（完成 - 明细区去掉表头与清空）
 
 - 日历/看板联动列表仅渲染行内容，移除标题、口径说明和「清空」按钮。

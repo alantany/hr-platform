@@ -125,6 +125,11 @@
     function getCalendarEvents() {
       // 与月度「本月推荐」同一口径：recommended_at 有值的推荐记录
       const calendarMeta = dashboardState.recommendationCalendar || [];
+      const metaByRecId = new Map(
+        calendarMeta
+          .filter((item) => item && item.recommendation_id != null)
+          .map((item) => [Number(item.recommendation_id), item])
+      );
       const positionNameById = new Map(
         (dashboardState.positions || []).map((row) => [Number(row.id), row.name || ''])
       );
@@ -132,15 +137,11 @@
         const date = parseDateValue(row.recommended_at);
         if (!date) return null;
         const operator = row.recommender || '未署名顾问';
-        const day = dayKey(date);
-        const meta = calendarMeta.find((item) => {
-          const itemDate = parseDateValue(item.date);
-          return itemDate && dayKey(itemDate) === day && (item.operator === operator || !row.recommender);
-        });
+        const meta = metaByRecId.get(Number(row.id));
         return {
           date,
           operator: meta?.operator || operator,
-          // 只认后端解析出的组长；禁止回退到推荐人（否则超管会显示成「admin组」）
+          // 按推荐记录 ID 取组长；操作员→其组长，组长本人→自己
           groupLeader: meta?.group_leader || '未分组',
           source: 'recommendation',
           candidateId: Number(row.candidate_id) || null,

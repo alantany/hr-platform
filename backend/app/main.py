@@ -724,6 +724,7 @@ def dashboard_recommendation_calendar(db: Session = Depends(get_db), user: User 
                 else (recommendation.recommender or "未署名顾问")
             ),
             "group_leader": resolve_group_leader(recommender),
+            "recommendation_id": recommendation.id,
         }
         for recommendation, recommender in rows
     ]
