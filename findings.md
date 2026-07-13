@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-13（项目所属公司下钻真正生效）
+
+- 仅改链接不够：客户页曾忽略 query；`open-company-from-project` 也曾无 handler。
+- 现约定：整页进 `customers.html?company_id=`，列表精确过滤该公司。
+
 ## 2026-07-13（项目列表 → 客户列表下钻）
 
 - 项目「所属公司」原链 `customers.html` 无过滤。

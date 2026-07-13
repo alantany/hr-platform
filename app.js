@@ -331,7 +331,7 @@ const renderProjectListMarkup = (projects = [], tagConfigs = []) => {
     return `
       <div class="list-item" data-id="${project.id}" data-company-id="${project.company_id}">
         <div class="item-top" style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 0.8fr 0.8fr 1.2fr 0.8fr 1.2fr 180px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-          <button class="project-company-link" type="button" style="color:#2563EB;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;" title="${escapeHtml(project.company_name || '未知公司')}" onclick="location.href='./customers.html?company_id=${encodeURIComponent(project.company_id || '')}'">${escapeHtml(project.company_name || '未知公司')}</button>
+          <button class="project-company-link" type="button" style="color:#2563EB;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;" title="${escapeHtml(project.company_name || '未知公司')}" data-action="open-company-from-project" data-company-id="${project.company_id || ''}">${escapeHtml(project.company_name || '未知公司')}</button>
           <div class="item-title" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; margin-right: 0;">
             <button class="project-name-link" type="button" style="font-weight:600;color:#0f172a;font-size:13px;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;" data-action="view-project-positions" data-project-id="${project.id}">${escapeHtml(project.name)}</button>
             ${tagHtml}
@@ -475,7 +475,11 @@ async function refreshCustomerList() {
     window.hrApi.positions(),
     window.hrTagSystem.fetchConfigs(),
   ]);
-  list.innerHTML = renderCompanyTableMarkup(companies, projects, positions, tagConfigs);
+  const companyId = new URLSearchParams(location.search).get('company_id');
+  const filteredCompanies = companyId
+    ? companies.filter((company) => String(company.id) === String(companyId))
+    : companies;
+  list.innerHTML = renderCompanyTableMarkup(filteredCompanies, projects, positions, tagConfigs);
 }
 
 async function renderProjectListFromState() {
@@ -4993,6 +4997,13 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     location.href = `./projects.html?company_id=${encodeURIComponent(companyId)}&tab=project`;
     return;
   }
+  if (button.dataset.action === "open-company-from-project") {
+    const companyId = button.dataset.companyId || '';
+    if (!companyId) throw new Error('未找到所属公司');
+    // 整页跳转并带 company_id，客户页按该公司过滤
+    location.href = `./customers.html?company_id=${encodeURIComponent(companyId)}`;
+    return;
+  }
   if (button.dataset.action === "open-jd-parse-modal") {
     const modal = document.querySelector("[data-jd-parse-modal]");
     const textarea = modal?.querySelector("[data-jd-parse-textarea]");
@@ -5734,8 +5745,9 @@ document.addEventListener("click", (event) => {
   if (!/\.html(\?|#|$)/.test(href)) return;
   // 登录页必须整页跳转，不能走 SPA 局部加载
   if (href.includes("login.html") || location.pathname.includes("login.html")) return;
-  // 带筛选参数的用户列表走整页跳转，避免 SPA 丢 ?role= 过滤（强刷才生效的问题）
+  // 带筛选参数的用户/客户列表走整页跳转，避免 SPA 丢 query 过滤
   if (/users\.html\?/i.test(href)) return;
+  if (/customers\.html\?/i.test(href)) return;
   event.preventDefault();
   loadPage(href);
 });

@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-13（完成 - 项目所属公司下钻真正生效）
+
+- 补 `open-company-from-project` 跳转；客户页按 `?company_id=` 过滤列表；副标题可回「查看全部客户」。
+- 带 query 的 `customers.html` 走整页跳转，避免 SPA 丢参。
+
 ## 2026-07-13（完成 - 补齐求职者池 URL exclude 套用）
 
 - `candidates.html` 启动时读取 `?exclude=`，写入状态筛选项后再渲染。

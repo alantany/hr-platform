@@ -162,9 +162,31 @@ window.__PAGE_BODY__ = `
         document.querySelector('[data-company-projects]').textContent = String(projects.filter(project => project.status === '招聘中').length);
         document.querySelector('[data-company-delivery]').textContent = String(employmentRecords.length);
         document.querySelector('[data-company-positions]').textContent = String(companies.reduce((sum, company) => sum + (company.position_count || 0), 0));
+
+        // 项目列表「所属公司」下钻：?company_id= 只展示该公司
+        const companyId = new URLSearchParams(location.search).get('company_id');
+        const filteredCompanies = companyId
+          ? companies.filter((company) => String(company.id) === String(companyId))
+          : companies;
         const list = document.querySelector('[data-company-list]');
         if (list) {
-          list.innerHTML = window.hrRenderCompanyList ? window.hrRenderCompanyList(companies, projects, positions, tagConfigs) : '';
+          list.innerHTML = window.hrRenderCompanyList
+            ? window.hrRenderCompanyList(filteredCompanies, projects, positions, tagConfigs)
+            : '';
+        }
+        const panelHead = document.querySelector('.panel .section-head');
+        const subtitle = panelHead?.querySelector('.section-sub');
+        const headTitle = panelHead?.querySelector('h3');
+        if (companyId && filteredCompanies.length) {
+          const name = filteredCompanies[0].name || '指定客户';
+          if (headTitle) headTitle.textContent = `客户公司 · ${name}`;
+          if (subtitle) {
+            subtitle.innerHTML = `已按项目列表下钻过滤。<a href="./customers.html" style="color:#2563EB;font-weight:600;">查看全部客户</a>`;
+          }
+        } else if (companyId && !filteredCompanies.length) {
+          if (subtitle) {
+            subtitle.innerHTML = `未找到对应客户。<a href="./customers.html" style="color:#2563EB;font-weight:600;">查看全部客户</a>`;
+          }
         }
       } catch (err) {
         console.warn(err);
