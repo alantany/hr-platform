@@ -4,43 +4,74 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>每日任务</title>
-  <link rel="stylesheet" href="../../styles.css" />
+  <link rel="stylesheet" href="../../styles.css?v=20260715-recruit-tasks-publish-ui" />
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js"></script>
+  <script defer src="../../app.js?v=20260715-recruit-tasks-publish-ui"></script>
 </head>
 <body>
   <div id="app"></div>
   <script>
     const dailyTaskState = { rows: [] };
+    const DAILY_TASK_ICONS = {
+      message: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      fileAsk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>',
+      download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+      inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
+      list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
+      calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>',
+    };
 
     window.__PAGE_BODY__ = `
+      <div class="daily-tasks-page">
       <section class="metrics">
-        <div class="metric-card tone-primary"><div class="metric-top"><div><div class="section-sub">打招呼</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-task-greet>0</div></div>
-        <div class="metric-card tone-success"><div class="metric-top"><div><div class="section-sub">索要简历</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-task-request>0</div></div>
-        <div class="metric-card tone-warning"><div class="metric-top"><div><div class="section-sub">简历下载</div></div><div class="metric-icon">▣</div></div><div class="metric-value" data-task-download>0</div></div>
-        <div class="metric-card tone-neutral"><div class="metric-top"><div><div class="section-sub">简历收到</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-task-ack>0</div></div>
+        <div class="metric-card tone-primary">
+          <div class="metric-top"><div><div class="section-sub">打招呼</div></div><div class="metric-icon">${DAILY_TASK_ICONS.message}</div></div>
+          <div class="metric-value" data-task-greet>0</div>
+        </div>
+        <div class="metric-card tone-success">
+          <div class="metric-top"><div><div class="section-sub">索要简历</div></div><div class="metric-icon">${DAILY_TASK_ICONS.fileAsk}</div></div>
+          <div class="metric-value" data-task-request>0</div>
+        </div>
+        <div class="metric-card tone-warning">
+          <div class="metric-top"><div><div class="section-sub">简历下载</div></div><div class="metric-icon">${DAILY_TASK_ICONS.download}</div></div>
+          <div class="metric-value" data-task-download>0</div>
+        </div>
+        <div class="metric-card tone-neutral">
+          <div class="metric-top"><div><div class="section-sub">简历收到</div></div><div class="metric-icon">${DAILY_TASK_ICONS.inbox}</div></div>
+          <div class="metric-value" data-task-ack>0</div>
+        </div>
       </section>
 
       <section class="panel">
         <div class="section-head">
           <div><h3>每日任务统计</h3></div>
-          <div class="hero-actions" style="margin-top:0"><a class="btn secondary" href="./recruit-job-list.html">岗位列表</a></div>
+          <div class="hero-actions daily-tasks-actions">
+            <a class="btn btn-secondary" href="./recruit-job-list.html">
+              <span class="btn-icon">${DAILY_TASK_ICONS.list}</span>
+              岗位列表
+            </a>
+          </div>
         </div>
-        <div class="toolbar">
+        <div class="toolbar daily-tasks-filter">
           <input class="input" type="date" data-task-date />
-          <button class="btn primary" data-action="load-recruit-task-stats">查询</button>
-          <button class="btn" data-action="reset-recruit-task-date">今天</button>
+          <button class="btn primary" type="button" data-action="load-recruit-task-stats">查询</button>
+          <button class="btn btn-secondary" type="button" data-action="reset-recruit-task-date">今天</button>
         </div>
         <div class="table-card">
-          <div class="table-head" style="grid-template-columns: .85fr 1fr 1.3fr .75fr .75fr .75fr .75fr 1fr;">
+          <div class="table-head daily-tasks-table-head">
             <div>日期</div><div>发布人</div><div>岗位</div><div>打招呼</div><div>索要</div><div>下载</div><div>回执</div><div>更新时间</div>
           </div>
           <div data-task-rows>
-            <div class="table-row" style="grid-template-columns: 1fr;"><div class="item-meta">任务统计加载中。</div></div>
+            <div class="table-empty">
+              <div class="table-empty-icon">${DAILY_TASK_ICONS.calendar}</div>
+              <div class="table-empty-title">任务统计加载中</div>
+              <div class="table-empty-desc">请稍候，正在读取当日 Recruit 任务数据。</div>
+            </div>
           </div>
-          <div class="table-foot"><span data-task-foot>共 0 条统计</span><span>Recruit schema</span></div>
+          <div class="table-foot daily-tasks-foot"><span data-task-foot>共 0 条统计</span><span>Recruit schema</span></div>
         </div>
       </section>
+      </div>
     `;
 
     function todayValue() {
@@ -67,7 +98,7 @@
       document.querySelector("[data-task-ack]").textContent = String(sum("resume_ack_count"));
       const rows = document.querySelector("[data-task-rows]");
       rows.innerHTML = dailyTaskState.rows.map((row) => `
-        <div class="table-row" style="grid-template-columns: .85fr 1fr 1.3fr .75fr .75fr .75fr .75fr 1fr;">
+        <div class="table-row daily-tasks-row">
           <div class="mono">${escapeHtml(row.stat_date || "-")}</div>
           <div>${escapeHtml(row.issuer_login_name || "-")}</div>
           <div><strong>${escapeHtml(row.job_title || "-")}</strong><div class="row-sub">posting #${row.job_posting_id || 0}</div></div>
@@ -77,7 +108,13 @@
           <div>${Number(row.resume_ack_count || 0)}</div>
           <div>${formatTime(row.updated_at)}</div>
         </div>
-      `).join("") || '<div class="table-row" style="grid-template-columns: 1fr;"><div class="item-meta">该日期暂无任务统计。</div></div>';
+      `).join("") || `
+        <div class="table-empty">
+          <div class="table-empty-icon">${DAILY_TASK_ICONS.calendar}</div>
+          <div class="table-empty-title">该日期暂无任务统计</div>
+          <div class="table-empty-desc">换个日期或点今天试试</div>
+        </div>
+      `;
       document.querySelector("[data-task-foot]").textContent = `共 ${dailyTaskState.rows.length} 条统计`;
     }
 

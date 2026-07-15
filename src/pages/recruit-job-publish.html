@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>岗位发布</title>
-  <link rel="stylesheet" href="../../styles.css" />
+  <link rel="stylesheet" href="../../styles.css?v=20260715-recruit-tasks-publish-ui" />
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js"></script>
+  <script defer src="../../app.js?v=20260715-recruit-tasks-publish-ui"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -27,49 +27,130 @@
       ["6m", "半年"],
     ];
     const GREET_OPTIONS = [10, 20, 30, 40, 50];
+    const PUBLISH_PAGE_ICONS = {
+      list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
+      check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>',
+      calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>',
+      inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
+    };
 
     window.__PAGE_BODY__ = `
-      <section class="metrics" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-        <a href="./recruit-job-list.html" class="metric-card tone-primary" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">Recruit 岗位</div></div><div class="metric-icon">○</div></div><div class="metric-value" data-recruit-job-total>0</div><div class="metric-label">当前岗位库总量</div></a>
-        <a href="./recruit-job-list.html?valid=Y" class="metric-card tone-success" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">有效岗位</div></div><div class="metric-icon">△</div></div><div class="metric-value" data-recruit-job-valid>0</div><div class="metric-label">抓取后台可读取</div></a>
-        <a href="./recruit-daily-tasks.html" class="metric-card tone-warning" style="text-decoration: none; color: inherit;"><div class="metric-top"><div><div class="section-sub">今日任务</div></div><div class="metric-icon">◌</div></div><div class="metric-value" data-recruit-task-today>0</div><div class="metric-label">今日统计行数</div></a>
+      <div class="job-publish-page">
+      <section class="metrics is-three">
+        <a href="./recruit-job-list.html" class="metric-card tone-primary">
+          <div class="metric-top"><div><div class="section-sub">Recruit 岗位</div></div><div class="metric-icon">${PUBLISH_PAGE_ICONS.list}</div></div>
+          <div class="metric-value" data-recruit-job-total>0</div>
+          <div class="metric-label">当前岗位库总量</div>
+        </a>
+        <a href="./recruit-job-list.html?valid=Y" class="metric-card tone-success">
+          <div class="metric-top"><div><div class="section-sub">有效岗位</div></div><div class="metric-icon">${PUBLISH_PAGE_ICONS.check}</div></div>
+          <div class="metric-value" data-recruit-job-valid>0</div>
+          <div class="metric-label">抓取后台可读取</div>
+        </a>
+        <a href="./recruit-daily-tasks.html" class="metric-card tone-warning">
+          <div class="metric-top"><div><div class="section-sub">今日任务</div></div><div class="metric-icon">${PUBLISH_PAGE_ICONS.calendar}</div></div>
+          <div class="metric-value" data-recruit-task-today>0</div>
+          <div class="metric-label">今日统计行数</div>
+        </a>
       </section>
 
-      <section class="grid-2">
-        <div class="panel">
+      <section class="job-publish-grid">
+        <div class="panel job-publish-card">
           <div class="section-head">
-            <div><h3>岗位发布</h3><div class="section-sub">保存后写入 recruit.job_postings。</div></div>
-            <div class="hero-actions" style="margin-top:0"><button class="btn primary" data-action="submit-recruit-job">发布岗位</button></div>
+            <div>
+              <h3>岗位发布</h3>
+              <div class="section-sub">保存后写入岗位库，供抓取后台读取。</div>
+            </div>
+            <div class="hero-actions job-publish-actions">
+              <button class="btn primary" type="button" data-action="submit-recruit-job">发布岗位</button>
+            </div>
           </div>
-          <div class="list">
-            <div class="list-item"><div class="item-title">岗位名称</div><div class="item-meta">用于智联岗位下拉选择</div><input class="input wide" data-recruit-field="job_title" placeholder="例如：Java 后端工程师" /></div>
-            <div class="list-item"><div class="item-title">工作地点</div><div class="item-meta">默认长春</div><input class="input wide" data-recruit-field="work_location" value="长春" /></div>
-            <div class="list-item"><div class="item-title">年龄范围</div><div class="item-meta">下限和上限需同时填写，可留空</div><div class="toolbar" style="margin:8px 0 0; padding:0; border:0; box-shadow:none; background:transparent;"><input class="input" type="number" min="16" max="99" data-recruit-field="age_min" placeholder="最小年龄" /><input class="input" type="number" min="16" max="99" data-recruit-field="age_max" placeholder="最大年龄" /></div></div>
-            <div class="list-item"><div class="item-title">学历要求</div><div class="item-meta">与 Recruit 原岗位库枚举保持一致</div><select class="input wide" data-recruit-field="education">${EDUCATION_OPTIONS.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></div>
-            <div class="list-item"><div class="item-title">候选人活跃时间</div><div class="item-meta">抓取时使用的活跃范围</div><select class="input wide" data-recruit-field="candidate_activity">${ACTIVITY_OPTIONS.map(([value, label]) => `<option value="${value}" ${value === "1m" ? "selected" : ""}>${label}</option>`).join("")}</select></div>
+          <div class="job-field-stack">
+            <div class="job-field-card">
+              <label class="job-field-label">岗位名称</label>
+              <div class="job-field-hint">用于智联岗位下拉选择</div>
+              <input class="input wide" data-recruit-field="job_title" placeholder="例如：Java 后端工程师" />
+            </div>
+            <div class="job-field-card">
+              <label class="job-field-label">工作地点</label>
+              <div class="job-field-hint">默认长春</div>
+              <input class="input wide" data-recruit-field="work_location" value="长春" />
+            </div>
+            <div class="job-field-card">
+              <label class="job-field-label">年龄范围</label>
+              <div class="job-field-hint">下限和上限需同时填写，可留空</div>
+              <div class="job-field-inline">
+                <input class="input" type="number" min="16" max="99" data-recruit-field="age_min" placeholder="最小年龄" />
+                <input class="input" type="number" min="16" max="99" data-recruit-field="age_max" placeholder="最大年龄" />
+              </div>
+            </div>
+            <div class="job-field-card">
+              <label class="job-field-label">学历要求</label>
+              <div class="job-field-hint">与 Recruit 原岗位库枚举保持一致</div>
+              <select class="input wide job-select" data-recruit-field="education">${EDUCATION_OPTIONS.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select>
+            </div>
+            <div class="job-field-card">
+              <label class="job-field-label">候选人活跃时间</label>
+              <div class="job-field-hint">抓取时使用的活跃范围</div>
+              <select class="input wide job-select" data-recruit-field="candidate_activity">${ACTIVITY_OPTIONS.map(([value, label]) => `<option value="${value}" ${value === "1m" ? "selected" : ""}>${label}</option>`).join("")}</select>
+            </div>
           </div>
         </div>
 
-        <div class="panel">
+        <div class="panel job-publish-card">
           <div class="section-head">
-            <div><h3>抓取配置</h3><div class="section-sub">控制单岗额度、关键词和是否参与抓取。</div></div>
+            <div>
+              <h3>抓取配置</h3>
+              <div class="section-sub">控制单岗额度、关键词和是否参与抓取。</div>
+            </div>
+            <span class="import-eyebrow">数据源 PG</span>
           </div>
-          <div class="list">
-            <div class="list-item"><div class="item-title">每日打招呼上限</div><div class="item-meta">单岗位配额</div><select class="input wide" data-recruit-field="daily_greet_limit">${GREET_OPTIONS.map((value) => `<option value="${value}" ${value === 20 ? "selected" : ""}>${value} 次/天</option>`).join("")}</select></div>
-            <div class="list-item"><div class="item-title">搜索关键词</div><div class="item-meta">可为空；最多 30 字</div><input class="input wide" maxlength="30" data-recruit-field="search_keyword" placeholder="例如：后端、Java、销售" /></div>
-            <div class="list-item"><div class="item-title">岗位状态</div><div class="item-meta">Y=参与抓取，N=抓取后台跳过</div><select class="input wide" data-recruit-field="is_valid"><option value="Y">Y 有效</option><option value="N">N 跳过</option></select></div>
-            <div class="list-item soft"><div class="item-top"><div><div class="item-title">数据源</div><div class="item-meta">本页只调用 HR FastAPI，并写入 PostgreSQL recruit schema。</div></div><span class="chip primary">PG</span></div></div>
+          <div class="job-field-stack">
+            <div class="job-field-card">
+              <label class="job-field-label">每日打招呼上限</label>
+              <div class="job-field-hint">单岗位配额</div>
+              <select class="input wide job-select" data-recruit-field="daily_greet_limit">${GREET_OPTIONS.map((value) => `<option value="${value}" ${value === 20 ? "selected" : ""}>${value} 次/天</option>`).join("")}</select>
+            </div>
+            <div class="job-field-card">
+              <label class="job-field-label">搜索关键词</label>
+              <div class="job-field-hint">可为空；最多 30 字</div>
+              <input class="input wide" maxlength="30" data-recruit-field="search_keyword" placeholder="例如：后端、Java、销售" />
+            </div>
+            <div class="job-field-card">
+              <label class="job-field-label">岗位状态</label>
+              <div class="job-field-hint">Y=参与抓取，N=抓取后台跳过</div>
+              <select class="input wide job-select" data-recruit-field="is_valid"><option value="Y">Y 有效</option><option value="N">N 跳过</option></select>
+            </div>
+            <div class="job-field-card is-tip">
+              <div class="job-field-label">说明</div>
+              <div class="job-field-hint">本页只调用 HR FastAPI，并写入 PostgreSQL recruit schema。</div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel job-publish-recent">
         <div class="section-head">
-          <div><h3>最近发布</h3><div class="section-sub">展示最新 5 条 Recruit 岗位。</div></div>
-          <div class="hero-actions" style="margin-top:0"><a class="btn secondary" href="./recruit-job-list.html">查看列表</a></div>
+          <div>
+            <h3>最近发布</h3>
+            <div class="section-sub">展示最新 5 条 Recruit 岗位。</div>
+          </div>
+          <div class="hero-actions job-publish-actions">
+            <a class="btn btn-secondary" href="./recruit-job-list.html">
+              <span class="btn-icon">${PUBLISH_PAGE_ICONS.list}</span>
+              查看列表
+            </a>
+          </div>
         </div>
-        <div class="list" data-recruit-recent-jobs><div class="list-item"><div class="item-meta">岗位数据加载中。</div></div></div>
+        <div class="job-recent-list" data-recruit-recent-jobs>
+          <div class="table-empty">
+            <div class="table-empty-icon">${PUBLISH_PAGE_ICONS.inbox}</div>
+            <div class="table-empty-title">岗位数据加载中</div>
+            <div class="table-empty-desc">请稍候，正在读取最近发布记录。</div>
+          </div>
+        </div>
       </section>
+      </div>
     `;
 
     function todayValue() {
@@ -96,13 +177,20 @@
       const box = document.querySelector("[data-recruit-recent-jobs]");
       if (!box) return;
       box.innerHTML = jobs.slice(0, 5).map((job) => `
-        <div class="list-item">
-          <div class="item-top">
-            <div><div class="item-title">${escapeHtml(job.job_title)}</div><div class="item-meta">${escapeHtml(job.work_location)} · ${job.daily_greet_limit} 次/天 · ${escapeHtml(job.publisher_login || "-")}</div></div>
-            <span class="chip ${job.is_valid === "Y" ? "success" : "neutral"}">${job.is_valid === "Y" ? "有效" : "跳过"}</span>
+        <div class="job-recent-item">
+          <div class="job-recent-copy">
+            <div class="job-recent-title">${escapeHtml(job.job_title)}</div>
+            <div class="job-recent-meta">${escapeHtml(job.work_location)} · ${job.daily_greet_limit} 次/天 · ${escapeHtml(job.publisher_login || "-")}</div>
           </div>
+          <span class="import-status-pill tone-${job.is_valid === "Y" ? "success" : "muted"}">${job.is_valid === "Y" ? "有效" : "跳过"}</span>
         </div>
-      `).join("") || '<div class="list-item"><div class="item-meta">暂无岗位。</div></div>';
+      `).join("") || `
+        <div class="table-empty">
+          <div class="table-empty-icon">${PUBLISH_PAGE_ICONS.inbox}</div>
+          <div class="table-empty-title">暂无岗位</div>
+          <div class="table-empty-desc">发布第一条岗位后，最近记录会显示在这里。</div>
+        </div>
+      `;
     }
 
     async function loadPageData() {

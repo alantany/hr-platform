@@ -469,5 +469,7 @@
 - [x] 项目管理（`projects.html`）— 项目列表 + 岗位列表两个 Tab
 - [x] 简历导入（`import.html`）
 - [x] 客户管理（`customers.html`）
+- [x] 每日任务（`recruit-daily-tasks.html`）
+- [x] 岗位发布（`recruit-job-publish.html`）
 - [ ] 其余页面（按用户指定顺序）
 - **Status:** in_progress

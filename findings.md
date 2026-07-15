@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-15（每日任务 / 岗位发布 UI）
+
+- 两页均页面作用域样式（`.daily-tasks-page` / `.job-publish-page`），复用 `.btn-secondary`、`.table-empty`、`.import-status-pill`。
+- 岗位发布表单用字段卡（label+hint+控件）替代粗细不一的 list-item 内框；下拉统一自定义箭头。
+
 ## 2026-07-15（客户管理页 UI）
 
 - 公司名下 `field-tag`（常含「招聘中」）与状态列重复，展示层已去掉，状态只保留状态列 pill；公司名弹层预览功能保留。
