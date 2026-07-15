@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-质保监控详情复用候选人池入口（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+去掉 Recruit 岗位列表/每日任务技术文案（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

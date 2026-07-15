@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-15（完成 - 去掉 Recruit 技术文案）
+
+- 岗位列表去掉「数据来自 PostgreSQL recruit.job_postings。」
+- 每日任务指标卡去掉 greet_count / resume_request_count / resume_download_count / resume_ack_count 小字。
+
 ## 2026-07-15（完成 - 质保监控详情复用候选人池入口）
 
 - 根因：质保页 SPA 只注入 `__PAGE_BODY__`，详情弹窗在脚本外；`view-detail` 又对 `position-candidates.html` 整页 DOMParser，拿不到 `__PAGE_BODY__` 模板里的 modal →「无法初始化详情窗口」。
