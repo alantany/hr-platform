@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-15（完成 - 质保监控详情复用候选人池入口）
+
+- 根因：质保页 SPA 只注入 `__PAGE_BODY__`，详情弹窗在脚本外；`view-detail` 又对 `position-candidates.html` 整页 DOMParser，拿不到 `__PAGE_BODY__` 模板里的 modal →「无法初始化详情窗口」。
+- 修复：`view-detail` 改为从 `candidates.html` 的 `__PAGE_BODY__` 注入弹窗（失败再回退岗位候选人页）；质保列表详情按钮对齐池内 `data-candidate-key` / `candidate:{id}`；去掉质保页重复弹窗拷贝。
+- 缓存：`app.js?v=20260715-warranty-detail`（warranty / candidates / dashboard / index）。
+
 ## 2026-07-15（完成 - 入池时间显示到秒）
 
 - 简历池「入池时间」由完整时间戳改为 `YYYY-MM-DD HH:mm:ss`（`formatDateTimeToSeconds`）。

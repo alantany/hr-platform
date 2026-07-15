@@ -2515,28 +2515,41 @@ async function handleGlobalButton(button) {
   if (button.dataset.action === "view-detail") {
     if (!document.querySelector('[data-candidate-detail-modal]')) {
       try {
-        const res = await fetch('position-candidates.html');
-        if (res.ok) {
-          const htmlText = await res.text();
+        // 与候选人池共用同一套详情弹窗：从 candidates.html 的 __PAGE_BODY__ 注入
+        //（SPA 页面只渲染 __PAGE_BODY__，直接 DOMParser 整页拿不到模板字符串里的 modal）
+        const modalSelectors = [
+          '[data-candidate-detail-modal]',
+          '[data-candidate-edit-modal]',
+          '[data-candidate-mail-modal]',
+          '[data-add-note-modal]',
+          '[data-add-tracking-modal]',
+          '[data-salary-tracking-modal]',
+          '[data-candidate-followup-modal]'
+        ];
+        const appendMissingModals = (htmlText) => {
           const parser = new DOMParser();
-          const doc = parser.parseFromString(htmlText, 'text/html');
-          const modalSelectors = [
-            '[data-candidate-detail-modal]',
-            '[data-candidate-edit-modal]',
-            '[data-candidate-mail-modal]',
-            '[data-add-note-modal]',
-            '[data-add-tracking-modal]',
-            '[data-salary-tracking-modal]',
-            '[data-candidate-followup-modal]'
-          ];
-          modalSelectors.forEach(sel => {
-            if (!document.querySelector(sel)) {
+          const sources = [];
+          const { bodyHtml } = extractPageBodyFromHtml(htmlText);
+          if (bodyHtml) {
+            sources.push(parser.parseFromString(`<div>${bodyHtml}</div>`, 'text/html'));
+          }
+          sources.push(parser.parseFromString(htmlText, 'text/html'));
+          modalSelectors.forEach((sel) => {
+            if (document.querySelector(sel)) return;
+            for (const doc of sources) {
               const modal = doc.querySelector(sel);
               if (modal) {
-                document.body.appendChild(modal);
+                document.body.appendChild(document.importNode(modal, true));
+                break;
               }
             }
           });
+        };
+        const primary = await fetch('candidates.html');
+        if (primary.ok) appendMissingModals(await primary.text());
+        if (!document.querySelector('[data-candidate-detail-modal]')) {
+          const fallback = await fetch('position-candidates.html');
+          if (fallback.ok) appendMissingModals(await fallback.text());
         }
       } catch (err) {
         console.error("动态加载候选人详情 Modal 失败:", err);

@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-07-15（质保监控详情无法初始化）
+
+- 报错文案实际为 `无法初始化详情窗口`（`app.js` `view-detail`）。
+- SPA `loadPage` 只渲染 `__PAGE_BODY__`；弹窗若写在页面脚本外的裸 HTML，侧栏进入质保页后 DOM 中没有 `[data-candidate-detail-modal]`。
+- 动态补弹窗时必须解析目标页的 `__PAGE_BODY__` 字符串；对整页做 `DOMParser` 拿不到模板里的 modal。
+- 质保列表详情应与候选人池一致：`data-action="view-detail"` + `data-candidate-key=record_key||candidate:{id}`，不要另造详情页。
+
 ## 2026-07-15（入池时间展示精度）
 
 - 列表「入池时间」只展示到秒：`YYYY-MM-DD HH:mm:ss`，去掉微秒与时区后缀。

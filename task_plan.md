@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-入池时间显示到秒（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+质保监控详情复用候选人池入口（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
