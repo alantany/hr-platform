@@ -1182,33 +1182,159 @@ function segmentSearchToken(token) {
   }
 }
 
-/** 短英文词（如 ai）用边界匹配，避免命中 AIGC/training 等；中文整词未中时再按分词匹配 */
-function tokenMatchesText(token, text) {
+function _partHitsText(part, hay) {
+  const p = String(part || "").toLowerCase();
+  if (!p) return false;
+  if (/^[a-z0-9]{1,2}$/.test(p)) {
+    return new RegExp(`(^|[^a-z0-9#+.])${p}([^a-z0-9#+.]|$)`, "i").test(hay);
+  }
+  return hay.includes(p);
+}
+
+/**
+ * 分析单 token 命中：整词优先；否则分词后任一子词命中即 matched。
+ * full=全部子词都命中（用于排序把全中排前面）。
+ */
+function analyzeTokenMatch(token, text) {
   const hay = String(text || "").toLowerCase();
   const needle = String(token || "").toLowerCase();
-  if (!needle) return false;
+  if (!needle) return { matched: false, full: false, hits: 0, total: 0, hitParts: [] };
   if (/^[a-z0-9]{1,2}$/.test(needle)) {
-    return new RegExp(`(^|[^a-z0-9#+.])${needle}([^a-z0-9#+.]|$)`, "i").test(hay);
+    const ok = _partHitsText(needle, hay);
+    return { matched: ok, full: ok, hits: ok ? 1 : 0, total: 1, hitParts: ok ? [needle] : [] };
   }
-  if (hay.includes(needle)) return true;
-  // 整串未命中：分词后匹配
+  if (hay.includes(needle)) {
+    return { matched: true, full: true, hits: 1, total: 1, hitParts: [needle] };
+  }
   const parts = segmentSearchToken(needle);
-  if (parts.length < 2) return false;
-  const partHit = (part) => {
-    if (/^[a-z0-9]{1,2}$/.test(part)) {
-      return new RegExp(`(^|[^a-z0-9#+.])${part}([^a-z0-9#+.]|$)`, "i").test(hay);
-    }
-    return hay.includes(part);
+  if (parts.length < 2) {
+    return { matched: false, full: false, hits: 0, total: 1, hitParts: [] };
+  }
+  const hitParts = parts.filter((part) => _partHitsText(part, hay));
+  return {
+    matched: hitParts.length > 0,
+    full: hitParts.length === parts.length,
+    hits: hitParts.length,
+    total: parts.length,
+    hitParts,
   };
-  // 全部分词都出现（可不相邻）
-  if (parts.every(partHit)) return true;
-  // 软匹配：至少命中 2 个分词，且命中字数 ≥ 查询分词总字数的一半
-  // 例：「生鲜运营总经理」可命中「生鲜运营负责人」（生鲜+运营）
-  const hitParts = parts.filter(partHit);
-  if (hitParts.length < 2) return false;
-  const hitChars = hitParts.join("").length;
-  const totalChars = parts.join("").length;
-  return totalChars > 0 && hitChars * 2 >= totalChars;
+}
+
+/** 任一分子命中即 true；全中与否只影响排序 */
+function tokenMatchesText(token, text) {
+  return analyzeTokenMatch(token, text).matched;
+}
+
+/** 收集关键词展开后的高亮词（整词 + 分词） */
+function collectKeywordHighlightParts(keyword) {
+  const groups = parseSearchKeywordGroups(keyword);
+  const seen = new Set();
+  const parts = [];
+  groups.forEach((orTokens) => {
+    orTokens.forEach((token) => {
+      const t = String(token || "").toLowerCase();
+      if (!t) return;
+      if (!seen.has(t)) {
+        seen.add(t);
+        parts.push(t);
+      }
+      segmentSearchToken(t).forEach((seg) => {
+        if (!seg || seen.has(seg)) return;
+        seen.add(seg);
+        parts.push(seg);
+      });
+    });
+  });
+  return parts.sort((a, b) => b.length - a.length);
+}
+
+function highlightSearchPartsInText(rawText, parts) {
+  const text = String(rawText || "");
+  if (!text || !parts.length) return escapeHtml(text);
+  const lower = text.toLowerCase();
+  const ranges = [];
+  parts.forEach((part) => {
+    const p = String(part || "").toLowerCase();
+    if (!p) return;
+    let from = 0;
+    while (from < lower.length) {
+      const idx = lower.indexOf(p, from);
+      if (idx < 0) break;
+      ranges.push({ start: idx, end: idx + p.length });
+      from = idx + Math.max(p.length, 1);
+    }
+  });
+  if (!ranges.length) return escapeHtml(text);
+  ranges.sort((a, b) => a.start - b.start || b.end - a.end);
+  const merged = [];
+  ranges.forEach((r) => {
+    const last = merged[merged.length - 1];
+    if (last && r.start <= last.end) {
+      last.end = Math.max(last.end, r.end);
+    } else {
+      merged.push({ ...r });
+    }
+  });
+  let html = "";
+  let cursor = 0;
+  merged.forEach((r) => {
+    if (r.start > cursor) html += escapeHtml(text.slice(cursor, r.start));
+    html += `<mark class="candidate-search-hit">${escapeHtml(text.slice(r.start, r.end))}</mark>`;
+    cursor = r.end;
+  });
+  if (cursor < text.length) html += escapeHtml(text.slice(cursor));
+  return html;
+}
+
+function extractHighlightedSnippet(fieldText, parts, radius = 36) {
+  const text = String(fieldText || "").replace(/\s+/g, " ").trim();
+  if (!text || !parts.length) return "";
+  const lower = text.toLowerCase();
+  let bestIdx = -1;
+  let bestLen = 0;
+  for (const part of parts) {
+    const p = String(part || "").toLowerCase();
+    if (!p) continue;
+    const idx = lower.indexOf(p);
+    if (idx < 0) continue;
+    if (bestIdx < 0 || p.length > bestLen) {
+      bestIdx = idx;
+      bestLen = p.length;
+    }
+  }
+  if (bestIdx < 0) return "";
+  const start = Math.max(0, bestIdx - radius);
+  const end = Math.min(text.length, bestIdx + bestLen + radius);
+  const snip =
+    (start > 0 ? "…" : "") + text.slice(start, end) + (end < text.length ? "…" : "");
+  return highlightSearchPartsInText(snip, parts);
+}
+
+/**
+ * 工作/项目等长字段命中时，返回带高亮的摘要（最多 2 条）
+ */
+function buildCandidateSearchHitSnippets(item, keyword) {
+  if (!item || !keyword) return [];
+  const parts = collectKeywordHighlightParts(keyword);
+  if (!parts.length) return [];
+  const fields = [
+    { key: "work_history", label: "工作经历" },
+    { key: "project_history", label: "项目经历" },
+    { key: "core_value", label: "核心优势" },
+    { key: "certificates", label: "证书资质" },
+  ];
+  const out = [];
+  for (const field of fields) {
+    const raw = String(item[field.key] || "").trim();
+    if (!raw) continue;
+    const analysis = parts.some((p) => _partHitsText(p, raw.toLowerCase()));
+    if (!analysis) continue;
+    const html = extractHighlightedSnippet(raw, parts);
+    if (!html) continue;
+    out.push({ label: field.label, html });
+    if (out.length >= 2) break;
+  }
+  return out;
 }
 
 /** L1：期望岗位名（求职意向 + 当前/期望职位名，最高优先） */
@@ -1234,12 +1360,34 @@ function buildCandidateSearchText(item) {
   return _joinSearchParts([buildCandidateL1SearchText(item), buildCandidateL2SearchText(item)]);
 }
 
-function _countKeywordGroupHits(text, groups) {
-  if (!groups.length) return 0;
-  return groups.reduce(
-    (n, orTokens) => n + (orTokens.some((token) => tokenMatchesText(token, text)) ? 1 : 0),
-    0
-  );
+function _bestTokenAnalysis(orTokens, text) {
+  let best = null;
+  (orTokens || []).forEach((token) => {
+    const a = analyzeTokenMatch(token, text);
+    if (!a.matched) return;
+    if (
+      !best ||
+      Number(a.full) > Number(best.full) ||
+      (Number(a.full) === Number(best.full) && a.hits > best.hits)
+    ) {
+      best = a;
+    }
+  });
+  return best;
+}
+
+function _scoreKeywordGroupsOnText(text, groups) {
+  let matchedGroups = 0;
+  let fullGroups = 0;
+  let hitSegs = 0;
+  (groups || []).forEach((orTokens) => {
+    const best = _bestTokenAnalysis(orTokens, text);
+    if (!best) return;
+    matchedGroups += 1;
+    if (best.full) fullGroups += 1;
+    hitSegs += best.hits;
+  });
+  return { matchedGroups, fullGroups, hitSegs };
 }
 
 function matchesSearchKeywords(text, keyword) {
@@ -1248,18 +1396,31 @@ function matchesSearchKeywords(text, keyword) {
   return groups.every((orTokens) => orTokens.some((token) => tokenMatchesText(token, text)));
 }
 
-/** 相关性分：L1 命中组数优先，其次 L2；用于结果排序 */
+/**
+ * 相关性分：全中组数优先，其次命中子词数，再 L1/L2
+ */
 function scoreCandidateKeywordMatch(item, keyword) {
   const groups = parseSearchKeywordGroups(keyword);
-  if (!groups.length) return { l1: 0, l2: 0, total: 0 };
-  const l1 = _countKeywordGroupHits(buildCandidateL1SearchText(item), groups);
-  const l2 = _countKeywordGroupHits(buildCandidateL2SearchText(item), groups);
-  return { l1, l2, total: l1 * 1000 + l2 };
+  if (!groups.length) {
+    return { fullGroups: 0, hitSegs: 0, l1: 0, l2: 0, total: 0 };
+  }
+  const all = _scoreKeywordGroupsOnText(buildCandidateSearchText(item), groups);
+  const l1 = _scoreKeywordGroupsOnText(buildCandidateL1SearchText(item), groups);
+  const l2 = _scoreKeywordGroupsOnText(buildCandidateL2SearchText(item), groups);
+  return {
+    fullGroups: all.fullGroups,
+    hitSegs: all.hitSegs,
+    l1: l1.hitSegs,
+    l2: l2.hitSegs,
+    total: all.fullGroups * 100000 + all.hitSegs * 1000 + l1.hitSegs * 10 + l2.hitSegs,
+  };
 }
 
 function compareCandidateKeywordRelevance(a, b, keyword) {
   const sa = scoreCandidateKeywordMatch(a, keyword);
   const sb = scoreCandidateKeywordMatch(b, keyword);
+  if (sb.fullGroups !== sa.fullGroups) return sb.fullGroups - sa.fullGroups;
+  if (sb.hitSegs !== sa.hitSegs) return sb.hitSegs - sa.hitSegs;
   if (sb.l1 !== sa.l1) return sb.l1 - sa.l1;
   if (sb.l2 !== sa.l2) return sb.l2 - sa.l2;
   return 0;
@@ -1267,7 +1428,10 @@ function compareCandidateKeywordRelevance(a, b, keyword) {
 
 window.parseSearchKeywordGroups = parseSearchKeywordGroups;
 window.segmentSearchToken = segmentSearchToken;
+window.analyzeTokenMatch = analyzeTokenMatch;
 window.tokenMatchesText = tokenMatchesText;
+window.collectKeywordHighlightParts = collectKeywordHighlightParts;
+window.buildCandidateSearchHitSnippets = buildCandidateSearchHitSnippets;
 window.buildCandidateL1SearchText = buildCandidateL1SearchText;
 window.buildCandidateL2SearchText = buildCandidateL2SearchText;
 window.buildCandidateSearchText = buildCandidateSearchText;

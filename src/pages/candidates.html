@@ -106,7 +106,7 @@
     }
   </style>
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=20260715-segment"></script>
+  <script defer src="../../app.js?v=20260715-segment-or"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -573,6 +573,7 @@
         tagConfigs: [],
         selectedCandidates: new Map(),
         visiblePageItems: [],
+        lastSearchKeyword: "",
         currentPage: 1,
         pageSize: 10,
         recordKey(item) {
@@ -700,8 +701,9 @@
             });
           }
 
-          // 用于相关性排序：搜索框词 + 已选热词（空格拼接，组间 AND）
+          // 用于相关性排序与命中摘要：搜索框词 + 已选热词（空格拼接，组间 AND）
           const relevanceKeyword = [keyword, ...activeHotkeys].filter(Boolean).join(" ").trim();
+          this.lastSearchKeyword = relevanceKeyword;
           
           // 6. 排序：有关键词/热词时默认按期望岗位命中优先；用户显式选时间/年龄时仍尊重
           if (sortVal === 'age_asc') {
@@ -788,6 +790,15 @@
               const aiReasonHtml = aiReason
                 ? `<div class="row-sub" style="margin-top:4px;color:#64748b;max-width:280px;white-space:normal;line-height:1.4;">${aiReason}</div>`
                 : '';
+              const searchKeyword = this.lastSearchKeyword || '';
+              const hitSnippets = searchKeyword && typeof window.buildCandidateSearchHitSnippets === 'function'
+                ? window.buildCandidateSearchHitSnippets(i, searchKeyword)
+                : [];
+              const hitSnippetsHtml = hitSnippets.length
+                ? `<div class="candidate-search-snippets">${hitSnippets.map((s) =>
+                    `<div class="candidate-search-snippet"><span class="candidate-search-snippet-label">${s.label}</span>${s.html}</div>`
+                  ).join('')}</div>`
+                : '';
 
               return `
                 <div class="table-row" data-row-key="${rowKey}" style="border-bottom: 1px solid #f1f5f9;">
@@ -799,6 +810,7 @@
                         <strong>${i.name || ''}</strong>${aiBadge}
                         ${candidateTagsHtml}
                         ${aiReasonHtml}
+                        ${hitSnippetsHtml}
                       </div>
                     </div>
                   </div>

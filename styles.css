@@ -2159,6 +2159,32 @@ button.customer-preview-position:focus-visible { outline: 2px solid rgba(102, 87
 .candidate-table-card .table-row {
   grid-template-columns: 40px 2.2fr 1fr 1fr 1fr 1fr 0.8fr 1.2fr;
 }
+.candidate-search-snippets {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 420px;
+}
+.candidate-search-snippet {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: normal;
+  word-break: break-word;
+}
+.candidate-search-snippet-label {
+  color: #94a3b8;
+  margin-right: 6px;
+  font-weight: 600;
+}
+.candidate-search-snippet mark.candidate-search-hit,
+mark.candidate-search-hit {
+  background: #fef08a;
+  color: #854d0e;
+  padding: 0 2px;
+  border-radius: 2px;
+}
 .candidate-search-toolbar {
   border: 1px solid #dbe4f0;
   background: linear-gradient(180deg, #f8fbff 0%, #ffffff 48%, #ffffff 100%);

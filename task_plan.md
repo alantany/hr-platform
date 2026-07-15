@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-分词搜索可用性加固（已完成：缓存 bust + 软匹配 + 回车搜索）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+分词 OR 命中 + 经历摘要高亮（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
