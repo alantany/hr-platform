@@ -1030,6 +1030,24 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+/** 展示用时间：裁到秒，如 2026-07-14 13:25:37 */
+function formatDateTimeToSeconds(value) {
+  if (value == null || value === "") return "--";
+  const raw = String(value).trim();
+  const matched = raw.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})/);
+  if (matched) return `${matched[1]} ${matched[2]}`;
+  try {
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return raw;
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  } catch (_) {
+    return raw;
+  }
+}
+
+window.formatDateTimeToSeconds = formatDateTimeToSeconds;
+
 function shouldShowButtonBusy(button) {
   const action = button?.dataset?.action || "";
   if (!action || button?.dataset?.busy === "true") return false;
