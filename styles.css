@@ -2236,6 +2236,16 @@ button.customer-preview-position:focus-visible { outline: 2px solid rgba(102, 87
   color: #0f766e;
   border: 1px solid #a5f3fc;
 }
+.candidate-search-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.candidate-search-actions .btn {
+  min-width: 88px;
+}
 @media (max-width: 900px) {
   .candidate-search-fields {
     flex-direction: column;
@@ -2243,6 +2253,13 @@ button.customer-preview-position:focus-visible { outline: 2px solid rgba(102, 87
   .candidate-search-city {
     min-width: 0;
     width: 100%;
+  }
+  .candidate-search-actions {
+    flex-direction: row;
+    width: 100%;
+  }
+  .candidate-search-actions .btn {
+    flex: 1;
   }
 }
 .candidate-filter-compact {

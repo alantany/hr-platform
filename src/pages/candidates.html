@@ -88,6 +88,21 @@
       font-size: 11px;
       line-height: 1.35;
     }
+    .candidates-pool-top .candidate-search-fields {
+      align-items: stretch;
+    }
+    .candidates-pool-top .candidate-search-actions {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      flex-shrink: 0;
+      min-width: 88px;
+    }
+    .candidates-pool-top .candidate-search-actions .btn {
+      width: 100%;
+      white-space: nowrap;
+    }
     .candidates-pool-top .candidate-filter-compact {
       gap: 8px;
       padding: 10px 12px;
@@ -126,16 +141,6 @@
       </section>
 
       <section class="panel candidate-search-toolbar">
-        <div class="section-head candidate-search-toolbar-head">
-          <div>
-            <h3>搜索工具栏</h3>
-            <div class="section-sub">关键词、城市组合搜索，快速定位候选人。</div>
-          </div>
-          <div class="hero-actions" style="margin-top:0">
-            <button class="btn candidate-search-btn" data-action="search-candidates">搜索</button>
-            <button class="btn primary" data-action="open-ai-search-modal">AI检索</button>
-          </div>
-        </div>
         <div class="toolbar candidate-search-fields">
           <div class="candidate-search-keyword">
             <label class="candidate-search-field-label candidate-search-field-label--keyword">关键词</label>
@@ -157,6 +162,10 @@
                 </div>
               </div>
             </div>
+          </div>
+          <div class="candidate-search-actions">
+            <button class="btn candidate-search-btn" data-action="search-candidates">搜索</button>
+            <button class="btn primary" data-action="open-ai-search-modal">AI检索</button>
           </div>
         </div>
       </section>
