@@ -1131,12 +1131,97 @@ function _joinSearchParts(parts) {
   return parts.filter(Boolean).map((p) => String(p)).join(" ").toLowerCase();
 }
 
+/**
+ * 职位通配词：可出现在「全中」判断里，但不能单独作为分词命中条件。
+ * 例：「算法工程师」核心是「算法」；仅「工程师」不能把所有工程师捞进来。
+ */
+const TITLE_ROLE_STOPWORDS = new Set([
+  "工程师",
+  "架构师",
+  "设计师",
+  "分析师",
+  "程序员",
+  "主管",
+  "经理",
+  "总经理",
+  "副总",
+  "总监",
+  "专员",
+  "助理",
+  "主任",
+  "顾问",
+  "专家",
+  "负责人",
+  "总裁",
+  "组长",
+  "部长",
+  "店长",
+  "实习生",
+  "管培生",
+  "合伙人",
+  "岗",
+  "岗位",
+]);
+
+const TITLE_SENIORITY_STOPWORDS = new Set([
+  "高级",
+  "资深",
+  "初级",
+  "中级",
+  "首席",
+  "实习",
+  "见习",
+]);
+
+const _TITLE_STOPWORD_SUFFIXES = [...TITLE_ROLE_STOPWORDS, ...TITLE_SENIORITY_STOPWORDS].sort(
+  (a, b) => b.length - a.length
+);
+
+/** 把「工程+师」等碎片还原为完整通配头衔，便于停用词过滤 */
+function _mergeKnownTitleCompounds(parts) {
+  const merges = [
+    ["工程", "师", "工程师"],
+    ["分析", "师", "分析师"],
+    ["设计", "师", "设计师"],
+    ["架构", "师", "架构师"],
+    ["程序", "员", "程序员"],
+    ["总", "经理", "总经理"],
+  ];
+  const list = (parts || []).map((p) => String(p || "").toLowerCase()).filter(Boolean);
+  if (!list.length) return list;
+  const out = [];
+  for (let i = 0; i < list.length; i += 1) {
+    let merged = false;
+    for (const [a, b, whole] of merges) {
+      if (list[i] === a && list[i + 1] === b) {
+        out.push(whole);
+        i += 1;
+        merged = true;
+        break;
+      }
+    }
+    if (!merged) out.push(list[i]);
+  }
+  return out;
+}
+
 /** 合并被拆碎的单字中文（如 后+端 → 后端），再丢掉仍过短的噪声 */
 function _coalesceSearchSegments(parts) {
   const out = [];
   let chineseBuf = "";
   const flushChinese = () => {
-    if (chineseBuf.length >= 2) out.push(chineseBuf);
+    if (chineseBuf.length >= 2) {
+      out.push(chineseBuf);
+    } else if (chineseBuf.length === 1 && out.length) {
+      // 「工程」+「师」→「工程师」，避免碎片「工程」被当成核心词
+      const combined = out[out.length - 1] + chineseBuf;
+      if (
+        TITLE_ROLE_STOPWORDS.has(combined) ||
+        TITLE_SENIORITY_STOPWORDS.has(combined)
+      ) {
+        out[out.length - 1] = combined;
+      }
+    }
     chineseBuf = "";
   };
   (parts || []).forEach((part) => {
@@ -1152,7 +1237,7 @@ function _coalesceSearchSegments(parts) {
     }
   });
   flushChinese();
-  return out;
+  return _mergeKnownTitleCompounds(out);
 }
 
 /**
@@ -1182,6 +1267,105 @@ function segmentSearchToken(token) {
   }
 }
 
+function isTitleSearchStopword(part) {
+  const p = String(part || "").toLowerCase();
+  return TITLE_ROLE_STOPWORDS.has(p) || TITLE_SENIORITY_STOPWORDS.has(p);
+}
+
+function extractCoreSearchParts(parts) {
+  return (parts || []).map((p) => String(p || "").toLowerCase()).filter((p) => p && !isTitleSearchStopword(p));
+}
+
+/** 分词未拆开时，从尾部剥职位通配后缀，得到核心词 */
+function peelTitleSearchToken(token) {
+  let rest = String(token || "").trim().toLowerCase();
+  if (!rest) return { core: "", suffixes: [] };
+  const suffixes = [];
+  let guard = 0;
+  while (rest && guard < 8) {
+    guard += 1;
+    let hit = "";
+    for (const s of _TITLE_STOPWORD_SUFFIXES) {
+      if (rest.length > s.length && rest.endsWith(s)) {
+        hit = s;
+        break;
+      }
+    }
+    if (!hit) break;
+    suffixes.unshift(hit);
+    rest = rest.slice(0, -hit.length);
+  }
+  // 前缀资历词
+  guard = 0;
+  while (rest && guard < 4) {
+    guard += 1;
+    let hit = "";
+    for (const s of [...TITLE_SENIORITY_STOPWORDS].sort((a, b) => b.length - a.length)) {
+      if (rest.length > s.length && rest.startsWith(s)) {
+        hit = s;
+        break;
+      }
+    }
+    if (!hit) break;
+    rest = rest.slice(hit.length);
+  }
+  return { core: rest, suffixes };
+}
+
+/**
+ * 匹配用词：优先核心词；通配头衔不参与「任一命中」。
+ * allParts 仍用于「全中」判断。
+ */
+function getSearchMatchParts(token) {
+  const raw = String(token || "").trim().toLowerCase();
+  if (!raw) return { allParts: [], matchParts: [], coreParts: [] };
+  if (!/[\u4e00-\u9fff]/.test(raw)) {
+    return { allParts: [raw], matchParts: [raw], coreParts: [raw] };
+  }
+  const segs = segmentSearchToken(raw);
+  let allParts = segs.length >= 2 ? segs : [raw];
+  let coreParts = extractCoreSearchParts(allParts);
+
+  // 分词仍含通配碎片时，用后缀剥离兜底（如未合并的「工程」）
+  if (coreParts.some((p) => p === "工程") || (coreParts.length && allParts.includes("工程"))) {
+    const peeled = peelTitleSearchToken(raw);
+    if (peeled.core && !isTitleSearchStopword(peeled.core)) {
+      const peeledSegs = segmentSearchToken(peeled.core);
+      const peeledCores = extractCoreSearchParts(peeledSegs.length >= 2 ? peeledSegs : [peeled.core]);
+      if (peeledCores.length) {
+        coreParts = peeledCores;
+        allParts = [...peeledCores, ...peeled.suffixes];
+      }
+    }
+  }
+
+  if (coreParts.length === 0 && allParts.length === 1) {
+    const peeled = peelTitleSearchToken(raw);
+    if (peeled.core && peeled.core !== raw && !isTitleSearchStopword(peeled.core)) {
+      const peeledSegs = segmentSearchToken(peeled.core);
+      coreParts = extractCoreSearchParts(peeledSegs.length >= 2 ? peeledSegs : [peeled.core]);
+      if (!coreParts.length && peeled.core) coreParts = [peeled.core];
+      const allFromPeel = [...(peeled.core ? [peeled.core] : []), ...peeled.suffixes];
+      return {
+        allParts: allFromPeel.length >= 2 ? allFromPeel : allParts,
+        matchParts: coreParts,
+        coreParts,
+      };
+    }
+    // 用户单独搜「工程师」等：仅允许整词精确包含，不走分词 OR
+    if (isTitleSearchStopword(raw)) {
+      return { allParts: [raw], matchParts: [], coreParts: [] };
+    }
+    coreParts = [raw];
+  }
+
+  return {
+    allParts,
+    matchParts: coreParts,
+    coreParts,
+  };
+}
+
 function _partHitsText(part, hay) {
   const p = String(part || "").toLowerCase();
   if (!p) return false;
@@ -1192,8 +1376,8 @@ function _partHitsText(part, hay) {
 }
 
 /**
- * 分析单 token 命中：整词优先；否则分词后任一子词命中即 matched。
- * full=全部子词都命中（用于排序把全中排前面）。
+ * 分析单 token 命中：整词优先；否则仅核心分词可 OR 命中。
+ * full=整词命中或全部分词（含通配头衔）都出现。
  */
 function analyzeTokenMatch(token, text) {
   const hay = String(text || "").toLowerCase();
@@ -1204,28 +1388,34 @@ function analyzeTokenMatch(token, text) {
     return { matched: ok, full: ok, hits: ok ? 1 : 0, total: 1, hitParts: ok ? [needle] : [] };
   }
   if (hay.includes(needle)) {
+    // 单独搜「工程师/主管」等通配词：不命中，避免结果过噪
+    if (isTitleSearchStopword(needle)) {
+      return { matched: false, full: false, hits: 0, total: 1, hitParts: [] };
+    }
     return { matched: true, full: true, hits: 1, total: 1, hitParts: [needle] };
   }
-  const parts = segmentSearchToken(needle);
-  if (parts.length < 2) {
-    return { matched: false, full: false, hits: 0, total: 1, hitParts: [] };
+  const { allParts, matchParts } = getSearchMatchParts(needle);
+  if (!matchParts.length) {
+    return { matched: false, full: false, hits: 0, total: allParts.length || 1, hitParts: [] };
   }
-  const hitParts = parts.filter((part) => _partHitsText(part, hay));
+  const hitParts = matchParts.filter((part) => _partHitsText(part, hay));
+  const full =
+    allParts.length > 0 && allParts.every((part) => _partHitsText(part, hay));
   return {
     matched: hitParts.length > 0,
-    full: hitParts.length === parts.length,
+    full,
     hits: hitParts.length,
-    total: parts.length,
+    total: matchParts.length,
     hitParts,
   };
 }
 
-/** 任一分子命中即 true；全中与否只影响排序 */
+/** 核心分词任一命中即 true；通配头衔不单独命中 */
 function tokenMatchesText(token, text) {
   return analyzeTokenMatch(token, text).matched;
 }
 
-/** 收集关键词展开后的高亮词（整词 + 分词） */
+/** 收集高亮词：整词 + 核心分词（不含工程师/主管等通配词） */
 function collectKeywordHighlightParts(keyword) {
   const groups = parseSearchKeywordGroups(keyword);
   const seen = new Set();
@@ -1238,7 +1428,7 @@ function collectKeywordHighlightParts(keyword) {
         seen.add(t);
         parts.push(t);
       }
-      segmentSearchToken(t).forEach((seg) => {
+      getSearchMatchParts(t).matchParts.forEach((seg) => {
         if (!seg || seen.has(seg)) return;
         seen.add(seg);
         parts.push(seg);
@@ -1443,6 +1633,7 @@ function compareCandidateKeywordRelevance(a, b, keyword) {
 
 window.parseSearchKeywordGroups = parseSearchKeywordGroups;
 window.segmentSearchToken = segmentSearchToken;
+window.getSearchMatchParts = getSearchMatchParts;
 window.analyzeTokenMatch = analyzeTokenMatch;
 window.tokenMatchesText = tokenMatchesText;
 window.collectKeywordHighlightParts = collectKeywordHighlightParts;
