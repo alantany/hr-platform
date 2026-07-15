@@ -412,7 +412,14 @@ const renderCustomerProjectPreview = (projects = [], positionsByProject = new Ma
 };
 
 const renderCompanyTableMarkup = (companies = [], projects = [], positions = [], tagConfigs = []) => {
-  if (!companies.length) return '<div class="list-item"><div class="item-meta">暂无客户列表。</div></div>';
+  if (!companies.length) {
+    return `
+      <div class="table-empty">
+        <div class="table-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg></div>
+        <div class="table-empty-title">暂无客户列表</div>
+        <div class="table-empty-desc">可新建客户，或从项目管理返回查看全部客户。</div>
+      </div>`;
+  }
   const projectsByCompany = new Map();
   projects.forEach((project) => {
     const bucket = projectsByCompany.get(project.company_id) || [];
@@ -427,37 +434,35 @@ const renderCompanyTableMarkup = (companies = [], projects = [], positions = [],
   });
   return companies.map((company) => {
     const computedStatus = company.status || '未招聘';
-    const chipClass = computedStatus === '未招聘' ? 'neutral' : 'success';
+    const statusClass = computedStatus === '未招聘' ? 'is-muted' : 'is-active';
     const companyProjects = projectsByCompany.get(company.id) || [];
-    const fieldTags = window.hrTagSystem.extractTags("company", company, tagConfigs);
-    const tagHtml = fieldTags.length ? window.hrTagSystem.renderTags(fieldTags, { className: "field-tag-list is-compact" }) : "";
+    // 状态只在状态列展示，公司名下不再重复渲染招聘中等标签
     return `
-    <div class="list-item" data-id="${company.id}">
-      <div class="item-top" style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 0.8fr 0.8fr 1.2fr 160px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-        <div class="item-title customer-name-preview" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; margin-right: 0;">
+    <div class="list-item customer-row" data-id="${company.id}">
+      <div class="item-top customer-row-grid">
+        <div class="customer-name-preview customer-name-cell">
           <button class="customer-name-trigger" type="button" aria-haspopup="dialog">${escapeHtml(company.name)}</button>
-          ${tagHtml}
           <div class="customer-project-popover" role="dialog" aria-label="${escapeHtml(company.name)}项目需求列表">
             <div class="customer-project-popover-title">项目需求列表</div>
             <div class="customer-project-popover-body">${renderCustomerProjectPreview(companyProjects, positionsByProject)}</div>
           </div>
         </div>
-        <div style="color: #475569; font-size: 13px;">${escapeHtml(company.contact_name || '--')}</div>
-        <div style="color: #475569; font-size: 13px;">${escapeHtml(company.contact_phone || '--')}</div>
-        <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(company.address || '')}">${escapeHtml(company.address || '--')}</div>
-        <div style="text-align: center;">
-          <a href="./projects.html?company_id=${encodeURIComponent(company.id)}&tab=project" style="color: #2563EB; font-size: 13px; font-weight: 600; text-decoration: none;">${company.project_count || 0}</a>
+        <div class="customer-cell">${escapeHtml(company.contact_name || '--')}</div>
+        <div class="customer-cell">${escapeHtml(company.contact_phone || '--')}</div>
+        <div class="customer-cell" title="${escapeHtml(company.address || '')}">${escapeHtml(company.address || '--')}</div>
+        <div class="is-center">
+          <a class="customer-count-link" href="./projects.html?company_id=${encodeURIComponent(company.id)}&tab=project">${company.project_count || 0}</a>
         </div>
-        <div style="text-align: center;">
-          <a href="./projects.html?company_id=${encodeURIComponent(company.id)}&tab=position" style="color: #2563EB; font-size: 13px; font-weight: 600; text-decoration: none;">${company.position_count || 0}</a>
+        <div class="is-center">
+          <a class="customer-count-link" href="./projects.html?company_id=${encodeURIComponent(company.id)}&tab=position">${company.position_count || 0}</a>
         </div>
-        <div style="text-align: center;">
-          <span class="chip ${chipClass}" style="width: 80px; text-align: center; display: inline-block; margin: 0 auto;">${computedStatus}</span>
+        <div class="is-center">
+          <span class="status-pill ${statusClass}">${escapeHtml(computedStatus)}</span>
         </div>
-        <div class="table-actions" style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
-          <button class="btn-sm" data-action="view-company-projects" data-id="${company.id}">项目</button>
-          <button class="btn-sm" data-action="edit-company" data-id="${company.id}">编辑</button>
-          <button class="btn-sm" data-action="delete-company" data-id="${company.id}">删除</button>
+        <div class="table-actions customer-row-actions">
+          <button class="btn-sm btn-secondary" data-action="view-company-projects" data-id="${company.id}">项目</button>
+          <button class="btn-sm btn-secondary" data-action="edit-company" data-id="${company.id}">编辑</button>
+          <button class="btn-sm btn-danger-text" data-action="delete-company" data-id="${company.id}">删除</button>
         </div>
       </div>
     </div>`;
