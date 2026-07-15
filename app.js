@@ -1398,10 +1398,11 @@ function matchesSearchKeywords(text, keyword) {
 
 /**
  * 相关性分（排序优先级）：
- * 1. 全中职位（L1）
- * 2. 某分词中职位（L1）
- * 3. 全中工作/项目经历（L2）
- * 4. 某分词中工作/项目经历（L2）
+ * 1. 全中职位（期望岗位 / 当前职位）
+ * 2. 全中工作/项目经历
+ * 3. 职位部分分词 + 经历部分分词
+ * 4. 仅经历部分分词
+ * 5. 仅职位部分分词
  * 同档内再比命中子词数。
  */
 function scoreCandidateKeywordMatch(item, keyword) {
@@ -1411,18 +1412,21 @@ function scoreCandidateKeywordMatch(item, keyword) {
   }
   const l1 = _scoreKeywordGroupsOnText(buildCandidateL1SearchText(item), groups);
   const l2 = _scoreKeywordGroupsOnText(buildCandidateL2SearchText(item), groups);
+  const l1Partial = l1.fullGroups === 0 && l1.hitSegs > 0;
+  const l2Partial = l2.fullGroups === 0 && l2.hitSegs > 0;
   let tier = 0;
-  if (l1.fullGroups > 0) tier = 4;
-  else if (l1.hitSegs > 0) tier = 3;
-  else if (l2.fullGroups > 0) tier = 2;
-  else if (l2.hitSegs > 0) tier = 1;
+  if (l1.fullGroups > 0) tier = 5;
+  else if (l2.fullGroups > 0) tier = 4;
+  else if (l1Partial && l2Partial) tier = 3;
+  else if (l2Partial) tier = 2;
+  else if (l1Partial) tier = 1;
   return {
     tier,
     l1Full: l1.fullGroups,
     l1Hits: l1.hitSegs,
     l2Full: l2.fullGroups,
     l2Hits: l2.hitSegs,
-    total: tier * 1000000 + l1.fullGroups * 10000 + l1.hitSegs * 100 + l2.fullGroups * 10 + l2.hitSegs,
+    total: tier * 1000000 + l1.fullGroups * 10000 + l2.fullGroups * 1000 + l1.hitSegs * 10 + l2.hitSegs,
   };
 }
 
@@ -1431,9 +1435,9 @@ function compareCandidateKeywordRelevance(a, b, keyword) {
   const sb = scoreCandidateKeywordMatch(b, keyword);
   if (sb.tier !== sa.tier) return sb.tier - sa.tier;
   if (sb.l1Full !== sa.l1Full) return sb.l1Full - sa.l1Full;
-  if (sb.l1Hits !== sa.l1Hits) return sb.l1Hits - sa.l1Hits;
   if (sb.l2Full !== sa.l2Full) return sb.l2Full - sa.l2Full;
   if (sb.l2Hits !== sa.l2Hits) return sb.l2Hits - sa.l2Hits;
+  if (sb.l1Hits !== sa.l1Hits) return sb.l1Hits - sa.l1Hits;
   return 0;
 }
 
