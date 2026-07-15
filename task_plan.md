@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-去掉 Recruit 岗位列表/每日任务技术文案（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+去掉每日任务技术说明文案（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

@@ -1,5 +1,9 @@
 # Progress
 
+## 2026-07-15（完成 - 去掉每日任务技术说明）
+
+- 每日任务统计标题下去掉「按日期读取 recruit.daily_task_stats。」
+
 ## 2026-07-15（完成 - 去掉 Recruit 技术文案）
 
 - 岗位列表去掉「数据来自 PostgreSQL recruit.job_postings。」
