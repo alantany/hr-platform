@@ -1917,13 +1917,11 @@ async function handleGlobalButton(button) {
     const panel = button.closest("[data-collapsible-panel]");
     if (!panel) return;
     const body = panel.querySelector(".task-board-panel-body");
-    const icon = panel.querySelector(".task-board-toggle-icon");
     const collapsed = !panel.classList.contains("is-collapsed");
     panel.classList.toggle("is-collapsed", collapsed);
     panel.classList.toggle("is-expanded", !collapsed);
     if (body) body.hidden = collapsed;
     button.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    if (icon) icon.textContent = collapsed ? "▸" : "▾";
     return;
   }
   if (button.dataset.action === "logout") {

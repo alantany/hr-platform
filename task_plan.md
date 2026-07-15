@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-多页面 UI 美化：全局设计系统已固化；等待逐页推进另外 9 个页面。维护流程：**改代码 → 更新三份 MD → commit → push**。
+多页面 UI 美化：已完成通知/候选人池/评价体系；其余页面按用户指定继续。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
@@ -471,5 +471,8 @@
 - [x] 客户管理（`customers.html`）
 - [x] 每日任务（`recruit-daily-tasks.html`）
 - [x] 岗位发布（`recruit-job-publish.html`）
+- [x] 任务与通知（`notifications.html`）
+- [x] 求职者数据池（`candidates.html`）
+- [x] 评价体系（`evaluations.html`）
 - [ ] 其余页面（按用户指定顺序）
 - **Status:** in_progress

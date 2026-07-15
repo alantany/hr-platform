@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-15（通知 / 候选人池 / 评价 UI）
+
+- 折叠面板箭头统一 SVG + `.is-expanded` 旋转；`app.js`/`setPanelCollapsed` 不再写 `▸/▾`，避免冲掉 SVG。
+- 候选人池状态展示改为页内 `cand-status-pill` + `mapCandidatePillTone`（进行绿/锁定橙/学历蓝/中性灰），不改标签配置数据。
+- 三页均页面作用域（`.notices-page` / `.candidates-page` / `.evaluations-page`），复用 `.btn-secondary` / `.input-search` / `.table-empty`。
+
 ## 2026-07-15（每日任务 / 岗位发布 UI）
 
 - 两页均页面作用域样式（`.daily-tasks-page` / `.job-publish-page`），复用 `.btn-secondary`、`.table-empty`、`.import-status-pill`。

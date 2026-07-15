@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>求职者数据池</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260710-metric-tones" />
+  <link rel="stylesheet" href="../../styles.css?v=20260715-notices-cand-eval-ui" />
   <style>
     .province-item, .city-item, .search-result-item {
       padding: 8px 12px;
@@ -24,108 +24,49 @@
       color: #0d9488;
       font-weight: 600;
     }
-
-    /* 简历池顶部压缩：看板 + 搜索 + 筛选 */
-    .candidates-pool-top {
-      display: grid;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .candidates-pool-top .metrics {
-      gap: 8px;
-      margin-bottom: 0;
-    }
-    .candidates-pool-top .metric-card {
-      padding: 8px 12px;
-      cursor: default;
-    }
-    .candidates-pool-top .metric-card:hover {
-      transform: none;
-      box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
-    }
-    .candidates-pool-top .metric-icon {
-      display: none;
-    }
-    .candidates-pool-top .metric-value {
-      margin-top: 2px;
-      font-size: 22px;
-      line-height: 1.15;
-    }
-    .candidates-pool-top .metric-label {
-      margin-top: 2px;
-      font-size: 11px;
-    }
-    .candidates-pool-top .metric-top .section-sub {
-      font-size: 12px;
-    }
-    .candidates-pool-top .panel {
-      margin-bottom: 0;
-      padding: 10px 12px;
-    }
-    .candidates-pool-top .section-head {
-      padding: 0 0 8px;
-      gap: 8px;
-      margin: 0;
-    }
-    .candidates-pool-top .section-head h3 {
-      font-size: 14px;
-      margin: 0;
-    }
-    .candidates-pool-top .section-sub {
-      margin-top: 2px;
-      font-size: 12px;
-    }
-    .candidates-pool-top .candidate-search-field-label {
-      margin-bottom: 4px;
-      font-size: 11px;
-    }
-    .candidates-pool-top .candidate-search-fields {
-      align-items: stretch;
-    }
-    .candidates-pool-top .candidate-search-actions {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 6px;
-      flex-shrink: 0;
-      min-width: 88px;
-    }
-    .candidates-pool-top .candidate-search-actions .btn {
-      width: 100%;
-      white-space: nowrap;
-    }
-    .candidates-pool-top .candidate-filter-compact {
-      gap: 8px;
-      padding: 10px 12px;
-    }
-    .candidates-pool-top .candidate-filter-hotkeys {
-      padding: 6px 8px;
-    }
-    .candidates-pool-top .candidate-filter-selects {
-      gap: 8px;
-    }
   </style>
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=20260715-warranty-detail"></script>
+  <script defer src="../../app.js?v=20260715-notices-cand-eval-ui"></script>
 </head>
 <body>
   <div id="app"></div>
   <script>
+    const CAND_ICONS = {
+      users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v4"/><path d="M12 18v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="m16.24 16.24 2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="m16.24 7.76 2.83-2.83"/></svg>',
+      lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+      search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+      map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+      up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>',
+    };
+    const mapCandidatePillTone = (text) => {
+      const t = String(text || '');
+      if (/锁定/.test(t) && !/未锁定/.test(t)) return 'warning';
+      if (/已入职|质保中|在职/.test(t)) return 'success';
+      if (/未锁定|未推荐/.test(t)) return 'neutral';
+      if (/硕士|博士|本科|大专/.test(t)) return 'info';
+      return 'neutral';
+    };
+    const escapeCandText = (value) => String(value ?? '')
+      .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+
     window.__PAGE_BODY__ = `
+      <div class="candidates-page">
       <div class="candidates-pool-top">
       <section class="metrics" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
         <div class="metric-card tone-primary">
-          <div class="metric-top"><div><div class="section-sub">候选人总数</div></div></div>
+          <div class="metric-top"><div><div class="section-sub">候选人总数</div></div><div class="metric-icon">${CAND_ICONS.users}</div></div>
           <div class="metric-value" data-candidate-total>0</div>
           <div class="metric-label">覆盖全部简历资源</div>
         </div>
         <div class="metric-card tone-success">
-          <div class="metric-top"><div><div class="section-sub">今日新增</div></div></div>
+          <div class="metric-top"><div><div class="section-sub">今日新增</div></div><div class="metric-icon">${CAND_ICONS.spark}</div></div>
           <div class="metric-value" data-candidate-new>0</div>
-          <div class="metric-label">比昨日增加 3.2%</div>
+          <div class="metric-label metric-trend is-up">${CAND_ICONS.up}<span>比昨日增加 3.2%</span></div>
         </div>
         <div class="metric-card tone-warning">
-          <div class="metric-top"><div><div class="section-sub">已锁定候选人</div></div></div>
+          <div class="metric-top"><div><div class="section-sub">已锁定候选人</div></div><div class="metric-icon">${CAND_ICONS.lock}</div></div>
           <div class="metric-value" data-candidate-locked>0</div>
           <div class="metric-label">当前被项目占用</div>
         </div>
@@ -134,12 +75,18 @@
       <section class="panel candidate-search-toolbar">
         <div class="toolbar candidate-search-fields">
           <div class="candidate-search-keyword">
-            <label class="candidate-search-field-label candidate-search-field-label--keyword">关键词</label>
-            <input class="input wide" data-field="candidate-keyword" placeholder="搜索期望岗位、当前职位、技能、工作经历等" />
+            <label class="candidate-search-field-label">关键词</label>
+            <div class="input-search">
+              <span class="input-search-icon">${CAND_ICONS.search}</span>
+              <input class="input wide" data-field="candidate-keyword" placeholder="搜索期望岗位、当前职位、技能、工作经历等" />
+            </div>
           </div>
           <div class="city-selector-wrapper candidate-search-city">
-            <label class="candidate-search-field-label candidate-search-field-label--city">期望城市</label>
-            <input class="input" data-field="candidate-city" placeholder="如：北京、上海、深圳" autocomplete="off" />
+            <label class="candidate-search-field-label">期望城市</label>
+            <div class="input-search">
+              <span class="input-search-icon">${CAND_ICONS.map}</span>
+              <input class="input" data-field="candidate-city" placeholder="如：北京、上海、深圳" autocomplete="off" />
+            </div>
             <div class="city-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1000; padding: 12px;">
               <div class="city-search-results" style="display: none; max-height: 240px; overflow-y: auto;">
               </div>
@@ -152,8 +99,8 @@
             </div>
           </div>
           <div class="candidate-search-actions">
-            <button class="btn candidate-search-btn" data-action="search-candidates">搜索</button>
-            <button class="btn primary" data-action="open-ai-search-modal">AI检索</button>
+            <button class="btn btn-secondary candidate-search-btn" data-action="search-candidates">搜索</button>
+            <button class="btn primary" data-action="open-ai-search-modal">AI 检索</button>
           </div>
         </div>
       </section>
@@ -216,20 +163,20 @@
               <option value="never_interviewed">未面试</option>
             </select>
           </label>
-          <button class="btn success" data-action="open-search-preset-modal">保存搜索方案</button>
+          <button class="btn primary" data-action="open-search-preset-modal">保存搜索方案</button>
         </div>
       </section>
       </div>
 
-      <section class="panel" style="padding:0;">
-        <div class="section-head" style="padding:16px 16px 0; display:flex; justify-content:space-between; align-items:center;">
+      <section class="panel candidate-list-panel">
+        <div class="section-head" style="padding:0 0 12px; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <h3>候选人列表</h3>
             <div class="section-sub">按岗位需求筛选、推进和管理候选人。</div>
           </div>
           <div class="hero-actions" style="margin-top:0">
             <button class="btn primary" data-action="open-batch-recommend-modal" data-selected-count disabled style="height:38px;">推荐至岗位（0）</button>
-            <button class="btn secondary" data-action="export-selected" style="height:38px;">导出简历</button>
+            <button class="btn btn-secondary" data-action="export-selected" style="height:38px;">导出简历</button>
           </div>
         </div>
         <div class="table-card candidate-table-card" style="border:0; box-shadow:none; border-radius:0; margin-top:10px;">
@@ -563,6 +510,7 @@
           </div>
         </div>
       </div>
+      </div>
 
     `;
     window.addEventListener('DOMContentLoaded', async () => {
@@ -780,7 +728,9 @@
               ].filter(Boolean).join(' / ') || '--';
               const candidateFieldTags = window.hrTagSystem?.extractTags?.('candidate', i, this.tagConfigs) || [];
               const candidateTagsHtml = candidateFieldTags.length
-                ? window.hrTagSystem.renderTags(candidateFieldTags, { className: 'field-tag-list is-compact' })
+                ? `<div class="field-tag-list is-compact">${candidateFieldTags.map((tag) =>
+                    `<span class="cand-status-pill tone-${mapCandidatePillTone(tag.text)}">${escapeCandText(tag.text)}</span>`
+                  ).join('')}</div>`
                 : '';
               const aiRank = Number(i.ai_match_rank) || 0;
               const aiReason = String(i.ai_match_reason || '').trim();
