@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-15（Recruit 岗位列表 UI）
+
+- 页面作用域类 `.recruit-job-list-page` 覆盖 KPI 彩条/伪图标，避免影响其他仍用旧 metric-icon 的页面。
+- 空态与搜索前缀抽为共用类（`.table-empty` / `.input-search`），后续页面可复用。
+
 ## 2026-07-15（多页面 UI 美化全局设计系统）
 
 - 权威约定：`docs/superpowers/specs/2026-07-15-ui-global-design-system.md`

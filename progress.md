@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-15（完成 - 美化 Recruit 岗位列表页）
+
+- 按全局设计系统改 `recruit-job-list.html`：KPI 白卡+语义 SVG、主/次按钮、搜索放大镜、表头/空态/页脚样式。
+- 新增共用工具类：`.input-search` / `.table-empty` / `.btn-secondary`；页面作用域 `.recruit-job-list-page`。
+- 未改筛选、刷新、编辑、删除与 API 逻辑。缓存：`?v=20260715-recruit-list-ui`。
+
 ## 2026-07-15（完成 - 固化多页面 UI 全局设计系统）
 
 - 将用户确认的全局 Tokens/11 条规则写入 `styles.css :root`（新 `--color-*` 等 + 旧变量别名）

@@ -465,5 +465,6 @@
 ### Phase 31 - 多页面 UI 美化（进行中）
 
 - [x] 固化全局 Tokens + 11 条规则（`2026-07-15-ui-global-design-system.md`）
-- [ ] 逐页美化另外 9 个页面（按用户指定顺序）
+- [x] 平台岗位发布-岗位列表（`recruit-job-list.html`）
+- [ ] 其余页面（按用户指定顺序）
 - **Status:** in_progress
