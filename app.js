@@ -1182,7 +1182,7 @@ function segmentSearchToken(token) {
   }
 }
 
-/** 短英文词（如 ai）用边界匹配，避免命中 AIGC/training 等；中文整词未中时再按分词 AND */
+/** 短英文词（如 ai）用边界匹配，避免命中 AIGC/training 等；中文整词未中时再按分词匹配 */
 function tokenMatchesText(token, text) {
   const hay = String(text || "").toLowerCase();
   const needle = String(token || "").toLowerCase();
@@ -1191,15 +1191,24 @@ function tokenMatchesText(token, text) {
     return new RegExp(`(^|[^a-z0-9#+.])${needle}([^a-z0-9#+.]|$)`, "i").test(hay);
   }
   if (hay.includes(needle)) return true;
-  // 整串未命中：分词后要求每个词都出现（可不相邻），如「生鲜运营总经理」可命中分散的 生鲜/运营/总经理
+  // 整串未命中：分词后匹配
   const parts = segmentSearchToken(needle);
   if (parts.length < 2) return false;
-  return parts.every((part) => {
+  const partHit = (part) => {
     if (/^[a-z0-9]{1,2}$/.test(part)) {
       return new RegExp(`(^|[^a-z0-9#+.])${part}([^a-z0-9#+.]|$)`, "i").test(hay);
     }
     return hay.includes(part);
-  });
+  };
+  // 全部分词都出现（可不相邻）
+  if (parts.every(partHit)) return true;
+  // 软匹配：至少命中 2 个分词，且命中字数 ≥ 查询分词总字数的一半
+  // 例：「生鲜运营总经理」可命中「生鲜运营负责人」（生鲜+运营）
+  const hitParts = parts.filter(partHit);
+  if (hitParts.length < 2) return false;
+  const hitChars = hitParts.join("").length;
+  const totalChars = parts.join("").length;
+  return totalChars > 0 && hitChars * 2 >= totalChars;
 }
 
 /** L1：期望岗位名（求职意向 + 当前/期望职位名，最高优先） */

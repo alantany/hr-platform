@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-简历池关键词中文分词（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+分词搜索可用性加固（已完成：缓存 bust + 软匹配 + 回车搜索）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

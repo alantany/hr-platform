@@ -106,7 +106,7 @@
     }
   </style>
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=20260629-tag-fields"></script>
+  <script defer src="../../app.js?v=20260715-segment"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -1118,6 +1118,14 @@
         if (e.target.matches('[data-filter-education], [data-filter-age], [data-filter-experience], [data-filter-sort], [data-filter-exclude]')) {
           window.candidatesPageState.applyFilters();
         }
+      });
+
+      // 关键词/城市回车即搜索
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        if (!e.target.matches('[data-field="candidate-keyword"], [data-field="candidate-city"]')) return;
+        e.preventDefault();
+        window.candidatesPageState.applyFilters();
       });
 
       // 热词点击选中和高亮切换
