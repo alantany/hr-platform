@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-首页数据看板 UI 视觉重构（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+多页面 UI 美化：全局设计系统已固化；等待逐页推进另外 9 个页面。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
@@ -461,3 +461,9 @@
 - [x] KPI/日历/月度卡/空状态样式与模板重构（不改数据逻辑）
 - [x] 顶栏标题层级与通知铃铛徽标微调
 - **Status:** complete
+
+### Phase 31 - 多页面 UI 美化（进行中）
+
+- [x] 固化全局 Tokens + 11 条规则（`2026-07-15-ui-global-design-system.md`）
+- [ ] 逐页美化另外 9 个页面（按用户指定顺序）
+- **Status:** in_progress

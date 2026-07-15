@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-07-15（多页面 UI 美化全局设计系统）
+
+- 权威约定：`docs/superpowers/specs/2026-07-15-ui-global-design-system.md`
+- Tokens 以 `--color-*` / `--radius-*` / `--shadow-card` / `--space` 为 canonical；旧 `--background`/`--primary` 等已别名兼容
+- 硬约束：纯 HTML+CSS+页面 JS；只改样式/结构类名；品牌蓝唯一主强调色；绿橙红仅状态；禁紫；禁新框架/UI 库
+- 后续「另外 9 个页面」美化一律按此执行，不再重复粘贴全局要求
+
 ## 2026-07-15（首页数据看板 UI 重构约束）
 
 - 线上首页是静态 HTML + `styles.css` + 页面内 JS，不是 v0 建议的 Tailwind/React；视觉方案需映射到现有 class/模板。
