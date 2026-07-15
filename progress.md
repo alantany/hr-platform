@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-15（完成 - 简历池关键词中文分词）
+
+- `tokenMatchesText`：整词未命中时按 `Intl.Segmenter` 拆词，要求各词均出现（AND）。
+- 覆盖「生鲜运营总经理」命中分散字段；导出 `segmentSearchToken`。
+
 ## 2026-07-15（完成 - 修复简历池分页跳页）
 
 - 根因：SPA 重复进入时 `document` 点击监听叠层，下一页一次 +2（1→3→5）。

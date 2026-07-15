@@ -1131,7 +1131,58 @@ function _joinSearchParts(parts) {
   return parts.filter(Boolean).map((p) => String(p)).join(" ").toLowerCase();
 }
 
-/** 短英文词（如 ai）用边界匹配，避免命中 AIGC/training 等 */
+/** 合并被拆碎的单字中文（如 后+端 → 后端），再丢掉仍过短的噪声 */
+function _coalesceSearchSegments(parts) {
+  const out = [];
+  let chineseBuf = "";
+  const flushChinese = () => {
+    if (chineseBuf.length >= 2) out.push(chineseBuf);
+    chineseBuf = "";
+  };
+  (parts || []).forEach((part) => {
+    const p = String(part || "").trim().toLowerCase();
+    if (!p) return;
+    if (/^[\u4e00-\u9fff]$/.test(p)) {
+      chineseBuf += p;
+      return;
+    }
+    flushChinese();
+    if (/^[\u4e00-\u9fff]{2,}$/.test(p) || /[a-z0-9]/i.test(p)) {
+      out.push(p);
+    }
+  });
+  flushChinese();
+  return out;
+}
+
+/**
+ * 中文分词：无空格长串如「生鲜运营总经理」→ [生鲜, 运营, 总经理]
+ * 优先 Intl.Segmenter；不可用时退回整词。
+ */
+function segmentSearchToken(token) {
+  const raw = String(token || "").trim().toLowerCase();
+  if (!raw) return [];
+  if (!/[\u4e00-\u9fff]/.test(raw)) return [raw];
+  if (typeof Intl === "undefined" || typeof Intl.Segmenter !== "function") {
+    return [raw];
+  }
+  try {
+    const segmenter = new Intl.Segmenter("zh-CN", { granularity: "word" });
+    const rawParts = [];
+    for (const item of segmenter.segment(raw)) {
+      const piece = String(item.segment || "").trim();
+      if (!piece) continue;
+      if (item.isWordLike === false && /^[\s\p{P}\p{S}]+$/u.test(piece)) continue;
+      rawParts.push(piece.toLowerCase());
+    }
+    const parts = _coalesceSearchSegments(rawParts);
+    return parts.length >= 2 ? parts : [raw];
+  } catch (_) {
+    return [raw];
+  }
+}
+
+/** 短英文词（如 ai）用边界匹配，避免命中 AIGC/training 等；中文整词未中时再按分词 AND */
 function tokenMatchesText(token, text) {
   const hay = String(text || "").toLowerCase();
   const needle = String(token || "").toLowerCase();
@@ -1139,7 +1190,16 @@ function tokenMatchesText(token, text) {
   if (/^[a-z0-9]{1,2}$/.test(needle)) {
     return new RegExp(`(^|[^a-z0-9#+.])${needle}([^a-z0-9#+.]|$)`, "i").test(hay);
   }
-  return hay.includes(needle);
+  if (hay.includes(needle)) return true;
+  // 整串未命中：分词后要求每个词都出现（可不相邻），如「生鲜运营总经理」可命中分散的 生鲜/运营/总经理
+  const parts = segmentSearchToken(needle);
+  if (parts.length < 2) return false;
+  return parts.every((part) => {
+    if (/^[a-z0-9]{1,2}$/.test(part)) {
+      return new RegExp(`(^|[^a-z0-9#+.])${part}([^a-z0-9#+.]|$)`, "i").test(hay);
+    }
+    return hay.includes(part);
+  });
 }
 
 /** L1：期望岗位名（求职意向 + 当前/期望职位名，最高优先） */
@@ -1197,6 +1257,8 @@ function compareCandidateKeywordRelevance(a, b, keyword) {
 }
 
 window.parseSearchKeywordGroups = parseSearchKeywordGroups;
+window.segmentSearchToken = segmentSearchToken;
+window.tokenMatchesText = tokenMatchesText;
 window.buildCandidateL1SearchText = buildCandidateL1SearchText;
 window.buildCandidateL2SearchText = buildCandidateL2SearchText;
 window.buildCandidateSearchText = buildCandidateSearchText;
