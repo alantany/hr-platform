@@ -938,6 +938,10 @@ async function render() {
   
   const existingSidebar = el.querySelector(".sidebar");
   if (existingSidebar) {
+    const shellEl = el.querySelector(".app-shell");
+    if (shellEl) {
+      shellEl.classList.toggle("app-shell-dashboard-screen", key === "statistics");
+    }
     const currentContent = el.querySelector(".content");
     if (currentContent) {
       const temp = document.createElement("div");
@@ -6159,8 +6163,13 @@ function syncActiveNav(pageName) {
 function extractPageBodyFromHtml(htmlText) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlText, "text/html");
+  // 页面专属 <style>（如统计大屏暗色主题）需随 SPA 一并注入，否则首次点击无样式
+  const styles = Array.from(doc.querySelectorAll("style"))
+    .map((el) => el.textContent || "")
+    .filter((css) => String(css).trim());
+
   const readyContent = doc.querySelector(".content");
-  if (readyContent) return { bodyHtml: readyContent.innerHTML, scripts: [] };
+  if (readyContent) return { bodyHtml: readyContent.innerHTML, scripts: [], styles };
 
   let pageBody = "";
   const inlineScripts = [];
@@ -6171,7 +6180,20 @@ function extractPageBodyFromHtml(htmlText) {
     const match = code.match(/window\.__PAGE_BODY__\s*=\s*([`'"])([\s\S]*?)\1\s*;?/);
     if (match) pageBody = match[2];
   });
-  return { bodyHtml: pageBody, scripts: inlineScripts };
+  return { bodyHtml: pageBody, scripts: inlineScripts, styles };
+}
+
+function applySpaPageStyles(pageName, styles) {
+  // 卸掉上一页 SPA 注入样式，以及硬刷残留的页面专属 style（如统计大屏）
+  document.querySelectorAll("style[data-spa-page-style], style[data-page-owned-style]").forEach((el) => el.remove());
+  (styles || []).forEach((css, index) => {
+    if (!String(css || "").trim()) return;
+    const styleEl = document.createElement("style");
+    styleEl.setAttribute("data-spa-page-style", pageName || "page");
+    styleEl.setAttribute("data-spa-page-style-index", String(index));
+    styleEl.textContent = css;
+    document.head.appendChild(styleEl);
+  });
 }
 
 function runSpaPageScripts(scripts) {
@@ -6234,7 +6256,7 @@ async function loadPage(url, push = true) {
     const res = await fetch(`./${pathOnly}`);
     if (!res.ok) throw new Error(`加载页面失败: ${res.status}`);
     const htmlText = await res.text();
-    const { bodyHtml, scripts } = extractPageBodyFromHtml(htmlText);
+    const { bodyHtml, scripts, styles } = extractPageBodyFromHtml(htmlText);
     if (!bodyHtml && !scripts.length) {
       throw new Error("页面无可渲染内容");
     }
@@ -6243,6 +6265,9 @@ async function loadPage(url, push = true) {
     if (push) {
       history.pushState(null, "", `./${pathOnly}${search}`);
     }
+
+    // 样式须在脚本/图表绘制前注入，否则统计大屏容器高度为 0、白字落在白底上看不见
+    applySpaPageStyles(pathOnly, styles);
 
     window.__PAGE_BODY__ = bodyHtml || window.__PAGE_BODY__ || "";
     const renderEpochBefore = window.__SPA_RENDER_EPOCH__ || 0;

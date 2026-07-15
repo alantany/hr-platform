@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-15（修复 - 统计管理 SPA 首次进入白屏）
+
+- 根因：`loadPage` 只注入 `__PAGE_BODY__`/脚本，未带 `statistics.html` 的 `<style>`；白字落在白底、图表容器无高度。
+- 修复：抽取并注入页面 `<style>`（先于脚本执行）；离开时清理；`app-shell-dashboard-screen` 在局部 render 时同步切换。
+- 缓存：`app.js?v=20260715-spa-page-styles`。
+
 ## 2026-07-15（完成 - 侧栏系统设置语义图标）
 
 - 「系统设置 / 开发工具」导航不再共用 settings 火花图标；改为 tags / role / shield / scope / shield-check / probe 等语义 SVG，描边规格与现有 nav 图标一致。

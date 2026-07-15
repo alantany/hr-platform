@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-15（统计管理 SPA 白屏）
+
+- 统计大屏样式写在页面 `<head><style>`，不在 `styles.css`；侧栏 SPA 跳转若不注入该 style，会表现为白底 + 看板“没数字”（实际是布局/对比度失效）。
+- 约定：页面专属 style 标 `data-page-owned-style`；SPA 注入用 `data-spa-page-style`，切页时两者都清掉再注入新页。
+
 ## 2026-07-15（侧栏导航图标）
 
 - 系统设置多项曾回退到 `icons.settings`，视觉上像同一标签；应按菜单语义分配独立 SVG（标签/角色/权限/数据范围/质保/探针）。
