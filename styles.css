@@ -2190,19 +2190,17 @@ button.customer-preview-position:focus-visible { outline: 2px solid rgba(102, 87
 .candidate-search-keyword {
   flex: 3;
   min-width: 0;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid #dbeafe;
-  background: var(--primary-soft);
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 .candidate-search-city {
   position: relative;
   flex: 1;
   min-width: 220px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid #a5f3fc;
-  background: #ecfeff;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 .candidate-search-field-label {
   display: block;
@@ -2215,26 +2213,6 @@ button.customer-preview-position:focus-visible { outline: 2px solid rgba(102, 87
 .candidate-search-keyword .input,
 .candidate-search-city .input {
   width: 100%;
-  background: #fff !important;
-  border-color: #cbd5e1 !important;
-}
-.candidate-search-hint {
-  margin: 8px 0 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #64748b;
-}
-.candidate-search-hint strong {
-  font-weight: 600;
-  color: #1d4ed8;
-}
-.candidate-search-hint code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: #fff;
-  color: #0f766e;
-  border: 1px solid #a5f3fc;
 }
 .candidate-search-actions {
   display: flex;
