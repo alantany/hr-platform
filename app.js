@@ -5323,6 +5323,10 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
   if (button.dataset.action === "noop") {
     return;
   }
+  // 分页由候选人页本地监听处理，避免全局 handler 与 SPA 重复绑定叠加
+  if (button.dataset.action === "prev-page" || button.dataset.action === "next-page") {
+    return;
+  }
   if (button.dataset.action) {
     console.warn("[hr] unhandled data-action:", button.dataset.action);
   }
@@ -5336,6 +5340,9 @@ function bindActionButtons() {
       const explicitAction = btn.dataset.action || "";
       // 仅放行页面自有的 recruit 操作；logout 等全局动作仍走统一处理
       if (explicitAction.includes("recruit") && explicitAction !== "logout") {
+        return;
+      }
+      if (explicitAction === "prev-page" || explicitAction === "next-page") {
         return;
       }
       event.preventDefault();
@@ -5358,6 +5365,10 @@ document.addEventListener("click", (event) => {
   }
   // 不要用 pathname.includes('recruit-') 拦截整页按钮，否则退出等全局动作会失效
   if (explicitAction.includes("recruit")) {
+    return;
+  }
+  // 候选人列表分页由页面本地处理
+  if (explicitAction === "prev-page" || explicitAction === "next-page") {
     return;
   }
 

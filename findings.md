@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-15（简历池分页 1→3→5）
+
+- SPA 局部加载会反复执行页面脚本；`document.addEventListener('click')` 未卸载会叠多层。
+- 下一页按钮一次触发多次 `currentPage++`，表现为 1、3、5。
+- 约定：页内 document 监听用可替换单例；`prev-page`/`next-page` 不走全局 `handleGlobalButton`。
+
 ## 2026-07-15（简历池搜索区视觉层级）
 
 - 关键词/期望城市不应再使用带边框的色块外层容器；输入框本身即可作为唯一边框层级。

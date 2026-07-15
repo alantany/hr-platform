@@ -1138,7 +1138,10 @@
         });
       }
 
-      document.addEventListener('click', async (e) => {
+      if (window.__candidatesPageClickHandler) {
+        document.removeEventListener('click', window.__candidatesPageClickHandler);
+      }
+      window.__candidatesPageClickHandler = async (e) => {
         const openPresetBtn = e.target.closest('[data-action="open-search-preset-modal"]');
         if (openPresetBtn) {
           e.stopPropagation();
@@ -1232,22 +1235,29 @@
 
         const prevBtn = e.target.closest('[data-action="prev-page"]');
         if (prevBtn) {
-          if (window.candidatesPageState.currentPage > 1) {
-            window.candidatesPageState.currentPage--;
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.candidatesPageState?.currentPage > 1) {
+            window.candidatesPageState.currentPage -= 1;
             window.candidatesPageState.renderOnly();
           }
           return;
         }
         const nextBtn = e.target.closest('[data-action="next-page"]');
         if (nextBtn) {
-          const totalPages = Math.ceil(window.candidatesPageState.list.length / window.candidatesPageState.pageSize);
-          if (window.candidatesPageState.currentPage < totalPages) {
-            window.candidatesPageState.currentPage++;
-            window.candidatesPageState.renderOnly();
+          e.preventDefault();
+          e.stopPropagation();
+          const state = window.candidatesPageState;
+          if (!state) return;
+          const totalPages = Math.max(1, Math.ceil(state.list.length / state.pageSize));
+          if (state.currentPage < totalPages) {
+            state.currentPage += 1;
+            state.renderOnly();
           }
           return;
         }
-      });
+      };
+      document.addEventListener('click', window.__candidatesPageClickHandler);
 
       window.updateCandidatePanels = async (candidateId) => {
         if (!candidateId) return;
