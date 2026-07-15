@@ -1,5 +1,12 @@
 # Findings
 
+## 2026-07-15（首页数据看板 UI 重构约束）
+
+- 线上首页是静态 HTML + `styles.css` + 页面内 JS，不是 v0 建议的 Tailwind/React；视觉方案需映射到现有 class/模板。
+- 允许改渲染模板结构与 class，禁止改 `loadDashboardData` / `getMonthlyMetrics` / `getCalendarEvents` 与点击筛选行为。
+- KPI 去掉彩条与多色数值；日历有数据用蓝点徽标，选中用描边+浅蓝底；空状态用图标+主/次文案。
+- 图标用内联 SVG（lucide 风格），不新增依赖。
+
 ## 2026-07-15（质保监控详情无法初始化）
 
 - 报错文案实际为 `无法初始化详情窗口`（`app.js` `view-detail`）。

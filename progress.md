@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-07-15（完成 - 首页数据看板 UI 视觉重构）
+
+- 按 v0 方案在现有栈落地：统一蓝/灰 tokens，KPI 白卡+图标、去彩条；日历弱化 0、有数据蓝点徽标、选中描边浅蓝底；月度卡对齐 KPI；空状态图标引导。
+- 文件：`styles.css`、`src/pages/dashboard.html`（仅模板）、`app.js`（标题文案/h1/铃铛徽标样式钩子）；spec：`docs/superpowers/specs/2026-07-15-dashboard-ui-redesign-design.md`。
+- 缓存：`styles.css?v=20260715-dashboard-ui`、`app.js?v=20260715-dashboard-ui`。
+- 未改 API、状态与指标计算逻辑。
+
 ## 2026-07-15（完成 - 去掉岗位列表指标卡技术小字）
 
 - 去掉「Recruit 岗位库 / 后台会处理 / is_valid=N / 关联员工数」。

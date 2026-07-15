@@ -12,7 +12,7 @@
 
 ## Current Phase
 
-去掉岗位列表指标卡技术小字（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+首页数据看板 UI 视觉重构（已完成）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 
@@ -452,4 +452,12 @@
 - [x] 候选人去重一人一行；岗位与看板数字同源逐条展示
 - [x] 统一行 UI、空态、清空、指标选中态与切月重置
 - [x] 设计文档 `docs/superpowers/specs/2026-07-13-dashboard-detail-list-design.md`
+- **Status:** complete
+
+### Phase 30 - 首页数据看板 UI 视觉重构（已完成）
+
+- [x] 确认路径 A：现有静态栈落地，不引入 Tailwind/React
+- [x] 设计文档 `docs/superpowers/specs/2026-07-15-dashboard-ui-redesign-design.md`
+- [x] KPI/日历/月度卡/空状态样式与模板重构（不改数据逻辑）
+- [x] 顶栏标题层级与通知铃铛徽标微调
 - **Status:** complete

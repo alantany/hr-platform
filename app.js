@@ -50,7 +50,7 @@ const parseId = (val) => {
 const pages = {
   dashboard: {
     crumbs: "首页 / 数据看板",
-    title: "统计数据看板",
+    title: "数据看板",
     desc: "汇总求职者、客户、推荐与待办等核心指标，便于快速掌握当前招聘进展。",
   },
   candidates: {
@@ -750,7 +750,7 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
     : `<div class="topbar">
         <div>
           <div class="crumbs">${renderCrumbsHtml(pageKey)}</div>
-          <h2 class="page-title" style="margin-top:0;">${pages[pageKey]?.title || "AI招聘管理平台"}</h2>
+          <h1 class="page-title" style="margin-top:0;">${pages[pageKey]?.title || "AI招聘管理平台"}</h1>
           ${pages[pageKey]?.desc ? `<p class="page-lede">${pages[pageKey].desc}</p>` : ""}
         </div>
         <div class="top-actions">${noticeBtn}</div>

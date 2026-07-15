@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>首页 - AI招聘管理平台</title>
-  <link rel="stylesheet" href="../../styles.css" />
+  <link rel="stylesheet" href="../../styles.css?v=20260715-dashboard-ui" />
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=20260715-warranty-detail"></script>
+  <script defer src="../../app.js?v=20260715-dashboard-ui"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -70,6 +70,19 @@
     };
 
     const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
+
+    const DASHBOARD_ICONS = {
+      users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>',
+      send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
+      inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
+      userCog: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="11" r="2"/><path d="M19 8v1"/><path d="M19 13v1"/><path d="M16.7 9.3l.7.7"/><path d="M20.6 13.2l.7.7"/><path d="M16.7 14.7l.7-.7"/><path d="M20.6 10.8l.7-.7"/></svg>',
+      calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>',
+      trend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>',
+      interview: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      briefcase: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 12v.01"/></svg>',
+      list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
+    };
 
     function parseDateValue(value) {
       if (!value) return null;
@@ -279,13 +292,21 @@
       if (!model.active) {
         container.innerHTML = `
           <div class="dashboard-detail-empty">
-            点击上方指标或左侧日历日期，在此查看明细
+            <div class="dashboard-detail-empty-icon">${DASHBOARD_ICONS.list}</div>
+            <div class="dashboard-detail-empty-title">选择指标或日期查看明细</div>
+            <div class="dashboard-detail-empty-desc">点击上方月度指标或左侧日历日期，相关候选人与岗位会显示在这里。</div>
           </div>
         `;
         return;
       }
       if (!model.rows.length) {
-        container.innerHTML = `<div class="dashboard-detail-empty">当前条件下暂无数据</div>`;
+        container.innerHTML = `
+          <div class="dashboard-detail-empty">
+            <div class="dashboard-detail-empty-icon">${DASHBOARD_ICONS.inbox}</div>
+            <div class="dashboard-detail-empty-title">当前条件下暂无数据</div>
+            <div class="dashboard-detail-empty-desc">可切换其他指标，或换一个有推荐记录的日期再试。</div>
+          </div>
+        `;
         return;
       }
       container.innerHTML = `
@@ -406,6 +427,7 @@
           value: dashboardState.summary.candidate_count,
           note: `本月推荐 ${metrics.monthlyRecommendedCount} 人`,
           tone: 'primary',
+          icon: 'users',
           link: './candidates.html',
         },
         {
@@ -413,6 +435,7 @@
           value: dashboardState.summary.company_count,
           note: `当前有 ${metrics.activeProjects} 个项目在推进`,
           tone: 'success',
+          icon: 'building',
           link: './customers.html',
         },
         {
@@ -420,6 +443,7 @@
           value: dashboardState.summary.recommendation_count,
           note: `本月入职 ${metrics.monthlyEmploymentCount} 人`,
           tone: 'warning',
+          icon: 'send',
           link: './candidates.html?exclude=recommended',
         },
         {
@@ -427,6 +451,7 @@
           value: dashboardState.todos.length,
           note: dashboardState.todos.length ? `有 ${dashboardState.todos.length} 个岗位等待确认` : '当前没有待确认岗位',
           tone: 'danger',
+          icon: 'inbox',
           link: './notifications.html?tab=position-tasks',
         },
         {
@@ -434,14 +459,18 @@
           value: dashboardState.summary.user_count,
           note: `本月活跃顾问 ${metrics.activeOperators} 人`,
           tone: 'neutral',
+          icon: 'userCog',
           link: './users.html',
         },
       ];
       container.innerHTML = cards.map((card) => `
         <a href="${card.link}" class="dashboard-kanban-card tone-${card.tone}" style="display: block; text-decoration: none;">
-          <div class="dashboard-kanban-title">${card.title}</div>
+          <div class="dashboard-kanban-card-top">
+            <div class="dashboard-kanban-title">${card.title}</div>
+            <span class="dashboard-kanban-icon">${DASHBOARD_ICONS[card.icon] || ''}</span>
+          </div>
           <div class="dashboard-kanban-body">
-            <strong class="dashboard-kanban-value tone-${card.tone}">${formatNumber(card.value)}</strong>
+            <strong class="dashboard-kanban-value">${formatNumber(card.value)}</strong>
             <span class="dashboard-kanban-note">${colorizeNote(card.note, card.tone)}</span>
           </div>
         </a>
@@ -494,16 +523,20 @@
 
       const grid = document.querySelector('[data-calendar-grid]');
       if (grid) {
-        grid.innerHTML = cells.map((cell) => `
+        grid.innerHTML = cells.map((cell) => {
+          const countMarkup = cell.count
+            ? `<span class="dashboard-calendar-badge"><span class="dashboard-calendar-dot"></span>${cell.count}</span>`
+            : `<span class="dashboard-calendar-count is-empty">0</span>`;
+          return `
           <button
             type="button"
-            class="dashboard-calendar-cell${cell.inMonth ? '' : ' is-outside'}${cell.isToday ? ' is-today' : ''}${cell.isSelected ? ' is-selected' : ''}"
+            class="dashboard-calendar-cell${cell.inMonth ? '' : ' is-outside'}${cell.isToday ? ' is-today' : ''}${cell.isSelected ? ' is-selected' : ''}${cell.count ? ' has-data' : ''}"
             data-day-key="${cell.key}"
           >
             <span class="dashboard-calendar-date">${cell.date.getDate()}</span>
-            <span class="dashboard-calendar-count${cell.count ? ' has-data' : ''}">${cell.count ? `${cell.count}条` : '0条'}</span>
-          </button>
-        `).join('');
+            ${countMarkup}
+          </button>`;
+        }).join('');
       }
 
       const total = events.length;
@@ -514,10 +547,12 @@
       if (summary) {
         summary.innerHTML = `
           <div class="dashboard-summary-chip tone-primary">
+            <span class="dashboard-summary-chip-icon">${DASHBOARD_ICONS.calendar}</span>
             <strong>${formatNumber(total)}</strong>
             <span>本月累计推荐</span>
           </div>
           <div class="dashboard-summary-chip tone-warning">
+            <span class="dashboard-summary-chip-icon">${DASHBOARD_ICONS.trend}</span>
             <strong>${peak && peak.count ? formatDayLabel(peak.date) : '--'}</strong>
             <span>${peak && peak.count ? `单日峰值 ${peak.count} 条` : '暂无推荐峰值'}</span>
           </div>
@@ -566,6 +601,7 @@
             ? `含跟踪面试与本月入职，共 ${metrics.monthlyInterviewCount} 人`
             : '本月暂无面试安排',
           tone: 'primary',
+          icon: 'interview',
         },
         {
           key: 'recommend',
@@ -575,6 +611,7 @@
             ? `本月变为已推荐 ${metrics.monthlyRecommendedCount} 条`
             : '本月暂无推荐记录',
           tone: 'success',
+          icon: 'send',
         },
         {
           key: 'employment',
@@ -582,6 +619,7 @@
           value: metrics.monthlyEmploymentCount,
           note: metrics.monthlyEmploymentCount ? '按入职日期统计已入职' : '本月暂无入职转化',
           tone: 'warning',
+          icon: 'briefcase',
         },
         {
           key: 'position',
@@ -589,6 +627,7 @@
           value: metrics.monthlyPositions.length,
           note: metrics.monthlyPositions.length ? `本月累计创建 ${metrics.monthlyPositions.length} 个岗位` : '本月暂无新增岗位',
           tone: 'danger',
+          icon: 'inbox',
         },
       ];
       container.innerHTML = cards.map((card) => {
@@ -599,7 +638,10 @@
           class="dashboard-month-card tone-${card.tone}${active}"
           data-month-metric="${card.key}"
         >
-          <div class="dashboard-month-card-label">${card.title}</div>
+          <div class="dashboard-month-card-top">
+            <div class="dashboard-month-card-label">${card.title}</div>
+            <span class="dashboard-month-card-icon">${DASHBOARD_ICONS[card.icon] || ''}</span>
+          </div>
           <div class="dashboard-month-card-value">${formatNumber(card.value)}</div>
           <div class="dashboard-month-card-note">${card.note}</div>
         </button>
