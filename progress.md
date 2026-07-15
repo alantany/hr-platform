@@ -4,6 +4,7 @@
 
 - `tokenMatchesText`：整词未命中时按 `Intl.Segmenter` 拆词，要求各词均出现（AND）。
 - 覆盖「生鲜运营总经理」命中分散字段；导出 `segmentSearchToken`。
+- `task_plan.md` Current Phase 已同步为本项。
 
 ## 2026-07-15（完成 - 修复简历池分页跳页）
 
