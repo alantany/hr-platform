@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-15（完成 - 侧栏系统设置语义图标）
+
+- 「系统设置 / 开发工具」导航不再共用 settings 火花图标；改为 tags / role / shield / scope / shield-check / probe 等语义 SVG，描边规格与现有 nav 图标一致。
+- 仅改 `app.js` 的 `navGroups` + `icons`，未改路由与权限可见性。
+
 ## 2026-07-15（完成 - 美化通知 / 候选人池 / 评价体系）
 
 - 通知：折叠 SVG 旋转、待办 count pill、状态/已读 pill、4 KPI 语义图标（未读红/直达绿）、筛选灰 label、未读左侧蓝条。
