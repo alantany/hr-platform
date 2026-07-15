@@ -4,52 +4,63 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>简历导入</title>
-  <link rel="stylesheet" href="../../styles.css" />
+  <link rel="stylesheet" href="../../styles.css?v=20260715-import-ui" />
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js"></script>
+  <script defer src="../../app.js?v=20260715-import-ui"></script>
 </head>
 <body>
   <div id="app"></div>
   <script>
+    const IMPORT_PAGE_ICONS = {
+      file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+      layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+      history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>',
+    };
+
     window.__PAGE_BODY__ = `
-      <section class="hero" style="grid-template-columns:1.1fr .9fr">
-        <div class="hero-card featured">
-          <div class="intro-line">
-            <div class="eyebrow">批量导入 · 解析结果</div>
-            <div class="micro">接收外部程序下载好的简历池数据</div>
+      <section class="import-page">
+        <div class="hero-card import-action-card">
+          <div class="import-card-head">
+            <span class="import-eyebrow">批量导入 · 解析结果</span>
+            <p class="import-card-desc">接收外部程序下载好的简历池数据</p>
           </div>
-          <div class="hero-actions">
-            <button class="btn primary" data-action="open-import-modal">选择文件</button>
-            <button class="btn" data-action="open-batch-import-modal">批量导入</button>
-            <button class="btn" data-action="refresh-page">查看导入历史</button>
+          <div class="hero-actions import-action-buttons">
+            <button class="btn primary" type="button" data-action="open-import-modal">
+              <span class="btn-icon">${IMPORT_PAGE_ICONS.upload}</span>
+              选择文件
+            </button>
+            <button class="btn btn-secondary" type="button" data-action="open-batch-import-modal">
+              <span class="btn-icon">${IMPORT_PAGE_ICONS.layers}</span>
+              批量导入
+            </button>
+            <button class="btn btn-secondary" type="button" data-action="refresh-page">
+              <span class="btn-icon">${IMPORT_PAGE_ICONS.history}</span>
+              查看导入历史
+            </button>
           </div>
         </div>
 
         <div class="panel import-records">
-          <div class="intro-line" style="margin-top:0">
-            <h3 style="margin:0">导入记录</h3>
-            <div class="micro">按时间查看导入结果和处理状态</div>
+          <div class="import-card-head">
+            <h3>导入记录</h3>
+            <p class="import-card-desc">按时间查看导入结果和处理状态</p>
           </div>
-          <div class="list" style="margin-top:12px;">
-            <div class="list-item soft">
-              <div class="item-top">
-                <div>
-                  <div class="item-title">导入预览</div>
-                  <div class="item-meta" data-import-preview>选择文件后会先检查同名候选人；若命中重复，会记录为待复核导入。</div>
-                </div>
-                <span class="tag blue">复核</span>
+          <div class="import-preview-tip">
+            <div class="import-record-main">
+              <span class="import-record-icon">${IMPORT_PAGE_ICONS.file}</span>
+              <div class="import-record-copy">
+                <div class="import-record-title">导入预览</div>
+                <div class="import-record-meta" data-import-preview>选择文件后会先检查同名候选人；若命中重复，会记录为待复核导入。</div>
               </div>
             </div>
+            <span class="import-status-pill tone-review">复核</span>
           </div>
-          <div class="timeline" data-import-history>
-            <div class="list-item soft">
-              <div class="item-top">
-                <div>
-                  <div class="item-title">暂无导入记录</div>
-                  <div class="item-meta">最近的导入结果来自数据库。</div>
-                </div>
-                <span class="tag blue">导入</span>
-              </div>
+          <div class="import-history-list" data-import-history>
+            <div class="table-empty import-empty">
+              <div class="table-empty-icon">${IMPORT_PAGE_ICONS.file}</div>
+              <div class="table-empty-title">暂无导入记录</div>
+              <div class="table-empty-desc">完成导入后，最近结果会显示在这里。</div>
             </div>
           </div>
         </div>
@@ -177,8 +188,8 @@
         const review = document.querySelector('[data-import-review]');
         if (review) review.textContent = String(items.filter(i => String(i.note || '').includes('复核')).length);
         const history = document.querySelector('[data-import-history]');
-        if (history) {
-          history.innerHTML = items.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
+        if (history && typeof window.hrRenderImportHistoryList === 'function') {
+          history.innerHTML = window.hrRenderImportHistoryList(items);
         }
         const preview = document.querySelector('[data-import-preview]');
         if (preview) {

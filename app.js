@@ -475,6 +475,38 @@ window.hrRenderCompanyList = renderCompanyTableMarkup;
 window.hrRenderProjectList = renderProjectListMarkup;
 window.hrRenderPositionList = renderPositionListMarkup;
 
+const importFileIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+
+const renderImportHistoryListMarkup = (items = []) => {
+  if (!items.length) {
+    return `
+      <div class="table-empty import-empty">
+        <div class="table-empty-icon">${importFileIconSvg}</div>
+        <div class="table-empty-title">暂无导入记录</div>
+        <div class="table-empty-desc">完成导入后，最近结果会显示在这里。</div>
+      </div>`;
+  }
+  return items.slice(0, 5).map((item) => {
+    const status = String(item.status || '');
+    const tone = status === '成功' ? 'success' : (status === '失败' ? 'danger' : 'review');
+    const label = status || '导入';
+    const meta = `${item.imported_count || 0} 成功 / ${item.failed_count || 0} 失败 · ${escapeHtml(item.note || '无备注')}`;
+    return `
+      <div class="import-record-item">
+        <div class="import-record-main">
+          <span class="import-record-icon">${importFileIconSvg}</span>
+          <div class="import-record-copy">
+            <div class="import-record-title">${escapeHtml(item.file_name || '未命名文件')}</div>
+            <div class="import-record-meta">${meta}</div>
+          </div>
+        </div>
+        <span class="import-status-pill tone-${tone}">${escapeHtml(label)}</span>
+      </div>`;
+  }).join('');
+};
+
+window.hrRenderImportHistoryList = renderImportHistoryListMarkup;
+
 async function refreshCustomerList() {
   const list = document.querySelector('[data-company-list]');
   if (!list) return;
@@ -4274,10 +4306,8 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       }
 
       const historyItems = await window.hrApi.importRecords();
-      const records = document.querySelector(".import-records .timeline");
-      if (records) {
-        records.innerHTML = historyItems.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
-      }
+      const records = document.querySelector("[data-import-history]");
+      if (records) records.innerHTML = renderImportHistoryListMarkup(historyItems);
 
       const success = document.querySelector('[data-import-success]');
       const failed = document.querySelector('[data-import-failed]');
@@ -4296,10 +4326,8 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     }).catch(err => {
       showToast(`简历导入解析失败: ${err.message || err}`);
       window.hrApi.importRecords().then(historyItems => {
-        const records = document.querySelector(".import-records .timeline");
-        if (records) {
-          records.innerHTML = historyItems.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
-        }
+        const records = document.querySelector("[data-import-history]");
+        if (records) records.innerHTML = renderImportHistoryListMarkup(historyItems);
       });
     });
     return;
@@ -4339,10 +4367,8 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
       showToast(`批量导入完成：成功 ${result.imported} 条` + (result.duplicates ? `，重复 ${result.duplicates} 条` : ''));
 
       const historyItems = await window.hrApi.importRecords();
-      const records = document.querySelector(".import-records .timeline");
-      if (records) {
-        records.innerHTML = historyItems.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
-      }
+      const records = document.querySelector("[data-import-history]");
+      if (records) records.innerHTML = renderImportHistoryListMarkup(historyItems);
 
       const success = document.querySelector('[data-import-success]');
       const failed = document.querySelector('[data-import-failed]');
@@ -4355,10 +4381,8 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     }).catch(err => {
       showToast(`批量简历导入失败: ${err.message || err}`);
       window.hrApi.importRecords().then(historyItems => {
-        const records = document.querySelector(".import-records .timeline");
-        if (records) {
-          records.innerHTML = historyItems.slice(0, 5).map(i => `<div class="list-item soft"><div class="item-top"><div><div class="item-title">${i.file_name}</div><div class="item-meta">${i.imported_count} 成功 / ${i.failed_count} 失败 · ${i.note}</div></div><span class="tag ${i.status === '成功' ? 'green' : 'blue'}">${i.status}</span></div></div>`).join('');
-        }
+        const records = document.querySelector("[data-import-history]");
+        if (records) records.innerHTML = renderImportHistoryListMarkup(historyItems);
       });
     });
     return;

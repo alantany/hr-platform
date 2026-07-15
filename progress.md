@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-15（完成 - 美化简历导入页）
+
+- 两栏 grid（窄屏堆叠）；左卡浅蓝 pill + 主/次按钮带图标；右卡记录列表项+状态 pill（成功绿/复核蓝/失败红）+ 空态。
+- 抽取 `hrRenderImportHistoryList`，导入成功/失败刷新共用。缓存：`?v=20260715-import-ui`。
+
 ## 2026-07-15（完成 - 补齐岗位列表 Tab 行样式）
 
 - `renderPositionListMarkup` 对齐项目列表：行 grid、紧急程度 pill、操作次按钮/删除危险态、漏斗数字语义色、空态图标区。
