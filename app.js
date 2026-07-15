@@ -262,47 +262,54 @@ window.hrTagSystem = {
 };
 
 const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagConfigs = []) => {
-  if (!positions.length) return '<div class="list-item"><div class="item-meta">暂无岗位数据。</div></div>';
+  if (!positions.length) {
+    return `
+      <div class="table-empty">
+        <div class="table-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></div>
+        <div class="table-empty-title">暂无岗位数据</div>
+        <div class="table-empty-desc">可新建岗位，或调整筛选条件后再试。</div>
+      </div>`;
+  }
   const curRole = window.currentUser?.role || '';
   const isLeader = curRole === '组长' || curRole === 'LEADER';
 
   return positions.map((position) => {
     const project = projectsById.get(position.project_id) || {};
     const stats = window.positionRecommendationStats?.get(position.id) || { total: 0, selected: 0, unselected: 0, rejected: 0 };
-    const urgencyBg = position.urgency === '高'
-      ? 'background: #fee2e2; color: #ef4444; border: 1px solid #fecaca;'
-      : (position.urgency === '中' ? 'background: #ffedd5; color: #f97316; border: 1px solid #fed7aa;' : 'background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;');
-    const fieldTags = window.hrTagSystem.extractTags("position", position, tagConfigs);
-    const tagHtml = fieldTags.length ? window.hrTagSystem.renderTags(fieldTags, { className: "field-tag-list is-compact" }) : "";
-    
+    const urgency = position.urgency || '中';
+    const urgencyClass = urgency === '高' ? 'is-high' : (urgency === '中' ? 'is-medium' : 'is-low');
+    // 紧急程度只在表格列展示，名称下不再重复渲染标签
+
     let actionsHtml = '';
     if (isLeader) {
       actionsHtml = `
-        <button class="btn-sm" data-action="assign-position-permission" data-id="${position.id}" style="background-color:#10b981; border-color:#10b981; color:#fff; font-size:11px; padding:2px 8px; border-radius:4px;">分配权限</button>
-        <button class="btn-sm" data-action="edit-position" data-id="${position.id}">编辑</button>
-        <button class="btn-sm" data-action="delete-position" data-id="${position.id}">删除</button>
+        <button class="btn-sm btn-secondary" data-action="assign-position-permission" data-id="${position.id}">分配权限</button>
+        <button class="btn-sm btn-secondary" data-action="edit-position" data-id="${position.id}">编辑</button>
+        <button class="btn-sm btn-danger-text" data-action="delete-position" data-id="${position.id}">删除</button>
       `;
     } else {
-      actionsHtml = `<span style="color:#94a3b8; font-size:12px;">只读岗位</span>`;
+      actionsHtml = `<span class="position-readonly">只读岗位</span>`;
     }
 
     return `
-      <div class="list-item" data-id="${position.id}" data-project-id="${position.project_id}">
-        <div class="item-top" style="display:grid;grid-template-columns:1.2fr 1.5fr 1.8fr 0.8fr 0.8fr 1fr 1.2fr 2.5fr 210px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;">
-          <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.company_name || '未知公司')}">${escapeHtml(project.company_name || '未知公司')}</div>
-          <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(project.name || '')}">${escapeHtml(project.name || '--')}</div>
-          <div class="item-title" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;margin-right:0;"><button type="button" data-action="show-position-candidates" data-position-id="${position.id}" style="font-weight:600;color:#0f172a;font-size:13px;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;">${escapeHtml(position.name)}</button>${tagHtml}</div>
-          <div style="text-align:center;"><span class="chip" style="${urgencyBg}width:48px;text-align:center;display:inline-block;font-weight:600;">${position.urgency || '中'}</span></div>
-          <div style="color:#475569;font-size:13px;text-align:center;">${position.hiring_count || 1}人</div>
-          <div style="color:#475569;font-size:13px;text-align:center;">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
-          <div style="color:#475569;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(position.location || '')}">${escapeHtml(position.location || '--')}</div>
-          <div style="display:flex;gap:8px;font-size:12px;font-weight:600;white-space:nowrap;">
-            <span>候选人 <button type="button" data-action="show-position-candidates" data-position-id="${position.id}" style="background:none;border:none;padding:0;font:inherit;font-weight:700;color:#2563EB;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${stats.total}</button></span>
-            <span>选中 <button type="button" data-action="show-position-candidates" data-position-id="${position.id}" data-funnel="selected" style="background:none;border:none;padding:0;font:inherit;font-weight:700;color:#15803D;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${stats.selected}</button></span>
-            <span>未选 <button type="button" data-action="show-position-candidates" data-position-id="${position.id}" data-funnel="unselected" style="background:none;border:none;padding:0;font:inherit;font-weight:700;color:#0f172a;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${stats.unselected}</button></span>
-            <span>淘汰 <button type="button" data-action="show-position-candidates" data-position-id="${position.id}" data-funnel="rejected" style="background:none;border:none;padding:0;font:inherit;font-weight:700;color:#ef4444;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${stats.rejected}</button></span>
+      <div class="list-item position-row" data-id="${position.id}" data-project-id="${position.project_id}">
+        <div class="item-top position-row-grid">
+          <div class="project-cell" title="${escapeHtml(project.company_name || '未知公司')}">${escapeHtml(project.company_name || '未知公司')}</div>
+          <div class="project-cell" title="${escapeHtml(project.name || '')}">${escapeHtml(project.name || '--')}</div>
+          <div class="position-name-cell">
+            <button class="position-name-link" type="button" data-action="show-position-candidates" data-position-id="${position.id}">${escapeHtml(position.name)}</button>
           </div>
-          <div class="table-actions" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">${actionsHtml}</div>
+          <div class="is-center"><span class="level-pill ${urgencyClass}">${escapeHtml(urgency)}</span></div>
+          <div class="project-cell is-center">${position.hiring_count || 1}人</div>
+          <div class="project-cell is-center">${position.salary_min || position.salary_max ? `${position.salary_min || ''}-${position.salary_max || ''}K` : '--'}</div>
+          <div class="project-cell" title="${escapeHtml(position.location || '')}">${escapeHtml(position.location || '--')}</div>
+          <div class="position-funnel">
+            <span>候选人 <button type="button" class="funnel-link is-primary" data-action="show-position-candidates" data-position-id="${position.id}">${stats.total}</button></span>
+            <span>选中 <button type="button" class="funnel-link is-success" data-action="show-position-candidates" data-position-id="${position.id}" data-funnel="selected">${stats.selected}</button></span>
+            <span>未选 <button type="button" class="funnel-link" data-action="show-position-candidates" data-position-id="${position.id}" data-funnel="unselected">${stats.unselected}</button></span>
+            <span>淘汰 <button type="button" class="funnel-link is-danger" data-action="show-position-candidates" data-position-id="${position.id}" data-funnel="rejected">${stats.rejected}</button></span>
+          </div>
+          <div class="table-actions project-row-actions">${actionsHtml}</div>
         </div>
       </div>`;
   }).join('');

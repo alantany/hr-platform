@@ -4,6 +4,7 @@
 
 - 项目行状态/等级只保留表格列 pill；名称下 `field-tag` 重复展示已去掉（展示层，不影响标签数据）。
 - 紧急岗位 KPI 数字色：`is-zero`→灰、`is-urgent`→`--color-danger`，在写入 `textContent` 时同步 class。
+- 岗位列表 Tab 行样式需单独改 `renderPositionListMarkup`；首轮只改了壳层，已补齐与项目列表一致的 pill/按钮/空态。
 
 ## 2026-07-15（Recruit 岗位列表 UI）
 

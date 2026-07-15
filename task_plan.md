@@ -466,6 +466,6 @@
 
 - [x] 固化全局 Tokens + 11 条规则（`2026-07-15-ui-global-design-system.md`）
 - [x] 平台岗位发布-岗位列表（`recruit-job-list.html`）
-- [x] 项目管理（`projects.html`）
+- [x] 项目管理（`projects.html`）— 项目列表 + 岗位列表两个 Tab
 - [ ] 其余页面（按用户指定顺序）
 - **Status:** in_progress
