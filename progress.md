@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-15（完成 - 美化项目管理页）
+
+- KPI 统一白卡+SVG；紧急岗位 0=灰、>0=危险红；下划线 Tab；筛选区 4 列 grid + 主/次按钮。
+- 项目行：去名称下重复标签；状态绿 pill、等级红/橙 pill；公司名蓝链；操作次按钮+删除危险态。
+- 文件：`projects.html`、`app.js`（仅 `renderProjectListMarkup`/紧急数展示色）、`styles.css`。缓存：`?v=20260715-projects-ui`。
+
 ## 2026-07-15（完成 - 美化 Recruit 岗位列表页）
 
 - 按全局设计系统改 `recruit-job-list.html`：KPI 白卡+语义 SVG、主/次按钮、搜索放大镜、表头/空态/页脚样式。

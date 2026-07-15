@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-15（项目管理页 UI）
+
+- 项目行状态/等级只保留表格列 pill；名称下 `field-tag` 重复展示已去掉（展示层，不影响标签数据）。
+- 紧急岗位 KPI 数字色：`is-zero`→灰、`is-urgent`→`--color-danger`，在写入 `textContent` 时同步 class。
+
 ## 2026-07-15（Recruit 岗位列表 UI）
 
 - 页面作用域类 `.recruit-job-list-page` 覆盖 KPI 彩条/伪图标，避免影响其他仍用旧 metric-icon 的页面。

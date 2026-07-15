@@ -309,9 +309,15 @@ const renderPositionListMarkup = (positions = [], projectsById = new Map(), tagC
 };
 
 const renderProjectListMarkup = (projects = [], tagConfigs = []) => {
-  if (!projects.length) return '<div class="list-item"><div class="item-meta">当前暂无项目列表。</div></div>';
+  if (!projects.length) {
+    return `
+      <div class="table-empty">
+        <div class="table-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></div>
+        <div class="table-empty-title">当前暂无项目列表</div>
+        <div class="table-empty-desc">可新建项目，或调整上方筛选条件后再试。</div>
+      </div>`;
+  }
   return projects.map((project) => {
-    const chipClass = project.status === '招聘完毕' ? 'neutral' : 'success';
     const formatDate = (isoString) => {
       if (!isoString) return '--';
       return isoString.split('T')[0];
@@ -320,34 +326,30 @@ const renderProjectListMarkup = (projects = [], tagConfigs = []) => {
     // Level badge styling: supporting both legacy A/B/C and new 高/中/低
     const isLevelHigh = project.level === 'A' || project.level === '高';
     const isLevelMedium = project.level === 'B' || project.level === '中';
-    const levelBg = isLevelHigh
-      ? 'background: #fee2e2; color: #ef4444; border: 1px solid #fecaca;'
-      : (isLevelMedium ? 'background: #ffedd5; color: #f97316; border: 1px solid #fed7aa;' : 'background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;');
     const levelText = isLevelHigh ? '高' : (isLevelMedium ? '中' : '低');
-    const levelBadge = `<span class="chip" style="${levelBg} width: 48px; text-align: center; display: inline-block; font-weight: 600;">${levelText}</span>`;
-    const fieldTags = window.hrTagSystem.extractTags("project", project, tagConfigs);
-    const tagHtml = fieldTags.length ? window.hrTagSystem.renderTags(fieldTags, { className: "field-tag-list is-compact" }) : "";
+    const levelClass = isLevelHigh ? 'is-high' : (isLevelMedium ? 'is-medium' : 'is-low');
+    const statusClass = project.status === '招聘中'
+      ? 'is-active'
+      : (project.status === '招聘完毕' ? 'is-done' : 'is-paused');
+    // 状态/等级只在表格对应列展示一次，不再在名称下重复渲染标签
 
     return `
-      <div class="list-item" data-id="${project.id}" data-company-id="${project.company_id}">
-        <div class="item-top" style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 0.8fr 0.8fr 1.2fr 0.8fr 1.2fr 180px; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-          <button class="project-company-link" type="button" style="color:#2563EB;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;" title="${escapeHtml(project.company_name || '未知公司')}" data-action="open-company-from-project" data-company-id="${project.company_id || ''}">${escapeHtml(project.company_name || '未知公司')}</button>
-          <div class="item-title" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; margin-right: 0;">
-            <button class="project-name-link" type="button" style="font-weight:600;color:#0f172a;font-size:13px;background:none;border:none;cursor:pointer;padding:0;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;" data-action="view-project-positions" data-project-id="${project.id}">${escapeHtml(project.name)}</button>
-            ${tagHtml}
+      <div class="list-item project-row" data-id="${project.id}" data-company-id="${project.company_id}">
+        <div class="item-top project-row-grid">
+          <button class="project-company-link" type="button" title="${escapeHtml(project.company_name || '未知公司')}" data-action="open-company-from-project" data-company-id="${project.company_id || ''}">${escapeHtml(project.company_name || '未知公司')}</button>
+          <div class="project-name-cell">
+            <button class="project-name-link" type="button" data-action="view-project-positions" data-project-id="${project.id}">${escapeHtml(project.name)}</button>
           </div>
-          <div style="text-align: center;">
-            <span class="chip ${chipClass}" style="width: 80px; text-align: center; display: inline-block; margin: 0 auto;">${project.status}</span>
-          </div>
-          <div style="text-align: center;">${levelBadge}</div>
-          <div style="color: #475569; font-size: 13px; text-align: center;">${project.hiring_count || 0}人</div>
-          <div style="color: #475569; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(project.work_location || '')}">${escapeHtml(project.work_location || '--')}</div>
-          <div style="text-align: center;"><a href="./projects.html?project_id=${encodeURIComponent(project.id)}&company_id=${encodeURIComponent(project.company_id || '')}&tab=position" style="color: #2563EB; font-size: 13px; font-weight: 600; text-decoration: none;">${project.position_count || 0}</a></div>
-          <div style="color: #475569; font-size: 13px;">${formatDate(project.created_at)}</div>
-          <div class="table-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end;">
-            <button class="btn-sm" data-action="noop" data-title="项目岗位列表" onclick="const tab = document.querySelector('[data-subtab=position-tab]'); if(tab){tab.click(); const select = document.querySelector('#search-position-project'); if(select){select.value='${project.id}'; document.querySelector('#btn-position-search').click();}}">岗位</button>
-            <button class="btn-sm" data-action="edit-project" data-id="${project.id}">编辑</button>
-            <button class="btn-sm" data-action="delete-project" data-id="${project.id}">删除</button>
+          <div class="is-center"><span class="status-pill ${statusClass}">${escapeHtml(project.status || '')}</span></div>
+          <div class="is-center"><span class="level-pill ${levelClass}">${levelText}</span></div>
+          <div class="project-cell is-center">${project.hiring_count || 0}人</div>
+          <div class="project-cell" title="${escapeHtml(project.work_location || '')}">${escapeHtml(project.work_location || '--')}</div>
+          <div class="is-center"><a class="project-count-link" href="./projects.html?project_id=${encodeURIComponent(project.id)}&company_id=${encodeURIComponent(project.company_id || '')}&tab=position">${project.position_count || 0}</a></div>
+          <div class="project-cell">${formatDate(project.created_at)}</div>
+          <div class="table-actions project-row-actions">
+            <button class="btn-sm btn-secondary" data-action="noop" data-title="项目岗位列表" onclick="const tab = document.querySelector('[data-subtab=position-tab]'); if(tab){tab.click(); const select = document.querySelector('#search-position-project'); if(select){select.value='${project.id}'; document.querySelector('#btn-position-search').click();}}">岗位</button>
+            <button class="btn-sm btn-secondary" data-action="edit-project" data-id="${project.id}">编辑</button>
+            <button class="btn-sm btn-danger-text" data-action="delete-project" data-id="${project.id}">删除</button>
           </div>
         </div>
       </div>`;
@@ -1939,7 +1941,12 @@ async function handleGlobalButton(button) {
     if (total) total.textContent = String(projects.length);
     if (active) active.textContent = String(projects.filter(p => p.status === '招聘中').length);
     if (finished) finished.textContent = String(projects.filter(p => p.status === '招聘完毕').length);
-    if (urgent) urgent.textContent = String(positions.filter(position => position.urgency === '高').length);
+    const urgentCount = positions.filter(position => position.urgency === '高').length;
+    if (urgent) {
+      urgent.textContent = String(urgentCount);
+      urgent.classList.toggle('is-urgent', urgentCount > 0);
+      urgent.classList.toggle('is-zero', urgentCount === 0);
+    }
   };
   const downloadCsv = (rows) => {
     const header = ['id','actor','module','action','target_type','target_id','result','detail','created_at'];
