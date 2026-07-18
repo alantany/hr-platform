@@ -1095,6 +1095,7 @@ body:has(.dashboard-redesign) .content {
 }
 
 .dashboard-redesign {
+  --dashboard-line: #BFDBFE;
   display: grid;
   gap: 24px;
   padding: 4px 2px 8px;
@@ -1227,7 +1228,7 @@ body:has(.dashboard-redesign) .content {
 .dashboard-month-panel.panel {
   padding: 20px 24px 24px;
   border-radius: 18px;
-  border: 1px solid rgba(226, 232, 240, 0.55);
+  border: 1px solid var(--dashboard-line, #BFDBFE);
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
   background: #fff;
 }
@@ -1262,7 +1263,7 @@ body:has(.dashboard-redesign) .content {
 .dashboard-calendar-nav {
   width: 32px;
   height: 32px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--dashboard-line, #BFDBFE);
   border-radius: 8px;
   background: #fff;
   color: var(--muted-foreground);
@@ -1308,7 +1309,7 @@ body:has(.dashboard-redesign) .content {
   padding: 6px 12px;
   border-radius: 999px;
   background: #EFF6FF;
-  border: 1px solid rgba(191, 219, 254, 0.8);
+  border: 1px solid var(--dashboard-line, #BFDBFE);
   color: #64748b;
 }
 
@@ -1363,7 +1364,7 @@ body:has(.dashboard-redesign) .content {
   align-content: center;
   min-height: 60px;
   padding: 8px 4px;
-  border: 1px solid #C5CEDA;
+  border: 1px solid var(--dashboard-line, #BFDBFE);
   border-radius: 12px;
   background: #fff;
   color: #475569;
@@ -1466,7 +1467,7 @@ body:has(.dashboard-redesign) .content {
   padding: 12px 16px;
   border-radius: 14px;
   background: #F8FBFF;
-  border: 0;
+  border: 1px solid var(--dashboard-line, #BFDBFE);
 }
 
 .dashboard-calendar-detail-title {
@@ -1520,7 +1521,7 @@ body:has(.dashboard-redesign) .content {
   min-height: 120px;
   padding: 20px 24px;
   border-radius: 16px;
-  border: 1px solid #C5CEDA;
+  border: 1px solid var(--dashboard-line, #BFDBFE);
   background: #fff;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
   text-align: left;
@@ -1600,7 +1601,7 @@ body:has(.dashboard-redesign) .content {
 
 .dashboard-candidate-panel {
   margin-top: 16px;
-  border: 1px solid rgba(226, 232, 240, 0.55);
+  border: 1px solid var(--dashboard-line, #BFDBFE);
   border-radius: 18px;
   background: #fff;
   min-height: 200px;
@@ -1623,7 +1624,7 @@ body:has(.dashboard-redesign) .content {
   margin-bottom: 6px;
   border-radius: 10px;
   background: #fff;
-  border: 1px solid rgba(226, 232, 240, 0.95);
+  border: 1px solid var(--dashboard-line, #BFDBFE);
 }
 
 .dashboard-detail-row:last-child {
@@ -1731,7 +1732,7 @@ body:has(.dashboard-redesign) .content {
 .dashboard-summary-chip.tone-warning,
 .dashboard-summary-chip.tone-success {
   background: #EFF6FF;
-  border-color: rgba(191, 219, 254, 0.8);
+  border-color: var(--dashboard-line, #BFDBFE);
 }
 .dashboard-summary-chip.tone-primary strong,
 .dashboard-summary-chip.tone-warning strong,
@@ -3165,13 +3166,17 @@ a { color: var(--primary); }
     0 8px 24px rgba(15, 23, 42, 0.06),
     0 16px 40px rgba(59, 130, 246, 0.08) !important;
 }
-.dashboard-month-card, .dashboard-candidate-panel { border: 1px solid #C5CEDA; border-radius: 16px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
+.dashboard-month-card, .dashboard-candidate-panel { border: 1px solid #BFDBFE; border-radius: 16px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
 .dashboard-month-card-icon { display: none !important; }
-.dashboard-calendar-cell { border: 1px solid #C5CEDA; }
+.dashboard-calendar-cell { border: 1px solid #BFDBFE; }
+.dashboard-calendar-detail { border: 1px solid #BFDBFE; }
+.dashboard-summary-chip { border-color: #BFDBFE; }
+.dashboard-calendar-nav { border-color: #BFDBFE; }
+.dashboard-detail-row { border-color: #BFDBFE; }
 body:has(.dashboard-redesign) .content {
   background: linear-gradient(180deg, #EEF5FF 0%, #F5F8FC 45%, #F8FAFC 100%) !important;
 }
-.dashboard-calendar-panel.panel, .dashboard-month-panel.panel { border: 1px solid rgba(226, 232, 240, 0.55); border-radius: 18px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
+.dashboard-calendar-panel.panel, .dashboard-month-panel.panel { border: 1px solid #BFDBFE; border-radius: 18px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
 .panel, .hero-card, .toolbar { padding: 24px; }
 .metric-card, .stat-card { padding: 20px 24px; }
 .panel { margin-bottom: 16px; }
