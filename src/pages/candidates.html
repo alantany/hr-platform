@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>求职者数据池</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260719-cand-search-width" />
+  <link rel="stylesheet" href="../../styles.css?v=20260719-cand-no-icons" />
   <style>
     .province-item, .city-item, .search-result-item {
       padding: 8px 12px;
@@ -26,7 +26,7 @@
     }
   </style>
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=20260719-cand-search-width"></script>
+  <script defer src="../../app.js?v=20260719-cand-no-icons"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -77,14 +77,12 @@
           <div class="candidate-search-keyword">
             <label class="candidate-search-field-label">关键词</label>
             <div class="input-search">
-              <span class="input-search-icon">${CAND_ICONS.search}</span>
               <input class="input wide" data-field="candidate-keyword" placeholder="搜索期望岗位、当前职位、技能、工作经历等" />
             </div>
           </div>
           <div class="city-selector-wrapper candidate-search-city">
             <label class="candidate-search-field-label">期望城市</label>
             <div class="input-search">
-              <span class="input-search-icon">${CAND_ICONS.map}</span>
               <input class="input" data-field="candidate-city" placeholder="如：北京、上海、深圳" autocomplete="off" />
             </div>
             <div class="city-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; width: 380px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); z-index: 1000; padding: 12px;">

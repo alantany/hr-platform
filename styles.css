@@ -5139,6 +5139,11 @@ input[type="radio"],
 .candidates-page .candidate-search-city .input {
   height: 34px;
   max-width: 100%;
+  padding-left: 12px;
+}
+.candidates-page .candidate-search-keyword .input-search-icon,
+.candidates-page .candidate-search-city .input-search-icon {
+  display: none !important;
 }
 .candidates-page .candidate-search-actions {
   display: flex;
