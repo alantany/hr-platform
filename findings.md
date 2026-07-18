@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-18（首页看板 Soft UI 缓存与验收）
+
+- 浏览器缓存以 `dashboard.html` 上 `styles.css` / `app.js` 的 `?v=` 为准；Soft UI 落地后需 bump 到 `20260718-dashboard-soft-ui`，否则会继续吃旧 CSS。
+- 目视验收入口：本地 HTTP 打开 `src/pages/dashboard.html`；契约测试可证明 token/空态文案，但真实选中态与窄屏需浏览器确认。
+- 浏览器 MCP 对本机 `http://127.0.0.1` 页偶发「No browser tab / view not found」，与登录页 Task 3 同类限制；可用 `python3 -m http.server` + 人工/controller 复核。
+
 ## 2026-07-18（首页看板 Soft UI CSS）
 
 - Soft UI 视觉落在 `styles.css`：`.dashboard-redesign` 渐变底 `#EEF5FF→#F7FAFF→#fff`；卡片/面板 `border-radius: 18px` + `0 10px 28px rgba(15, 23, 42, 0.06)`。
