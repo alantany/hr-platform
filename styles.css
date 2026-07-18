@@ -5441,7 +5441,8 @@ input[type="radio"],
 .notices-page .metrics,
 .job-publish-page .metrics,
 .recruit-job-list-page .metrics,
-.daily-tasks-page .metrics {
+.daily-tasks-page .metrics,
+.logs-page .metrics {
   gap: 12px;
   margin-bottom: 0;
 }
@@ -5452,7 +5453,8 @@ input[type="radio"],
 .notices-page .metrics .metric-card,
 .job-publish-page .metrics .metric-card,
 .recruit-job-list-page .metrics .metric-card,
-.daily-tasks-page .metrics .metric-card {
+.daily-tasks-page .metrics .metric-card,
+.logs-page .metrics .metric-card {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -5485,7 +5487,9 @@ input[type="radio"],
 .recruit-job-list-page .metrics .metric-card::before,
 .recruit-job-list-page .metrics .metric-card::after,
 .daily-tasks-page .metrics .metric-card::before,
-.daily-tasks-page .metrics .metric-card::after {
+.daily-tasks-page .metrics .metric-card::after,
+.logs-page .metrics .metric-card::before,
+.logs-page .metrics .metric-card::after {
   content: none !important;
   display: none !important;
 }
@@ -5503,7 +5507,9 @@ input[type="radio"],
 .recruit-job-list-page .metrics .metric-card:hover,
 .recruit-job-list-page .metrics .metric-card:focus-visible,
 .daily-tasks-page .metrics .metric-card:hover,
-.daily-tasks-page .metrics .metric-card:focus-visible {
+.daily-tasks-page .metrics .metric-card:focus-visible,
+.logs-page .metrics .metric-card:hover,
+.logs-page .metrics .metric-card:focus-visible {
   transform: translateY(-2px);
   border: none !important;
   outline: none;
@@ -5527,7 +5533,12 @@ input[type="radio"],
 .notices-page .metrics .metric-card.tone-primary.is-filter-active,
 .notices-page .metrics .metric-card.tone-danger.is-filter-active,
 .notices-page .metrics .metric-card.tone-warning.is-filter-active,
-.notices-page .metrics .metric-card.tone-success.is-filter-active {
+.notices-page .metrics .metric-card.tone-success.is-filter-active,
+.logs-page .metrics .metric-card.is-filter-active,
+.logs-page .metrics .metric-card.tone-primary.is-filter-active,
+.logs-page .metrics .metric-card.tone-success.is-filter-active,
+.logs-page .metrics .metric-card.tone-warning.is-filter-active,
+.logs-page .metrics .metric-card.tone-neutral.is-filter-active {
   color: inherit;
   background: #fff !important;
   border: none !important;
@@ -5543,7 +5554,8 @@ input[type="radio"],
 .notices-page .metrics .metric-icon,
 .job-publish-page .metrics .metric-icon,
 .recruit-job-list-page .metrics .metric-icon,
-.daily-tasks-page .metrics .metric-icon {
+.daily-tasks-page .metrics .metric-icon,
+.logs-page .metrics .metric-icon {
   display: none !important;
 }
 
@@ -5553,7 +5565,8 @@ input[type="radio"],
 .notices-page .metrics .metric-top,
 .job-publish-page .metrics .metric-top,
 .recruit-job-list-page .metrics .metric-top,
-.daily-tasks-page .metrics .metric-top {
+.daily-tasks-page .metrics .metric-top,
+.logs-page .metrics .metric-top {
   margin: 0;
 }
 
@@ -5563,7 +5576,8 @@ input[type="radio"],
 .notices-page .metrics .section-sub,
 .job-publish-page .metrics .section-sub,
 .recruit-job-list-page .metrics .section-sub,
-.daily-tasks-page .metrics .section-sub {
+.daily-tasks-page .metrics .section-sub,
+.logs-page .metrics .section-sub {
   color: #64748B;
   font-size: 12px;
   font-weight: 500;
@@ -5607,7 +5621,12 @@ input[type="radio"],
 .daily-tasks-page .metrics .metric-card.tone-primary .metric-value,
 .daily-tasks-page .metrics .metric-card.tone-success .metric-value,
 .daily-tasks-page .metrics .metric-card.tone-warning .metric-value,
-.daily-tasks-page .metrics .metric-card.tone-neutral .metric-value {
+.daily-tasks-page .metrics .metric-card.tone-neutral .metric-value,
+.logs-page .metrics .metric-value,
+.logs-page .metrics .metric-card.tone-primary .metric-value,
+.logs-page .metrics .metric-card.tone-success .metric-value,
+.logs-page .metrics .metric-card.tone-warning .metric-value,
+.logs-page .metrics .metric-card.tone-neutral .metric-value {
   margin-top: 0 !important;
   font-family: inherit;
   font-size: clamp(22px, 1.8vw, 26px);
@@ -5622,7 +5641,8 @@ input[type="radio"],
 .notices-page .metrics .metric-label,
 .job-publish-page .metrics .metric-label,
 .recruit-job-list-page .metrics .metric-label,
-.daily-tasks-page .metrics .metric-label {
+.daily-tasks-page .metrics .metric-label,
+.logs-page .metrics .metric-label {
   margin-top: 0;
   color: #94A3B8;
   font-size: 12px;

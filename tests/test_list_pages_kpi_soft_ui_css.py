@@ -10,6 +10,7 @@ SOFT_KPI_PAGES = (
     "job-publish-page",
     "recruit-job-list-page",
     "daily-tasks-page",
+    "logs-page",
 )
 
 
