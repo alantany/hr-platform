@@ -8,18 +8,20 @@
   <script defer src="../../frontend-api.js?v=20260630"></script>
   <style>
     :root {
-      --login-ink: #142033;
-      --login-muted: #6d7788;
-      --login-line: rgba(20, 32, 51, .12);
-      --login-primary: #2563eb;
-      --login-primary-soft: #eff6ff;
-      --login-card: rgba(255, 255, 255, .88);
+      --login-ink: #0f172a;
+      --login-muted: #64748b;
+      --login-line: #e2e8f0;
+      --login-primary: #3b82f6;
+      --login-bg-top: #e0f2fe;
+      --login-bg-bottom: #ffffff;
     }
 
     body {
       margin: 0;
       color: var(--login-ink);
-      background: #f7f8fa;
+      background: linear-gradient(180deg, var(--login-bg-top) 0%, var(--login-bg-bottom) 72%);
+      min-height: 100vh;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
     }
 
     .login-stage {
@@ -27,252 +29,166 @@
       min-height: 100vh;
       display: grid;
       place-items: center;
-      padding: 40px 18px;
+      padding: 48px 32px;
       overflow: hidden;
     }
 
-    .login-stage::before {
+    .login-stage::before,
+    .login-stage::after {
       content: "";
       position: absolute;
-      inset: 28px;
-      border: 1px solid rgba(20, 32, 51, .07);
-      border-radius: 28px;
+      border: 1.5px solid rgba(255, 255, 255, 0.55);
+      border-radius: 50%;
       pointer-events: none;
+    }
+
+    .login-stage::before {
+      width: 520px;
+      height: 520px;
+      top: -180px;
+      right: -120px;
+    }
+
+    .login-stage::after {
+      width: 360px;
+      height: 360px;
+      top: -40px;
+      right: 40px;
+      border-color: rgba(191, 219, 254, 0.7);
     }
 
     .login-shell {
       position: relative;
+      z-index: 1;
       width: min(980px, 100%);
       display: grid;
-      grid-template-columns: .92fr 1.08fr;
-      background: var(--login-card);
-      border: 1px solid rgba(255, 255, 255, .8);
-      border-radius: 30px;
-      box-shadow: 0 24px 80px rgba(28, 48, 72, .16), inset 0 1px 0 rgba(255, 255, 255, .8);
-      overflow: hidden;
-      backdrop-filter: blur(22px);
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 48px;
+      align-items: center;
     }
 
     .login-brief {
-      position: relative;
-      min-height: 560px;
-      padding: 46px 42px;
-      background: #2563EB;
-      color: #fff;
-      overflow: hidden;
+      padding: 12px 8px;
     }
 
-    .login-brief::before {
-      content: "";
-      position: absolute;
-      width: 340px;
-      height: 340px;
-      right: -140px;
-      top: -110px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.08);
-    }
-
-    .login-brief::after {
-      content: "";
-      position: absolute;
-      inset: auto -20px 34px 42px;
-      height: 1px;
-      background: rgba(255,255,255,.4);
-    }
-
-    .login-mark {
-      width: 74px;
-      height: 74px;
+    .login-logo {
+      width: 72px;
+      height: 72px;
       display: grid;
       place-items: center;
-      border-radius: 24px;
-      background: #fff;
-      color: #2563EB;
-      box-shadow: 0 18px 42px rgba(0, 0, 0, .22);
-      font-size: 30px;
-      font-weight: 900;
-      letter-spacing: .04em;
+      filter: drop-shadow(0 10px 24px rgba(59, 130, 246, 0.28));
     }
 
-    .login-kicker {
-      margin-top: 78px;
-      color: rgba(255,255,255,.66);
-      font-size: 12px;
-      letter-spacing: .24em;
-      text-transform: uppercase;
+    .login-logo svg {
+      width: 72px;
+      height: 72px;
+      display: block;
     }
 
     .login-brief h1 {
-      margin: 14px 0 0;
-      max-width: 360px;
-      font-size: clamp(30px, 4vw, 42px);
-      line-height: 1.08;
-      letter-spacing: -.04em;
+      margin: 28px 0 0;
+      font-size: clamp(32px, 4vw, 44px);
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      font-weight: 800;
     }
 
     .login-brief p {
-      max-width: 360px;
       margin: 12px 0 0;
-      color: rgba(255,255,255,.76);
-      font-size: 17px;
-      font-weight: 700;
-      line-height: 1.55;
+      color: var(--login-ink);
+      font-size: 16px;
+      font-weight: 500;
     }
 
-    .login-product-note {
-      max-width: 360px;
-      margin-top: 18px;
-      color: rgba(255,255,255,.62);
-      font-size: 12px;
-      line-height: 1.8;
-    }
-
-    .login-rule {
-      position: absolute;
-      left: 42px;
-      right: 42px;
-      bottom: 42px;
-      display: grid;
+    .login-pills {
+      display: flex;
+      flex-wrap: wrap;
       gap: 10px;
-      color: rgba(255,255,255,.7);
-      font-size: 12px;
+      margin-top: 28px;
     }
 
-    .login-rule strong {
-      color: #fff;
-      font-size: 14px;
+    .login-pill {
+      padding: 8px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      background: #fff;
+      color: #6b7280;
+      font-size: 13px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
 
     .login-form {
-      padding: 56px 58px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+      padding: 40px 36px;
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.1);
     }
 
     .login-title {
-      margin: 0;
-      font-size: 30px;
-      letter-spacing: -.04em;
-    }
-
-    .login-subtitle {
-      margin: 10px 0 34px;
-      color: var(--login-muted);
-      font-size: 14px;
-      line-height: 1.7;
+      margin: 0 0 28px;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
     }
 
     .login-field {
       display: grid;
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 18px;
     }
 
     .login-field label {
       font-size: 13px;
-      font-weight: 800;
-      letter-spacing: .08em;
-      color: #344055;
+      font-weight: 600;
+      color: #64748b;
     }
 
     .login-field input {
       width: 100%;
-      height: 58px;
+      height: 48px;
       border: 1px solid var(--login-line);
-      border-radius: 18px;
-      padding: 0 18px;
-      background: rgba(255, 255, 255, .72);
+      border-radius: 10px;
+      padding: 0 14px;
+      background: #fff;
       color: var(--login-ink);
-      font-size: 17px;
+      font-size: 15px;
       outline: none;
-      transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+      box-sizing: border-box;
     }
 
     .login-field input:focus {
-      border-color: rgba(20, 125, 114, .7);
-      background: #fff;
-      box-shadow: 0 0 0 5px rgba(20, 125, 114, .11);
+      border-color: var(--login-primary);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
     }
 
     .login-submit {
       width: 100%;
-      height: 60px;
-      margin-top: 10px;
+      height: 48px;
+      margin-top: 8px;
       border: 0;
-      border-radius: 20px;
-      background: #2563EB;
+      border-radius: 10px;
+      background: var(--login-primary);
       color: #fff;
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: .12em;
+      font-size: 16px;
+      font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 18px 34px rgba(20, 125, 114, .24);
-      transition: transform .18s ease, box-shadow .18s ease;
     }
 
     .login-submit:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 22px 40px rgba(20, 125, 114, .3);
+      filter: brightness(1.05);
     }
 
     .login-message {
       min-height: 22px;
-      margin-top: 14px;
+      margin-top: 12px;
       color: #b04435;
       font-size: 13px;
     }
 
-    .login-footnote {
-      margin-top: 34px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      color: var(--login-muted);
-      font-size: 12px;
-    }
-
-    .login-footnote::before {
-      content: "";
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--login-primary);
-      box-shadow: 0 0 0 6px rgba(37, 99, 235, .12);
-    }
-
     @media (max-width: 760px) {
-      .login-stage {
-        padding: 18px;
-      }
-
-      .login-stage::before {
-        display: none;
-      }
-
-      .login-shell {
-        grid-template-columns: 1fr;
-        border-radius: 24px;
-      }
-
-      .login-brief {
-        min-height: 260px;
-        padding: 30px;
-      }
-
-      .login-kicker {
-        margin-top: 38px;
-      }
-
-      .login-rule {
-        position: static;
-        margin-top: 28px;
-      }
-
-      .login-form {
-        padding: 34px 26px;
-      }
+      .login-stage { padding: 28px 18px; }
+      .login-shell { grid-template-columns: 1fr; gap: 28px; }
+      .login-form { padding: 28px 22px; }
     }
   </style>
 </head>
@@ -280,19 +196,28 @@
   <main class="login-stage">
     <section class="login-shell" aria-label="登录到 AI 招聘管理平台">
       <aside class="login-brief">
-        <div class="login-mark">招</div>
-        <div class="login-kicker">AI Recruiting</div>
+        <div class="login-logo" aria-label="XL">
+          <svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" role="img">
+            <defs>
+              <filter id="login-hex-glow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#93c5fd" flood-opacity="0.55"/>
+              </filter>
+            </defs>
+            <polygon points="36,4 64,20 64,52 36,68 8,52 8,20" fill="#ffffff" opacity="0.85" filter="url(#login-hex-glow)"/>
+            <polygon points="36,10 58,23 58,49 36,62 14,49 14,23" fill="#3b82f6"/>
+            <text x="36" y="44" text-anchor="middle" fill="#ffffff" font-size="22" font-weight="800" font-family="Arial Black, Helvetica, sans-serif" letter-spacing="-1">XL</text>
+          </svg>
+        </div>
         <h1>AI招聘管理平台</h1>
-        <p>人力资源招聘管理系统 v3.0</p>
-        <div class="login-product-note">基于 AI 驱动的人力资源全生命周期管理平台，覆盖客户、项目、岗位、候选人、推荐交付、评价与权限协同。</div>
-        <div class="login-rule">
-          <strong>RBAC + 数据权限</strong>
-          <span>登录后系统会按身份自动收口菜单和业务数据。</span>
+        <p>人力资源管理系统 v3.0</p>
+        <div class="login-pills">
+          <span class="login-pill">智能招聘</span>
+          <span class="login-pill">权限管理</span>
+          <span class="login-pill">数据分析</span>
         </div>
       </aside>
       <form class="login-form" data-login-form>
         <h2 class="login-title">登录系统</h2>
-        <p class="login-subtitle">使用管理员分配的账号进入招聘管理后台。</p>
         <div class="login-field">
           <label for="login-username">账号</label>
           <input id="login-username" data-login-username value="admin" autocomplete="username" />
@@ -303,7 +228,6 @@
         </div>
         <button class="login-submit" type="submit" data-login-submit>登录</button>
         <div class="login-message" data-login-message></div>
-        <div class="login-footnote">权限变更会在下次登录后自动生效。</div>
       </form>
     </section>
   </main>

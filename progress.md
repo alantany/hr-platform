@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-18（完成 - 登录页 Task 2 markup）
+
+- 重写 `src/pages/login.html`：浅色渐变分栏布局、内联 SVG 六边形 XL logo、三个功能 pill。
+- 移除旧 `login-mark` / `login-footnote`；保留 `hrApi.login` 与 `reason=kicked` 脚本逻辑。
+- `tests/test_login_page_markup.py` 4 passed。
+
 ## 2026-07-18（计划 - 登录页视觉改版）
 
 - Spec 已审阅通过；实现计划已写入 `docs/superpowers/plans/2026-07-18-login-page-restyle.md`。
