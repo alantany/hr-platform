@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-18（设计 - 首页看板 Soft UI 改版）
+
+- 已确认：作用域样式升级（方案 A）；空态只改风格、不加折线图。
+- Spec：`docs/superpowers/specs/2026-07-18-dashboard-soft-ui-restyle-design.md`（待用户审阅后写实现计划）。
+
 ## 2026-07-18（完成 - 登录页 Task 3 全局样式）
 
 - 按任务简报替换 `styles.css` 登录页 `!important` 覆盖，保留浅蓝至白渐变、透明分栏壳和右侧白色圆角表单卡。
