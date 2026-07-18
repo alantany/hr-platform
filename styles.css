@@ -3255,17 +3255,40 @@ input:disabled, select:disabled, textarea:disabled { background: #f3f4f6; color:
 /* Normalize legacy inline gradients without changing page behavior. */
 [style*="linear-gradient"] { background-image: none !important; background-color: var(--primary) !important; }
 
-/* Login follows the same restrained visual system. */
-body:has(.login-stage) { color: var(--foreground) !important; background: var(--background) !important; }
-.login-stage { padding: 32px 20px !important; background: var(--background) !important; }
-.login-stage::before { display: none !important; }
-.login-shell { border: 1px solid var(--border) !important; border-radius: 12px !important; background: #fff !important; box-shadow: var(--shadow-sm) !important; backdrop-filter: none !important; }
-.login-brief { background: var(--primary) !important; }
-.login-brief::before, .login-brief::after { display: none !important; }
-.login-mark { border-radius: 12px !important; background: #fff !important; color: var(--primary) !important; box-shadow: none !important; }
-.login-form-panel { background: #fff !important; }
-.login-form-panel h2 { color: var(--foreground) !important; font-weight: 600 !important; }
-.login-submit { border-radius: 8px !important; background: var(--primary) !important; box-shadow: none !important; }
+/* Login page owns its visual system in login.html; do not flatten it here. */
+body:has(.login-stage) {
+  color: #0f172a !important;
+  background: linear-gradient(180deg, #e0f2fe 0%, #ffffff 72%) !important;
+}
+.login-stage {
+  padding: 48px 32px !important;
+  background: transparent !important;
+}
+.login-shell {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.login-brief {
+  background: transparent !important;
+  color: #0f172a !important;
+}
+.login-brief::before,
+.login-brief::after {
+  display: none !important;
+}
+.login-form {
+  background: #fff !important;
+  border-radius: 20px !important;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.1) !important;
+}
+.login-submit {
+  border-radius: 10px !important;
+  background: #3b82f6 !important;
+  box-shadow: none !important;
+}
 
 @media (max-width: 900px) {
   .sidebar { width: 220px; flex-basis: 220px; }

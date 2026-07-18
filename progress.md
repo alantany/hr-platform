@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-18（完成 - 登录页 Task 3 全局样式）
+
+- 按任务简报替换 `styles.css` 登录页 `!important` 覆盖，保留浅蓝至白渐变、透明分栏壳和右侧白色圆角表单卡。
+- `python -m pytest tests/test_login_page_markup.py -v`：4 passed；`git diff --check -- styles.css`：通过。
+- 浏览器 MCP 可用但无法创建可导航的本地页面标签，因此改为逐项核对 CSS 选择器和值；未改登录认证脚本。
+
 ## 2026-07-18（完成 - 登录页 Task 2 markup）
 
 - 重写 `src/pages/login.html`：浅色渐变分栏布局、内联 SVG 六边形 XL logo、三个功能 pill。
