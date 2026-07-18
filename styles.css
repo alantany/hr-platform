@@ -1408,8 +1408,12 @@ button, input, select { font: inherit; }
   color: #fff;
 }
 
-.dashboard-calendar-cell.has-data .dashboard-calendar-date {
+.dashboard-calendar-cell.has-data:not(.is-selected) .dashboard-calendar-date {
   color: var(--foreground);
+}
+
+.dashboard-calendar-cell.is-selected.has-data .dashboard-calendar-date {
+  color: #fff;
 }
 
 .dashboard-calendar-date {
@@ -1740,8 +1744,8 @@ button, input, select { font: inherit; }
 .dashboard-summary-chip.tone-primary,
 .dashboard-summary-chip.tone-warning,
 .dashboard-summary-chip.tone-success {
-  background: #f1f5f9;
-  border-color: var(--border);
+  background: #EFF6FF;
+  border-color: rgba(191, 219, 254, 0.8);
 }
 .dashboard-summary-chip.tone-primary strong,
 .dashboard-summary-chip.tone-warning strong,

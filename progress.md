@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-07-18（完成 - Soft UI CSS 评审 Important 修复）
+
+- 修复日历选中+有数据日期色：`has-data` 不再覆盖 `.is-selected` 白色文字。
+- 修复 summary chip `tone-*`：背景保持 Soft `#EFF6FF` + 软蓝边框。
+- `python -m pytest tests/test_dashboard_soft_ui_css.py -v`：4 passed。
+- 仅改 `styles.css`；未改 HTML / JS / API。
+
 ## 2026-07-18（完成 - 首页看板 Soft UI CSS Task 2）
 
 - 按 brief 升级 `styles.css` 看板 Soft UI：浅蓝渐变底、卡片 18px + 软阴影、日历实心蓝选中、新增 `.dashboard-kanban-card.is-filter-active`。
