@@ -26,7 +26,8 @@
 - [x] Soft UI CSS 契约测试（Task 1）
 - [x] `styles.css` Soft UI 浮卡风格（Task 2 + Important 修复）
 - [x] `dashboard.html` 缓存 `?v=20260718-dashboard-soft-ui`（Task 3）
-- [x] 回归测试与任务记录更新；push 全部未推送提交
+- [x] 回归测试与任务记录更新
+- [ ] push 全部未推送提交（GitHub 443 连接失败，本地 ahead 4，待网络恢复后推送）
 
 ## Phases
 

@@ -7,6 +7,7 @@
 - 本地 `python3 -m http.server 8765` 已启动；`curl` 确认新 `?v=` 与 Soft UI token（浅蓝底 / 18px / `#3B82F6`）可取到。
 - 浏览器 MCP 无法稳定打开本地页（同登录页收尾情况）；目视留给 controller 复核：`http://127.0.0.1:8765/src/pages/dashboard.html`。
 - 空态文案仍为「选择指标或日期查看明细」；未改业务 JS / API。
+- Commit `13d05b9` 已落盘；`GIT_HTTP_VERSION=HTTP/1.1 git push` 两次均因 github.com:443 超时失败，本地仍 ahead 4。
 
 ## 2026-07-18（完成 - Soft UI CSS 评审 Important 修复）
 
