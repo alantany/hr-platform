@@ -12,10 +12,15 @@
 - 日历选中态改为实心 `#3B82F6` + 白字；`.dashboard-kanban-card.is-filter-active` 与月度卡选中态对齐。
 - 后部设计系统覆盖若含 `.dashboard-kanban-card`，会压回 12px；需从通用 `.panel` 列表拆出并显式重申 Soft 值。
 
+## 2026-07-18（看板 KPI 真悬浮）
+
+- 悬浮靠「无描边 + 多层阴影 + 浅蓝底对比」；硬边框会把卡压成扁平。
+- `body:has(.dashboard-redesign) .content` 上浅蓝渐变，白卡才能浮起来；后部覆盖需对 `.dashboard-kanban-card` 用 `border: none !important` + 阴影 `!important`。
+
 ## 2026-07-18（看板 KPI 浮卡调性）
 
-- 顶部 KPI 去图标后更干净；边线用 `#D0D7E2` / `#C5CEDA` 比 Soft 半透明边更能分清格子。
-- 后部设计系统会对 `.dashboard-kanban-card` 再声明一遍，改浮卡样式需同步 3160/3252 一带，避免被压回。
+- 顶部 KPI 去图标后更干净；日历/月度格边线 `#C5CEDA` 便于分隔。
+- 后部设计系统会对 `.dashboard-kanban-card` 再声明一遍，改浮卡样式需同步后部覆盖，避免被压回。
 
 ## 2026-07-18（首页看板 Soft UI 改版）
 

@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>首页 - AI招聘管理平台</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260718-dashboard-kpi-float" />
+  <link rel="stylesheet" href="../../styles.css?v=20260718-dashboard-float-v2" />
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=20260718-dashboard-kpi-float"></script>
+  <script defer src="../../app.js?v=20260718-dashboard-float-v2"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -593,7 +593,6 @@
             ? `含跟踪面试与本月入职，共 ${metrics.monthlyInterviewCount} 人`
             : '本月暂无面试安排',
           tone: 'primary',
-          icon: 'interview',
         },
         {
           key: 'recommend',
@@ -603,7 +602,6 @@
             ? `本月变为已推荐 ${metrics.monthlyRecommendedCount} 条`
             : '本月暂无推荐记录',
           tone: 'success',
-          icon: 'send',
         },
         {
           key: 'employment',
@@ -611,7 +609,6 @@
           value: metrics.monthlyEmploymentCount,
           note: metrics.monthlyEmploymentCount ? '按入职日期统计已入职' : '本月暂无入职转化',
           tone: 'warning',
-          icon: 'briefcase',
         },
         {
           key: 'position',
@@ -619,7 +616,6 @@
           value: metrics.monthlyPositions.length,
           note: metrics.monthlyPositions.length ? `本月累计创建 ${metrics.monthlyPositions.length} 个岗位` : '本月暂无新增岗位',
           tone: 'danger',
-          icon: 'inbox',
         },
       ];
       container.innerHTML = cards.map((card) => {
@@ -630,10 +626,7 @@
           class="dashboard-month-card tone-${card.tone}${active}"
           data-month-metric="${card.key}"
         >
-          <div class="dashboard-month-card-top">
-            <div class="dashboard-month-card-label">${card.title}</div>
-            <span class="dashboard-month-card-icon">${DASHBOARD_ICONS[card.icon] || ''}</span>
-          </div>
+          <div class="dashboard-month-card-label">${card.title}</div>
           <div class="dashboard-month-card-value">${formatNumber(card.value)}</div>
           <div class="dashboard-month-card-note">${card.note}</div>
         </button>
