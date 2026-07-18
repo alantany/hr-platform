@@ -19,7 +19,7 @@
 
 ## Current Phase
 
-首页看板 Soft UI 改版：实现计划已就绪，待执行。维护流程：**改代码 → 更新三份 MD → commit → push**。
+首页看板 Soft UI 改版：Task 1（CSS 契约 RED）与 Task 2（styles.css Soft UI GREEN）已完成；待 Task 3（dashboard.html 缓存 bump / 目视）与收尾。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

@@ -1093,6 +1093,9 @@ button, input, select { font: inherit; }
 .dashboard-redesign {
   display: grid;
   gap: 24px;
+  padding: 4px 2px 8px;
+  background: linear-gradient(180deg, #EEF5FF 0%, #F7FAFF 55%, #FFFFFF 100%);
+  border-radius: 20px;
 }
 
 .dashboard-main-row {
@@ -1115,10 +1118,10 @@ button, input, select { font: inherit; }
   gap: 8px;
   min-height: 128px;
   padding: 20px 24px;
-  border-radius: 12px;
+  border-radius: 18px;
   background: #fff;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(226, 232, 240, 0.55);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
@@ -1128,6 +1131,12 @@ button, input, select { font: inherit; }
   border-color: var(--primary);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
   outline: none;
+}
+
+.dashboard-kanban-card.is-filter-active {
+  border-color: rgba(59, 130, 246, 0.45);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.18), 0 10px 28px rgba(59, 130, 246, 0.12);
+  background: #f8fbff;
 }
 
 .dashboard-kanban-card::before {
@@ -1156,8 +1165,8 @@ button, input, select { font: inherit; }
   height: 36px;
   flex-shrink: 0;
   border-radius: 999px;
-  background: var(--primary-soft);
-  color: var(--primary);
+  background: #EFF6FF;
+  color: #3B82F6;
 }
 
 .dashboard-kanban-icon svg {
@@ -1204,19 +1213,25 @@ button, input, select { font: inherit; }
 .dashboard-kanban-note-num {
   font-style: normal;
   font-weight: 600;
-  color: var(--primary);
+  color: #3B82F6;
 }
 .dashboard-kanban-note-num.tone-primary,
 .dashboard-kanban-note-num.tone-success,
 .dashboard-kanban-note-num.tone-warning,
 .dashboard-kanban-note-num.tone-danger,
 .dashboard-kanban-note-num.tone-neutral {
-  color: var(--primary);
+  color: #3B82F6;
 }
 
 .dashboard-calendar-panel,
-.dashboard-month-panel {
+.dashboard-month-panel,
+.dashboard-calendar-panel.panel,
+.dashboard-month-panel.panel {
   padding: 20px 24px 24px;
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.55);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  background: #fff;
 }
 
 .dashboard-section-head {
@@ -1294,9 +1309,9 @@ button, input, select { font: inherit; }
   gap: 8px;
   padding: 6px 12px;
   border-radius: 999px;
-  background: #f1f5f9;
-  border: 1px solid var(--border);
-  color: var(--muted-foreground);
+  background: #EFF6FF;
+  border: 1px solid rgba(191, 219, 254, 0.8);
+  color: #64748b;
 }
 
 .dashboard-summary-chip-icon {
@@ -1350,8 +1365,8 @@ button, input, select { font: inherit; }
   align-content: center;
   min-height: 60px;
   padding: 8px 4px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  border-radius: 12px;
   background: #fff;
   color: #475569;
   cursor: pointer;
@@ -1383,10 +1398,14 @@ button, input, select { font: inherit; }
 }
 
 .dashboard-calendar-cell.is-selected {
-  border-color: var(--primary);
-  background: var(--primary-soft);
-  color: var(--foreground);
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
+  border-color: #3B82F6;
+  background: #3B82F6;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(59, 130, 246, 0.28);
+}
+
+.dashboard-calendar-cell.is-selected .dashboard-calendar-date {
+  color: #fff;
 }
 
 .dashboard-calendar-cell.has-data .dashboard-calendar-date {
@@ -1432,7 +1451,7 @@ button, input, select { font: inherit; }
 
 .dashboard-calendar-cell.is-selected .dashboard-calendar-count,
 .dashboard-calendar-cell.is-selected .dashboard-calendar-badge {
-  color: var(--primary);
+  color: #3B82F6;
   background: #fff;
 }
 
@@ -1443,9 +1462,9 @@ button, input, select { font: inherit; }
   gap: 12px;
   margin-top: 16px;
   padding: 12px 16px;
-  border-radius: 8px;
-  background: #f8fafc;
-  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #F8FBFF;
+  border: 0;
 }
 
 .dashboard-calendar-detail-title {
@@ -1498,10 +1517,10 @@ button, input, select { font: inherit; }
   gap: 8px;
   min-height: 120px;
   padding: 20px 24px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.55);
   background: #fff;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
   text-align: left;
   cursor: pointer;
   font: inherit;
@@ -1522,8 +1541,8 @@ button, input, select { font: inherit; }
 .dashboard-month-card.tone-success.is-filter-active,
 .dashboard-month-card.tone-warning.is-filter-active,
 .dashboard-month-card.tone-danger.is-filter-active {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2), var(--shadow-sm);
+  border-color: rgba(59, 130, 246, 0.45);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.18), 0 10px 28px rgba(59, 130, 246, 0.12);
   background: #f8fbff;
 }
 
@@ -1547,8 +1566,8 @@ button, input, select { font: inherit; }
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  background: var(--primary-soft);
-  color: var(--primary);
+  background: #EFF6FF;
+  color: #3B82F6;
 }
 
 .dashboard-month-card-icon svg {
@@ -1591,12 +1610,12 @@ button, input, select { font: inherit; }
 
 .dashboard-candidate-panel {
   margin-top: 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.55);
+  border-radius: 18px;
   background: #fff;
   min-height: 200px;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 }
 
 .dashboard-detail-list {
@@ -1690,8 +1709,9 @@ button, input, select { font: inherit; }
   height: 48px;
   margin-bottom: 4px;
   border-radius: 999px;
-  background: var(--primary-soft);
-  color: var(--primary);
+  background: #EFF6FF;
+  color: #3B82F6;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.12);
 }
 
 .dashboard-detail-empty-icon svg {
@@ -3145,7 +3165,9 @@ a { color: var(--primary); }
 .grid-2, .grid-3 { gap: 16px; }
 .metrics, .stats-grid { gap: 16px; margin-bottom: 24px; }
 .page-section { margin-bottom: 24px; }
-.panel, .hero-card, .table-card, .metric-card, .stat-card, .dashboard-kanban-card, .dashboard-work-card, .dashboard-todo-card, .dashboard-calendar-card, .tag-dictionary-panel, .admin-page-card { border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-sm); }
+.panel, .hero-card, .table-card, .metric-card, .stat-card, .dashboard-work-card, .dashboard-todo-card, .dashboard-calendar-card, .tag-dictionary-panel, .admin-page-card { border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-sm); }
+.dashboard-kanban-card, .dashboard-month-card, .dashboard-candidate-panel { border: 1px solid rgba(226, 232, 240, 0.55); border-radius: 18px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
+.dashboard-calendar-panel.panel, .dashboard-month-panel.panel { border: 1px solid rgba(226, 232, 240, 0.55); border-radius: 18px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
 .panel, .hero-card, .toolbar { padding: 24px; }
 .metric-card, .stat-card { padding: 20px 24px; }
 .panel { margin-bottom: 16px; }
@@ -3236,7 +3258,7 @@ input:disabled, select:disabled, textarea:disabled { background: #f3f4f6; color:
   background: #64748b;
 }
 .dashboard-kanban-grid { gap: 16px; }
-.dashboard-kanban-card { min-height: 128px; padding: 20px 24px; border-radius: 12px; box-shadow: var(--shadow-sm); }
+.dashboard-kanban-card { min-height: 128px; padding: 20px 24px; border-radius: 18px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
 .dashboard-kanban-card::before { display: none !important; }
 .summary-chip { border-radius: 12px; background: #fff !important; }
 .summary-chip::before { width: 3px; }

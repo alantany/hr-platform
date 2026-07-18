@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-18（首页看板 Soft UI CSS）
+
+- Soft UI 视觉落在 `styles.css`：`.dashboard-redesign` 渐变底 `#EEF5FF→#F7FAFF→#fff`；卡片/面板 `border-radius: 18px` + `0 10px 28px rgba(15, 23, 42, 0.06)`。
+- 日历选中态改为实心 `#3B82F6` + 白字；`.dashboard-kanban-card.is-filter-active` 与月度卡选中态对齐。
+- 后部设计系统覆盖若含 `.dashboard-kanban-card`，会压回 12px；需从通用 `.panel` 列表拆出并显式重申 Soft 值。
+
 ## 2026-07-18（首页看板 Soft UI 改版）
 
 - 目标：截图 1 Soft UI（浅蓝底、白卡软阴影、更大圆角、日历实心选中）；截图 2 为当前扁平描边风。

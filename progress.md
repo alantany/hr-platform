@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-07-18（完成 - 首页看板 Soft UI CSS Task 2）
+
+- 按 brief 升级 `styles.css` 看板 Soft UI：浅蓝渐变底、卡片 18px + 软阴影、日历实心蓝选中、新增 `.dashboard-kanban-card.is-filter-active`。
+- 后部全局覆盖中剔除/对齐看板浮卡规则，避免 `.panel` 压扁日历/月度面板。
+- `python -m pytest tests/test_dashboard_soft_ui_css.py -v`：4 passed（TDD GREEN）。
+- 未改 `dashboard.html` / JS / API。
+
 ## 2026-07-18（计划 - 首页看板 Soft UI 改版）
 
 - Spec 已审阅通过；实现计划：`docs/superpowers/plans/2026-07-18-dashboard-soft-ui-restyle.md`。
