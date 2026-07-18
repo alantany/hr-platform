@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>首页 - AI招聘管理平台</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260719-dashboard-compact" />
+  <link rel="stylesheet" href="../../styles.css?v=20260719-calendar-tiao" />
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=20260719-dashboard-compact"></script>
+  <script defer src="../../app.js?v=20260719-calendar-tiao"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -517,7 +517,7 @@
       if (grid) {
         grid.innerHTML = cells.map((cell) => {
           const countMarkup = cell.count
-            ? `<span class="dashboard-calendar-badge"><span class="dashboard-calendar-dot"></span>${cell.count}</span>`
+            ? `<span class="dashboard-calendar-badge"><span class="dashboard-calendar-dot"></span>${cell.count}条</span>`
             : `<span class="dashboard-calendar-count is-empty">0</span>`;
           return `
           <button
