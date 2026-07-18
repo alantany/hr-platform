@@ -5341,3 +5341,132 @@ input[type="radio"],
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* list-pages soft KPI — align homepage kanban */
+.customers-page .metrics,
+.projects-page .metrics,
+.candidates-page .metrics {
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.customers-page .metrics .metric-card,
+.projects-page .metrics .metric-card,
+.candidates-page .metrics .metric-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  padding: 12px 16px 10px !important;
+  border-radius: 14px !important;
+  border: none !important;
+  background: #fff !important;
+  text-decoration: none;
+  color: inherit;
+  box-shadow:
+    0 2px 6px rgba(37, 99, 235, 0.08),
+    0 10px 24px rgba(37, 99, 235, 0.12),
+    0 20px 40px rgba(15, 23, 42, 0.08) !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  overflow: visible;
+}
+
+.customers-page .metrics .metric-card::before,
+.customers-page .metrics .metric-card::after,
+.projects-page .metrics .metric-card::before,
+.projects-page .metrics .metric-card::after,
+.candidates-page .metrics .metric-card::before,
+.candidates-page .metrics .metric-card::after {
+  content: none !important;
+  display: none !important;
+}
+
+.customers-page .metrics .metric-card:hover,
+.customers-page .metrics .metric-card:focus-visible,
+.projects-page .metrics .metric-card:hover,
+.projects-page .metrics .metric-card:focus-visible,
+.candidates-page .metrics .metric-card:hover,
+.candidates-page .metrics .metric-card:focus-visible {
+  transform: translateY(-2px);
+  border: none !important;
+  outline: none;
+  box-shadow:
+    0 4px 10px rgba(37, 99, 235, 0.1),
+    0 14px 28px rgba(37, 99, 235, 0.14),
+    0 24px 48px rgba(15, 23, 42, 0.1) !important;
+}
+
+.projects-page .metrics .metric-card.is-filter-active,
+.projects-page .metrics .metric-card.tone-primary.is-filter-active,
+.projects-page .metrics .metric-card.tone-success.is-filter-active,
+.projects-page .metrics .metric-card.tone-neutral.is-filter-active,
+.projects-page .metrics .metric-card.tone-danger.is-filter-active {
+  color: inherit;
+  background: #fff !important;
+  border: none !important;
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.22),
+    0 8px 20px rgba(37, 99, 235, 0.14),
+    0 18px 36px rgba(15, 23, 42, 0.08) !important;
+}
+
+.customers-page .metrics .metric-icon,
+.projects-page .metrics .metric-icon,
+.candidates-page .metrics .metric-icon {
+  display: none !important;
+}
+
+.customers-page .metrics .metric-top,
+.projects-page .metrics .metric-top,
+.candidates-page .metrics .metric-top {
+  margin: 0;
+}
+
+.customers-page .metrics .section-sub,
+.projects-page .metrics .section-sub,
+.candidates-page .metrics .section-sub {
+  color: #64748B;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.customers-page .metrics .metric-value,
+.customers-page .metrics .metric-card.tone-primary .metric-value,
+.customers-page .metrics .metric-card.tone-success .metric-value,
+.customers-page .metrics .metric-card.tone-warning .metric-value,
+.customers-page .metrics .metric-card.tone-neutral .metric-value,
+.projects-page .metrics .metric-value,
+.projects-page .metrics .metric-card.tone-primary .metric-value,
+.projects-page .metrics .metric-card.tone-success .metric-value,
+.projects-page .metrics .metric-card.tone-neutral .metric-value,
+.projects-page .metrics .metric-card.tone-danger .metric-value,
+.projects-page .metrics .metric-value.is-zero,
+.projects-page .metrics .metric-value.is-urgent,
+.candidates-page .metrics .metric-value,
+.candidates-page .metrics .metric-card.tone-primary .metric-value,
+.candidates-page .metrics .metric-card.tone-success .metric-value,
+.candidates-page .metrics .metric-card.tone-warning .metric-value {
+  margin-top: 0 !important;
+  font-family: inherit;
+  font-size: clamp(22px, 1.8vw, 26px);
+  line-height: 1.15;
+  font-weight: 700;
+  color: #0F172A !important;
+}
+
+.customers-page .metrics .metric-label,
+.projects-page .metrics .metric-label,
+.candidates-page .metrics .metric-label {
+  margin-top: 0;
+  color: #94A3B8;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.candidates-page .metrics .metric-trend {
+  color: #94A3B8 !important;
+  font-weight: 400;
+}
