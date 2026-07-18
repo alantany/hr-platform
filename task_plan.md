@@ -19,7 +19,7 @@
 
 ## Current Phase
 
-首页看板 Soft UI 改版：Task 1–3 已完成（CSS 契约 → Soft UI styles → 缓存 bump / 收尾）。浏览器 MCP 未能完成目视，本地 `http://127.0.0.1:8765` 可供 controller 复核。维护流程：**改代码 → 更新三份 MD → commit → push**。
+首页看板 Soft UI 改版已完成（已 push）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## 2026-07-18 首页看板 Soft UI 改版完成记录
 
@@ -27,7 +27,7 @@
 - [x] `styles.css` Soft UI 浮卡风格（Task 2 + Important 修复）
 - [x] `dashboard.html` 缓存 `?v=20260718-dashboard-soft-ui`（Task 3）
 - [x] 回归测试与任务记录更新
-- [ ] push 全部未推送提交（GitHub 443 连接失败，本地 ahead 4，待网络恢复后推送）
+- [x] push 至 `origin/main`（`bf3192e..b8eb758`）；controller 目视验收通过
 
 ## Phases
 
