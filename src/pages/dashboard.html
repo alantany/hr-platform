@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>首页 - AI招聘管理平台</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260718-dashboard-soft-ui" />
+  <link rel="stylesheet" href="../../styles.css?v=20260718-dashboard-kpi-float" />
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=20260718-dashboard-soft-ui"></script>
+  <script defer src="../../app.js?v=20260718-dashboard-kpi-float"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -427,7 +427,6 @@
           value: dashboardState.summary.candidate_count,
           note: `本月推荐 ${metrics.monthlyRecommendedCount} 人`,
           tone: 'primary',
-          icon: 'users',
           link: './candidates.html',
         },
         {
@@ -435,7 +434,6 @@
           value: dashboardState.summary.company_count,
           note: `当前有 ${metrics.activeProjects} 个项目在推进`,
           tone: 'success',
-          icon: 'building',
           link: './customers.html',
         },
         {
@@ -443,7 +441,6 @@
           value: dashboardState.summary.recommendation_count,
           note: `本月入职 ${metrics.monthlyEmploymentCount} 人`,
           tone: 'warning',
-          icon: 'send',
           link: './candidates.html?exclude=recommended',
         },
         {
@@ -451,7 +448,6 @@
           value: dashboardState.todos.length,
           note: dashboardState.todos.length ? `有 ${dashboardState.todos.length} 个岗位等待确认` : '当前没有待确认岗位',
           tone: 'danger',
-          icon: 'inbox',
           link: './notifications.html?tab=position-tasks',
         },
         {
@@ -459,16 +455,12 @@
           value: dashboardState.summary.user_count,
           note: `本月活跃顾问 ${metrics.activeOperators} 人`,
           tone: 'neutral',
-          icon: 'userCog',
           link: './users.html',
         },
       ];
       container.innerHTML = cards.map((card) => `
         <a href="${card.link}" class="dashboard-kanban-card tone-${card.tone}" style="display: block; text-decoration: none;">
-          <div class="dashboard-kanban-card-top">
-            <div class="dashboard-kanban-title">${card.title}</div>
-            <span class="dashboard-kanban-icon">${DASHBOARD_ICONS[card.icon] || ''}</span>
-          </div>
+          <div class="dashboard-kanban-title">${card.title}</div>
           <div class="dashboard-kanban-body">
             <strong class="dashboard-kanban-value">${formatNumber(card.value)}</strong>
             <span class="dashboard-kanban-note">${colorizeNote(card.note, card.tone)}</span>

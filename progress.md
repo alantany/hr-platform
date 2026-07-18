@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-18（完成 - 看板 KPI 浮卡与边线加深）
+
+- 顶部 5 卡去掉图标；悬浮轻阴影 + 商务灰蓝描边（`#D0D7E2`），更贴合简约商务调性。
+- 日历格 / 月度卡边线加深为 `#C5CEDA`，分隔更明显。
+- 文件：`styles.css`、`src/pages/dashboard.html`（缓存 `?v=20260718-dashboard-kpi-float`）。
+
 ## 2026-07-18（完成 - Soft UI Task 3 缓存 bump / 收尾）
 
 - `dashboard.html` 的 `styles.css` / `app.js` 缓存参数 bump 为 `?v=20260718-dashboard-soft-ui`。

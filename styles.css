@@ -1108,35 +1108,35 @@ button, input, select { font: inherit; }
 .dashboard-kanban-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 16px;
+  gap: 18px;
 }
 
 .dashboard-kanban-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-height: 128px;
-  padding: 20px 24px;
-  border-radius: 18px;
+  gap: 10px;
+  min-height: 120px;
+  padding: 22px 22px 20px;
+  border-radius: 16px;
   background: #fff;
-  border: 1px solid rgba(226, 232, 240, 0.55);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  border: 1px solid #D0D7E2;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.04);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .dashboard-kanban-card:hover,
 .dashboard-kanban-card:focus-visible {
-  transform: translateY(-2px);
-  border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+  transform: translateY(-3px);
+  border-color: #B8C4D4;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05);
   outline: none;
 }
 
 .dashboard-kanban-card.is-filter-active {
-  border-color: rgba(59, 130, 246, 0.45);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.18), 0 10px 28px rgba(59, 130, 246, 0.12);
-  background: #f8fbff;
+  border-color: #93C5FD;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.16), 0 12px 28px rgba(59, 130, 246, 0.1);
+  background: #F8FBFF;
 }
 
 .dashboard-kanban-card::before {
@@ -1151,27 +1151,14 @@ button, input, select { font: inherit; }
 }
 
 .dashboard-kanban-title {
-  color: var(--muted-foreground);
+  color: #64748B;
   font-size: 13px;
   font-weight: 500;
   line-height: 1.4;
 }
 
 .dashboard-kanban-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: #EFF6FF;
-  color: #3B82F6;
-}
-
-.dashboard-kanban-icon svg {
-  width: 20px;
-  height: 20px;
+  display: none;
 }
 
 .dashboard-kanban-body {
@@ -1179,7 +1166,7 @@ button, input, select { font: inherit; }
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .dashboard-kanban-body strong,
@@ -1365,7 +1352,7 @@ button, input, select { font: inherit; }
   align-content: center;
   min-height: 60px;
   padding: 8px 4px;
-  border: 1px solid rgba(226, 232, 240, 0.7);
+  border: 1px solid #C5CEDA;
   border-radius: 12px;
   background: #fff;
   color: #475569;
@@ -1521,8 +1508,8 @@ button, input, select { font: inherit; }
   gap: 8px;
   min-height: 120px;
   padding: 20px 24px;
-  border-radius: 18px;
-  border: 1px solid rgba(226, 232, 240, 0.55);
+  border-radius: 16px;
+  border: 1px solid #C5CEDA;
   background: #fff;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
   text-align: left;
@@ -3170,7 +3157,9 @@ a { color: var(--primary); }
 .metrics, .stats-grid { gap: 16px; margin-bottom: 24px; }
 .page-section { margin-bottom: 24px; }
 .panel, .hero-card, .table-card, .metric-card, .stat-card, .dashboard-work-card, .dashboard-todo-card, .dashboard-calendar-card, .tag-dictionary-panel, .admin-page-card { border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-sm); }
-.dashboard-kanban-card, .dashboard-month-card, .dashboard-candidate-panel { border: 1px solid rgba(226, 232, 240, 0.55); border-radius: 18px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
+.dashboard-kanban-card { border: 1px solid #D0D7E2; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.04); }
+.dashboard-month-card, .dashboard-candidate-panel { border: 1px solid #C5CEDA; border-radius: 16px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
+.dashboard-calendar-cell { border: 1px solid #C5CEDA; }
 .dashboard-calendar-panel.panel, .dashboard-month-panel.panel { border: 1px solid rgba(226, 232, 240, 0.55); border-radius: 18px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
 .panel, .hero-card, .toolbar { padding: 24px; }
 .metric-card, .stat-card { padding: 20px 24px; }
@@ -3262,8 +3251,9 @@ input:disabled, select:disabled, textarea:disabled { background: #f3f4f6; color:
   background: #64748b;
 }
 .dashboard-kanban-grid { gap: 16px; }
-.dashboard-kanban-card { min-height: 128px; padding: 20px 24px; border-radius: 18px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
+.dashboard-kanban-card { min-height: 120px; padding: 22px 22px 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.04); }
 .dashboard-kanban-card::before { display: none !important; }
+.dashboard-kanban-icon { display: none !important; }
 .summary-chip { border-radius: 12px; background: #fff !important; }
 .summary-chip::before { width: 3px; }
 .position-candidates-summary { padding: 24px; gap: 16px; }
