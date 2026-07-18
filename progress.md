@@ -1,9 +1,14 @@
 # Progress
 
+## 2026-07-18（计划 - 登录页视觉改版）
+
+- Spec 已审阅通过；实现计划已写入 `docs/superpowers/plans/2026-07-18-login-page-restyle.md`。
+- 待执行：markup 契约测试 → 重写 login.html → 调整 styles.css 覆盖 → 收尾提交。
+
 ## 2026-07-18（设计 - 登录页视觉改版）
 
 - 已确认方案 A：页内 SVG 六边形 XL logo + 浅色分栏登录布局。
-- Spec：`docs/superpowers/specs/2026-07-18-login-page-restyle-design.md`（待用户审阅后写实现计划）。
+- Spec：`docs/superpowers/specs/2026-07-18-login-page-restyle-design.md`。
 
 ## 2026-07-15（岗位发布 KPI 文案精简）
 
