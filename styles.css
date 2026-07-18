@@ -1255,6 +1255,13 @@ body:has(.dashboard-redesign) .content {
   color: var(--foreground);
 }
 
+.dashboard-month-hint {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
 .dashboard-section-head .panel-sub {
   margin: 4px 0 0;
   font-size: 13px;
