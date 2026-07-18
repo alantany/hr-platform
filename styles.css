@@ -5119,35 +5119,41 @@ input[type="radio"],
   min-width: 0;
 }
 .candidates-page .candidate-search-keyword {
-  flex: 1 1 280px;
+  flex: 1 1 220px;
+  max-width: 420px;
 }
 .candidates-page .candidate-search-city {
   position: relative;
-  flex: 0 1 200px;
-  min-width: 160px;
+  flex: 0 0 240px;
+  min-width: 220px;
+  max-width: 260px;
 }
 .candidates-page .candidate-search-keyword .input-search,
 .candidates-page .candidate-search-city .input-search {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
+  width: 100%;
 }
 .candidates-page .candidate-search-keyword .input,
 .candidates-page .candidate-search-city .input {
   height: 34px;
+  max-width: 100%;
 }
 .candidates-page .candidate-search-actions {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  min-width: 0;
-  margin-left: auto;
+  flex: 0 0 auto;
+  margin-left: 0;
 }
 .candidates-page .candidate-search-actions .btn {
   width: auto;
   min-height: 34px;
   height: 34px;
   padding: 0 12px;
+  flex-shrink: 0;
 }
 .candidates-page .candidate-filter-hotkeys {
   display: flex;
