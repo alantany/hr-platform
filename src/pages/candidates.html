@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>求职者数据池</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260719-list-kpi-soft" />
+  <link rel="stylesheet" href="../../styles.css?v=20260719-cand-filter-compact" />
   <style>
     .province-item, .city-item, .search-result-item {
       padding: 8px 12px;
@@ -26,7 +26,7 @@
     }
   </style>
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=20260719-list-kpi-soft"></script>
+  <script defer src="../../app.js?v=20260719-cand-filter-compact"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -72,7 +72,7 @@
         </div>
       </section>
 
-      <section class="panel candidate-search-toolbar">
+      <section class="panel candidate-search-toolbar candidate-filter-compact">
         <div class="toolbar candidate-search-fields">
           <div class="candidate-search-keyword">
             <label class="candidate-search-field-label">关键词</label>
@@ -103,9 +103,6 @@
             <button class="btn primary" data-action="open-ai-search-modal">AI 检索</button>
           </div>
         </div>
-      </section>
-
-      <section class="panel candidate-filter-compact">
         <div class="candidate-filter-hotkeys">
           <span class="candidate-filter-label">猜你想搜</span>
           <div class="skills" data-hotkey-container>

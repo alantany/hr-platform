@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-19（候选人筛选区压缩）
+
+- 搜索 toolbar 与 filter compact 合并为同一 `panel`；标签左置横排可显著降低垂直占用。
+- 作用域限制在 `.candidates-page`，不改搜索/热词/筛选 JS。
+
 ## 2026-07-19（列表页顶部 KPI 对齐首页）
 
 - 范围仅客户/项目/候选人三页 `.metrics` 内 `metric-card`；下方筛选/表格不动。

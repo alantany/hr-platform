@@ -5071,37 +5071,69 @@ input[type="radio"],
 }
 .candidates-page .candidates-pool-top {
   display: grid;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 .candidates-page .candidates-pool-top .panel {
   margin: 0;
-  padding: 16px 20px;
+  padding: 10px 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+/* 搜索+筛选合并为一卡，标签横排压高度 */
+.candidates-page .panel.candidate-search-toolbar.candidate-filter-compact {
+  display: grid;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
 }
 .candidates-page .candidate-search-field-label,
 .candidates-page .candidate-search-field-label--keyword,
 .candidates-page .candidate-search-field-label--city {
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin: 0;
   color: var(--color-text-muted) !important;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
 }
 .candidates-page .candidate-search-fields {
   display: flex;
-  align-items: flex-end;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
 }
-.candidates-page .candidate-search-keyword {
-  flex: 1 1 320px;
+.candidates-page .candidate-search-keyword,
+.candidates-page .candidate-search-city {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
+.candidates-page .candidate-search-keyword {
+  flex: 1 1 280px;
+}
 .candidates-page .candidate-search-city {
-  flex: 0 1 220px;
-  min-width: 180px;
+  position: relative;
+  flex: 0 1 200px;
+  min-width: 160px;
+}
+.candidates-page .candidate-search-keyword .input-search,
+.candidates-page .candidate-search-city .input-search {
+  flex: 1;
+  min-width: 0;
+}
+.candidates-page .candidate-search-keyword .input,
+.candidates-page .candidate-search-city .input {
+  height: 34px;
 }
 .candidates-page .candidate-search-actions {
   display: flex;
@@ -5109,22 +5141,27 @@ input[type="radio"],
   align-items: center;
   gap: 8px;
   min-width: 0;
+  margin-left: auto;
 }
 .candidates-page .candidate-search-actions .btn {
   width: auto;
-  min-height: 40px;
-}
-.candidates-page .candidate-filter-compact {
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  box-shadow: none;
+  min-height: 34px;
+  height: 34px;
+  padding: 0 12px;
 }
 .candidates-page .candidate-filter-hotkeys {
-  border: 1px solid var(--color-border);
-  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 .candidates-page .candidate-filter-label {
   color: var(--color-text-muted);
+  font-size: 12px;
   font-weight: 600;
 }
 .candidates-page .candidate-filter-compact .skill-tag,
@@ -5134,6 +5171,10 @@ input[type="radio"],
   background: #f1f5f9 !important;
   color: var(--color-text-muted) !important;
   font-weight: 500 !important;
+  font-size: 12px !important;
+  padding: 2px 8px !important;
+  min-height: 24px;
+  line-height: 1.2;
   box-shadow: none !important;
 }
 .candidates-page .candidate-filter-compact .skill-tag:hover {
@@ -5146,13 +5187,43 @@ input[type="radio"],
   background: var(--color-primary) !important;
   color: #fff !important;
 }
+.candidates-page .candidate-filter-selects {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.candidates-page .candidate-filter-field {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 120px;
+}
 .candidates-page .candidate-filter-field span,
 .candidates-page .candidate-filter-field:nth-child(n) span {
+  flex: 0 0 auto;
   color: var(--color-text-muted) !important;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.candidates-page .candidate-filter-field .input {
+  height: 34px;
+  min-width: 0;
+  flex: 1;
 }
 .candidates-page .candidate-filter-selects .btn,
 .candidates-page .candidate-filter-selects .btn.primary,
 .candidates-page .candidate-filter-selects .btn.success {
+  flex: 0 0 auto;
+  height: 34px;
+  margin-left: auto;
   border-color: var(--color-primary) !important;
   background: var(--color-primary) !important;
   color: #fff !important;
@@ -5160,6 +5231,16 @@ input[type="radio"],
 .candidates-page .candidate-filter-selects .btn:hover {
   border-color: #1d4ed8 !important;
   background: #1d4ed8 !important;
+}
+@media (max-width: 900px) {
+  .candidates-page .candidate-search-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  .candidates-page .candidate-filter-selects .btn {
+    margin-left: 0;
+    width: 100%;
+  }
 }
 .candidates-page .panel.candidate-list-panel {
   margin: 0;
