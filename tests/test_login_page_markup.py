@@ -18,9 +18,10 @@ def test_login_page_brand_copy_and_pills():
     html = _html()
     assert "AI招聘管理平台" in html
     assert "人力资源管理系统 v3.0" in html
-    assert "智能招聘" in html
-    assert "权限管理" in html
-    assert "数据分析" in html
+    assert "AI简历筛选" in html
+    assert "JD自动匹配" in html
+    assert "候选状态跟踪" in html
+    assert "招聘交付闭环" in html
 
 
 def test_login_page_keeps_auth_hooks():

@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-19（登录页能力标语）
+
+- 登录页 pill 定位为「智能 + 交付」兼顾：前两条强调 AI/JD 能力，后两条强调候选人跟踪与招聘交付闭环。
+- 避免「人岗」等内部术语；保留「JD」更易懂。字数大致对齐，并用 `min-width` 保证 pill 视觉宽度一致。
+
 ## 2026-07-19（招聘相关页 KPI 统一 Soft）
 
 - 任务看板在 `notifications.html`（`.notices-page`）；岗位发布/列表/每日任务分别为 `.job-publish-page` / `.recruit-job-list-page` / `.daily-tasks-page`。
