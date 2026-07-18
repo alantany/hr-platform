@@ -1113,46 +1113,77 @@ body:has(.dashboard-redesign) .content {
 .dashboard-kanban-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 18px;
+  gap: 22px;
+  padding-bottom: 10px;
 }
 
 .dashboard-kanban-card {
   position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 120px;
+  min-height: 124px;
   padding: 22px 22px 20px;
-  border-radius: 16px;
-  background: #fff;
-  border: none;
+  border-radius: 22px;
+  border: 1px solid rgba(191, 219, 254, 0.85);
+  background: linear-gradient(165deg, #F4F9FF 0%, #EAF3FF 48%, #FFFFFF 100%);
   box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 8px 24px rgba(15, 23, 42, 0.06),
-    0 16px 40px rgba(59, 130, 246, 0.08);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+    0 1px 2px rgba(59, 130, 246, 0.05),
+    0 8px 20px rgba(59, 130, 246, 0.08),
+    0 18px 40px rgba(15, 23, 42, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  isolation: isolate;
 }
 
 .dashboard-kanban-card:hover,
 .dashboard-kanban-card:focus-visible {
-  transform: translateY(-4px);
+  transform: translateY(-5px);
   box-shadow:
-    0 2px 6px rgba(15, 23, 42, 0.05),
-    0 14px 32px rgba(15, 23, 42, 0.08),
-    0 22px 48px rgba(59, 130, 246, 0.12);
+    0 2px 6px rgba(59, 130, 246, 0.08),
+    0 14px 28px rgba(59, 130, 246, 0.12),
+    0 24px 48px rgba(15, 23, 42, 0.08);
   outline: none;
 }
 
 .dashboard-kanban-card.is-filter-active {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: linear-gradient(165deg, #EAF3FF 0%, #DBEAFE 45%, #FFFFFF 100%);
   box-shadow:
-    0 0 0 1px rgba(59, 130, 246, 0.22),
-    0 10px 28px rgba(59, 130, 246, 0.14),
-    0 18px 40px rgba(15, 23, 42, 0.06);
-  background: #F8FBFF;
+    0 0 0 1px rgba(59, 130, 246, 0.18),
+    0 10px 24px rgba(59, 130, 246, 0.14),
+    0 20px 40px rgba(15, 23, 42, 0.06);
 }
 
+/* 底部叠一层浅色卡片 */
 .dashboard-kanban-card::before {
-  display: none;
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 10px;
+  right: 10px;
+  bottom: -8px;
+  height: 100%;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #E8F1FF 0%, #F5F9FF 100%);
+  border: 1px solid rgba(191, 219, 254, 0.7);
+  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.06);
+  pointer-events: none;
+}
+
+.dashboard-kanban-card::after {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  left: 18px;
+  right: 18px;
+  bottom: -14px;
+  height: 100%;
+  border-radius: 18px;
+  background: #F0F6FF;
+  border: 1px solid rgba(191, 219, 254, 0.45);
+  opacity: 0.9;
+  pointer-events: none;
 }
 
 .dashboard-kanban-card-top {
@@ -3169,13 +3200,13 @@ a { color: var(--primary); }
 .page-section { margin-bottom: 24px; }
 .panel, .hero-card, .table-card, .metric-card, .stat-card, .dashboard-work-card, .dashboard-todo-card, .dashboard-calendar-card, .tag-dictionary-panel, .admin-page-card { border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-sm); }
 .dashboard-kanban-card {
-  border: none !important;
-  border-radius: 16px !important;
-  background: #fff !important;
+  border: 1px solid rgba(191, 219, 254, 0.85) !important;
+  border-radius: 22px !important;
+  background: linear-gradient(165deg, #F4F9FF 0%, #EAF3FF 48%, #FFFFFF 100%) !important;
   box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 8px 24px rgba(15, 23, 42, 0.06),
-    0 16px 40px rgba(59, 130, 246, 0.08) !important;
+    0 1px 2px rgba(59, 130, 246, 0.05),
+    0 8px 20px rgba(59, 130, 246, 0.08),
+    0 18px 40px rgba(15, 23, 42, 0.06) !important;
 }
 .dashboard-month-card, .dashboard-candidate-panel { border: 1px solid #BFDBFE; border-radius: 16px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06); }
 .dashboard-month-card-icon { display: none !important; }
@@ -3277,26 +3308,56 @@ input:disabled, select:disabled, textarea:disabled { background: #f3f4f6; color:
 .recommend-modal-body::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
-.dashboard-kanban-grid { gap: 18px; }
+.dashboard-kanban-grid { gap: 22px; padding-bottom: 10px; }
 .dashboard-kanban-card {
-  min-height: 120px;
+  min-height: 124px;
   padding: 22px 22px 20px;
-  border: none !important;
-  border-radius: 16px !important;
+  border: 1px solid rgba(191, 219, 254, 0.85) !important;
+  border-radius: 22px !important;
+  background: linear-gradient(165deg, #F4F9FF 0%, #EAF3FF 48%, #FFFFFF 100%) !important;
   box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 8px 24px rgba(15, 23, 42, 0.06),
-    0 16px 40px rgba(59, 130, 246, 0.08) !important;
+    0 1px 2px rgba(59, 130, 246, 0.05),
+    0 8px 20px rgba(59, 130, 246, 0.08),
+    0 18px 40px rgba(15, 23, 42, 0.06) !important;
 }
 .dashboard-kanban-card:hover,
 .dashboard-kanban-card:focus-visible {
-  transform: translateY(-4px);
+  transform: translateY(-5px);
   box-shadow:
-    0 2px 6px rgba(15, 23, 42, 0.05),
-    0 14px 32px rgba(15, 23, 42, 0.08),
-    0 22px 48px rgba(59, 130, 246, 0.12) !important;
+    0 2px 6px rgba(59, 130, 246, 0.08),
+    0 14px 28px rgba(59, 130, 246, 0.12),
+    0 24px 48px rgba(15, 23, 42, 0.08) !important;
 }
-.dashboard-kanban-card::before { display: none !important; }
+.dashboard-kanban-card::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  z-index: -1;
+  left: 10px;
+  right: 10px;
+  bottom: -8px;
+  height: 100%;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #E8F1FF 0%, #F5F9FF 100%);
+  border: 1px solid rgba(191, 219, 254, 0.7);
+  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.06);
+  pointer-events: none;
+}
+.dashboard-kanban-card::after {
+  content: "";
+  display: block;
+  position: absolute;
+  z-index: -2;
+  left: 18px;
+  right: 18px;
+  bottom: -14px;
+  height: 100%;
+  border-radius: 18px;
+  background: #F0F6FF;
+  border: 1px solid rgba(191, 219, 254, 0.45);
+  opacity: 0.9;
+  pointer-events: none;
+}
 .dashboard-kanban-icon { display: none !important; }
 .dashboard-month-card-icon { display: none !important; }
 .summary-chip { border-radius: 12px; background: #fff !important; }
