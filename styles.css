@@ -1572,7 +1572,7 @@ body:has(.dashboard-redesign) .content {
   font-size: 32px;
   line-height: 1.15;
   font-weight: 700;
-  color: var(--foreground);
+  color: #3B82F6;
 }
 
 .dashboard-month-card.tone-primary .dashboard-month-card-value,
@@ -1580,7 +1580,7 @@ body:has(.dashboard-redesign) .content {
 .dashboard-month-card.tone-warning .dashboard-month-card-value,
 .dashboard-month-card.tone-danger .dashboard-month-card-value,
 .dashboard-month-card.tone-neutral .dashboard-month-card-value {
-  color: var(--foreground);
+  color: #3B82F6;
 }
 
 .dashboard-month-card-note {
@@ -1597,6 +1597,17 @@ body:has(.dashboard-redesign) .content {
 .dashboard-month-card.tone-danger .dashboard-month-card-note,
 .dashboard-month-card.tone-neutral .dashboard-month-card-note {
   color: var(--muted-foreground);
+}
+
+.dashboard-month-card-note .dashboard-kanban-note-num,
+.dashboard-month-card-note .dashboard-kanban-note-num.tone-primary,
+.dashboard-month-card-note .dashboard-kanban-note-num.tone-success,
+.dashboard-month-card-note .dashboard-kanban-note-num.tone-warning,
+.dashboard-month-card-note .dashboard-kanban-note-num.tone-danger,
+.dashboard-month-card-note .dashboard-kanban-note-num.tone-neutral {
+  font-style: normal;
+  font-weight: 700;
+  color: #3B82F6;
 }
 
 .dashboard-candidate-panel {
