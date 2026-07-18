@@ -110,13 +110,23 @@
     .login-pill {
       min-width: 7.5em;
       padding: 8px 14px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid #BFDBFE;
       border-radius: 999px;
-      background: #fff;
-      color: #6b7280;
+      background: #EFF6FF;
+      color: #2563eb;
       font-size: 13px;
+      font-weight: 500;
       text-align: center;
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      box-shadow: 0 1px 2px rgba(59, 130, 246, 0.06);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      cursor: default;
+    }
+
+    .login-pill:hover {
+      transform: translateY(-2px);
+      border-color: #93C5FD;
+      background: #DBEAFE;
+      box-shadow: 0 8px 18px rgba(59, 130, 246, 0.18);
     }
 
     .login-form {
