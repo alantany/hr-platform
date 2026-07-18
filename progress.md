@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-18（设计 - 登录页视觉改版）
+
+- 已确认方案 A：页内 SVG 六边形 XL logo + 浅色分栏登录布局。
+- Spec：`docs/superpowers/specs/2026-07-18-login-page-restyle-design.md`（待用户审阅后写实现计划）。
+
 ## 2026-07-15（岗位发布 KPI 文案精简）
 
 - 3 个数字看板去掉数字下方说明文案；第一卡名称改为「岗位总数」。
