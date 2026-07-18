@@ -5437,14 +5437,22 @@ input[type="radio"],
 /* list-pages soft KPI — align homepage kanban */
 .customers-page .metrics,
 .projects-page .metrics,
-.candidates-page .metrics {
+.candidates-page .metrics,
+.notices-page .metrics,
+.job-publish-page .metrics,
+.recruit-job-list-page .metrics,
+.daily-tasks-page .metrics {
   gap: 12px;
   margin-bottom: 0;
 }
 
 .customers-page .metrics .metric-card,
 .projects-page .metrics .metric-card,
-.candidates-page .metrics .metric-card {
+.candidates-page .metrics .metric-card,
+.notices-page .metrics .metric-card,
+.job-publish-page .metrics .metric-card,
+.recruit-job-list-page .metrics .metric-card,
+.daily-tasks-page .metrics .metric-card {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -5469,7 +5477,15 @@ input[type="radio"],
 .projects-page .metrics .metric-card::before,
 .projects-page .metrics .metric-card::after,
 .candidates-page .metrics .metric-card::before,
-.candidates-page .metrics .metric-card::after {
+.candidates-page .metrics .metric-card::after,
+.notices-page .metrics .metric-card::before,
+.notices-page .metrics .metric-card::after,
+.job-publish-page .metrics .metric-card::before,
+.job-publish-page .metrics .metric-card::after,
+.recruit-job-list-page .metrics .metric-card::before,
+.recruit-job-list-page .metrics .metric-card::after,
+.daily-tasks-page .metrics .metric-card::before,
+.daily-tasks-page .metrics .metric-card::after {
   content: none !important;
   display: none !important;
 }
@@ -5479,7 +5495,15 @@ input[type="radio"],
 .projects-page .metrics .metric-card:hover,
 .projects-page .metrics .metric-card:focus-visible,
 .candidates-page .metrics .metric-card:hover,
-.candidates-page .metrics .metric-card:focus-visible {
+.candidates-page .metrics .metric-card:focus-visible,
+.notices-page .metrics .metric-card:hover,
+.notices-page .metrics .metric-card:focus-visible,
+.job-publish-page .metrics .metric-card:hover,
+.job-publish-page .metrics .metric-card:focus-visible,
+.recruit-job-list-page .metrics .metric-card:hover,
+.recruit-job-list-page .metrics .metric-card:focus-visible,
+.daily-tasks-page .metrics .metric-card:hover,
+.daily-tasks-page .metrics .metric-card:focus-visible {
   transform: translateY(-2px);
   border: none !important;
   outline: none;
@@ -5493,7 +5517,17 @@ input[type="radio"],
 .projects-page .metrics .metric-card.tone-primary.is-filter-active,
 .projects-page .metrics .metric-card.tone-success.is-filter-active,
 .projects-page .metrics .metric-card.tone-neutral.is-filter-active,
-.projects-page .metrics .metric-card.tone-danger.is-filter-active {
+.projects-page .metrics .metric-card.tone-danger.is-filter-active,
+.recruit-job-list-page .metrics .metric-card.is-filter-active,
+.recruit-job-list-page .metrics .metric-card.tone-primary.is-filter-active,
+.recruit-job-list-page .metrics .metric-card.tone-success.is-filter-active,
+.recruit-job-list-page .metrics .metric-card.tone-warning.is-filter-active,
+.recruit-job-list-page .metrics .metric-card.tone-neutral.is-filter-active,
+.notices-page .metrics .metric-card.is-filter-active,
+.notices-page .metrics .metric-card.tone-primary.is-filter-active,
+.notices-page .metrics .metric-card.tone-danger.is-filter-active,
+.notices-page .metrics .metric-card.tone-warning.is-filter-active,
+.notices-page .metrics .metric-card.tone-success.is-filter-active {
   color: inherit;
   background: #fff !important;
   border: none !important;
@@ -5505,19 +5539,31 @@ input[type="radio"],
 
 .customers-page .metrics .metric-icon,
 .projects-page .metrics .metric-icon,
-.candidates-page .metrics .metric-icon {
+.candidates-page .metrics .metric-icon,
+.notices-page .metrics .metric-icon,
+.job-publish-page .metrics .metric-icon,
+.recruit-job-list-page .metrics .metric-icon,
+.daily-tasks-page .metrics .metric-icon {
   display: none !important;
 }
 
 .customers-page .metrics .metric-top,
 .projects-page .metrics .metric-top,
-.candidates-page .metrics .metric-top {
+.candidates-page .metrics .metric-top,
+.notices-page .metrics .metric-top,
+.job-publish-page .metrics .metric-top,
+.recruit-job-list-page .metrics .metric-top,
+.daily-tasks-page .metrics .metric-top {
   margin: 0;
 }
 
 .customers-page .metrics .section-sub,
 .projects-page .metrics .section-sub,
-.candidates-page .metrics .section-sub {
+.candidates-page .metrics .section-sub,
+.notices-page .metrics .section-sub,
+.job-publish-page .metrics .section-sub,
+.recruit-job-list-page .metrics .section-sub,
+.daily-tasks-page .metrics .section-sub {
   color: #64748B;
   font-size: 12px;
   font-weight: 500;
@@ -5539,7 +5585,29 @@ input[type="radio"],
 .candidates-page .metrics .metric-value,
 .candidates-page .metrics .metric-card.tone-primary .metric-value,
 .candidates-page .metrics .metric-card.tone-success .metric-value,
-.candidates-page .metrics .metric-card.tone-warning .metric-value {
+.candidates-page .metrics .metric-card.tone-warning .metric-value,
+.notices-page .metrics .metric-value,
+.notices-page .metrics .metric-card.tone-primary .metric-value,
+.notices-page .metrics .metric-card.tone-success .metric-value,
+.notices-page .metrics .metric-card.tone-warning .metric-value,
+.notices-page .metrics .metric-card.tone-danger .metric-value,
+.notices-page .metrics .metric-value.is-zero,
+.notices-page .metrics .metric-value.is-urgent,
+.notices-page .metrics .metric-value.is-direct,
+.job-publish-page .metrics .metric-value,
+.job-publish-page .metrics .metric-card.tone-primary .metric-value,
+.job-publish-page .metrics .metric-card.tone-success .metric-value,
+.job-publish-page .metrics .metric-card.tone-warning .metric-value,
+.recruit-job-list-page .metrics .metric-value,
+.recruit-job-list-page .metrics .metric-card.tone-primary .metric-value,
+.recruit-job-list-page .metrics .metric-card.tone-success .metric-value,
+.recruit-job-list-page .metrics .metric-card.tone-warning .metric-value,
+.recruit-job-list-page .metrics .metric-card.tone-neutral .metric-value,
+.daily-tasks-page .metrics .metric-value,
+.daily-tasks-page .metrics .metric-card.tone-primary .metric-value,
+.daily-tasks-page .metrics .metric-card.tone-success .metric-value,
+.daily-tasks-page .metrics .metric-card.tone-warning .metric-value,
+.daily-tasks-page .metrics .metric-card.tone-neutral .metric-value {
   margin-top: 0 !important;
   font-family: inherit;
   font-size: clamp(22px, 1.8vw, 26px);
@@ -5550,7 +5618,11 @@ input[type="radio"],
 
 .customers-page .metrics .metric-label,
 .projects-page .metrics .metric-label,
-.candidates-page .metrics .metric-label {
+.candidates-page .metrics .metric-label,
+.notices-page .metrics .metric-label,
+.job-publish-page .metrics .metric-label,
+.recruit-job-list-page .metrics .metric-label,
+.daily-tasks-page .metrics .metric-label {
   margin-top: 0;
   color: #94A3B8;
   font-size: 12px;

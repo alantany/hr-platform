@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-19（招聘相关页 KPI 统一 Soft）
+
+- 任务看板在 `notifications.html`（`.notices-page`）；岗位发布/列表/每日任务分别为 `.job-publish-page` / `.recruit-job-list-page` / `.daily-tasks-page`。
+- Soft KPI 用同一段作用域 CSS 覆盖，仅顶部 `metrics`，不改下方业务区。
+
 ## 2026-07-19（候选人筛选区压缩）
 
 - 搜索 toolbar 与 filter compact 合并为同一 `panel`；标签左置横排可显著降低垂直占用。
