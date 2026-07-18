@@ -19,7 +19,7 @@
 
 ## Current Phase
 
-首页看板 Soft UI 改版：spec 已写，待用户审阅后进入实现计划。维护流程：**改代码 → 更新三份 MD → commit → push**。
+首页看板 Soft UI 改版：实现计划已就绪，待执行。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## Phases
 

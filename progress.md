@@ -1,9 +1,14 @@
 # Progress
 
+## 2026-07-18（计划 - 首页看板 Soft UI 改版）
+
+- Spec 已审阅通过；实现计划：`docs/superpowers/plans/2026-07-18-dashboard-soft-ui-restyle.md`。
+- 待执行：CSS 契约 → Soft UI 样式 → 缓存 bump / 目视 / 收尾。
+
 ## 2026-07-18（设计 - 首页看板 Soft UI 改版）
 
 - 已确认：作用域样式升级（方案 A）；空态只改风格、不加折线图。
-- Spec：`docs/superpowers/specs/2026-07-18-dashboard-soft-ui-restyle-design.md`（待用户审阅后写实现计划）。
+- Spec：`docs/superpowers/specs/2026-07-18-dashboard-soft-ui-restyle-design.md`。
 
 ## 2026-07-18（完成 - 登录页 Task 3 全局样式）
 
