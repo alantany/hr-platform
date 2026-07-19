@@ -168,6 +168,80 @@ button, input, select { font: inherit; }
 .crumb-current { color: var(--muted-foreground); }
 .crumb-sep { color: var(--muted-foreground); }
 .top-actions { display: flex; gap: 10px; align-items: center; }
+.topbar-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 220px;
+  padding: 6px 10px;
+  border: 1px solid #c2def8;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff 40%, #f3f8fd 100%);
+  box-shadow:
+    -1px 1px 0 #b0cfe1,
+    1px 1px 0 #b0cfe1,
+    0 2px 0 #a4c7dc,
+    0 4px 10px rgba(130, 170, 210, 0.28);
+}
+.topbar-avatar {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+.topbar-user-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.topbar-username {
+  color: #0B2A4A;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-role {
+  color: rgba(11, 42, 74, 0.58);
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: #fff;
+  color: #0B2A4A;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+}
+.topbar-icon-btn:hover {
+  border-color: #93c5fd;
+  background: #f0f9ff;
+  color: #0284C7;
+}
+.topbar-logout-btn:hover {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+}
 .top-action {
   display: inline-flex;
   align-items: center;
@@ -3773,15 +3847,7 @@ input[type="radio"],
   border-radius: 999px;
 }
 
-.sidebar-footer {
-  margin-top: auto !important;
-  flex: 0 0 auto !important;
-  padding-top: 16px !important;
-  border-top: 1px solid rgba(11, 42, 74, 0.14) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 12px !important;
-}
+.sidebar-footer { display: none !important; }
 
 .sidebar-user-chip {
   display: flex !important;

@@ -797,15 +797,43 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
             </svg>
             ${unreadCount > 0 ? `<span class="badge">${unreadCount}</span>` : ""}
           </a>`;
+  const topUserActions = `
+          <div class="topbar-user-chip" title="${currentUser?.full_name || "管理员"} · ${currentUser?.role || "超级管理员"}">
+            <div class="topbar-avatar">${firstChar}</div>
+            <div class="topbar-user-info">
+              <div class="topbar-username">${currentUser?.full_name || "管理员"}</div>
+              <div class="topbar-role">${currentUser?.role || "超级管理员"}</div>
+            </div>
+          </div>
+          <button class="topbar-icon-btn" data-action="open-settings" title="个人设置" aria-label="个人设置">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 2v2"></path>
+              <path d="M12 20v2"></path>
+              <path d="M4.93 4.93l1.41 1.41"></path>
+              <path d="M17.66 17.66l1.41 1.41"></path>
+              <path d="M2 12h2"></path>
+              <path d="M20 12h2"></path>
+              <path d="M4.93 19.07l1.41-1.41"></path>
+              <path d="M17.66 6.34l1.41-1.41"></path>
+            </svg>
+          </button>
+          <button class="topbar-icon-btn topbar-logout-btn" data-action="logout" title="退出系统" aria-label="退出系统">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>`;
   const topbarHtml = isDashboardScreen
-    ? `<div class="topbar topbar-dashboard-screen"><div class="top-actions top-actions-only">${noticeBtn}</div></div>`
+    ? `<div class="topbar topbar-dashboard-screen"><div class="top-actions top-actions-only">${noticeBtn}${topUserActions}</div></div>`
     : `<div class="topbar">
         <div>
           <div class="crumbs">${renderCrumbsHtml(pageKey)}</div>
           <h1 class="page-title" style="margin-top:0;">${pages[pageKey]?.title || "AI招聘管理平台"}</h1>
           ${pages[pageKey]?.desc ? `<p class="page-lede">${pages[pageKey].desc}</p>` : ""}
         </div>
-        <div class="top-actions">${noticeBtn}</div>
+        <div class="top-actions">${noticeBtn}${topUserActions}</div>
       </div>`;
   return `
   <div class="app-shell${isDashboardScreen ? " app-shell-dashboard-screen" : ""}">
@@ -819,37 +847,6 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
       </div>
       <div class="sidebar-nav-list">
         ${navHtml}
-      </div>
-      <div class="sidebar-footer">
-        <div class="sidebar-user-chip">
-          <div class="sidebar-avatar">${firstChar}</div>
-          <div class="sidebar-user-info">
-            <div class="sidebar-username">${currentUser?.full_name || "管理员"}</div>
-            <div class="sidebar-role">${currentUser?.role || "超级管理员"}</div>
-          </div>
-        </div>
-        <button class="sidebar-settings-btn" data-action="open-settings" title="个人设置">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M12 2v2"></path>
-            <path d="M12 20v2"></path>
-            <path d="M4.93 4.93l1.41 1.41"></path>
-            <path d="M17.66 17.66l1.41 1.41"></path>
-            <path d="M2 12h2"></path>
-            <path d="M20 12h2"></path>
-            <path d="M4.93 19.07l1.41-1.41"></path>
-            <path d="M17.66 6.34l1.41-1.41"></path>
-          </svg>
-          <span>设置</span>
-        </button>
-        <button class="sidebar-logout-btn" data-action="logout" title="退出系统">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-          <span>退出</span>
-        </button>
       </div>
     </aside>
     <main class="content">
