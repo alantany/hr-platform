@@ -797,8 +797,8 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
             ${unreadCount > 0 ? `<span class="badge">${unreadCount}</span>` : ""}
           </a>`;
   const topUserActions = `
-          <div class="topbar-user-chip" title="${currentUser?.full_name || "管理员"}">
-            <div class="topbar-username">${currentUser?.full_name || "管理员"}</div>
+          <div class="topbar-user-chip" title="${currentUser?.username || "admin"}">
+            <div class="topbar-username">${currentUser?.username || "admin"}</div>
           </div>
           <button class="topbar-icon-btn" data-action="open-settings" title="个人设置" aria-label="个人设置">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
