@@ -19,7 +19,7 @@
 
 ## Current Phase
 
-产品说明手册已预留各模块截图占位；截图放入 `outputs/manual-screenshots/` 后取消手册内图片注释即可。维护流程：**改代码/文档 → 更新三份 MD → commit → push**。
+产品说明手册截图已批量生成并嵌入。维护流程：**改代码/文档 → 更新三份 MD → commit → push**。
 
 ## 2026-07-18 首页看板 Soft UI 改版完成记录
 

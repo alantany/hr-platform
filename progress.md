@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-19（完成 - 产品手册功能截图批量生成）
+
+- 用 Playwright 对手册第 6 章功能页批量截图，写入 `outputs/manual-screenshots/`（共 29 张含补拍）。
+- 手册内主图 Markdown 已启用；脚本：`scripts/capture-manual-screenshots.mjs`。
+- 顺手修复 `settings.html` 缺少 `renderApp()` 导致直链打开空白。
+
 ## 2026-07-19（完成 - 产品手册截图占位）
 
 - `outputs/产品说明手册.md` 第 6 章每个功能模块增加「📷 截图占位」：建议文件名、拍摄说明、可选补拍、虚线框粘贴位、可取消注释的 Markdown 图片语法。

@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-19（settings 直链需 renderApp）
+
+- `settings.html` 原先只有 `__PAGE_BODY__`，缺少 `DOMContentLoaded → renderApp()`，整页直链打开时 `#app` 为空；SPA 从顶栏进入不受影响。
+- 产品手册截图可用 `scripts/capture-manual-screenshots.mjs`（Playwright，admin/admin123，1440×900）。
+
 ## 2026-07-19（产品手册截图约定）
 
 - 产品说明截图统一放 `outputs/manual-screenshots/`，命名 `06-XX-短名.png`。

@@ -91,6 +91,10 @@
       event.preventDefault();
       submitChangePassword();
     });
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await renderApp();
+    });
   </script>
 </body>
 </html>
