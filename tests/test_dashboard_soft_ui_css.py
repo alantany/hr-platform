@@ -32,6 +32,7 @@ def test_dashboard_cards_use_solid_3d_thickness():
     assert "0px 3px 0px #a4c7dc" in css
     assert "0px 6px 12px rgba(130, 170, 210, 0.45)" in css
     assert "#003fa3" in css
+    assert "height: 93px" in css
 
 
 def test_dashboard_calendar_selected_is_solid_blue():
@@ -44,3 +45,4 @@ def test_dashboard_no_chart_empty_state_copy_still_in_page():
     html = (Path(__file__).resolve().parents[1] / "src" / "pages" / "dashboard.html").read_text(encoding="utf-8")
     assert "选择指标或日期查看明细" in html
     assert "dashboard-kanban-bottom" in html
+    assert "dashboard-kanban-note" not in html.split("renderTopCards")[1].split("function renderCalendarWeekdays")[0]

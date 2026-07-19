@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>首页 - AI招聘管理平台</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260719-kpi-solid3d" />
+  <link rel="stylesheet" href="../../styles.css?v=20260719-kpi-flat" />
   <script defer src="../../frontend-api.js"></script>
   <script defer src="../../app.js?v=20260719-month-hint2"></script>
 </head>
@@ -463,7 +463,6 @@
           <div class="dashboard-kanban-title">${card.title}</div>
           <div class="dashboard-kanban-bottom">
             <strong class="dashboard-kanban-value">${formatNumber(card.value)}</strong>
-            <span class="dashboard-kanban-note">${colorizeNote(card.note, card.tone)}</span>
           </div>
         </a>
       `).join('');

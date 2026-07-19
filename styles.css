@@ -1133,7 +1133,8 @@ body:has(.dashboard-redesign) .content {
   justify-content: space-between;
   gap: 16px;
   min-width: 0;
-  min-height: 148px;
+  height: 93px;
+  min-height: 93px;
   padding: 22px 20px;
   border-radius: 36px;
   border: 1px solid #c2def8;
@@ -3235,7 +3236,8 @@ a { color: var(--primary); }
   border: 1px solid #c2def8 !important;
   border-radius: 36px !important;
   background: linear-gradient(180deg, #ffffff 40%, #f3f8fd 100%) !important;
-  min-height: 148px !important;
+  height: 93px !important;
+  min-height: 93px !important;
   padding: 22px 20px !important;
   box-shadow:
     -1px 2px 0px #b0cfe1,
@@ -3397,7 +3399,8 @@ input:disabled, select:disabled, textarea:disabled { background: #f3f4f6; color:
 }
 .dashboard-month-grid { gap: 12px; }
 .dashboard-kanban-card {
-  min-height: 148px;
+  height: 93px;
+  min-height: 93px;
   padding: 22px 20px;
 }
 .dashboard-kanban-card:hover,

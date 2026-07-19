@@ -19,7 +19,7 @@
 
 ## Current Phase
 
-uvicorn 热重载已限定 `backend/`，避免改 tests 卡死。维护流程：**改代码 → 更新三份 MD → commit → push**。
+首页 KPI 已去小字并压扁到客户管理卡高度（93px）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## 2026-07-18 首页看板 Soft UI 改版完成记录
 

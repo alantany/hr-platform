@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-19（完成 - 首页 KPI 去小字并压扁）
+
+- 顶部五卡去掉辅助小字（如「本月推荐 x 人」）。
+- 卡片高度对齐客户管理 Soft KPI（`height/min-height: 93px`），其余实体厚度样式不动。
+- 缓存 `?v=20260719-kpi-flat`。
+
 ## 2026-07-19（完成 - 修复 uvicorn WatchFiles 卡死）
 
 - 现象：改 `tests/` 触发 `--reload` 后停在 `Reloading...`，8000 无响应。

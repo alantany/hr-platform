@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-19（首页 KPI 压扁高度）
+
+- 客户管理 Soft KPI 实际高度约：`padding 12+10` + 标题/数字/小字 ≈ `93px`。
+- 首页五卡压扁时只改 `height/min-height`，保留 solid-3d 渐变/边框/硬阴影。
+
 ## 2026-07-19（uvicorn reload 卡死）
 
 - `uvicorn --reload` 默认监视整个工作区；改 `tests/*.py` 也会触发重载，偶发卡在 `WatchFiles ... Reloading...` 导致 8000 无响应。
