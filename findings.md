@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-19（全站顶栏蓝条）
+
+- `.topbar` 在 `.content` 内，要用负边距对齐 content padding（桌面 `-24px -32px`，中屏 `-20px`，窄屏 `-16px/-14px`），否则蓝条两侧留白。
+- 后部 administration 覆盖层会重置 `.topbar` / `.page-title` / `.crumbs` 颜色，改顶栏必须同步改该覆盖块，否则仍是浅灰底深色字。
+
 ## 2026-07-19（全站 solid-3d 表面）
 
 - 用 `body:not(:has([data-page-owned-style="statistics.html"]))` 排除统计大屏；登录用 `:not(:has(.login-stage))`。
