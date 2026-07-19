@@ -19,7 +19,7 @@
 
 ## Current Phase
 
-首页 KPI 字号已适配 93px 压扁卡。维护流程：**改代码 → 更新三份 MD → commit → push**。
+首页 KPI 圆角已对齐客户管理卡（14px）。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## 2026-07-18 首页看板 Soft UI 改版完成记录
 

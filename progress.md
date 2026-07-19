@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-19（完成 - 首页 KPI 圆角对齐客户卡）
+
+- `.dashboard-kanban-card` 圆角由 `36px` 改为 `14px`，与客户管理 Soft KPI 一致。
+- 缓存 `?v=20260719-kpi-radius`。
+
 ## 2026-07-19（完成 - 首页 KPI 字号适配压扁卡）
 
 - 标题 `12px`、数字 `clamp(22px,1.8vw,26px)`，对齐客户管理 Soft KPI 比例。
