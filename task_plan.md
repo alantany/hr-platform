@@ -19,7 +19,7 @@
 
 ## Current Phase
 
-项目/岗位筛选大框已补齐 solid-3d。维护流程：**改代码 → 更新三份 MD → commit → push**。
+侧边栏已改为浅蓝上浅下深渐变。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## 2026-07-18 首页看板 Soft UI 改版完成记录
 
