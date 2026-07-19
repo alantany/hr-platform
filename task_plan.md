@@ -19,7 +19,7 @@
 
 ## Current Phase
 
-全站大框/卡片已统一 solid-3d（统计管理除外）。维护流程：**改代码 → 更新三份 MD → commit → push**。
+项目/岗位筛选大框已补齐 solid-3d。维护流程：**改代码 → 更新三份 MD → commit → push**。
 
 ## 2026-07-18 首页看板 Soft UI 改版完成记录
 

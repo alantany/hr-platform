@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-19（完成 - 项目/岗位筛选大框实体悬浮）
+
+- `.projects-filter-panel` / `.search-form-panel` 补齐 solid-3d（此前未走 `.panel` 选择器）。
+- 缓存 `?v=20260719-projects-filter`。
+
 ## 2026-07-19（完成 - 全站实体悬浮面统一）
 
 - 月度详情大框 `.dashboard-candidate-panel` 对齐 solid-3d。

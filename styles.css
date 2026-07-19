@@ -4272,15 +4272,20 @@ input[type="radio"],
   cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease;
 }
-.projects-filter-panel {
+.projects-filter-panel,
+.search-form-panel.projects-filter-panel {
   display: grid;
   gap: 16px;
   margin: 0;
   padding: 20px 24px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-card);
+  border: 1px solid #c2def8;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 40%, #f3f8fd 100%);
+  box-shadow:
+    -1px 2px 0px #b0cfe1,
+    1px 2px 0px #b0cfe1,
+    0px 3px 0px #a4c7dc,
+    0px 6px 12px rgba(130, 170, 210, 0.45);
 }
 .projects-filter-grid {
   display: grid;
@@ -5790,6 +5795,8 @@ body:not(:has([data-page-owned-style="statistics.html"])):not(:has(.login-stage)
 body:not(:has([data-page-owned-style="statistics.html"])):not(:has(.login-stage)) .content .stat-card,
 body:not(:has([data-page-owned-style="statistics.html"])):not(:has(.login-stage)) .content .recruit-filter-bar,
 body:not(:has([data-page-owned-style="statistics.html"])):not(:has(.login-stage)) .content .position-candidates-filter-bar,
+body:not(:has([data-page-owned-style="statistics.html"])):not(:has(.login-stage)) .content .projects-filter-panel,
+body:not(:has([data-page-owned-style="statistics.html"])):not(:has(.login-stage)) .content .search-form-panel,
 body:not(:has([data-page-owned-style="statistics.html"])):not(:has(.login-stage)) .dashboard-candidate-panel {
   border: 1px solid #c2def8 !important;
   border-radius: 14px !important;
