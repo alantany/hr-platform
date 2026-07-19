@@ -169,52 +169,20 @@ button, input, select { font: inherit; }
 .crumb-sep { color: var(--muted-foreground); }
 .top-actions { display: flex; gap: 10px; align-items: center; }
 .topbar-user-chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
-  max-width: 220px;
-  padding: 6px 10px;
+  max-width: 140px;
+  min-height: 32px;
+  padding: 4px 10px;
   border: 1px solid #c2def8;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff 40%, #f3f8fd 100%);
-  box-shadow:
-    -1px 1px 0 #b0cfe1,
-    1px 1px 0 #b0cfe1,
-    0 2px 0 #a4c7dc,
-    0 4px 10px rgba(130, 170, 210, 0.28);
-}
-.topbar-avatar {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-size: 13px;
-  font-weight: 700;
-}
-.topbar-user-info {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+  border-radius: 999px;
+  background: #fff;
 }
 .topbar-username {
   color: #0B2A4A;
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.topbar-role {
-  color: rgba(11, 42, 74, 0.58);
-  font-size: 11px;
-  line-height: 1.25;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -788,7 +788,6 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
           </a>`).join("")}
       </div>`;
   }).join("");
-  const firstChar = (currentUser?.full_name || "管")[0];
   const noticeBtn = `
           <a class="top-notice-btn" aria-label="未读通知" href="./notifications.html">
             <svg class="bell-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -798,24 +797,13 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
             ${unreadCount > 0 ? `<span class="badge">${unreadCount}</span>` : ""}
           </a>`;
   const topUserActions = `
-          <div class="topbar-user-chip" title="${currentUser?.full_name || "管理员"} · ${currentUser?.role || "超级管理员"}">
-            <div class="topbar-avatar">${firstChar}</div>
-            <div class="topbar-user-info">
-              <div class="topbar-username">${currentUser?.full_name || "管理员"}</div>
-              <div class="topbar-role">${currentUser?.role || "超级管理员"}</div>
-            </div>
+          <div class="topbar-user-chip" title="${currentUser?.full_name || "管理员"}">
+            <div class="topbar-username">${currentUser?.full_name || "管理员"}</div>
           </div>
           <button class="topbar-icon-btn" data-action="open-settings" title="个人设置" aria-label="个人设置">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
               <circle cx="12" cy="12" r="3"></circle>
-              <path d="M12 2v2"></path>
-              <path d="M12 20v2"></path>
-              <path d="M4.93 4.93l1.41 1.41"></path>
-              <path d="M17.66 17.66l1.41 1.41"></path>
-              <path d="M2 12h2"></path>
-              <path d="M20 12h2"></path>
-              <path d="M4.93 19.07l1.41-1.41"></path>
-              <path d="M17.66 6.34l1.41-1.41"></path>
             </svg>
           </button>
           <button class="topbar-icon-btn topbar-logout-btn" data-action="logout" title="退出系统" aria-label="退出系统">
