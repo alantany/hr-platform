@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-19（uvicorn reload 卡死）
+
+- `uvicorn --reload` 默认监视整个工作区；改 `tests/*.py` 也会触发重载，偶发卡在 `WatchFiles ... Reloading...` 导致 8000 无响应。
+- 本项目热重载应只盯 `backend/`：`--reload-dir backend`。前端/静态/测试改动不需要重启 API。
+
 ## 2026-07-19（首页 KPI 实体厚度 3D）
 
 - 悬浮核心不是大范围扩散阴影，而是 0 模糊硬阴影叠左右下三边：`-1px/1px 2px 0 #b0cfe1` + `0 3px 0 #a4c7dc`，再加收紧环境影 `0 6px 12px rgba(130,170,210,.45)`。

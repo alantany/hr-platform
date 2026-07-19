@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-19（完成 - 修复 uvicorn WatchFiles 卡死）
+
+- 现象：改 `tests/` 触发 `--reload` 后停在 `Reloading...`，8000 无响应。
+- 处理：杀掉僵死进程；`run.sh` 改为 `--reload-dir backend`，不再监视 tests/前端文件。
+
 ## 2026-07-19（完成 - 首页 KPI 实体厚度 3D 卡）
 
 - 按提供的 solid-3d 样例：白到微蓝渐变、`#c2def8` 边框、左右下硬阴影 + 蓝色环境阴影；圆角对齐样例 `36px`。

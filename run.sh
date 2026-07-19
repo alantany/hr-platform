@@ -11,10 +11,11 @@ echo "=================================================="
 export DATABASE_URL="${DATABASE_URL:-postgresql://user_delivery:delivery_pass@localhost:5432/hr_platform}"
 
 # 运行 uvicorn 服务器（开启自动重载）
+# 只监视 backend/，避免改 tests/styles/html 时触发卡死式重载。
 # 优先使用 uv 按 requirements.txt 创建隔离运行环境，避免系统 Python 缺少 uvicorn。
 if command -v uv >/dev/null 2>&1; then
-  uv run --with-requirements requirements.txt uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+  uv run --with-requirements requirements.txt uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir backend
 else
   python3 -m pip install -r requirements.txt
-  python3 -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+  python3 -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir backend
 fi
