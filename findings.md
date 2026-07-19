@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-19（产品手册 Word 导出）
+
+- Word 生成脚本：`scripts/generate-product-manual-docx.py`（`uv run --with python-docx`）。
+- 输出：`outputs/猎头招聘交付系统-产品说明手册.docx`；截图占位元信息在转换时跳过，保留正文与图片。
+
 ## 2026-07-19（settings 直链需 renderApp）
 
 - `settings.html` 原先只有 `__PAGE_BODY__`，缺少 `DOMContentLoaded → renderApp()`，整页直链打开时 `#app` 为空；SPA 从顶栏进入不受影响。

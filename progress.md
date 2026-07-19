@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-19（完成 - 产品说明手册 Word 版）
+
+- 新增 `scripts/generate-product-manual-docx.py`：将 Markdown 手册 + 截图排版为 Word。
+- 产出 `outputs/猎头招聘交付系统-产品说明手册.docx`（约 6MB，含封面/目录域/29 张截图/主题色表头）。
+
 ## 2026-07-19（完成 - 产品手册功能截图批量生成）
 
 - 用 Playwright 对手册第 6 章功能页批量截图，写入 `outputs/manual-screenshots/`（共 29 张含补拍）。
