@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-19（全站 solid-3d 表面）
+
+- 用 `body:not(:has([data-page-owned-style="statistics.html"]))` 排除统计大屏；登录用 `:not(:has(.login-stage))`。
+- 弹窗 `.modal .panel` 在全局覆盖之后再重置，避免实体厚度破坏模态层级。
+- 外层大框吃 solid-3d；`.panel .panel / .toolbar` 内嵌层用轻描边无阴影，防止双重厚度。
+
 ## 2026-07-19（列表页 KPI 对齐首页）
 
 - 八个业务列表页共用 `.customers-page/.projects-page/... .metrics .metric-card` 覆盖块，应与首页 `.dashboard-kanban-card` 同一套 solid-3d token。

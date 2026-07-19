@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-19（完成 - 全站实体悬浮面统一）
+
+- 月度详情大框 `.dashboard-candidate-panel` 对齐 solid-3d。
+- 全局覆盖：`.content` 内 `panel/table-card/hero-card/admin/tag` 等大框（统计管理、登录、弹窗除外）；内嵌子面板保持轻描边。
+- 缓存 `?v=20260719-global-solid3d`。
+
 ## 2026-07-19（完成 - 月度看板四卡实体悬浮）
 
 - 月度四卡对齐顶部 KPI：solid-3d、`93px`、数字 `#003fa3`；去掉辅助小字。
