@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>首页 - AI招聘管理平台</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260719-panel-solid3d" />
+  <link rel="stylesheet" href="../../styles.css?v=20260719-month-solid3d" />
   <script defer src="../../frontend-api.js"></script>
   <script defer src="../../app.js?v=20260719-month-hint2"></script>
 </head>
@@ -627,7 +627,6 @@
         >
           <div class="dashboard-month-card-label">${card.title}</div>
           <div class="dashboard-month-card-value">${formatNumber(card.value)}</div>
-          <div class="dashboard-month-card-note">${colorizeNote(card.note, card.tone)}</div>
         </button>
       `;
       }).join('');
