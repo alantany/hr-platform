@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-07-19（首页 KPI 悬浮卡规格）
+
+- 悬浮感核心是「浅灰底 + 独立白卡 + 大范围低透明阴影」，不是蓝色多层阴影；蓝色渐变底会削弱浮起感。
+- 规格阴影：`0 10px 30px -8px rgba(15, 23, 42, 0.12)`；边框 `1px solid rgba(15,23,42,0.04)`。
+- 后部 administration 覆盖层对 `.dashboard-kanban-card` 使用 `!important`，改悬浮卡必须同步覆盖，否则会被压回旧 padding/阴影。
+
 ## 2026-07-19（侧边栏深蓝渐变）
 
 - 侧边栏 token：`--sidebar` 可直接存 `linear-gradient(...)`，`.sidebar { background: var(--sidebar) }` 即可吃到渐变。
