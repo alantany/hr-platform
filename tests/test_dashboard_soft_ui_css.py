@@ -19,15 +19,19 @@ def _block(start_marker: str, end_marker: str | None = None) -> str:
 def test_dashboard_redesign_has_soft_background_tokens():
     css = _css()
     assert "body:has(.dashboard-redesign)" in css
-    assert "#F5F7FA" in css or "#f5f7fa" in css.lower()
+    assert "#ffffff" in css.lower() or "#fff" in css.lower()
     assert "linear-gradient(180deg, #EEF5FF" not in css
 
 
-def test_dashboard_cards_use_soft_radius_and_shadow():
+def test_dashboard_cards_use_solid_3d_thickness():
     css = _css()
-    assert "border-radius: 16px" in css
-    assert "0 10px 30px -8px rgba(15, 23, 42, 0.12)" in css
-    assert "rgba(15, 23, 42, 0.04)" in css
+    assert "linear-gradient(180deg, #ffffff 40%, #f3f8fd 100%)" in css
+    assert "border: 1px solid #c2def8" in css
+    assert "-1px 2px 0px #b0cfe1" in css
+    assert "1px 2px 0px #b0cfe1" in css
+    assert "0px 3px 0px #a4c7dc" in css
+    assert "0px 6px 12px rgba(130, 170, 210, 0.45)" in css
+    assert "#003fa3" in css
 
 
 def test_dashboard_calendar_selected_is_solid_blue():
@@ -39,4 +43,4 @@ def test_dashboard_calendar_selected_is_solid_blue():
 def test_dashboard_no_chart_empty_state_copy_still_in_page():
     html = (Path(__file__).resolve().parents[1] / "src" / "pages" / "dashboard.html").read_text(encoding="utf-8")
     assert "选择指标或日期查看明细" in html
-    assert "dashboard-kanban-main" in html
+    assert "dashboard-kanban-bottom" in html
