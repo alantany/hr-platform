@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>项目管理</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260719-sidebar-navy" />
+  <link rel="stylesheet" href="../../styles.css?v=20260719-list-solid3d" />
   <script defer src="../../frontend-api.js"></script>
   <script defer src="../../app.js?v=20260719-list-kpi-soft"></script>
 </head>
@@ -25,22 +25,18 @@ window.__PAGE_BODY__ = `
     <div class="metric-card tone-primary" data-metric-filter-group="project-status" data-metric-filter-key="" onclick="filterProjectsByStatus('')" style="cursor: pointer;">
       <div class="metric-top"><div><div class="section-sub">项目总数</div></div><div class="metric-icon">${PROJECT_PAGE_ICONS.folder}</div></div>
       <div class="metric-value" data-project-total>0</div>
-      <div class="metric-label">客户招聘包</div>
     </div>
     <div class="metric-card tone-success" data-metric-filter-group="project-status" data-metric-filter-key="招聘中" onclick="filterProjectsByStatus('招聘中')" style="cursor: pointer;">
       <div class="metric-top"><div><div class="section-sub">招聘中</div></div><div class="metric-icon">${PROJECT_PAGE_ICONS.activity}</div></div>
       <div class="metric-value" data-project-active>0</div>
-      <div class="metric-label">持续推进中</div>
     </div>
     <div class="metric-card tone-neutral" data-metric-filter-group="project-status" data-metric-filter-key="招聘完毕" onclick="filterProjectsByStatus('招聘完毕')" style="cursor: pointer;">
       <div class="metric-top"><div><div class="section-sub">招聘完毕</div></div><div class="metric-icon">${PROJECT_PAGE_ICONS.check}</div></div>
       <div class="metric-value" data-project-finished>0</div>
-      <div class="metric-label">已完成交付</div>
     </div>
     <div class="metric-card tone-danger" data-metric-filter-group="position-urgency" data-metric-filter-key="高" onclick="filterPositionsByUrgency('高')" style="cursor: pointer;">
       <div class="metric-top"><div><div class="section-sub">紧急岗位</div></div><div class="metric-icon">${PROJECT_PAGE_ICONS.alert}</div></div>
       <div class="metric-value is-zero" data-project-urgent>0</div>
-      <div class="metric-label">需要优先匹配</div>
     </div>
   </section>
 

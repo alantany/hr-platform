@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-19（列表页 KPI 对齐首页）
+
+- 八个业务列表页共用 `.customers-page/.projects-page/... .metrics .metric-card` 覆盖块，应与首页 `.dashboard-kanban-card` 同一套 solid-3d token。
+- 小字统一删除（markup + `display:none` 兜底），标题留 `section-sub`，数值留 `metric-value`。
+
 ## 2026-07-19（首页 KPI 压扁高度）
 
 - 客户管理 Soft KPI 实际高度约：`padding 12+10` + 标题/数字/小字 ≈ `93px`。

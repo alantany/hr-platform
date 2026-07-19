@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>客户管理</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260719-sidebar-navy" />
+  <link rel="stylesheet" href="../../styles.css?v=20260719-list-solid3d" />
   <script defer src="../../frontend-api.js"></script>
   <script defer src="../../app.js?v=20260719-list-kpi-soft"></script>
 </head>
@@ -23,22 +23,18 @@ window.__PAGE_BODY__ = `
     <a href="./customers.html" class="metric-card tone-primary">
       <div class="metric-top"><div><div class="section-sub">客户公司数</div></div><div class="metric-icon">${CUSTOMER_PAGE_ICONS.building}</div></div>
       <div class="metric-value" data-company-total>0</div>
-      <div class="metric-label">当前在库客户</div>
     </a>
     <a href="./projects.html" class="metric-card tone-success">
       <div class="metric-top"><div><div class="section-sub">进行中项目</div></div><div class="metric-icon">${CUSTOMER_PAGE_ICONS.folder}</div></div>
       <div class="metric-value" data-company-projects>0</div>
-      <div class="metric-label">持续推进中的招聘包</div>
     </a>
     <a href="./warranty.html" class="metric-card tone-warning">
       <div class="metric-top"><div><div class="section-sub">累计交付人数</div></div><div class="metric-icon">${CUSTOMER_PAGE_ICONS.users}</div></div>
       <div class="metric-value" data-company-delivery>0</div>
-      <div class="metric-label">基于全部交付记录统计</div>
     </a>
     <a href="./positions.html" class="metric-card tone-neutral">
       <div class="metric-top"><div><div class="section-sub">岗位总数</div></div><div class="metric-icon">${CUSTOMER_PAGE_ICONS.briefcase}</div></div>
       <div class="metric-value" data-company-positions>0</div>
-      <div class="metric-label">当前客户全部岗位</div>
     </a>
   </section>
   <section class="panel customers-panel">
