@@ -72,18 +72,27 @@
     }
 
     .login-logo {
-      width: 72px;
-      height: 72px;
-      display: grid;
-      place-items: center;
-      filter: drop-shadow(0 10px 24px rgba(59, 130, 246, 0.28));
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      filter: drop-shadow(0 8px 18px rgba(59, 130, 246, 0.22));
     }
 
     .login-logo img {
-      width: 72px;
-      height: 72px;
+      width: 48px;
+      height: 48px;
       display: block;
       object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .login-logo-name {
+      color: #0f172a;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.12em;
+      white-space: nowrap;
     }
 
     .login-brief h1 {
@@ -213,13 +222,14 @@
           <img
             src="../../assets/zhiyida-mark.png"
             srcset="../../assets/zhiyida-mark.png 1x, ../../assets/zhiyida-mark@2x.png 2x"
-            alt="职易达"
-            width="72"
-            height="72"
+            alt=""
+            width="48"
+            height="48"
           />
+          <span class="login-logo-name">职易达</span>
         </div>
         <h1>AI招聘管理平台</h1>
-        <p>人力资源管理系统 v3.0</p>
+        <p>讯联科技出品</p>
         <div class="login-pills">
           <span class="login-pill">AI简历筛选</span>
           <span class="login-pill">JD自动匹配</span>

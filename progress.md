@@ -1,8 +1,12 @@
 # Progress
 
+## 2026-07-20（完成 - 登录页品牌微调）
+
+- Logo 缩小为 48px，旁加深色「职易达」；副标题改为「讯联科技出品」。
+
 ## 2026-07-20（完成 - 登录页接入职易达 Logo）
 
-- `login.html` 用 `zhiyida-mark.png` 替换 XL 六边形 SVG；保留原 logo 尺寸与投影。
+- `login.html` 用 `zhiyida-mark.png` 替换 XL 六边形 SVG。
 
 ## 2026-07-20（完成 - Logo 恢复提亮前版本）
 
