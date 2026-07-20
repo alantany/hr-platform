@@ -840,7 +840,7 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
           <div class="brand-name">职易达</div>
         </div>
         <div class="brand-divider" aria-hidden="true"></div>
-        <div class="brand-tagline">AI一站式招聘交付</div>
+        <div class="brand-tagline">AI一站式招聘交付系统</div>
       </div>
       <div class="sidebar-nav-list">
         ${navHtml}
