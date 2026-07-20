@@ -241,22 +241,36 @@
       }
     });
 
-    document.addEventListener('click', async (event) => {
+    // SPA 每次进入本页会重跑脚本；挂载前卸掉旧监听，避免刷新 toast 叠加
+    if (window.__notificationsPageClickHandler) {
+      document.removeEventListener('click', window.__notificationsPageClickHandler);
+    }
+    if (window.__notificationsPageInputHandler) {
+      document.removeEventListener('input', window.__notificationsPageInputHandler);
+    }
+    if (window.__notificationsPageChangeHandler) {
+      document.removeEventListener('change', window.__notificationsPageChangeHandler);
+    }
+
+    window.__notificationsPageClickHandler = async (event) => {
       const btn = event.target.closest('[data-action]');
       if (!btn) return;
       if (btn.dataset.action === 'toggle-task-panel') return;
       if (btn.dataset.action === 'refresh-notifications') {
         await loadNotifications().catch((err) => console.warn(err));
         showToast('通知已刷新');
+        return;
       }
       if (btn.dataset.action === 'refresh-position-tasks') {
         await loadPositionTasks();
         showToast('岗位待办已刷新');
+        return;
       }
       if (btn.dataset.action === 'accept-position-task') {
         await window.hrApi.respondPositionAssignmentTask(btn.dataset.id, 'accept');
         await Promise.all([loadPositionTasks(), loadNotifications()]);
         showToast('已接受岗位分配，岗位权限已生效');
+        return;
       }
       if (btn.dataset.action === 'reject-position-task') {
         const note = window.prompt('可填写拒绝原因（选填）', '') ?? null;
@@ -264,6 +278,7 @@
         await window.hrApi.respondPositionAssignmentTask(btn.dataset.id, 'reject', note);
         await Promise.all([loadPositionTasks(), loadNotifications()]);
         showToast('已拒绝岗位分配');
+        return;
       }
       if (btn.dataset.action === 'read-notification') {
         try {
@@ -273,19 +288,22 @@
           console.warn(err);
         }
       }
-    });
+    };
+    document.addEventListener('click', window.__notificationsPageClickHandler);
 
     let timer = null;
-    document.addEventListener('input', (event) => {
+    window.__notificationsPageInputHandler = (event) => {
       if (!event.target.closest('[data-notice-type], [data-notice-keyword]')) return;
       clearTimeout(timer);
       timer = setTimeout(() => loadNotifications().catch((err) => console.warn(err)), 250);
-    });
+    };
+    document.addEventListener('input', window.__notificationsPageInputHandler);
 
-    document.addEventListener('change', (event) => {
+    window.__notificationsPageChangeHandler = (event) => {
       if (!event.target.closest('[data-notice-read], [data-notice-from], [data-notice-to]')) return;
       loadNotifications().catch((err) => console.warn(err));
-    });
+    };
+    document.addEventListener('change', window.__notificationsPageChangeHandler);
 
     window.filterNotices = function(read) {
       const applied = window.applyMetricFilterToggle

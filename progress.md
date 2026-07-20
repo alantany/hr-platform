@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-20（完成 - 通知页刷新 toast 叠加）
+
+- 根因：SPA 重跑 `notifications.html` 脚本时重复挂载 `document` 的 click/input/change 监听，未卸旧监听。
+- 修复：与候选人页相同，用 `window.__notificationsPage*Handler` 挂载前先 `removeEventListener`；刷新分支加 `return`。
+- 验证：改后同一会话多次进入通知页再点「刷新」，只应出现一条「通知已刷新」。
+
 ## 2026-07-20（完成 - 顶栏浅蓝矮条）
 
 - 顶栏色块改为实色 `#C5DFF8`；上下 padding 压到 `8px`，标题约 `20px`，整体变矮。

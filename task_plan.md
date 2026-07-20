@@ -19,7 +19,7 @@
 
 ## Current Phase
 
-顶栏色块 `#C5DFF8` 并压矮。维护流程：**改代码/文档 → 更新三份 MD → commit → push**。
+已修通知页 SPA 监听泄漏导致的刷新 toast 叠加。维护流程：**改代码/文档 → 更新三份 MD → commit → push**。
 
 ## 2026-07-18 首页看板 Soft UI 改版完成记录
 

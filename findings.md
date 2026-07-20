@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-20（通知页 SPA 监听泄漏）
+
+- `runSpaPageScripts` 每次进入页面都会执行页内脚本；若对 `document` 直接 `addEventListener` 且不卸旧监听，同一操作会触发 N 次（N = 进入次数）。
+- 通知页「刷新」因此会叠加多条「通知已刷新」toast；候选人页已有 `__candidatesPageClickHandler` 卸挂模式可复用。
+
 ## 2026-07-20（顶栏浅蓝矮条）
 
 - 顶栏色块 `#C5DFF8`；压矮靠减小垂直 padding（`8px`）与标题字号，不是改横向宽度。
