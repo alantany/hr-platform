@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-20（完成 - 侧栏改回 PNG 标 + 白字职易达）
+
+- 不用 SVG 整图；恢复 `zhiyida-mark.png` Z 标。
+- 图标正下方加白色「职易达」，右侧保留「AI一站式招聘交付」；缓存 `?v=20260720-logo-mark`。
+
 ## 2026-07-20（完成 - 接入 SVG Logo）
 
 - 使用用户 `gemini-svg.svg` → `assets/logo.svg`；底部「职易达」`fill` 改为 `#ffffff`。
