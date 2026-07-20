@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-07-20（完成 - 接入 SVG Logo）
+
+- 使用用户 `gemini-svg.svg` → `assets/logo.svg`；底部「职易达」`fill` 改为 `#ffffff`。
+- 侧栏 brand 改用 SVG；旁白仅保留「AI一站式招聘交付」，避免与 SVG 内文字重复。
+- 缓存 `?v=20260720-logo-svg`。
+
 ## 2026-07-20（完成 - 修复 logo 棋盘格与半截裁切）
 
 - 根因：`logo.png` 是位图，设计软件透明棋盘格被烤进像素；上次裁切误切到 Z 中部。

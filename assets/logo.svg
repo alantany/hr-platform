@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- 主渐变 -->
+    <linearGradient id="blueGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#031b4e"/>
+      <stop offset="40%" stop-color="#0052cc"/>
+      <stop offset="100%" stop-color="#00d2ff"/>
+    </linearGradient>
+    <!-- 浅蓝手部/折角渐变 -->
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d2ff"/>
+      <stop offset="100%" stop-color="#0052cc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 正方形圆角遮罩/背景（透明背景） -->
+  <rect width="500" height="500" rx="90" ry="90" fill="none"/>
+
+  <g transform="translate(25, 20)">
+    <!-- 字母 Z 与 握手/飞翔主图形 -->
+    <!-- Z 顶笔与箭头 -->
+    <path d="M 120 130 C 120 130, 260 130, 290 130 C 310 130, 390 60, 390 60 L 360 110 L 410 100 L 390 60 C 390 60, 300 190, 240 250 Z" fill="url(#blueGrad)" />
+    
+    <!-- 握手剪影与底笔 -->
+    <path d="M 120 130 C 120 130, 120 230, 160 260 C 180 275, 210 260, 230 240 L 290 300 C 270 320, 240 330, 210 310 L 190 290 C 180 280, 165 280, 155 290 L 145 300 C 135 310, 120 310, 110 300 L 210 400 L 260 350 C 270 340, 270 325, 260 315 L 210 265 L 250 220 L 320 280 L 340 220 C 340 220, 240 250, 200 210 Z" fill="url(#blueGrad)"/>
+
+    <!-- 科技节点/雪花修饰 -->
+    <path d="M 390 60 L 410 40 M 390 60 L 370 30 M 390 60 L 420 70" stroke="#00d2ff" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="410" cy="40" r="5" fill="#00d2ff"/>
+    <circle cx="370" cy="30" r="5" fill="#00d2ff"/>
+    <circle cx="420" cy="70" r="5" fill="#00d2ff"/>
+
+    <!-- 底部文字：职易达 -->
+    <text x="225" y="440" font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="bold" font-size="52" fill="#ffffff" text-anchor="middle" letter-spacing="3">
+      职易达
+    </text>
+  </g>
+</svg>
