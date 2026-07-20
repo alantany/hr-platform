@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-20（完成 - toast 连点固定原位）
+
+- `showToast` 改为复用 `.app-toast`：连点只更新文案并重置消失计时，不再向下追加导致向上滚动。
+- 与上一轮通知页 SPA 监听卸挂配合，刷新提示始终只有一条、位置固定。
+
 ## 2026-07-20（完成 - 通知页刷新 toast 叠加）
 
 - 根因：SPA 重跑 `notifications.html` 脚本时重复挂载 `document` 的 click/input/change 监听，未卸旧监听。

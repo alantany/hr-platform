@@ -970,19 +970,30 @@ function ensureToastHost() {
   return host;
 }
 
+let toastHideTimer = null;
+
 function showToast(message) {
   const host = ensureToastHost();
-  const toast = document.createElement("div");
+  // 复用同一条 toast，连点时停在原位刷新文案，不向上堆叠
+  let toast = host.querySelector(".app-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.className = "app-toast";
+    toast.style.padding = "10px 12px";
+    toast.style.borderRadius = "10px";
+    toast.style.background = "rgba(24,35,53,0.96)";
+    toast.style.color = "#fff";
+    toast.style.boxShadow = "0 12px 28px rgba(0,0,0,.18)";
+    toast.style.maxWidth = "320px";
+    toast.style.pointerEvents = "none";
+    host.appendChild(toast);
+  }
   toast.textContent = message;
-  toast.style.padding = "10px 12px";
-  toast.style.borderRadius = "10px";
-  toast.style.background = "rgba(24,35,53,0.96)";
-  toast.style.color = "#fff";
-  toast.style.boxShadow = "0 12px 28px rgba(0,0,0,.18)";
-  toast.style.maxWidth = "320px";
-  toast.style.pointerEvents = "none";
-  host.appendChild(toast);
-  setTimeout(() => toast.remove(), 2200);
+  clearTimeout(toastHideTimer);
+  toastHideTimer = setTimeout(() => {
+    toast.remove();
+    toastHideTimer = null;
+  }, 2200);
 }
 
 /**

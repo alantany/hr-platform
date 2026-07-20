@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-20（toast 连点应原地刷新）
+
+- `showToast` 原先每次 `appendChild`，连点会堆成一列并视觉上「向上滚」。
+- 约定：全局只保留一条 `.app-toast`，重复调用更新文案并重置 2.2s 隐藏计时。
+
 ## 2026-07-20（通知页 SPA 监听泄漏）
 
 - `runSpaPageScripts` 每次进入页面都会执行页内脚本；若对 `document` 直接 `addEventListener` 且不卸旧监听，同一操作会触发 N 次（N = 进入次数）。
