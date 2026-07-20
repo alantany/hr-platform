@@ -4,6 +4,7 @@
 
 - 用户素材 `assets/logo.png`（2048、约 5MB）去白底后裁 Z 图标，导出 128/256：`zhiyida-mark.png`、`zhiyida-mark@2x.png`。
 - 侧栏去掉白底托盘，透明底 + 轻 drop-shadow，适配深蓝侧栏；缓存 `?v=20260720-logo-png`。
+- 同步补充 `findings.md`：源图与上线小图约定。
 
 ## 2026-07-20（完成 - 侧栏接入职易达 Logo）
 
