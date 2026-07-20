@@ -19,7 +19,7 @@
 
 ## Current Phase
 
-Logo 棋盘格/半截已修；待用户提供 SVG 源可换成真矢量。维护流程：**改代码/文档 → 更新三份 MD → commit → push**。
+侧栏已接入白色「职易达」字样的 SVG Logo。维护流程：**改代码/文档 → 更新三份 MD → commit → push**。
 
 ## 2026-07-18 首页看板 Soft UI 改版完成记录
 
