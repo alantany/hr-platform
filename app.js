@@ -827,9 +827,13 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
   <div class="app-shell${isDashboardScreen ? " app-shell-dashboard-screen" : ""}">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">招</div>
+        <div class="brand-mark" aria-hidden="true">
+          <img src="../../assets/zhiyida-mark.png" alt="" width="40" height="40" />
+        </div>
         <div class="brand-text">
-          <h1>职易达 · AI一站式招聘交付</h1>
+          <h1>
+            <span class="brand-name">职易达</span><span class="brand-sep"> · </span><span class="brand-tagline">AI一站式招聘交付</span>
+          </h1>
         </div>
       </div>
       <div class="sidebar-nav-list">
