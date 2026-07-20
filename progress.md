@@ -1,5 +1,9 @@
 # Progress
 
+## 2026-07-20（完成 - 登录页接入职易达 Logo）
+
+- `login.html` 用 `zhiyida-mark.png` 替换 XL 六边形 SVG；保留原 logo 尺寸与投影。
+
 ## 2026-07-20（完成 - Logo 恢复提亮前版本）
 
 - 按反馈回退：从 `zhiyida-mark-dark.png` 恢复 mark/`@2x`，去掉提亮滤镜与青色外光；缓存 `?v=20260720-logo-prev`。

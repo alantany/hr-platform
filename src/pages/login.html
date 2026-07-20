@@ -79,10 +79,11 @@
       filter: drop-shadow(0 10px 24px rgba(59, 130, 246, 0.28));
     }
 
-    .login-logo svg {
+    .login-logo img {
       width: 72px;
       height: 72px;
       display: block;
+      object-fit: contain;
     }
 
     .login-brief h1 {
@@ -208,17 +209,14 @@
   <main class="login-stage">
     <section class="login-shell" aria-label="登录到 AI 招聘管理平台">
       <aside class="login-brief">
-        <div class="login-logo" aria-label="XL">
-          <svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" role="img">
-            <defs>
-              <filter id="login-hex-glow" x="-30%" y="-30%" width="160%" height="160%">
-                <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#93c5fd" flood-opacity="0.55"/>
-              </filter>
-            </defs>
-            <polygon points="36,4 64,20 64,52 36,68 8,52 8,20" fill="#ffffff" opacity="0.85" filter="url(#login-hex-glow)"/>
-            <polygon points="36,10 58,23 58,49 36,62 14,49 14,23" fill="#3b82f6"/>
-            <text x="36" y="44" text-anchor="middle" fill="#ffffff" font-size="22" font-weight="800" font-family="Arial Black, Helvetica, sans-serif" letter-spacing="-1">XL</text>
-          </svg>
+        <div class="login-logo" aria-label="职易达">
+          <img
+            src="../../assets/zhiyida-mark.png"
+            srcset="../../assets/zhiyida-mark.png 1x, ../../assets/zhiyida-mark@2x.png 2x"
+            alt="职易达"
+            width="72"
+            height="72"
+          />
         </div>
         <h1>AI招聘管理平台</h1>
         <p>人力资源管理系统 v3.0</p>
