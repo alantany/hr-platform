@@ -1,5 +1,9 @@
 # Progress
 
+## 2026-07-20（完成 - 品牌中线与左标同高）
+
+- `.brand` 改为 `align-items: stretch`，中线去掉固定高度，随左侧「图标+职易达」拉齐；缓存 `styles.css?v=20260720-brand-line-tall`。
+
 ## 2026-07-20（完成 - 品牌右侧文案）
 
 - 侧栏右侧文案改为「AI一站式招聘交付系统」；缓存 `app.js?v=20260720-brand-copy`。
