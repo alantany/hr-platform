@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-20（完成 - 用 assets/logo.png 重做侧栏标）
+
+- 用户素材 `assets/logo.png`（2048、约 5MB）去白底后裁 Z 图标，导出 128/256：`zhiyida-mark.png`、`zhiyida-mark@2x.png`。
+- 侧栏去掉白底托盘，透明底 + 轻 drop-shadow，适配深蓝侧栏；缓存 `?v=20260720-logo-png`。
+
 ## 2026-07-20（完成 - 侧栏接入职易达 Logo）
 
 - 将用户 Logo 裁出 Z 图标为 `assets/zhiyida-mark.png`，替换原「招」字标。

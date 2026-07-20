@@ -828,7 +828,13 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
-          <img src="../../assets/zhiyida-mark.png" alt="" width="40" height="40" />
+          <img
+            src="../../assets/zhiyida-mark.png"
+            srcset="../../assets/zhiyida-mark.png 1x, ../../assets/zhiyida-mark@2x.png 2x"
+            alt=""
+            width="40"
+            height="40"
+          />
         </div>
         <div class="brand-text">
           <h1>
