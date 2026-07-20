@@ -828,9 +828,8 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark">招</div>
-        <div>
+        <div class="brand-text">
           <h1>职易达 · AI一站式招聘交付</h1>
-          <p>人力资源招聘管理系统 v3.0</p>
         </div>
       </div>
       <div class="sidebar-nav-list">
