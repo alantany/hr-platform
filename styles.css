@@ -130,7 +130,7 @@ button, input, select { font: inherit; }
 }
 .brand-divider {
   flex: 0 0 auto;
-  width: 2px;
+  width: 1px;
   height: 44px;
   border-radius: 999px;
   background: linear-gradient(
