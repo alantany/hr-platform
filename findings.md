@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-07-20（侧栏深蓝底）
+
+- 侧栏实色 `#27374E`；`--sidebar-foreground` / `--sidebar-muted` 均为 `#ffffff`。
+- 后部 administration / v0 兼容层会覆盖 `.nav-item.active` 颜色，改侧栏必须同步改这些覆盖块。
+
 ## 2026-07-19（产品手册 Word 导出）
 
 - Word 生成脚本：`scripts/generate-product-manual-docx.py`（`uv run --with python-docx`）。

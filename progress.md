@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-20（完成 - 侧栏深蓝底 + 白字）
+
+- 侧栏底色改为实色 `#27374E`；分组标签 / 导航文字 / 图标统一白色。
+- 悬停与选中改为半透明白底高亮；缓存 `styles.css?v=20260720-sidebar-navy`。
+
 ## 2026-07-19（完成 - 产品说明手册 Word 版）
 
 - 新增 `scripts/generate-product-manual-docx.py`：将 Markdown 手册 + 截图排版为 Word。
