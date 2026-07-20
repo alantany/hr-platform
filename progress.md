@@ -1,9 +1,12 @@
 # Progress
 
+## 2026-07-20（完成 - Logo 恢复提亮前版本）
+
+- 按反馈回退：从 `zhiyida-mark-dark.png` 恢复 mark/`@2x`，去掉提亮滤镜与青色外光；缓存 `?v=20260720-logo-prev`。
+
 ## 2026-07-20（完成 - Logo 提亮适配深色侧栏）
 
-- 重导出 `zhiyida-mark.png` / `@2x`：压暗部抬亮、偏青白；原图备份 `zhiyida-mark-dark.png`。
-- CSS 加轻微 brightness + 青色外发光；缓存 `?v=20260720-logo-bright`。
+- 曾提亮 mark；用户要求回上一版后已回退。
 
 ## 2026-07-20（完成 - 品牌中线与左标同高）
 
