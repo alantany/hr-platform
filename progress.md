@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-07-20（完成 - Logo 提亮适配深色侧栏）
+
+- 重导出 `zhiyida-mark.png` / `@2x`：压暗部抬亮、偏青白；原图备份 `zhiyida-mark-dark.png`。
+- CSS 加轻微 brightness + 青色外发光；缓存 `?v=20260720-logo-bright`。
+
 ## 2026-07-20（完成 - 品牌中线与左标同高）
 
 - `.brand` 改为 `align-items: stretch`，中线去掉固定高度，随左侧「图标+职易达」拉齐；缓存 `styles.css?v=20260720-brand-line-tall`。
