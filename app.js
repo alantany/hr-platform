@@ -827,19 +827,20 @@ function shell(pageKey, body, currentUser = null, unreadCount = 0) {
   <div class="app-shell${isDashboardScreen ? " app-shell-dashboard-screen" : ""}">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <img
-            src="../../assets/zhiyida-mark.png"
-            srcset="../../assets/zhiyida-mark.png 1x, ../../assets/zhiyida-mark@2x.png 2x"
-            alt=""
-            width="40"
-            height="40"
-          />
-        </div>
-        <div class="brand-text">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">
+            <img
+              src="../../assets/zhiyida-mark.png"
+              srcset="../../assets/zhiyida-mark.png 1x, ../../assets/zhiyida-mark@2x.png 2x"
+              alt=""
+              width="40"
+              height="40"
+            />
+          </div>
           <div class="brand-name">职易达</div>
-          <div class="brand-tagline">AI一站式招聘交付</div>
         </div>
+        <div class="brand-divider" aria-hidden="true"></div>
+        <div class="brand-tagline">AI一站式招聘交付</div>
       </div>
       <div class="sidebar-nav-list">
         ${navHtml}
