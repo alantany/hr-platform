@@ -741,6 +741,10 @@
                     `<div class="candidate-search-snippet"><span class="candidate-search-snippet-label">${s.label}</span>${s.html}</div>`
                   ).join('')}</div>`
                 : '';
+              const jobPostingRaw = i.job_posting_name || '--';
+              const jobPostingNameHtml = (searchKeyword && typeof window.highlightSearchPartsInText === 'function' && typeof window.collectKeywordHighlightParts === 'function')
+                ? window.highlightSearchPartsInText(jobPostingRaw, window.collectKeywordHighlightParts(searchKeyword))
+                : (typeof window.escapeHtml === 'function' ? window.escapeHtml(jobPostingRaw) : jobPostingRaw);
 
               return `
                 <div class="table-row" data-row-key="${rowKey}" style="border-bottom: 1px solid #f1f5f9;">
@@ -756,7 +760,7 @@
                       </div>
                     </div>
                   </div>
-                  <div>${i.job_posting_name || '--'}</div>
+                  <div>${jobPostingNameHtml}</div>
                   <div>${i.city || '--'}</div>
                   <div class="mono">${typeof window.formatDateTimeToSeconds === 'function' ? window.formatDateTimeToSeconds(i.created_at) : (i.created_at || '--')}</div>
                   <div>${i.source || '--'}</div>

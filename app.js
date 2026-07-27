@@ -1716,6 +1716,7 @@ window.getSearchMatchParts = getSearchMatchParts;
 window.analyzeTokenMatch = analyzeTokenMatch;
 window.tokenMatchesText = tokenMatchesText;
 window.collectKeywordHighlightParts = collectKeywordHighlightParts;
+window.highlightSearchPartsInText = highlightSearchPartsInText;
 window.buildCandidateSearchHitSnippets = buildCandidateSearchHitSnippets;
 window.buildCandidateL1SearchText = buildCandidateL1SearchText;
 window.buildCandidateL2SearchText = buildCandidateL2SearchText;

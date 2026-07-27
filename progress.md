@@ -3446,4 +3446,5 @@
   * 修改 [src/pages/candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html) 列头及渲染表达式。
   * 修改 [backend/app/schemas.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/schemas.py) 与 [backend/app/crud.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/crud.py)。
   * 将 `job_posting_name` 纳入前端 `app.js` 及后端 `crud.py` 的 L1 最高优先级关键词搜索与排序。
+  * 将“岗位名称”列接通词元提取高亮渲染，搜寻命中处自动呈现黄色醒目高亮。
   * 新增及更新自动化单元测试 `tests/test_candidate_job_posting.py` 及 `tests/test_candidate_keyword_search.py` 均运行通过。
