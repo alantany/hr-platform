@@ -59,6 +59,20 @@ def test_l1_title_ranks_above_l2_experience_only():
     )
 
 
+def test_job_posting_name_matches_l1_search():
+    item = {
+        "id": 3,
+        "job_posting_name": "Go语言架构师",
+        "job_intention": "",
+        "current_title": "软件工程师",
+        "work_history": "维护已有系统",
+    }
+    keyword = "Go语言"
+    assert crud._matches_search_keyword(crud._candidate_search_text(item), keyword)
+    l1, l2 = crud._score_candidate_keyword_match(item, keyword)
+    assert l1 == 1
+
+
 def test_current_title_counts_as_l1():
     item = {
         "job_intention": "",

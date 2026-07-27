@@ -1606,10 +1606,10 @@ function buildCandidateSearchHitSnippets(item, keyword) {
   return out;
 }
 
-/** L1：期望岗位名（求职意向 + 当前/期望职位名，最高优先） */
+/** L1：岗位名（发布岗位名称 + 求职意向 + 当前/期望职位名，最高优先） */
 function buildCandidateL1SearchText(item) {
   if (!item) return "";
-  return _joinSearchParts([item.job_intention, item.current_title]);
+  return _joinSearchParts([item.job_posting_name, item.job_intention, item.current_title]);
 }
 
 /** L2：经历与技能补充（不含职位名，职位名已在 L1） */

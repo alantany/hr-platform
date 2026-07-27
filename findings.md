@@ -2427,3 +2427,4 @@
 ## 2026-07-27（候选人“期望岗位”变更为“岗位名称”）
 
 - 候选人简历池列表的“期望岗位”列已被改造为“岗位名称”，实时左连接 `recruit.resume_downloads.job_posting_id` 与 `recruit.job_postings.id` 提取实际发布岗位名称（`job_posting_name`），并在前端页面 [candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html) 和后端接口 (`crud.list_candidates`) 中更新支持。所有历史候选人记录全量自动、实时生效展示。
+- 发布岗位名称 `job_posting_name` 已同步纳入前端（`app.js`）及后端（`crud.py`）的 L1 最高优先级关键词搜索与排序算子中。当搜索发布岗位名称时，能够精准过滤匹配并优先置顶展现。

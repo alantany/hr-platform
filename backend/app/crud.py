@@ -591,8 +591,8 @@ def _token_matches_text(token: str, text: str) -> bool:
 
 
 def _candidate_l1_search_text(item: dict) -> str:
-    """L1：期望岗位名（求职意向 + 当前/期望职位名，最高优先）。"""
-    return _join_search_parts([item.get("job_intention"), item.get("current_title")])
+    """L1：岗位名（发布岗位名称 + 求职意向 + 当前/期望职位名，最高优先）。"""
+    return _join_search_parts([item.get("job_posting_name"), item.get("job_intention"), item.get("current_title")])
 
 
 def _candidate_l2_search_text(item: dict) -> str:
