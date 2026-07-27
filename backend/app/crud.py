@@ -642,8 +642,12 @@ def create_candidate(db: Session, payload):
 
 
 def list_candidates(db: Session, keyword: str | None = None, city: str | None = None, status: str | None = None):
-    from .models import RecruitResumeDownload, Candidate
+    from .models import RecruitResumeDownload, Candidate, RecruitJobPosting
     
+    # 0. 查出 recruit.job_postings 建立 job_posting_id -> job_title 映射
+    job_postings = db.query(RecruitJobPosting).all()
+    job_posting_map = {jp.id: jp.job_title for jp in job_postings}
+
     # 1. 联合查询：用 SQLAlchemy 的 outerjoin 将抓取端的简历下载表与交付端扩展表进行 LEFT JOIN
     rows = db.query(RecruitResumeDownload, Candidate).outerjoin(
         Candidate, Candidate.candidate_agent_id == RecruitResumeDownload.candidate_agent_id
@@ -693,6 +697,7 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
             "salary_structure": c.salary_structure,
             "job_intention": c.job_intention,
             "project_history": c.project_history,
+            "job_posting_name": None,
             "candidate_agent_id": None,
             "record_key": f"candidate:{c.id}",
             "created_at": c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else None,
@@ -701,6 +706,7 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
         
     # 处理联合查询的结果
     for d, c in rows:
+        jp_name = job_posting_map.get(d.job_posting_id) if (d and d.job_posting_id) else None
         if c:
             if c.id in seen_candidate_ids:
                 continue
@@ -739,6 +745,7 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "salary_structure": c.salary_structure,
                 "job_intention": c.job_intention,
                 "project_history": c.project_history,
+                "job_posting_name": jp_name,
                 "candidate_agent_id": d.candidate_agent_id,
                 "record_key": f"candidate:{c.id}",
                 # 入池时间：优先用 recruit 抓取下载时间，否则用交付表创建时间
@@ -779,6 +786,7 @@ def list_candidates(db: Session, keyword: str | None = None, city: str | None = 
                 "salary_structure": None,
                 "job_intention": None,
                 "project_history": None,
+                "job_posting_name": jp_name,
                 "candidate_agent_id": d.candidate_agent_id,
                 "record_key": f"download:{d.id}",
                 "created_at": d.created_at,

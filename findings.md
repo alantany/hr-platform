@@ -2423,3 +2423,7 @@
 
 - “自己锁定”按当前用户已接受并生效的岗位权限、岗位推荐关系和候选人锁定状态计算，不依赖单一 `owner_user_id`。
 - 同一岗位分配给多名操作员时，岗位下锁定候选人对每名操作员都属于“自己锁定”。
+
+## 2026-07-27（候选人“期望岗位”变更为“岗位名称”）
+
+- 候选人简历池列表的“期望岗位”列已被改造为“岗位名称”，实时左连接 `recruit.resume_downloads.job_posting_id` 与 `recruit.job_postings.id` 提取实际发布岗位名称（`job_posting_name`），并在前端页面 [candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html) 和后端接口 (`crud.list_candidates`) 中更新支持。所有历史候选人记录全量自动、实时生效展示。

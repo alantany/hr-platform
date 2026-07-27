@@ -3436,3 +3436,13 @@
 - 候选人资源池状态过滤新增“自己锁定”。
 - 依据当前用户已生效的岗位权限和岗位推荐关系标记锁定候选人；共享岗位的多名操作员均可命中同一批候选人。
 - 轻量验证通过：共享数据权限定向测试 1 passed、候选人页脚本语法及差异检查通过。
+
+## 2026-07-27（完成 - 候选人列表“期望岗位”列变更为“岗位名称”）
+
+- **需求实现**：将候选人简历池列表的“期望岗位”表头修改为“岗位名称”，并通过后端关联查询动态输出实际发布的岗位名称（`job_posting_name`）。
+- **字段关联路径**：`Candidate` / `RecruitResumeDownload` $\rightarrow$ `recruit.resume_downloads.job_posting_id` $\rightarrow$ `recruit.job_postings.id` $\rightarrow$ `title` (`job_title`)。
+- **关联同步范围**：后端采用接口动态 LEFT JOIN / Map 查询，自动覆盖并实时更新所有历史及新增候选人数据。
+- **页面及验证**：
+  * 修改 [src/pages/candidates.html](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/src/pages/candidates.html) 列头及渲染表达式。
+  * 修改 [backend/app/schemas.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/schemas.py) 与 [backend/app/crud.py](file:///Users/huaiyuan/Desktop/workspace/hr-plateform/backend/app/crud.py)。
+  * 新增自动化单元测试 `tests/test_candidate_job_posting.py` 并运行通过。

@@ -175,7 +175,7 @@
           <div class="table-head">
             <div><input type="checkbox" data-action="toggle-all-candidates" aria-label="全选" /></div>
             <div>候选人</div>
-            <div>期望职位</div>
+            <div>岗位名称</div>
             <div>期望城市</div>
             <div>入池时间</div>
             <div>来源</div>
@@ -756,7 +756,7 @@
                       </div>
                     </div>
                   </div>
-                  <div>${i.job_intention || i.current_title || '--'}</div>
+                  <div>${i.job_posting_name || '--'}</div>
                   <div>${i.city || '--'}</div>
                   <div class="mono">${typeof window.formatDateTimeToSeconds === 'function' ? window.formatDateTimeToSeconds(i.created_at) : (i.created_at || '--')}</div>
                   <div>${i.source || '--'}</div>

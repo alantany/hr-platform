@@ -319,6 +319,7 @@ class CandidateOut(CandidateCreate):
     candidate_warranty_status: str | None = ""
     self_locked: bool = False
     has_interview_round: bool = False
+    job_posting_name: str | None = None
 
 
 class CandidateAiSearchRequest(BaseModel):
