@@ -87,22 +87,22 @@ const pages = {
   "recruit-job-publish": {
     crumbs: "平台岗位发布 / 岗位发布",
     title: "岗位发布",
-    desc: "发布供 Recruit 抓取后台读取的岗位条件，数据写入 PostgreSQL 的 recruit.job_postings。",
+    desc: "配置与发布自动化招聘岗位需求，支持 AI 智能解析 JD 提取精准匹配关键词与岗位画像。",
   },
   "recruit-job-list": {
     crumbs: "平台岗位发布 / 岗位列表",
     title: "岗位列表",
-    desc: "查看和维护 Recruit 岗位库，控制岗位是否参与抓取任务。",
+    desc: "集中管理与维护当前发布的所有招聘岗位、搜索关键词及自动化抓取生效状态。",
   },
   "recruit-daily-tasks": {
     crumbs: "平台岗位发布 / 每日任务",
     title: "每日任务",
-    desc: "按日期查看 Recruit 抓取任务的打招呼、索要简历、下载和回执统计。",
+    desc: "实时查看每日自动化人才抓取、打招呼沟通、索要简历及下载履约的数据统计。",
   },
   "recruit-keywords": {
     crumbs: "平台岗位发布 / 解析关键词",
     title: "解析关键词配置",
-    desc: "统一配置用于岗位描述 (JD) 智能解析与过滤的自定义关键词库。",
+    desc: "配置 AI 智能解析 JD 时重点关注的关键词矩阵，提升人才匹配与精筛精准度。",
   },
   evaluations: {
     crumbs: "评价 / 评价管理",
