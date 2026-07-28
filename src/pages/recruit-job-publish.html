@@ -313,17 +313,7 @@
         showToast("请先在左侧输入或粘贴 JD 文本");
         return;
       }
-      const token = localStorage.getItem("token") || "";
-      const res = await fetch("/api/recruit/jobs/parse-jd", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ jd_text: jdText, job_title: jobTitle }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: "解析失败" }));
-        throw new Error(err.detail || "解析失败");
-      }
-      const data = await res.json();
+      const data = await window.hrApi.parseRecruitJd({ jd_text: jdText, job_title: jobTitle });
       renderPortraitView(data.profile);
       showToast("JD 智能解析成功！岗位画像已更新");
     }

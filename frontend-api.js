@@ -457,6 +457,9 @@ window.hrApi = {
   deleteRecruitJobPosting(id) {
     return this.request(`/recruit/job-postings/${id}`, { method: "DELETE" });
   },
+  parseRecruitJd(payload) {
+    return this.request("/recruit/jobs/parse-jd", { method: "POST", body: JSON.stringify(payload) });
+  },
   recruitDailyTaskStats(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/recruit/daily-task-stats${qs ? `?${qs}` : ""}`);
