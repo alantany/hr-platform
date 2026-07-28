@@ -1644,15 +1644,36 @@ def list_parse_keywords(db: Session, category: str | None = None, is_active: boo
         query = query.filter(RecruitParseKeyword.category == category)
     if is_active is not None:
         query = query.filter(RecruitParseKeyword.is_active == is_active)
-    return query.order_by(RecruitParseKeyword.id.desc()).all()
+    rows = query.order_by(RecruitParseKeyword.id.asc()).all()
+    
+    # 若数据库尚无任何关键词记录，自动植入 8 个预置核心矩阵关键词
+    if not rows and category is None and is_active is None:
+        default_keywords = [
+            ("education", "学历"),
+            ("age", "年龄"),
+            ("licenses", "证书"),
+            ("industry", "行业"),
+            ("job_category", "岗位"),
+            ("skills", "技能"),
+            ("awards", "获奖情况"),
+            ("experience", "工作年限"),
+        ]
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        for cat, kw in default_keywords:
+            item = RecruitParseKeyword(category=cat, keyword=kw, is_active=True, created_at=now_str)
+            db.add(item)
+        db.commit()
+        rows = db.query(RecruitParseKeyword).order_by(RecruitParseKeyword.id.asc()).all()
+
+    return rows
 
 
 def create_parse_keyword(db: Session, payload) -> RecruitParseKeyword:
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     obj = RecruitParseKeyword(
-        category=payload.category,
+        category=payload.category if hasattr(payload, 'category') and payload.category else "general",
         keyword=payload.keyword.strip(),
-        is_active=payload.is_active,
+        is_active=getattr(payload, 'is_active', True),
         created_at=now_str
     )
     db.add(obj)
@@ -1683,15 +1704,13 @@ def delete_parse_keyword(db: Session, keyword_id: int) -> bool:
 def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: str = "", db: Session | None = None) -> dict:
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     
-    # 动态查询用户在【解析关键词】配置页中录入的所有活跃关键词
-    configured_keywords = []
-    category_map = {"skills": [], "job_category": [], "industry": [], "licenses": [], "experience": []}
+    # 动态查询用户在【解析关键词矩阵】中已勾选启用的关键词
+    active_keywords = []
     if db:
         db_kws = list_parse_keywords(db, is_active=True)
-        for item in db_kws:
-            configured_keywords.append(item.keyword)
-            if item.category in category_map:
-                category_map[item.category].append(item.keyword)
+        active_keywords = [item.keyword for item in db_kws if item.is_active]
+    if not active_keywords:
+        active_keywords = ["学历", "年龄", "证书", "行业", "岗位", "技能", "获奖情况", "工作年限"]
 
     # 尝试使用大模型 API (DeepSeek / OpenAI 规范) 进行大模型级精准解析
     llm_result = None
@@ -1702,11 +1721,16 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
             from openai import OpenAI
             client = OpenAI(base_url=base_url, api_key=api_key)
             
-            user_kw_hint = ""
-            if configured_keywords:
-                user_kw_hint = f"\n必须优先参考并从中挑选匹配的配置关键词词库：{json.dumps(category_map, ensure_ascii=False)}"
+            prompt = f"""你是资深招聘分析专家。
+用户在配置矩阵中【已勾选启用】了以下需要从岗位描述 (JD) 中强抓取的【关注关键词列表】：
+{json.dumps(active_keywords, ensure_ascii=False)}
 
-            prompt = f"""你是专业的招聘与岗位画像专家。请分析输入的 JD 岗位描述文本，严格返回以下 JSON 对象：
+请你分析输入的 JD 岗位描述文本，严格抓取与上述【关注关键词】相关的具体要求内容，并将提取出的内容结构化整理，填入【职位画像】中：
+- 针对"年龄"、"学历"、"证书"、"工作年限"等硬性指标，填入 hard_requirements 字典中；
+- 针对"技能"、"岗位"、"行业"、"获奖情况/其他"等优先能力项，提取核心词/短语填入 priority_requirements 画像对象中；
+- 提取最能代表该岗位的 4~6 个精准搜索关键词填入 search_keywords。
+
+必须严格返回 JSON 对象，格式如下：
 {{
   "age_range": "例如 18-35岁 或 不限",
   "education": "例如 本科及以上",
@@ -1714,10 +1738,10 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
   "job_category": "岗位类别名称",
   "industry": "行业名称",
   "skills": ["技能词1", "技能词2"],
-  "experience": "经验要求说明",
-  "other": "其他要求说明",
+  "experience": "工作年限与经验要求说明",
+  "other": "获奖情况或其他重点要求说明",
   "search_keywords": ["搜索词1", "搜索词2"]
-}}{user_kw_hint}"""
+}}"""
             response = client.chat.completions.create(
                 model=model,
                 messages=[

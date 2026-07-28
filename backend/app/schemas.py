@@ -877,7 +877,7 @@ class CandidateNoteOut(CandidateNoteCreate):
 
 
 class RecruitParseKeywordCreate(BaseModel):
-    category: str
+    category: str = "general"
     keyword: str
     is_active: bool = True
 

@@ -1,12 +1,10 @@
 # Progress
 
-## 2026-07-28（完成 - 解析关键词配置标签页与即时解析提示落地）
+## 2026-07-28（完成 - 解析关键词矩阵勾选网格与 AI 动态抓取落地）
 
-- **即时 Toast 反馈**：在 `recruit-job-publish.html` 一键点击【智能解析 JD】时，右下角**立刻**弹出“🤖 AI 正在对 JD 文本进行智能解析与关键词过滤，请稍候...”的提示，彻底消除点击等待感。
-- **解析关键词配置页**：在侧栏【平台岗位发布】分组下新增【解析关键词】标签页（`recruit-keywords.html`），支持用户管理与配置专属技能、职类、行业背景、特种作业/证书关键词词库。
-- **数据库 Schema (`recruit`)**：在 `models.py` 中新增 `RecruitParseKeyword` 模型，属于 PostgreSQL `recruit` schema（映射表 `recruit.parse_keywords`）。
-- **动态解析引擎**：彻底移除了写死的旧“风电工程师”写死模板，`POST /api/recruit/jobs/parse-jd` 在解析时动态加载用户在【解析关键词】页面配置的有效词库，并注入大模型 Prompt 与过滤逻辑。
-- **自动化测试**：新增 `tests/test_recruit_keywords.py`，全量测试集运行通过（`2 passed`）。
+- **矩阵勾选网格 (Matrix Grid UI)**：在 `recruit-keywords.html` 中重构推出实体卡片矩阵网格，预置 `学历`、`年龄`、`证书`、`行业`、`岗位`、`技能`、`获奖情况`、`工作年限` 8 个核心矩阵词，支持单点击勾选（Checkbox）开/关生效状态，并提供快捷内联追加新词。
+- **AI 大模型 Prompt 强力绑定**：在 `crud.py` 中更新 `parse_jd_text_to_profile`，解析时自动查询 `is_active = True` 的全量已勾选矩阵词，将其作为极佳抓取指令注入 DeepSeek 系统 Prompt 中，强力抽取并充实【岗位画像】。
+- **自动化测试**：全量单元与契约测试通过（`2 passed`）。
 
 ## 2026-07-28（完成 - 岗位发布 JD 智能解析与岗位/客户画像功能落地）
 
