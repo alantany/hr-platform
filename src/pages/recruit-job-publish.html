@@ -300,7 +300,7 @@
       const searchTags = profile.search_keywords || [];
       const searchCloud = document.querySelector("[data-portrait-search-tags]");
       if (searchCloud) {
-        searchCloud.innerHTML = searchTags.map(t => `<span class="portrait-tag is-primary">${t}</span>`).join("");
+        searchCloud.innerHTML = searchTags.map(t => `<span class="portrait-tag is-primary is-clickable" data-action="add-search-kw" title="点击自动追加至搜索关键词框">${t} ➕</span>`).join("");
       }
 
       const kwInput = document.querySelector('[data-recruit-field="search_keyword"]');
@@ -407,6 +407,23 @@
     window.addEventListener("DOMContentLoaded", async () => {
       await renderApp();
       await loadPageData().catch((err) => showToast(err.message || String(err)));
+      
+      document.addEventListener("click", (e) => {
+        const tagBtn = e.target.closest('[data-action="add-search-kw"]');
+        if (!tagBtn) return;
+        const kwText = tagBtn.textContent.replace("➕", "").trim();
+        const kwInput = document.querySelector('[data-recruit-field="search_keyword"]');
+        if (!kwInput) return;
+
+        let currentKws = kwInput.value.trim().split(/\s+/).filter(Boolean);
+        if (!currentKws.includes(kwText)) {
+          currentKws.push(kwText);
+          kwInput.value = currentKws.join(" ");
+          showToast(`已自动将【${kwText}】填入搜索关键词框`);
+        } else {
+          showToast(`关键词【${kwText}】已在搜索框中`);
+        }
+      });
       
       document.addEventListener("click", async (event) => {
         const parseBtn = event.target.closest('[data-action="parse-jd"]');

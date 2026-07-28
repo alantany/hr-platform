@@ -1721,26 +1721,29 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
             from openai import OpenAI
             client = OpenAI(base_url=base_url, api_key=api_key)
             
-            prompt = f"""你是资深招聘分析专家。
-用户在配置矩阵中【已勾选启用】了以下需要从岗位描述 (JD) 中强抓取的【关注关键词列表】：
+            prompt = f"""你是资深招聘与岗位解析分析专家。
+用户在配置矩阵中【已勾选启用】了以下需要重点抓取的【关注关键词列表】：
 {json.dumps(active_keywords, ensure_ascii=False)}
 
-请你分析输入的 JD 岗位描述文本，严格抓取与上述【关注关键词】相关的具体要求内容，并将提取出的内容结构化整理，填入【职位画像】中：
-- 针对"年龄"、"学历"、"证书"、"工作年限"等硬性指标，填入 hard_requirements 字典中；
-- 针对"技能"、"岗位"、"行业"、"获奖情况/其他"等优先能力项，提取核心词/短语填入 priority_requirements 画像对象中；
-- 提取最能代表该岗位的 4~6 个精准搜索关键词填入 search_keywords。
+请你对输入的 JD 岗位描述文本进行深度的智能解析与信息抓取，并输出结构化的【职位画像】：
+
+【搜索关键词 (search_keywords) 生成的核心优先级规则】：
+1. 第 1 优先级（排在最前面）：从 JD 中解析出候选人【必须具备的硬性能力/资格】（如：必备证书/资质名称、必须熟练操作的特定工具或核心硬门槛能力）。
+   - 排除项：页面上已有独立表单/下拉框的"年龄"与"学历"不需要重复放入关键词中。
+   - 拆分要求：如果有多个必须具备的硬性能力或资质，必须拆分为多个独立、精炼的短搜索关键词（如 ["高压电工证", "登高证", "风机调试"]），逐一排在 search_keywords 的最前端！
+2. 第 2 优先级（排在后面）：从 JD 的优先/加分要求中提取出的核心技能词、行业背景与特定细分岗位名称，排在硬性能力词之后。
 
 必须严格返回 JSON 对象，格式如下：
 {{
   "age_range": "例如 18-35岁 或 不限",
   "education": "例如 本科及以上",
-  "special_licenses": "例如 必须有 / 无特殊要求",
+  "special_licenses": "例如 必备高压电工证/登高证 或 无特殊要求",
   "job_category": "岗位类别名称",
   "industry": "行业名称",
-  "skills": ["技能词1", "技能词2"],
+  "skills": ["核心技能1", "核心技能2"],
   "experience": "工作年限与经验要求说明",
   "other": "获奖情况或其他重点要求说明",
-  "search_keywords": ["搜索词1", "搜索词2"]
+  "search_keywords": ["硬性必备能力1", "硬性必备能力2", "优先技能1", "优先技能2"]
 }}"""
             response = client.chat.completions.create(
                 model=model,
