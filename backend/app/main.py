@@ -3648,8 +3648,47 @@ def parse_recruit_jd(payload: schemas.JDParseRequest, db: Session = Depends(get_
     jd_text = (payload.jd_text or "").strip()
     if not jd_text:
         raise HTTPException(status_code=400, detail="请提供有效的岗位描述 JD 文本")
-    profile = crud.parse_jd_text_to_profile(jd_text, job_title=payload.job_title or "", job_category=payload.job_category or "")
+    profile = crud.parse_jd_text_to_profile(jd_text, job_title=payload.job_title or "", job_category=payload.job_category or "", db=db)
     return {"profile": profile}
+
+
+@app.get("/api/recruit/parse-keywords")
+def list_recruit_parse_keywords(category: str | None = None, is_active: bool | None = None, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    items = crud.list_parse_keywords(db, category=category, is_active=is_active)
+    return {"keywords": [schemas.RecruitParseKeywordOut.model_validate(item) for item in items]}
+
+
+@app.post("/api/recruit/parse-keywords")
+def create_recruit_parse_keyword(payload: schemas.RecruitParseKeywordCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if not payload.keyword.strip():
+        raise HTTPException(status_code=400, detail="请输入解析关键词文本")
+    obj = crud.create_parse_keyword(db, payload)
+    crud.add_audit(db, user.username, "Recruit岗位管理", "新增解析关键词", "parse_keyword", str(obj.id), detail=obj.keyword)
+    db.commit()
+    db.refresh(obj)
+    return {"keyword": schemas.RecruitParseKeywordOut.model_validate(obj)}
+
+
+@app.patch("/api/recruit/parse-keywords/{keyword_id}")
+def update_recruit_parse_keyword(keyword_id: int, payload: schemas.RecruitParseKeywordUpdate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    obj = crud.update_parse_keyword(db, keyword_id, payload)
+    if not obj:
+        raise HTTPException(status_code=404, detail="解析关键词不存在")
+    crud.add_audit(db, user.username, "Recruit岗位管理", "更新解析关键词", "parse_keyword", str(keyword_id), detail=obj.keyword)
+    db.commit()
+    db.refresh(obj)
+    return {"keyword": schemas.RecruitParseKeywordOut.model_validate(obj)}
+
+
+@app.delete("/api/recruit/parse-keywords/{keyword_id}")
+def delete_recruit_parse_keyword(keyword_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    ok = crud.delete_parse_keyword(db, keyword_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="解析关键词不存在")
+    crud.add_audit(db, user.username, "Recruit岗位管理", "删除解析关键词", "parse_keyword", str(keyword_id))
+    db.commit()
+    return {"ok": True, "deleted_id": keyword_id}
+
 
 
 @app.get("/api/recruit/job-postings")
@@ -3924,12 +3963,13 @@ def get_db_table_data(
         "employees": RecruitEmployee,
         "job_postings": RecruitJobPosting,
         "job_profiles": RecruitJobProfile,
+        "parse_keywords": RecruitParseKeyword,
         "daily_task_stats": RecruitDailyTaskStat,
         "candidate_notes": CandidateNote
     }
     
     # Dynamically determine the schema of the requested table
-    recruit_tables = {"candidate_profiles", "resume_downloads", "employees", "job_postings", "job_profiles", "daily_task_stats"}
+    recruit_tables = {"candidate_profiles", "resume_downloads", "employees", "job_postings", "job_profiles", "parse_keywords", "daily_task_stats"}
     schema = None
     if table_name in recruit_tables:
         schema = "recruit"

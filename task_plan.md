@@ -98,12 +98,21 @@
 
 ### Phase 10 - Recruit JD Parsing & Profile Configuration (recruit schema)
 
-- [ ] 新增 `recruit.job_profiles` SQLAlchemy 模型（包含 raw_jd_text, hard_requirements, priority_requirements, search_keywords, use_portrait_weights）
-- [ ] 开发 `POST /api/recruit/jobs/parse-jd` AI/智能规则解析 API
-- [ ] 升级 `src/pages/recruit-job-publish.html` 为双栏布局，集成 JD 文本框与岗位画像右侧侧边栏卡片
-- [ ] 在岗位画像卡片中增加“使用此比例与关键词指导匹配/搜索”的人类确认开关
-- [ ] 编写接口与 UI 自动化/契约测试，更新 `findings.md` 与 `progress.md`
-- **Status:** in_progress
+- [x] 新增 `recruit.job_profiles` SQLAlchemy 模型（包含 raw_jd_text, hard_requirements, priority_requirements, search_keywords, use_portrait_weights）
+- [x] 开发 `POST /api/recruit/jobs/parse-jd` AI/智能规则解析 API
+- [x] 升级 `src/pages/recruit-job-publish.html` 为双栏布局，集成 JD 文本框与岗位画像右侧侧边栏卡片
+- [x] 在岗位画像卡片中增加“使用此比例与关键词指导匹配/搜索”的人类确认开关
+- [x] 编写接口与 UI 自动化/契约测试，更新 `findings.md` 与 `progress.md`
+- **Status:** complete
+
+### Phase 11 - Recruit Dynamic Keywords Configuration & Instant Parsing Toast
+
+- [x] 在 `recruit-job-publish.html` 中增加一键智能解析即时消息提示（Toast 提醒）
+- [x] 在侧栏【平台岗位发布】分组下新增【解析关键词】标签页（`recruit-keywords.html`）
+- [x] 新增 `recruit.parse_keywords` 数据库表与 CRUD 接口（recruit schema）
+- [x] 移除旧固定的“风电/岗位”写死模板，改为动态结合用户配置的词库进行 JD 精准提取与大模型分析
+- [x] 编写单元/契约测试并全量验证通过
+- **Status:** complete
 
 ## Key Questions
 

@@ -875,3 +875,26 @@ class CandidateNoteOut(CandidateNoteCreate):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class RecruitParseKeywordCreate(BaseModel):
+    category: str
+    keyword: str
+    is_active: bool = True
+
+
+class RecruitParseKeywordUpdate(BaseModel):
+    category: str | None = None
+    keyword: str | None = None
+    is_active: bool | None = None
+
+
+class RecruitParseKeywordOut(BaseModel):
+    id: int
+    category: str
+    keyword: str
+    is_active: bool
+    created_at: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+

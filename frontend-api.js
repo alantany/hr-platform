@@ -460,6 +460,19 @@ window.hrApi = {
   parseRecruitJd(payload) {
     return this.request("/recruit/jobs/parse-jd", { method: "POST", body: JSON.stringify(payload) });
   },
+  recruitParseKeywords(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/recruit/parse-keywords${qs ? `?${qs}` : ""}`);
+  },
+  createRecruitParseKeyword(payload) {
+    return this.request("/recruit/parse-keywords", { method: "POST", body: JSON.stringify(payload) });
+  },
+  updateRecruitParseKeyword(id, payload) {
+    return this.request(`/recruit/parse-keywords/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  },
+  deleteRecruitParseKeyword(id) {
+    return this.request(`/recruit/parse-keywords/${id}`, { method: "DELETE" });
+  },
   recruitDailyTaskStats(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/recruit/daily-task-stats${qs ? `?${qs}` : ""}`);

@@ -17,6 +17,7 @@ const navGroups = [
     items: [
       { href: "recruit-job-publish.html", label: "岗位发布", badge: "发布", icon: "file" },
       { href: "recruit-job-list.html", label: "岗位列表", badge: "列表", icon: "inbox" },
+      { href: "recruit-keywords.html", label: "解析关键词", badge: "词库", icon: "tags" },
       { href: "recruit-daily-tasks.html", label: "每日任务", badge: "任务", icon: "chart" },
     ],
   },
@@ -97,6 +98,11 @@ const pages = {
     crumbs: "平台岗位发布 / 每日任务",
     title: "每日任务",
     desc: "按日期查看 Recruit 抓取任务的打招呼、索要简历、下载和回执统计。",
+  },
+  "recruit-keywords": {
+    crumbs: "平台岗位发布 / 解析关键词",
+    title: "解析关键词配置",
+    desc: "统一配置用于岗位描述 (JD) 智能解析与过滤的自定义关键词库。",
   },
   evaluations: {
     crumbs: "评价 / 评价管理",
@@ -685,6 +691,7 @@ function getNavVisibility(role, permissions = null) {
       "positions.html",
       "recruit-job-publish.html",
       "recruit-job-list.html",
+      "recruit-keywords.html",
       "recruit-daily-tasks.html",
       "projects.html",
       "evaluations.html",
@@ -702,6 +709,7 @@ function getNavVisibility(role, permissions = null) {
       "positions.html",
       "recruit-job-publish.html",
       "recruit-job-list.html",
+      "recruit-keywords.html",
       "recruit-daily-tasks.html",
       "projects.html",
       "evaluations.html",
@@ -725,6 +733,7 @@ const crumbHrefMap = {
   "平台岗位发布": "./recruit-job-publish.html",
   "岗位发布": "./recruit-job-publish.html",
   "岗位列表": "./recruit-job-list.html",
+  "解析关键词": "./recruit-keywords.html",
   "每日任务": "./recruit-daily-tasks.html",
   "评价": "./evaluations.html",
   "评价管理": "./evaluations.html",

@@ -314,6 +314,8 @@
         return;
       }
 
+      showToast("🤖 AI 正在对 JD 文本进行智能解析与关键词过滤，请稍候...", 4000);
+
       let data;
       if (window.hrApi && typeof window.hrApi.parseRecruitJd === "function") {
         data = await window.hrApi.parseRecruitJd({ jd_text: jdText, job_title: jobTitle });

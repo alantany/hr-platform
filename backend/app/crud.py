@@ -10,7 +10,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from . import security
-from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, RecruitJobProfile, Role, RolePermission, SalaryRecord, SearchHotword, SearchPreset, SystemConfig, TagDictionary, User, WarrantyRule
+from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, RecruitJobProfile, RecruitParseKeyword, Role, RolePermission, SalaryRecord, SearchHotword, SearchPreset, SystemConfig, TagDictionary, User, WarrantyRule
 
 
 TAG_OBJECT_LABELS = {
@@ -1638,10 +1638,62 @@ def list_candidate_notes(db: Session, candidate_id: int | None = None):
     return query.order_by(CandidateNote.created_at.desc()).all()
 
 
-def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: str = "") -> dict:
+def list_parse_keywords(db: Session, category: str | None = None, is_active: bool | None = None):
+    query = db.query(RecruitParseKeyword)
+    if category:
+        query = query.filter(RecruitParseKeyword.category == category)
+    if is_active is not None:
+        query = query.filter(RecruitParseKeyword.is_active == is_active)
+    return query.order_by(RecruitParseKeyword.id.desc()).all()
+
+
+def create_parse_keyword(db: Session, payload) -> RecruitParseKeyword:
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    obj = RecruitParseKeyword(
+        category=payload.category,
+        keyword=payload.keyword.strip(),
+        is_active=payload.is_active,
+        created_at=now_str
+    )
+    db.add(obj)
+    return obj
+
+
+def update_parse_keyword(db: Session, keyword_id: int, payload) -> RecruitParseKeyword | None:
+    obj = db.get(RecruitParseKeyword, keyword_id)
+    if not obj:
+        return None
+    data = payload.model_dump(exclude_unset=True)
+    for key, value in data.items():
+        if key == "keyword" and value is not None:
+            value = value.strip()
+        setattr(obj, key, value)
+    db.add(obj)
+    return obj
+
+
+def delete_parse_keyword(db: Session, keyword_id: int) -> bool:
+    obj = db.get(RecruitParseKeyword, keyword_id)
+    if not obj:
+        return False
+    db.delete(obj)
+    return True
+
+
+def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: str = "", db: Session | None = None) -> dict:
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     
-    # 优先尝试使用大模型 API (DeepSeek / OpenAI 规范) 进行大模型级精准解析
+    # 动态查询用户在【解析关键词】配置页中录入的所有活跃关键词
+    configured_keywords = []
+    category_map = {"skills": [], "job_category": [], "industry": [], "licenses": [], "experience": []}
+    if db:
+        db_kws = list_parse_keywords(db, is_active=True)
+        for item in db_kws:
+            configured_keywords.append(item.keyword)
+            if item.category in category_map:
+                category_map[item.category].append(item.keyword)
+
+    # 尝试使用大模型 API (DeepSeek / OpenAI 规范) 进行大模型级精准解析
     llm_result = None
     try:
         from .config import get_deepseek_config
@@ -1649,18 +1701,23 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
         if api_key and api_key not in ("your_api_key_here", "replace_with_your_openrouter_key", "replace_with_your_deepseek_key"):
             from openai import OpenAI
             client = OpenAI(base_url=base_url, api_key=api_key)
-            prompt = """你是专业的招聘与岗位画像专家。请分析输入的 JD 岗位描述文本，严格返回以下 JSON 对象：
-{
+            
+            user_kw_hint = ""
+            if configured_keywords:
+                user_kw_hint = f"\n必须优先参考并从中挑选匹配的配置关键词词库：{json.dumps(category_map, ensure_ascii=False)}"
+
+            prompt = f"""你是专业的招聘与岗位画像专家。请分析输入的 JD 岗位描述文本，严格返回以下 JSON 对象：
+{{
   "age_range": "例如 18-35岁 或 不限",
   "education": "例如 本科及以上",
   "special_licenses": "例如 必须有 / 无特殊要求",
   "job_category": "岗位类别名称",
   "industry": "行业名称",
-  "skills": ["技能词1", "技能词2", "技能词3"],
+  "skills": ["技能词1", "技能词2"],
   "experience": "经验要求说明",
   "other": "其他要求说明",
-  "search_keywords": ["关键词1", "关键词2", "关键词3"]
-}"""
+  "search_keywords": ["搜索词1", "搜索词2"]
+}}{user_kw_hint}"""
             response = client.chat.completions.create(
                 model=model,
                 messages=[
@@ -1675,7 +1732,7 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
     except Exception:
         llm_result = None
 
-    # 高精度基础规则引擎（用作离线或 API 异常时的兜底）
+    # 基础规则过滤与提取
     age_min, age_max = 16, 40
     age_match = re.search(r'(\d{2})[-~至到](\d{2})岁', jd_text)
     if age_match:
@@ -1685,7 +1742,7 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
         if age_max_match:
             age_max = int(age_max_match.group(1))
 
-    education = "大专、本科、硕士、博士"
+    education = "不限"
     if "本科" in jd_text:
         education = "本科及以上"
     elif "大专" in jd_text:
@@ -1693,20 +1750,36 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
     elif "硕士" in jd_text:
         education = "硕士及以上"
 
-    special_req = "必须有" if ("证书" in jd_text or "特种" in jd_text or "登高" in jd_text or "电工" in jd_text) else "无特殊要求"
-
+    # 动态匹配用户在系统【解析关键词】中配置的词
     skills = []
-    skill_candidates = ["风力发电", "现场运维", "调试", "风机", "光伏", "电气", "PLC", "Office软件", "文字编辑", "办公软件", "Java", "Python", "Linux"]
+    skill_candidates = category_map["skills"] if category_map["skills"] else ["办公软件", "沟通协作", "团队配合", "项目管理", "技术研发"]
     for sc in skill_candidates:
         if sc.lower() in jd_text.lower():
             skills.append(sc)
     if not skills:
-        skills = ["办公软件", "文字编辑", "沟通协作"]
+        skills = skill_candidates[:3]
 
-    category_name = job_category or job_title or "风电/光伏运维工程师"
-    industry_name = "风电" if "风" in jd_text else ("软件/互联网" if ("java" in jd_text.lower() or "python" in jd_text.lower()) else "通用行业")
+    category_name = job_category or job_title or (category_map["job_category"][0] if category_map["job_category"] else "通用岗位")
+    for cat_item in category_map["job_category"]:
+        if cat_item.lower() in jd_text.lower():
+            category_name = cat_item
+            break
 
-    # 大模型 LLM 成功解析时的结构化结果融合
+    industry_name = category_map["industry"][0] if category_map["industry"] else "通用行业"
+    for ind_item in category_map["industry"]:
+        if ind_item.lower() in jd_text.lower():
+            industry_name = ind_item
+            break
+
+    special_req = "无特殊要求"
+    for lic in category_map["licenses"]:
+        if lic.lower() in jd_text.lower():
+            special_req = f"必须有{lic}"
+            break
+    if special_req == "无特殊要求" and ("证书" in jd_text or "特种" in jd_text or "登高" in jd_text or "电工" in jd_text):
+        special_req = "必须有相关专业证书"
+
+    # 大模型 LLM 成功解析时的结果融合
     if isinstance(llm_result, dict):
         age_range_str = llm_result.get("age_range") or f"{age_min}-{age_max}岁"
         edu_str = llm_result.get("education") or education
@@ -1714,8 +1787,8 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
         cat_str = llm_result.get("job_category") or category_name
         ind_str = llm_result.get("industry") or industry_name
         skill_tags = llm_result.get("skills") if isinstance(llm_result.get("skills"), list) and llm_result.get("skills") else skills
-        exp_str = llm_result.get("experience") or "1-3年相关领域工作经验"
-        other_str = llm_result.get("other") or "能适应出差或常驻项目"
+        exp_str = llm_result.get("experience") or "1-3年相关工作经验"
+        other_str = llm_result.get("other") or "具备强烈的责任心与服务意识"
         search_kws = llm_result.get("search_keywords") if isinstance(llm_result.get("search_keywords"), list) and llm_result.get("search_keywords") else list(set(skills + [cat_str, ind_str]))[:6]
 
         return {
@@ -1753,8 +1826,8 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
             "job_category": {"name": category_name, "weight": 20.0},
             "industry": {"name": industry_name, "weight": 10.0},
             "skills": {"tags": skills, "weight": 30.0},
-            "experience": {"desc": "1-3年相关领域工作经验", "weight": 20.0},
-            "other": {"desc": "能适应出差或常驻项目", "weight": 20.0},
+            "experience": {"desc": "1-3年相关工作经验", "weight": 20.0},
+            "other": {"desc": "具备良好的沟通协同能力", "weight": 20.0},
         },
         "search_keywords": list(set(skills + [category_name, industry_name]))[:6],
         "use_portrait_weights": True,
@@ -1793,4 +1866,5 @@ def create_or_update_job_profile(db: Session, job_posting_id: int | None, profil
 
 def get_job_profile_by_posting_id(db: Session, job_posting_id: int) -> RecruitJobProfile | None:
     return db.query(RecruitJobProfile).filter(RecruitJobProfile.job_posting_id == job_posting_id).first()
+
 

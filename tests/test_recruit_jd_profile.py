@@ -36,6 +36,7 @@ def test_recruit_jd_parse_and_profile_flow():
         assert profile["priority_requirements"]["job_category"]["weight"] == 20.0
 
         # 2. 测试创建带岗位画像的 Recruit Job Posting
+        headers = login_headers(client, "admin")
         create_res = client.post(
             "/api/recruit/job-postings",
             json={

@@ -642,6 +642,17 @@ class RecruitJobProfile(Base):
     created_at: Mapped[str] = mapped_column(String(64), nullable=False)
 
 
+class RecruitParseKeyword(Base):
+    __tablename__ = "parse_keywords"
+    __table_args__ = {"schema": "recruit"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    category: Mapped[str] = mapped_column(String(64), nullable=False)
+    keyword: Mapped[str] = mapped_column(String(128), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
 class CandidateNote(Base, TimestampMixin):
     __tablename__ = "candidate_notes"
 

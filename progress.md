@@ -1,5 +1,13 @@
 # Progress
 
+## 2026-07-28（完成 - 解析关键词配置标签页与即时解析提示落地）
+
+- **即时 Toast 反馈**：在 `recruit-job-publish.html` 一键点击【智能解析 JD】时，右下角**立刻**弹出“🤖 AI 正在对 JD 文本进行智能解析与关键词过滤，请稍候...”的提示，彻底消除点击等待感。
+- **解析关键词配置页**：在侧栏【平台岗位发布】分组下新增【解析关键词】标签页（`recruit-keywords.html`），支持用户管理与配置专属技能、职类、行业背景、特种作业/证书关键词词库。
+- **数据库 Schema (`recruit`)**：在 `models.py` 中新增 `RecruitParseKeyword` 模型，属于 PostgreSQL `recruit` schema（映射表 `recruit.parse_keywords`）。
+- **动态解析引擎**：彻底移除了写死的旧“风电工程师”写死模板，`POST /api/recruit/jobs/parse-jd` 在解析时动态加载用户在【解析关键词】页面配置的有效词库，并注入大模型 Prompt 与过滤逻辑。
+- **自动化测试**：新增 `tests/test_recruit_keywords.py`，全量测试集运行通过（`2 passed`）。
+
 ## 2026-07-28（完成 - 岗位发布 JD 智能解析与岗位/客户画像功能落地）
 
 - **数据库模型**：在 `models.py` 中新增 `RecruitJobProfile` SQLAlchemy 模型，显式指定 `__table_args__ = {"schema": "recruit"}`（映射为 PostgreSQL `recruit.job_profiles` 表），存储原始 JD 文本、硬性要求、优先要求及权重占比、搜索关键词标签及人类协同决策标记 `use_portrait_weights`。
