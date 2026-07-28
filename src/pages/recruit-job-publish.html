@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>岗位发布</title>
-  <link rel="stylesheet" href="../../styles.css?v=20260720-logo-prev" />
+  <link rel="stylesheet" href="../../styles.css?v=20260728-jd-profile" />
   <script defer src="../../frontend-api.js"></script>
-  <script defer src="../../app.js?v=20260720-logo-prev"></script>
+  <script defer src="../../app.js?v=20260728-jd-profile"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -32,7 +32,10 @@
       check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>',
       calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>',
       inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
+      sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>',
     };
+
+    let currentParsedProfile = null;
 
     window.__PAGE_BODY__ = `
       <div class="job-publish-page">
@@ -51,86 +54,196 @@
         </a>
       </section>
 
-      <section class="job-publish-grid">
-        <div class="panel job-publish-card">
-          <div class="section-head">
-            <div>
-              <h3>岗位发布</h3>
-              <div class="section-sub">保存后写入岗位库，供抓取后台读取。</div>
-            </div>
-            <div class="hero-actions job-publish-actions">
-              <button class="btn primary" type="button" data-action="submit-recruit-job">发布岗位</button>
-            </div>
-          </div>
-          <div class="job-field-stack">
-            <div class="job-field-card">
-              <label class="job-field-label">岗位名称</label>
-              <div class="job-field-hint">用于智联岗位下拉选择</div>
-              <input class="input wide" data-recruit-field="job_title" placeholder="例如：Java 后端工程师" />
-            </div>
-            <div class="job-field-card">
-              <label class="job-field-label">工作地点</label>
-              <div class="job-field-hint">默认长春</div>
-              <input class="input wide" data-recruit-field="work_location" value="长春" />
-            </div>
-            <div class="job-field-card">
-              <label class="job-field-label">年龄范围</label>
-              <div class="job-field-hint">下限和上限需同时填写，可留空</div>
-              <div class="job-field-inline">
-                <input class="input" type="number" min="16" max="99" data-recruit-field="age_min" placeholder="最小年龄" />
-                <input class="input" type="number" min="16" max="99" data-recruit-field="age_max" placeholder="最大年龄" />
+      <section class="job-publish-layout">
+        <!-- 左侧面板：岗位发布与 JD 输入 -->
+        <div class="job-publish-left">
+          <div class="panel job-publish-card">
+            <div class="section-head">
+              <div>
+                <h3>岗位发布与 JD 文本</h3>
+                <div class="section-sub">在此输入岗位基本信息与 JD 描述，生成岗位画像。</div>
+              </div>
+              <div class="hero-actions job-publish-actions">
+                <button class="btn btn-secondary" type="button" data-action="parse-jd">
+                  <span class="btn-icon">${PUBLISH_PAGE_ICONS.sparkles}</span>
+                  智能解析 JD
+                </button>
+                <button class="btn primary" type="button" data-action="submit-recruit-job">发布岗位</button>
               </div>
             </div>
-            <div class="job-field-card">
-              <label class="job-field-label">学历要求</label>
-              <div class="job-field-hint">与 Recruit 原岗位库枚举保持一致</div>
-              <select class="input wide job-select" data-recruit-field="education">${EDUCATION_OPTIONS.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select>
-            </div>
-            <div class="job-field-card">
-              <label class="job-field-label">候选人活跃时间</label>
-              <div class="job-field-hint">抓取时使用的活跃范围</div>
-              <select class="input wide job-select" data-recruit-field="candidate_activity">${ACTIVITY_OPTIONS.map(([value, label]) => `<option value="${value}" ${value === "1m" ? "selected" : ""}>${label}</option>`).join("")}</select>
+            
+            <div class="job-field-stack">
+              <div class="job-field-card">
+                <label class="job-field-label">岗位名称</label>
+                <div class="job-field-hint">用于智联岗位下拉选择</div>
+                <input class="input wide" data-recruit-field="job_title" placeholder="例如：风电运维工程师" />
+              </div>
+
+              <div class="job-field-card">
+                <label class="job-field-label">职位描述 (JD 文本)</label>
+                <div class="job-field-hint">输入或粘贴完整 JD，系统将自动过滤提取关键词与百分比画像</div>
+                <textarea class="input wide job-jd-textarea" rows="7" data-recruit-field="raw_jd_text" placeholder="粘贴工作职责、岗位要求、薪资福利等 JD 文本..."></textarea>
+              </div>
+
+              <div class="job-field-grid-2">
+                <div class="job-field-card">
+                  <label class="job-field-label">工作地点</label>
+                  <input class="input wide" data-recruit-field="work_location" value="长春" />
+                </div>
+                <div class="job-field-card">
+                  <label class="job-field-label">学历要求</label>
+                  <select class="input wide job-select" data-recruit-field="education">${EDUCATION_OPTIONS.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select>
+                </div>
+              </div>
+
+              <div class="job-field-grid-2">
+                <div class="job-field-card">
+                  <label class="job-field-label">年龄范围</label>
+                  <div class="job-field-inline">
+                    <input class="input" type="number" min="16" max="99" data-recruit-field="age_min" placeholder="最小" />
+                    <input class="input" type="number" min="16" max="99" data-recruit-field="age_max" placeholder="最大" />
+                  </div>
+                </div>
+                <div class="job-field-card">
+                  <label class="job-field-label">候选人活跃时间</label>
+                  <select class="input wide job-select" data-recruit-field="candidate_activity">${ACTIVITY_OPTIONS.map(([value, label]) => `<option value="${value}" ${value === "1m" ? "selected" : ""}>${label}</option>`).join("")}</select>
+                </div>
+              </div>
+
+              <div class="job-field-grid-2">
+                <div class="job-field-card">
+                  <label class="job-field-label">每日打招呼上限</label>
+                  <select class="input wide job-select" data-recruit-field="daily_greet_limit">${GREET_OPTIONS.map((value) => `<option value="${value}" ${value === 20 ? "selected" : ""}>${value} 次/天</option>`).join("")}</select>
+                </div>
+                <div class="job-field-card">
+                  <label class="job-field-label">岗位状态</label>
+                  <select class="input wide job-select" data-recruit-field="is_valid"><option value="Y">Y 有效</option><option value="N">N 跳过</option></select>
+                </div>
+              </div>
+
+              <div class="job-field-card">
+                <label class="job-field-label">搜索关键词</label>
+                <div class="job-field-hint">机器人抓取时的辅助搜索关键词</div>
+                <input class="input wide" maxlength="80" data-recruit-field="search_keyword" placeholder="自动从 JD 提取或手动补充" />
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="panel job-publish-card">
-          <div class="section-head">
-            <div>
-              <h3>抓取配置</h3>
-              <div class="section-sub">控制单岗额度、关键词和是否参与抓取。</div>
+        <!-- 右侧面板：岗位画像可视化面板 (参考截图设计) -->
+        <div class="job-publish-right">
+          <div class="panel job-portrait-panel">
+            <div class="portrait-header">
+              <div class="portrait-header-main">
+                <div class="portrait-avatar">🤖</div>
+                <div>
+                  <div class="portrait-title">
+                    岗位画像
+                    <span class="portrait-edit-icon" title="编辑画像">✏️</span>
+                  </div>
+                  <div class="portrait-time" data-portrait-parsed-at>JD解析时间：暂未解析</div>
+                </div>
+              </div>
             </div>
-            <span class="import-eyebrow">数据源 PG</span>
-          </div>
-          <div class="job-field-stack">
-            <div class="job-field-card">
-              <label class="job-field-label">每日打招呼上限</label>
-              <div class="job-field-hint">单岗位配额</div>
-              <select class="input wide job-select" data-recruit-field="daily_greet_limit">${GREET_OPTIONS.map((value) => `<option value="${value}" ${value === 20 ? "selected" : ""}>${value} 次/天</option>`).join("")}</select>
+
+            <!-- 岗位硬性要求 -->
+            <div class="portrait-section">
+              <div class="portrait-section-title text-primary">
+                <span class="portrait-icon">🔒</span> 岗位硬性要求
+              </div>
+              <div class="portrait-item-row">
+                <span class="portrait-label">● 年龄</span>
+                <span class="portrait-val" data-portrait-age>16-40岁</span>
+              </div>
+              <div class="portrait-item-row">
+                <span class="portrait-label">● 学历</span>
+                <span class="portrait-val" data-portrait-edu>大专、本科、硕士、博士...</span>
+              </div>
+              <div class="portrait-item-row">
+                <span class="portrait-label">● 特种作业...</span>
+                <span class="portrait-val" data-portrait-license>必须有</span>
+              </div>
             </div>
-            <div class="job-field-card">
-              <label class="job-field-label">搜索关键词</label>
-              <div class="job-field-hint">可为空；最多 30 字</div>
-              <input class="input wide" maxlength="30" data-recruit-field="search_keyword" placeholder="例如：后端、Java、销售" />
+
+            <!-- 岗位优先要求与权重占比 -->
+            <div class="portrait-section">
+              <div class="portrait-section-title text-success">
+                <span class="portrait-icon">⚡</span> 岗位优先要求（权重比例）
+              </div>
+
+              <div class="portrait-priority-row">
+                <div class="portrait-priority-meta">
+                  <span class="portrait-label">● 职类</span>
+                  <span class="portrait-weight-badge">20.00%</span>
+                </div>
+                <div class="portrait-priority-content" data-portrait-category>风电/光伏运维工程师</div>
+              </div>
+
+              <div class="portrait-priority-row">
+                <div class="portrait-priority-meta">
+                  <span class="portrait-label">● 行业</span>
+                  <span class="portrait-weight-badge">10.00%</span>
+                </div>
+                <div class="portrait-priority-content" data-portrait-industry>风电</div>
+              </div>
+
+              <div class="portrait-priority-row">
+                <div class="portrait-priority-meta">
+                  <span class="portrait-label">● 岗位技能</span>
+                  <span class="portrait-weight-badge text-bold">30.00%</span>
+                </div>
+                <div class="portrait-tags-cloud" data-portrait-skill-tags>
+                  <span class="portrait-tag">办公软件</span>
+                  <span class="portrait-tag">文字编辑</span>
+                  <span class="portrait-tag">office软件</span>
+                  <span class="portrait-tag">Offce办公软件</span>
+                </div>
+              </div>
+
+              <div class="portrait-priority-row">
+                <div class="portrait-priority-meta">
+                  <span class="portrait-label">● 从业经验</span>
+                  <span class="portrait-weight-badge">20.00%</span>
+                </div>
+                <div class="portrait-priority-content" data-portrait-exp>1-3年相关工作经验</div>
+              </div>
+
+              <div class="portrait-priority-row">
+                <div class="portrait-priority-meta">
+                  <span class="portrait-label">● 其他</span>
+                  <span class="portrait-weight-badge">20.00%</span>
+                </div>
+                <div class="portrait-priority-content" data-portrait-other>能适应项目出差</div>
+              </div>
             </div>
-            <div class="job-field-card">
-              <label class="job-field-label">岗位状态</label>
-              <div class="job-field-hint">Y=参与抓取，N=抓取后台跳过</div>
-              <select class="input wide job-select" data-recruit-field="is_valid"><option value="Y">Y 有效</option><option value="N">N 跳过</option></select>
+
+            <!-- 搜索关键词标签 -->
+            <div class="portrait-section">
+              <div class="portrait-section-title text-info">
+                <span class="portrait-icon">🔍</span> 搜索关键词
+              </div>
+              <div class="portrait-tags-cloud" data-portrait-search-tags>
+                <span class="portrait-tag is-primary">风力发电</span>
+                <span class="portrait-tag is-primary">现场运维</span>
+              </div>
             </div>
-            <div class="job-field-card is-tip">
-              <div class="job-field-label">说明</div>
-              <div class="job-field-hint">本页只调用 HR FastAPI，并写入 PostgreSQL recruit schema。</div>
+
+            <!-- 人机协同决策支持 -->
+            <div class="portrait-footer-switch">
+              <label class="portrait-switch-label">
+                <input type="checkbox" id="chkUsePortraitWeights" checked />
+                <span>应用此画像权重与关键词指导简历筛选与搜索</span>
+              </label>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="panel job-publish-recent">
+      <section class="panel job-publish-recent margin-top-lg">
         <div class="section-head">
           <div>
             <h3>最近发布</h3>
-            <div class="section-sub">展示最新 5 条 Recruit 岗位。</div>
+            <div class="section-sub">展示最新 5 条 Recruit 岗位及绑定的岗位画像状态。</div>
           </div>
           <div class="hero-actions job-publish-actions">
             <a class="btn btn-secondary" href="./recruit-job-list.html">
@@ -155,8 +268,72 @@
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     }
 
+    function renderPortraitView(profile) {
+      if (!profile) return;
+      currentParsedProfile = profile;
+      document.querySelector("[data-portrait-parsed-at]").textContent = `JD解析时间：${profile.parsed_at || "刚刚"}`;
+      
+      const hard = profile.hard_requirements || {};
+      document.querySelector("[data-portrait-age]").textContent = hard.age_range || "16-40岁";
+      document.querySelector("[data-portrait-edu]").textContent = hard.education || "不限";
+      document.querySelector("[data-portrait-license]").textContent = hard.special_licenses || "无特殊要求";
+
+      const prio = profile.priority_requirements || {};
+      if (prio.job_category) document.querySelector("[data-portrait-category]").textContent = prio.job_category.name || "通用岗位";
+      if (prio.industry) document.querySelector("[data-portrait-industry]").textContent = prio.industry.name || "通用行业";
+      if (prio.experience) document.querySelector("[data-portrait-exp]").textContent = prio.experience.desc || "不限";
+      if (prio.other) document.querySelector("[data-portrait-other]").textContent = prio.other.desc || "无";
+
+      const skillTags = (prio.skills && prio.skills.tags) ? prio.skills.tags : [];
+      const skillCloud = document.querySelector("[data-portrait-skill-tags]");
+      if (skillCloud) {
+        skillCloud.innerHTML = skillTags.map(t => `<span class="portrait-tag">${t}</span>`).join("") || '<span class="portrait-tag-empty">暂无关键词</span>';
+      }
+
+      const searchTags = profile.search_keywords || [];
+      const searchCloud = document.querySelector("[data-portrait-search-tags]");
+      if (searchCloud) {
+        searchCloud.innerHTML = searchTags.map(t => `<span class="portrait-tag is-primary">${t}</span>`).join("");
+      }
+
+      const kwInput = document.querySelector('[data-recruit-field="search_keyword"]');
+      if (kwInput && searchTags.length > 0 && !kwInput.value.trim()) {
+        kwInput.value = searchTags.slice(0, 3).join(" ");
+      }
+    }
+
+    async function triggerJDParse() {
+      const jdText = document.querySelector('[data-recruit-field="raw_jd_text"]')?.value?.trim();
+      const jobTitle = document.querySelector('[data-recruit-field="job_title"]')?.value?.trim();
+      if (!jdText) {
+        showToast("请先在左侧输入或粘贴 JD 文本");
+        return;
+      }
+      const token = localStorage.getItem("token") || "";
+      const res = await fetch("/api/recruit/jobs/parse-jd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ jd_text: jdText, job_title: jobTitle }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "解析失败" }));
+        throw new Error(err.detail || "解析失败");
+      }
+      const data = await res.json();
+      renderPortraitView(data.profile);
+      showToast("JD 智能解析成功！岗位画像已更新");
+    }
+
     function readPayload() {
       const get = (name) => document.querySelector(`[data-recruit-field="${name}"]`)?.value?.trim() || "";
+      const rawJd = get("raw_jd_text");
+      const useWeights = document.getElementById("chkUsePortraitWeights")?.checked ?? true;
+      
+      let profilePayload = currentParsedProfile;
+      if (profilePayload) {
+        profilePayload.use_portrait_weights = useWeights;
+      }
+
       return {
         job_title: get("job_title"),
         work_location: get("work_location") || "长春",
@@ -167,6 +344,8 @@
         daily_greet_limit: Number(get("daily_greet_limit") || 20),
         search_keyword: get("search_keyword") || null,
         is_valid: get("is_valid") || "Y",
+        raw_jd_text: rawJd || null,
+        job_profile: profilePayload || null,
       };
     }
 
@@ -176,7 +355,10 @@
       box.innerHTML = jobs.slice(0, 5).map((job) => `
         <div class="job-recent-item">
           <div class="job-recent-copy">
-            <div class="job-recent-title">${escapeHtml(job.job_title)}</div>
+            <div class="job-recent-title">
+              ${escapeHtml(job.job_title)}
+              ${job.job_profile ? '<span class="import-status-pill tone-primary">含画像</span>' : ''}
+            </div>
             <div class="job-recent-meta">${escapeHtml(job.work_location)} · ${job.daily_greet_limit} 次/天 · ${escapeHtml(job.publisher_login || "-")}</div>
           </div>
           <span class="import-status-pill tone-${job.is_valid === "Y" ? "success" : "muted"}">${job.is_valid === "Y" ? "有效" : "跳过"}</span>
@@ -205,24 +387,39 @@
     window.addEventListener("DOMContentLoaded", async () => {
       await renderApp();
       await loadPageData().catch((err) => showToast(err.message || String(err)));
+      
       document.addEventListener("click", async (event) => {
-        const btn = event.target.closest('[data-action="submit-recruit-job"]');
-        if (!btn) return;
-        try {
-          await window.withButtonBusy(btn, async () => {
-            const result = await window.hrApi.createRecruitJobPosting(readPayload());
-            showToast(`已发布岗位：${result.job.job_title}`);
-            document.querySelectorAll("[data-recruit-field]").forEach((node) => {
-              if (node.dataset.recruitField === "work_location") node.value = "长春";
-              else if (node.dataset.recruitField === "candidate_activity") node.value = "1m";
-              else if (node.dataset.recruitField === "daily_greet_limit") node.value = "20";
-              else if (node.dataset.recruitField === "is_valid") node.value = "Y";
-              else node.value = "";
-            });
-            await loadPageData();
-          }, "发布中...");
-        } catch (err) {
-          showToast(`发布失败：${err.message || String(err)}`);
+        const parseBtn = event.target.closest('[data-action="parse-jd"]');
+        if (parseBtn) {
+          try {
+            await window.withButtonBusy(parseBtn, async () => {
+              await triggerJDParse();
+            }, "解析中...");
+          } catch (err) {
+            showToast(`解析失败：${err.message || String(err)}`);
+          }
+          return;
+        }
+
+        const submitBtn = event.target.closest('[data-action="submit-recruit-job"]');
+        if (submitBtn) {
+          try {
+            await window.withButtonBusy(submitBtn, async () => {
+              const result = await window.hrApi.createRecruitJobPosting(readPayload());
+              showToast(`已发布岗位：${result.job.job_title}`);
+              document.querySelectorAll("[data-recruit-field]").forEach((node) => {
+                if (node.dataset.recruitField === "work_location") node.value = "长春";
+                else if (node.dataset.recruitField === "candidate_activity") node.value = "1m";
+                else if (node.dataset.recruitField === "daily_greet_limit") node.value = "20";
+                else if (node.dataset.recruitField === "is_valid") node.value = "Y";
+                else node.value = "";
+              });
+              currentParsedProfile = null;
+              await loadPageData();
+            }, "发布中...");
+          } catch (err) {
+            showToast(`发布失败：${err.message || String(err)}`);
+          }
         }
       });
     });

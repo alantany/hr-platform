@@ -3503,7 +3503,20 @@ def _recruit_employee_label(employee: RecruitEmployee | None) -> str:
     return employee.display_name or employee.login_name or ""
 
 
-def _recruit_job_out(job: RecruitJobPosting, employee: RecruitEmployee | None = None) -> dict:
+def _recruit_job_out(job: RecruitJobPosting, employee: RecruitEmployee | None = None, db: Session | None = None) -> dict:
+    profile_out = None
+    if db:
+        prof = crud.get_job_profile_by_posting_id(db, job.id)
+        if prof:
+            profile_out = {
+                "id": prof.id,
+                "raw_jd_text": prof.raw_jd_text,
+                "parsed_at": prof.parsed_at,
+                "hard_requirements": prof.hard_requirements,
+                "priority_requirements": prof.priority_requirements,
+                "search_keywords": prof.search_keywords,
+                "use_portrait_weights": prof.use_portrait_weights,
+            }
     return {
         "id": job.id,
         "employee_id": job.employee_id,
@@ -3519,7 +3532,9 @@ def _recruit_job_out(job: RecruitJobPosting, employee: RecruitEmployee | None = 
         "search_keyword": job.search_keyword,
         "is_valid": "N" if str(job.is_valid or "Y").upper() == "N" else "Y",
         "created_at": _format_recruit_time(job.created_at),
+        "job_profile": profile_out,
     }
+
 
 
 def _normalize_recruit_job_payload(payload, *, partial: bool = False) -> dict:
@@ -3628,6 +3643,15 @@ def list_recruit_employees(db: Session = Depends(get_db), user: User = Depends(r
     ]
 
 
+@app.post("/api/recruit/jobs/parse-jd")
+def parse_recruit_jd(payload: schemas.JDParseRequest, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    jd_text = (payload.jd_text or "").strip()
+    if not jd_text:
+        raise HTTPException(status_code=400, detail="请提供有效的岗位描述 JD 文本")
+    profile = crud.parse_jd_text_to_profile(jd_text, job_title=payload.job_title or "", job_category=payload.job_category or "")
+    return {"profile": profile}
+
+
 @app.get("/api/recruit/job-postings")
 def list_recruit_job_postings(db: Session = Depends(get_db), user: User = Depends(require_user)):
     rows = (
@@ -3636,19 +3660,34 @@ def list_recruit_job_postings(db: Session = Depends(get_db), user: User = Depend
         .order_by(RecruitJobPosting.id.desc())
         .all()
     )
-    return {"jobs": [_recruit_job_out(job, employee) for job, employee in rows]}
+    return {"jobs": [_recruit_job_out(job, employee, db) for job, employee in rows]}
 
 
 @app.post("/api/recruit/job-postings")
 def create_recruit_job_posting(payload: schemas.RecruitJobPostingCreate, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    raw_jd = payload.raw_jd_text
+    profile_data = payload.job_profile
     data = _normalize_recruit_job_payload(payload)
+    data.pop("raw_jd_text", None)
+    data.pop("job_profile", None)
+
     employee = _resolve_recruit_employee(db, user, data.pop("employee_id", None))
     obj = RecruitJobPosting(employee_id=employee.id, created_at=datetime.now(timezone.utc).isoformat(), **data)
     db.add(obj)
-    crud.add_audit(db, user.username, "Recruit岗位管理", "发布岗位", "recruit_job_posting", "new", detail=obj.job_title)
+    db.flush()
+
+    if profile_data or raw_jd:
+        if not profile_data and raw_jd:
+            profile_data = crud.parse_jd_text_to_profile(raw_jd, job_title=obj.job_title)
+        if profile_data:
+            if raw_jd and not profile_data.get("raw_jd_text"):
+                profile_data["raw_jd_text"] = raw_jd
+            crud.create_or_update_job_profile(db, obj.id, profile_data)
+
+    crud.add_audit(db, user.username, "Recruit岗位管理", "发布岗位", "recruit_job_posting", str(obj.id), detail=obj.job_title)
     db.commit()
     db.refresh(obj)
-    return {"job": _recruit_job_out(obj, employee)}
+    return {"job": _recruit_job_out(obj, employee, db)}
 
 
 @app.patch("/api/recruit/job-postings/{job_id}")
@@ -3656,19 +3695,36 @@ def update_recruit_job_posting(job_id: int, payload: schemas.RecruitJobPostingUp
     obj = db.get(RecruitJobPosting, job_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Recruit 岗位不存在")
+
+    raw_jd = payload.raw_jd_text
+    profile_data = payload.job_profile
+
     data = _normalize_recruit_job_payload(payload, partial=True)
+    data.pop("raw_jd_text", None)
+    data.pop("job_profile", None)
+
     employee = None
     if "employee_id" in data:
         employee = _resolve_recruit_employee(db, user, data.pop("employee_id"))
         obj.employee_id = employee.id
     for key, value in data.items():
         setattr(obj, key, value)
+
+    if profile_data or raw_jd:
+        if not profile_data and raw_jd:
+            profile_data = crud.parse_jd_text_to_profile(raw_jd, job_title=obj.job_title)
+        if profile_data:
+            if raw_jd and not profile_data.get("raw_jd_text"):
+                profile_data["raw_jd_text"] = raw_jd
+            crud.create_or_update_job_profile(db, obj.id, profile_data)
+
     crud.add_audit(db, user.username, "Recruit岗位管理", "更新岗位", "recruit_job_posting", str(job_id), detail=obj.job_title)
     db.commit()
     db.refresh(obj)
     if employee is None:
         employee = db.get(RecruitEmployee, obj.employee_id)
-    return {"job": _recruit_job_out(obj, employee)}
+    return {"job": _recruit_job_out(obj, employee, db)}
+
 
 
 @app.delete("/api/recruit/job-postings/{job_id}")
@@ -3867,12 +3923,13 @@ def get_db_table_data(
         "resume_downloads": RecruitResumeDownload,
         "employees": RecruitEmployee,
         "job_postings": RecruitJobPosting,
+        "job_profiles": RecruitJobProfile,
         "daily_task_stats": RecruitDailyTaskStat,
         "candidate_notes": CandidateNote
     }
     
     # Dynamically determine the schema of the requested table
-    recruit_tables = {"candidate_profiles", "resume_downloads", "employees", "job_postings", "daily_task_stats"}
+    recruit_tables = {"candidate_profiles", "resume_downloads", "employees", "job_postings", "job_profiles", "daily_task_stats"}
     schema = None
     if table_name in recruit_tables:
         schema = "recruit"

@@ -96,6 +96,15 @@
 - [x] End-to-end smoke for dashboard, AI, email config, responsive config
 - **Status:** complete
 
+### Phase 10 - Recruit JD Parsing & Profile Configuration (recruit schema)
+
+- [ ] 新增 `recruit.job_profiles` SQLAlchemy 模型（包含 raw_jd_text, hard_requirements, priority_requirements, search_keywords, use_portrait_weights）
+- [ ] 开发 `POST /api/recruit/jobs/parse-jd` AI/智能规则解析 API
+- [ ] 升级 `src/pages/recruit-job-publish.html` 为双栏布局，集成 JD 文本框与岗位画像右侧侧边栏卡片
+- [ ] 在岗位画像卡片中增加“使用此比例与关键词指导匹配/搜索”的人类确认开关
+- [ ] 编写接口与 UI 自动化/契约测试，更新 `findings.md` 与 `progress.md`
+- **Status:** in_progress
+
 ## Key Questions
 
 1. DOCX 中的功能是否足够大，是否需要按模块拆成多个 PRD？

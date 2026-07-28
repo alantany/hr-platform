@@ -627,6 +627,21 @@ class RecruitDailyTaskStat(Base):
     updated_at: Mapped[str] = mapped_column(String(64), nullable=False)
 
 
+class RecruitJobProfile(Base):
+    __tablename__ = "job_profiles"
+    __table_args__ = {"schema": "recruit"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_posting_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    raw_jd_text: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    parsed_at: Mapped[str] = mapped_column(String(64), nullable=False)
+    hard_requirements: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    priority_requirements: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    search_keywords: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    use_portrait_weights: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
 class CandidateNote(Base, TimestampMixin):
     __tablename__ = "candidate_notes"
 

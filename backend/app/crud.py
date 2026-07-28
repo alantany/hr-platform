@@ -10,7 +10,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from . import security
-from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, Role, RolePermission, SalaryRecord, SearchHotword, SearchPreset, SystemConfig, TagDictionary, User, WarrantyRule
+from .models import AuditLog, AiTask, Candidate, CandidateNote, CandidateFollowUpRecord, CandidateMailRecord, CandidateOwnershipTransfer, CandidateTrackingEvent, Company, DataPermission, Delivery, EmailConfig, EmploymentRecord, Evaluation, EvaluationLevel, ExportRecord, ImportRecord, InterviewRecord, Notification, Position, PositionAssignmentTask, Project, Recommendation, RecommendationFeedback, RecruitJobProfile, Role, RolePermission, SalaryRecord, SearchHotword, SearchPreset, SystemConfig, TagDictionary, User, WarrantyRule
 
 
 TAG_OBJECT_LABELS = {
@@ -1636,3 +1636,93 @@ def list_candidate_notes(db: Session, candidate_id: int | None = None):
     if candidate_id is not None:
         query = query.filter(CandidateNote.candidate_id == candidate_id)
     return query.order_by(CandidateNote.created_at.desc()).all()
+
+
+def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: str = "") -> dict:
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    
+    age_min, age_max = 16, 40
+    age_match = re.search(r'(\d{2})[-~至到](\d{2})岁', jd_text)
+    if age_match:
+        age_min, age_max = int(age_match.group(1)), int(age_match.group(2))
+    else:
+        age_max_match = re.search(r'(\d{2})岁以[内下]', jd_text)
+        if age_max_match:
+            age_max = int(age_max_match.group(1))
+
+    education = "大专、本科、硕士、博士"
+    if "本科" in jd_text:
+        education = "本科及以上"
+    elif "大专" in jd_text:
+        education = "大专及以上"
+    elif "硕士" in jd_text:
+        education = "硕士及以上"
+
+    special_req = "必须有" if ("证书" in jd_text or "特种" in jd_text or "登高" in jd_text or "电工" in jd_text) else "无特殊要求"
+
+    skills = []
+    skill_candidates = ["风力发电", "现场运维", "调试", "风机", "光伏", "电气", "PLC", "Office软件", "文字编辑", "办公软件", "Java", "Python", "Linux"]
+    for sc in skill_candidates:
+        if sc.lower() in jd_text.lower():
+            skills.append(sc)
+    if not skills:
+        skills = ["办公软件", "文字编辑", "沟通协作"]
+
+    category_name = job_category or job_title or "风电/光伏运维工程师"
+    industry_name = "风电" if "风" in jd_text else ("软件/互联网" if ("java" in jd_text.lower() or "python" in jd_text.lower()) else "通用行业")
+
+    return {
+        "parsed_at": now_str,
+        "raw_jd_text": jd_text,
+        "hard_requirements": {
+            "age_range": f"{age_min}-{age_max}岁",
+            "age_min": age_min,
+            "age_max": age_max,
+            "education": education,
+            "special_licenses": special_req,
+        },
+        "priority_requirements": {
+            "job_category": {"name": category_name, "weight": 20.0},
+            "industry": {"name": industry_name, "weight": 10.0},
+            "skills": {"tags": skills, "weight": 30.0},
+            "experience": {"desc": "1-3年相关领域工作经验", "weight": 20.0},
+            "other": {"desc": "能适应出差或常驻项目", "weight": 20.0},
+        },
+        "search_keywords": list(set(skills + [category_name, industry_name]))[:6],
+        "use_portrait_weights": True,
+    }
+
+
+def create_or_update_job_profile(db: Session, job_posting_id: int | None, profile_data: dict) -> RecruitJobProfile:
+    existing = None
+    if job_posting_id:
+        existing = db.query(RecruitJobProfile).filter(RecruitJobProfile.job_posting_id == job_posting_id).first()
+    
+    if existing:
+        existing.raw_jd_text = profile_data.get("raw_jd_text", existing.raw_jd_text)
+        existing.parsed_at = profile_data.get("parsed_at", existing.parsed_at)
+        existing.hard_requirements = profile_data.get("hard_requirements", existing.hard_requirements)
+        existing.priority_requirements = profile_data.get("priority_requirements", existing.priority_requirements)
+        existing.search_keywords = profile_data.get("search_keywords", existing.search_keywords)
+        existing.use_portrait_weights = profile_data.get("use_portrait_weights", True)
+        db.add(existing)
+        return existing
+    else:
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        obj = RecruitJobProfile(
+            job_posting_id=job_posting_id,
+            raw_jd_text=profile_data.get("raw_jd_text", ""),
+            parsed_at=profile_data.get("parsed_at", now_str),
+            hard_requirements=profile_data.get("hard_requirements"),
+            priority_requirements=profile_data.get("priority_requirements"),
+            search_keywords=profile_data.get("search_keywords"),
+            use_portrait_weights=profile_data.get("use_portrait_weights", True),
+            created_at=now_str,
+        )
+        db.add(obj)
+        return obj
+
+
+def get_job_profile_by_posting_id(db: Session, job_posting_id: int) -> RecruitJobProfile | None:
+    return db.query(RecruitJobProfile).filter(RecruitJobProfile.job_posting_id == job_posting_id).first()
+

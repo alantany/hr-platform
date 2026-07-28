@@ -5959,3 +5959,178 @@ body:not(:has([data-page-owned-style="statistics.html"])) .content .panel .posit
   background: #fff !important;
   box-shadow: none !important;
 }
+
+/* ===== 岗位发布与岗位画像 (recruit-job-publish) 样式 ===== */
+.job-publish-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1024px) {
+  .job-publish-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.job-jd-textarea {
+  resize: vertical;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 140px;
+}
+.job-field-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.job-portrait-panel {
+  background: #f0f7ff !important;
+  border: 1px solid #bae0ff !important;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 14px rgba(24, 144, 255, 0.08) !important;
+}
+.portrait-header {
+  border-bottom: 1px dashed #c4e1ff;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+.portrait-header-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.portrait-avatar {
+  width: 42px;
+  height: 42px;
+  background: #e6f7ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.portrait-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #003a8c;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.portrait-edit-icon {
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.portrait-time {
+  font-size: 11px;
+  color: #8c8c8c;
+  margin-top: 2px;
+}
+
+.portrait-section {
+  margin-bottom: 16px;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  border: 1px solid #e6f4ff;
+}
+.portrait-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.text-primary { color: #1677ff; }
+.text-success { color: #52c41a; }
+.text-info { color: #13c2c2; }
+.text-bold { font-weight: 700; }
+
+.portrait-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: #434343;
+}
+.portrait-label {
+  color: #595959;
+}
+.portrait-val {
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.portrait-priority-row {
+  margin-bottom: 8px;
+  border-bottom: 1px dotted #f0f0f0;
+  padding-bottom: 6px;
+}
+.portrait-priority-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+.portrait-priority-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.portrait-weight-badge {
+  font-weight: 700;
+  color: #262626;
+  font-family: var(--font-mono, monospace);
+}
+.portrait-priority-content {
+  font-size: 12px;
+  color: #1677ff;
+  font-weight: 500;
+}
+
+.portrait-tags-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.portrait-tag {
+  background: #e6f4ff;
+  color: #0958d9;
+  border: 1px solid #91caff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.portrait-tag.is-primary {
+  background: #f6ffed;
+  color: #389e0d;
+  border-color: #b7eb8f;
+}
+.portrait-tag-empty {
+  font-size: 11px;
+  color: #bfbfbf;
+}
+
+.portrait-footer-switch {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed #d9d9d9;
+}
+.portrait-switch-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #262626;
+  cursor: pointer;
+}
+.margin-top-lg {
+  margin-top: 24px;
+}
+

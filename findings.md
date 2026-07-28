@@ -1,6 +1,16 @@
 # Findings
 
-## 2026-07-20（SVG Logo 接入）
+## 2026-07-28（岗位发布 JD 智能解析与岗位/客户画像 recruit schema）
+
+1. **Recruit Schema 约束与隔离**：
+   - 招聘抓取与岗位发布模块相关表在数据库物理架构中完全独立于 public schema，属于 PostgreSQL `recruit` schema。
+   - 新增的 `RecruitJobProfile` SQLAlchemy 模型通过 `__table_args__ = {"schema": "recruit"}` 指定在 `recruit.job_profiles` 表，确保跨模式隔离。
+   - `backend/init_db.sql` 中对 DB 用户赋予 `GRANT ALL ON SCHEMA recruit TO user_delivery;` 可保障 API 和自动化测试创建 recruit 扩展表时不发生 Schema 权限拒绝。
+
+2. **权重比例（30%技能、20%职类等）在业务与架构中的落地策略**：
+   - **抓取阶段（广度优先 / Broad Fetching）**：机器人去外部平台搜简历时，只保留最基础的宽泛过滤条件（地点、职类、学历年龄），避免在搜索框内设词过于苛刻导致“漏抓”。
+   - **库内筛选阶段（精度优先 / Deep Filtering & Scoring）**：抓回私域简历库后，系统自动依据 JD 画像解析出的 30% 技能、20% 职类、20% 经验、10% 行业等权重对简历计算综合得分（0-100分），高分简历置顶推送给猎头/HR。
+   - **人机协同控制**：通过 `use_portrait_weights` 标记由人类操作员最终决定是否启用该权重指导检索与精筛。
 
 - 源：用户 Downloads/`gemini-svg.svg` → `assets/logo.svg`。
 - 深色侧栏上「职易达」需 `fill="#ffffff"`；图形渐变里的 `#031b4e` 不要改。

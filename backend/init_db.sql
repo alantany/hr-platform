@@ -17,9 +17,9 @@ $$;
 GRANT CREATE ON DATABASE hr_platform TO user_delivery;
 GRANT CREATE ON DATABASE hr_platform TO user_recruit;
 
--- 授予 Schema 的 USAGE 权限，使得用户可以访问 Schema 内的对象
-GRANT USAGE ON SCHEMA public TO user_delivery;
-GRANT USAGE ON SCHEMA recruit TO user_delivery;
+-- 授予 Schema 的 USAGE 与 CREATE 权限，使得用户可以访问 Schema 内的对象并新建表
+GRANT ALL ON SCHEMA public TO user_delivery;
+GRANT ALL ON SCHEMA recruit TO user_delivery;
 
 GRANT USAGE ON SCHEMA public TO user_recruit;
 GRANT USAGE ON SCHEMA recruit TO user_recruit;

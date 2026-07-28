@@ -824,6 +824,8 @@ class RecruitJobPostingCreate(BaseModel):
     search_keyword: str | None = None
     is_valid: str = "Y"
     employee_id: int | None = None
+    raw_jd_text: str | None = None
+    job_profile: dict | None = None
 
 
 class RecruitJobPostingUpdate(BaseModel):
@@ -837,6 +839,28 @@ class RecruitJobPostingUpdate(BaseModel):
     search_keyword: str | None = None
     is_valid: str | None = None
     employee_id: int | None = None
+    raw_jd_text: str | None = None
+    job_profile: dict | None = None
+
+
+class JDParseRequest(BaseModel):
+    jd_text: str
+    job_title: str | None = None
+    job_category: str | None = None
+
+
+class RecruitJobProfileOut(BaseModel):
+    id: int | None = None
+    job_posting_id: int | None = None
+    raw_jd_text: str = ""
+    parsed_at: str = ""
+    hard_requirements: dict | None = None
+    priority_requirements: dict | None = None
+    search_keywords: list[str] | None = None
+    use_portrait_weights: bool = True
+    created_at: str = ""
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CandidateNoteCreate(BaseModel):
@@ -850,3 +874,4 @@ class CandidateNoteOut(CandidateNoteCreate):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
