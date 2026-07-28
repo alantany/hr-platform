@@ -1727,11 +1727,9 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
 
 请你对输入的 JD 岗位描述文本进行深度的智能解析与信息抓取，并输出结构化的【职位画像】：
 
-【搜索关键词 (search_keywords) 生成的核心优先级规则】：
-1. 第 1 优先级（排在最前面）：从 JD 中解析出候选人【必须具备的硬性能力/资格】（如：必备证书/资质名称、必须熟练操作的特定工具或核心硬门槛能力）。
-   - 排除项：页面上已有独立表单/下拉框的"年龄"与"学历"不需要重复放入关键词中。
-   - 拆分要求：如果有多个必须具备的硬性能力或资质，必须拆分为多个独立、精炼的短搜索关键词（如 ["高压电工证", "登高证", "风机调试"]），逐一排在 search_keywords 的最前端！
-2. 第 2 优先级（排在后面）：从 JD 的优先/加分要求中提取出的核心技能词、行业背景与特定细分岗位名称，排在硬性能力词之后。
+【搜索关键词 (search_keywords) 分类生成的核心规则】：
+1. must (硬性搜索关键词)：从 JD 中解析出候选人【必须具备的硬性能力/资格/工具/资质】（排除已有下拉框的年龄和学历）。如有多个必须拆分为短词列表。
+2. preferred (加分搜索关键词)：从 JD 的优先/加分要求中提取出的核心技能词、行业背景与细分岗位名称。
 
 必须严格返回 JSON 对象，格式如下：
 {{
@@ -1743,7 +1741,10 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
   "skills": ["核心技能1", "核心技能2"],
   "experience": "工作年限与经验要求说明",
   "other": "获奖情况或其他重点要求说明",
-  "search_keywords": ["硬性必备能力1", "硬性必备能力2", "优先技能1", "优先技能2"]
+  "search_keywords": {{
+    "must": ["硬性必备词1", "硬性必备词2"],
+    "preferred": ["加分优先词1", "加分优先词2"]
+  }}
 }}"""
             response = client.chat.completions.create(
                 model=model,
@@ -1798,7 +1799,22 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
         skill_tags = llm_result.get("skills") if isinstance(llm_result.get("skills"), list) and llm_result.get("skills") else skills
         exp_str = llm_result.get("experience") or "1-3年相关工作经验"
         other_str = llm_result.get("other") or "具备强烈的责任心与服务意识"
-        search_kws = llm_result.get("search_keywords") if isinstance(llm_result.get("search_keywords"), list) and llm_result.get("search_keywords") else list(set(skills + [cat_str, ind_str]))[:6]
+        search_kws_raw = llm_result.get("search_keywords")
+        if isinstance(search_kws_raw, dict):
+            search_kws = {
+                "must": search_kws_raw.get("must") or [license_str] if license_str != "无特殊要求" else [],
+                "preferred": search_kws_raw.get("preferred") or skill_tags
+            }
+        elif isinstance(search_kws_raw, list):
+            search_kws = {
+                "must": search_kws_raw[:2],
+                "preferred": search_kws_raw[2:]
+            }
+        else:
+            search_kws = {
+                "must": [license_str] if license_str != "无特殊要求" else [],
+                "preferred": skill_tags[:4]
+            }
 
         return {
             "parsed_at": now_str,
@@ -1817,7 +1833,7 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
                 "experience": {"desc": exp_str, "weight": 20.0},
                 "other": {"desc": other_str, "weight": 20.0},
             },
-            "search_keywords": search_kws[:6],
+            "search_keywords": search_kws,
             "use_portrait_weights": True,
         }
 
@@ -1838,7 +1854,10 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
             "experience": {"desc": "1-3年相关工作经验", "weight": 20.0},
             "other": {"desc": "具备良好的沟通协同能力", "weight": 20.0},
         },
-        "search_keywords": list(set(skills + [category_name, industry_name]))[:6],
+        "search_keywords": {
+            "must": [special_req] if special_req != "无特殊要求" else [],
+            "preferred": list(set(skills + [category_name]))[:5]
+        },
         "use_portrait_weights": True,
     }
 

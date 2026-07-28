@@ -297,15 +297,50 @@
         skillCloud.innerHTML = skillTags.map(t => `<span class="portrait-tag">${t}</span>`).join("") || '<span class="portrait-tag-empty">暂无关键词</span>';
       }
 
-      const searchTags = profile.search_keywords || [];
+      const searchKws = profile.search_keywords || {};
+      let mustTags = [];
+      let prefTags = [];
+      if (Array.isArray(searchKws)) {
+        mustTags = searchKws.slice(0, 2);
+        prefTags = searchKws.slice(2);
+      } else if (typeof searchKws === "object") {
+        mustTags = searchKws.must || [];
+        prefTags = searchKws.preferred || [];
+      }
+
       const searchCloud = document.querySelector("[data-portrait-search-tags]");
       if (searchCloud) {
-        searchCloud.innerHTML = searchTags.map(t => `<span class="portrait-tag is-primary is-clickable" data-action="add-search-kw" title="点击自动追加至搜索关键词框">${t} ➕</span>`).join("");
+        let html = "";
+        if (mustTags.length) {
+          html += `
+            <div class="search-kw-group-sub">
+              <span class="search-kw-group-title text-danger">🔴 硬性搜索词 (必备门槛)：</span>
+              <div class="portrait-tags-cloud margin-top-xs">
+                ${mustTags.map(t => `<span class="portrait-tag is-danger is-clickable" data-action="add-search-kw" title="点击自动追加至搜索关键词框">${t} ➕</span>`).join("")}
+              </div>
+            </div>
+          `;
+        }
+        if (prefTags.length) {
+          html += `
+            <div class="search-kw-group-sub margin-top-xs">
+              <span class="search-kw-group-title text-primary">🟢 加分搜索词 (优先匹配)：</span>
+              <div class="portrait-tags-cloud margin-top-xs">
+                ${prefTags.map(t => `<span class="portrait-tag is-primary is-clickable" data-action="add-search-kw" title="点击自动追加至搜索关键词框">${t} ➕</span>`).join("")}
+              </div>
+            </div>
+          `;
+        }
+        if (!html) html = '<span class="portrait-tag-empty">暂无搜索关键词推荐</span>';
+        searchCloud.innerHTML = html;
       }
 
       const kwInput = document.querySelector('[data-recruit-field="search_keyword"]');
-      if (kwInput && searchTags.length > 0 && !kwInput.value.trim()) {
-        kwInput.value = searchTags.slice(0, 3).join(" ");
+      if (kwInput && !kwInput.value.trim()) {
+        const allRecommend = [...mustTags, ...prefTags];
+        if (allRecommend.length > 0) {
+          kwInput.value = allRecommend.slice(0, 3).join(" ");
+        }
       }
     }
 
