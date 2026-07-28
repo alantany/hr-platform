@@ -197,13 +197,24 @@
                   <span class="portrait-weight-badge">30.00%</span>
                 </div>
                 <div class="portrait-tags-cloud" data-portrait-skill-tags>
+                  <span class="portrait-tag-empty">暂无核心技能</span>
+                </div>
+              </div>
 
               <div class="portrait-priority-row">
                 <div class="portrait-priority-meta">
-                  <span class="portrait-label">● 其他</span>
+                  <span class="portrait-label">● 工作年限</span>
                   <span class="portrait-weight-badge">20.00%</span>
                 </div>
-                <div class="portrait-priority-content" data-portrait-other>能适应项目出差</div>
+                <div class="portrait-priority-content" data-portrait-exp>1-3年工作经验</div>
+              </div>
+
+              <div class="portrait-priority-row">
+                <div class="portrait-priority-meta">
+                  <span class="portrait-label">● 获奖与优先项</span>
+                  <span class="portrait-weight-badge">20.00%</span>
+                </div>
+                <div class="portrait-priority-content" data-portrait-other>无</div>
               </div>
             </div>
 
@@ -261,18 +272,24 @@
     function renderPortraitView(profile) {
       if (!profile) return;
       currentParsedProfile = profile;
-      document.querySelector("[data-portrait-parsed-at]").textContent = `JD解析时间：${profile.parsed_at || "刚刚"}`;
+
+      const setTxt = (selector, val) => {
+        const el = document.querySelector(selector);
+        if (el) el.textContent = val;
+      };
+
+      setTxt("[data-portrait-parsed-at]", `JD解析时间：${profile.parsed_at || "刚刚"}`);
       
       const hard = profile.hard_requirements || {};
-      document.querySelector("[data-portrait-age]").textContent = hard.age_range || "16-40岁";
-      document.querySelector("[data-portrait-edu]").textContent = hard.education || "不限";
-      document.querySelector("[data-portrait-license]").textContent = hard.special_licenses || "无特殊要求";
+      setTxt("[data-portrait-age]", hard.age_range || "16-40岁");
+      setTxt("[data-portrait-edu]", hard.education || "不限");
+      setTxt("[data-portrait-license]", hard.special_licenses || "无特殊要求");
 
       const prio = profile.priority_requirements || {};
-      if (prio.job_category) document.querySelector("[data-portrait-category]").textContent = prio.job_category.name || "通用岗位";
-      if (prio.industry) document.querySelector("[data-portrait-industry]").textContent = prio.industry.name || "通用行业";
-      if (prio.experience) document.querySelector("[data-portrait-exp]").textContent = prio.experience.desc || "不限";
-      if (prio.other) document.querySelector("[data-portrait-other]").textContent = prio.other.desc || "无";
+      if (prio.job_category) setTxt("[data-portrait-category]", prio.job_category.name || "通用岗位");
+      if (prio.industry) setTxt("[data-portrait-industry]", prio.industry.name || "通用行业");
+      if (prio.experience) setTxt("[data-portrait-exp]", prio.experience.desc || "1-3年相关工作经验");
+      if (prio.other) setTxt("[data-portrait-other]", prio.other.desc || "无");
 
       const skillTags = (prio.skills && prio.skills.tags) ? prio.skills.tags : [];
       const skillCloud = document.querySelector("[data-portrait-skill-tags]");
