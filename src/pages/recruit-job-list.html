@@ -79,9 +79,16 @@
             <option value="N">跳过</option>
           </select>
         </div>
-        <div class="table-card">
-          <div class="table-head" style="grid-template-columns: 1.4fr .8fr .85fr .8fr .9fr .8fr .85fr 1.1fr;">
-            <div>岗位</div><div>地点</div><div>年龄</div><div>学历</div><div>活跃</div><div>额度</div><div>状态</div><div>操作</div>
+        <div class="table-card recruit-job-table">
+          <div class="table-head">
+            <div class="col-job">岗位</div>
+            <div class="col-loc">地点</div>
+            <div class="col-center">年龄</div>
+            <div class="col-center">学历</div>
+            <div class="col-center">活跃</div>
+            <div class="col-center">额度</div>
+            <div class="col-center">状态</div>
+            <div class="col-actions">操作</div>
           </div>
           <div data-recruit-job-rows>
             <div class="table-empty">
@@ -136,15 +143,15 @@
       const rows = document.querySelector("[data-recruit-job-rows]");
       if (!rows) return;
       rows.innerHTML = recruitJobState.filtered.map((job) => `
-        <div class="table-row" style="grid-template-columns: 1.4fr .8fr .85fr .8fr .9fr .8fr .85fr 1.1fr;">
-          <div><div class="row-title"><div class="avatar-sm"></div><div><strong>${escapeHtml(job.job_title)}</strong><div class="row-sub">${escapeHtml(job.search_keyword || "未配置关键词")} · ${escapeHtml(job.publisher_login || "-")}</div></div></div></div>
-          <div>${escapeHtml(job.work_location || "-")}</div>
-          <div>${ageLabel(job)}</div>
-          <div>${educationLabels[job.education] || "-"}</div>
-          <div>${activityLabels[job.candidate_activity] || job.candidate_activity || "-"}</div>
-          <div>${job.daily_greet_limit || 20} 次</div>
-          <div><span class="chip ${job.is_valid === "Y" ? "success" : "neutral"}">${job.is_valid === "Y" ? "有效" : "跳过"}</span></div>
-          <div class="table-actions"><button class="btn-sm" data-action="edit-recruit-job" data-id="${job.id}">编辑</button><button class="btn-sm" style="color:#c0392b;" data-action="delete-recruit-job" data-id="${job.id}" data-title="${escapeHtml(job.job_title)}">删除</button></div>
+        <div class="table-row">
+          <div class="col-job"><div class="row-title"><div class="avatar-sm"></div><div><strong>${escapeHtml(job.job_title)}</strong><div class="row-sub">${escapeHtml(job.search_keyword || "未配置关键词")} · ${escapeHtml(job.publisher_login || "-")}</div></div></div></div>
+          <div class="col-loc">${escapeHtml(job.work_location || "-")}</div>
+          <div class="col-center">${ageLabel(job)}</div>
+          <div class="col-center">${educationLabels[job.education] || "-"}</div>
+          <div class="col-center">${activityLabels[job.candidate_activity] || job.candidate_activity || "-"}</div>
+          <div class="col-center">${job.daily_greet_limit || 20} 次</div>
+          <div class="col-center"><span class="chip ${job.is_valid === "Y" ? "success" : "neutral"}">${job.is_valid === "Y" ? "有效" : "跳过"}</span></div>
+          <div class="col-actions table-actions"><button class="btn-sm" data-action="edit-recruit-job" data-id="${job.id}">编辑</button><button class="btn-sm" style="color:#c0392b;" data-action="delete-recruit-job" data-id="${job.id}" data-title="${escapeHtml(job.job_title)}">删除</button></div>
         </div>
       `).join("") || `
         <div class="table-empty">
