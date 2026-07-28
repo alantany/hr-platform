@@ -6259,7 +6259,7 @@ async function loadPage(url, push = true) {
       return;
     }
 
-    const res = await fetch(`./${pathOnly}`);
+    const res = await fetch(`./${pathOnly}${pathOnly.includes("?") ? "&" : "?"}_t=${Date.now()}`, { cache: "no-cache" });
     if (!res.ok) throw new Error(`加载页面失败: ${res.status}`);
     const htmlText = await res.text();
     const { bodyHtml, scripts, styles } = extractPageBodyFromHtml(htmlText);
