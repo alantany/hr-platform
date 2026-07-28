@@ -1774,33 +1774,15 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
     elif "硕士" in jd_text:
         education = "硕士及以上"
 
-    # 动态匹配用户在系统【解析关键词】中配置的词
-    skills = []
-    skill_candidates = category_map["skills"] if category_map["skills"] else ["办公软件", "沟通协作", "团队配合", "项目管理", "技术研发"]
-    for sc in skill_candidates:
-        if sc.lower() in jd_text.lower():
-            skills.append(sc)
+    # 动态匹配用户在系统【解析关键词矩阵】中配置的词
+    skills = [kw for kw in active_keywords if kw.lower() in jd_text.lower()]
     if not skills:
-        skills = skill_candidates[:3]
+        skills = active_keywords[:3]
 
-    category_name = job_category or job_title or (category_map["job_category"][0] if category_map["job_category"] else "通用岗位")
-    for cat_item in category_map["job_category"]:
-        if cat_item.lower() in jd_text.lower():
-            category_name = cat_item
-            break
-
-    industry_name = category_map["industry"][0] if category_map["industry"] else "通用行业"
-    for ind_item in category_map["industry"]:
-        if ind_item.lower() in jd_text.lower():
-            industry_name = ind_item
-            break
-
+    category_name = job_category or job_title or "通用岗位"
+    industry_name = "通用行业"
     special_req = "无特殊要求"
-    for lic in category_map["licenses"]:
-        if lic.lower() in jd_text.lower():
-            special_req = f"必须有{lic}"
-            break
-    if special_req == "无特殊要求" and ("证书" in jd_text or "特种" in jd_text or "登高" in jd_text or "电工" in jd_text):
+    if "证书" in jd_text or "特种" in jd_text or "登高" in jd_text or "电工" in jd_text:
         special_req = "必须有相关专业证书"
 
     # 大模型 LLM 成功解析时的结果融合
