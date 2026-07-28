@@ -64,10 +64,6 @@
                 <div class="section-sub">在此输入岗位基本信息与 JD 描述，生成岗位画像。</div>
               </div>
               <div class="hero-actions job-publish-actions">
-                <button class="btn btn-secondary" type="button" data-action="parse-jd">
-                  <span class="btn-icon">${PUBLISH_PAGE_ICONS.sparkles}</span>
-                  智能解析 JD
-                </button>
                 <button class="btn primary" type="button" data-action="submit-recruit-job">发布岗位</button>
               </div>
             </div>
@@ -80,8 +76,16 @@
               </div>
 
               <div class="job-field-card">
-                <label class="job-field-label">职位描述 (JD 文本)</label>
-                <div class="job-field-hint">输入或粘贴完整 JD，系统将自动过滤提取关键词与百分比画像</div>
+                <div class="job-field-header-row">
+                  <div>
+                    <label class="job-field-label">职位描述 (JD 文本)</label>
+                    <div class="job-field-hint">输入或粘贴完整 JD，系统将自动过滤提取关键词与百分比画像</div>
+                  </div>
+                  <button class="btn btn-secondary" type="button" data-action="parse-jd">
+                    <span class="btn-icon">${PUBLISH_PAGE_ICONS.sparkles}</span>
+                    智能解析 JD
+                  </button>
+                </div>
                 <textarea class="input wide job-jd-textarea" rows="7" data-recruit-field="raw_jd_text" placeholder="粘贴工作职责、岗位要求、薪资福利等 JD 文本..."></textarea>
               </div>
 

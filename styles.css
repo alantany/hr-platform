@@ -5972,6 +5972,13 @@ body:not(:has([data-page-owned-style="statistics.html"])) .content .panel .posit
     grid-template-columns: 1fr;
   }
 }
+.job-field-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 6px;
+}
 .job-jd-textarea {
   resize: vertical;
   font-family: inherit;

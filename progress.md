@@ -4,7 +4,7 @@
 
 - **数据库模型**：在 `models.py` 中新增 `RecruitJobProfile` SQLAlchemy 模型，显式指定 `__table_args__ = {"schema": "recruit"}`（映射为 PostgreSQL `recruit.job_profiles` 表），存储原始 JD 文本、硬性要求、优先要求及权重占比、搜索关键词标签及人类协同决策标记 `use_portrait_weights`。
 - **后端 API**：在 `crud.py` 与 `main.py` 中新增 `POST /api/recruit/jobs/parse-jd` 接口与规则抽取逻辑，支持抽取年龄/学历/证书等硬性门槛，默认推荐技能 30%、职类 20%、经验 20%、行业 10%、其他 20% 的加权比例及 6 个精准搜索关键词；在岗位发布与查询路由中完美绑定 `job_profile` 数据。
-- **前端 UI & Soft UI 体验**：升级 `src/pages/recruit-job-publish.html` 为响应式双栏布局，左侧提供 JD 大文本域与“智能解析 JD”动作，右侧实现仿截图款式的“岗位画像”可视化面板卡片（硬性指标、优先要求权重占比、关键词 Tag 云），并配备人类确认开关。
+- **前端 UI & Soft UI 体验**：升级 `src/pages/recruit-job-publish.html` 为响应式双栏布局；应用户体验要求，将“智能解析 JD”动作按钮直接调整移至【职位描述 (JD 文本)】标题栏右侧同行显示，大幅提升粘贴 JD 后顺手一键解析的操作流畅度；右侧实现仿截图款式的“岗位画像”可视化面板卡片（硬性指标、优先要求权重占比、关键词 Tag 云），并配备人类确认开关。
 - **自动化测试**：新增 `tests/test_recruit_jd_profile.py` 覆盖 JD 解析、岗位发布绑定与 Profile 数据全流程，已全量运行通过（`1 passed`）。
 - **权限与 Schema 契约**：补全 `backend/init_db.sql` 中 `user_delivery` 对 `recruit` schema 的 `CREATE` 权限。
 
