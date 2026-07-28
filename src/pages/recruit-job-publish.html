@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>岗位发布</title>
   <link rel="stylesheet" href="../../styles.css?v=20260728-jd-profile" />
-  <script defer src="../../frontend-api.js"></script>
+  <script defer src="../../frontend-api.js?v=20260728-jd-parse-fix"></script>
   <script defer src="../../app.js?v=20260728-jd-profile"></script>
 </head>
 <body>
@@ -313,7 +313,28 @@
         showToast("请先在左侧输入或粘贴 JD 文本");
         return;
       }
-      const data = await window.hrApi.parseRecruitJd({ jd_text: jdText, job_title: jobTitle });
+
+      let data;
+      if (window.hrApi && typeof window.hrApi.parseRecruitJd === "function") {
+        data = await window.hrApi.parseRecruitJd({ jd_text: jdText, job_title: jobTitle });
+      } else {
+        const token = localStorage.getItem("hr_token") || (window.hrApi && window.hrApi.token) || "";
+        const baseUrl = (window.hrApi && window.hrApi.baseUrl) || "/api";
+        const res = await fetch(`${baseUrl}/recruit/jobs/parse-jd`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ jd_text: jdText, job_title: jobTitle })
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText || "解析失败");
+        }
+        data = await res.json();
+      }
+
       renderPortraitView(data.profile);
       showToast("JD 智能解析成功！岗位画像已更新");
     }
