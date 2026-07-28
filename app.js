@@ -993,29 +993,60 @@ function ensureToastHost() {
 
 let toastHideTimer = null;
 
-function showToast(message) {
+window.showToast = function(message, options = {}) {
+  const duration = typeof options === "number" ? options : (options.duration !== undefined ? options.duration : 2200);
+  const isPersistent = options.persistent === true || duration === 0;
+  const isLoading = options.isLoading === true;
+
   const host = ensureToastHost();
-  // 复用同一条 toast，连点时停在原位刷新文案，不向上堆叠
   let toast = host.querySelector(".app-toast");
   if (!toast) {
     toast = document.createElement("div");
     toast.className = "app-toast";
-    toast.style.padding = "10px 12px";
+    toast.style.padding = "10px 14px";
     toast.style.borderRadius = "10px";
     toast.style.background = "rgba(24,35,53,0.96)";
     toast.style.color = "#fff";
     toast.style.boxShadow = "0 12px 28px rgba(0,0,0,.18)";
-    toast.style.maxWidth = "320px";
+    toast.style.maxWidth = "380px";
+    toast.style.display = "inline-flex";
+    toast.style.alignItems = "center";
+    toast.style.gap = "8px";
     toast.style.pointerEvents = "none";
+    toast.style.fontSize = "13px";
+    toast.style.zIndex = "9999";
     host.appendChild(toast);
   }
-  toast.textContent = message;
+
+  let textContent = escapeHtml(String(message));
+  if (isLoading) {
+    toast.innerHTML = `<span>${textContent}</span><span class="loading-dots-animated"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>`;
+  } else {
+    toast.innerHTML = `<span>${textContent}</span>`;
+  }
+
   clearTimeout(toastHideTimer);
-  toastHideTimer = setTimeout(() => {
-    toast.remove();
-    toastHideTimer = null;
-  }, 2200);
-}
+  if (!isPersistent) {
+    toastHideTimer = setTimeout(() => {
+      if (toast && toast.parentNode) toast.remove();
+      toastHideTimer = null;
+    }, duration);
+  }
+
+  return {
+    close: () => {
+      clearTimeout(toastHideTimer);
+      if (toast && toast.parentNode) toast.remove();
+    }
+  };
+};
+
+window.hideToast = function() {
+  const host = ensureToastHost();
+  const toast = host.querySelector(".app-toast");
+  if (toast) toast.remove();
+  clearTimeout(toastHideTimer);
+};
 
 /**
  * 数字看板过滤卡片：同组互斥高亮；再点同一条件则取消过滤。

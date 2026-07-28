@@ -6319,6 +6319,27 @@ body:not(:has([data-page-owned-style="statistics.html"])) .content .panel .posit
   background: #fff1f0;
 }
 
+.loading-dots-animated {
+  display: inline-flex;
+  gap: 2px;
+  font-weight: bold;
+  color: #60a5fa;
+  margin-left: 2px;
+}
+.loading-dots-animated .dot {
+  animation: dotPulse 1.4s infinite ease-in-out;
+}
+.loading-dots-animated .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.loading-dots-animated .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes dotPulse {
+  0%, 80%, 100% { opacity: 0.2; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-4px); }
+}
+
 .job-field-rule-hint {
   margin-top: 8px;
   font-size: 12px;
