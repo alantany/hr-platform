@@ -674,6 +674,9 @@ function getNavVisibility(role, permissions = null) {
       const key = href.replace(".html", "");
       if (permissionSet.has(`page:${key}`)) allowed.add(href);
     });
+    if (permissionSet.has("page:recruit-job-publish") || permissionSet.has("page:recruit-job-list") || permissionSet.has("page:recruit-daily-tasks")) {
+      allowed.add("recruit-keywords.html");
+    }
     return allowed;
   }
   const normalized = String(role || "").toLowerCase();
