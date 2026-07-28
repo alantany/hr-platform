@@ -1797,8 +1797,15 @@ def parse_jd_text_to_profile(jd_text: str, job_title: str = "", job_category: st
         cat_str = llm_result.get("job_category") or category_name
         ind_str = llm_result.get("industry") or industry_name
         skill_tags = llm_result.get("skills") if isinstance(llm_result.get("skills"), list) and llm_result.get("skills") else skills
-        exp_str = llm_result.get("experience") or "1-3年相关工作经验"
-        other_str = llm_result.get("other") or "具备强烈的责任心与服务意识"
+        exp_raw = str(llm_result.get("experience") or "").strip()
+        exp_str = exp_raw if exp_raw and exp_raw != "无" else "1-3年相关工作经验"
+        if len(exp_str) > 30:
+            exp_str = exp_str[:28] + "..."
+
+        other_raw = str(llm_result.get("other") or "").strip()
+        other_str = other_raw if other_raw else "无"
+        if len(other_str) > 30:
+            other_str = other_str[:28] + "..."
         search_kws_raw = llm_result.get("search_keywords")
         if isinstance(search_kws_raw, dict):
             search_kws = {
