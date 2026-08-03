@@ -5794,6 +5794,7 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
   if (button.dataset.action === "delete-position") {
     if (button.dataset.deleting === "true") return;
     button.dataset.deleting = "true";
+    button.disabled = true;
     const positions = await window.hrApi.positions();
     const item = positions.find(p => p.id === Number(button.dataset.id));
     if (!item) {
@@ -5954,7 +5955,12 @@ document.addEventListener("click", (event) => {
 
   const explicitActionCheck = btn.dataset.action;
   if (!explicitActionCheck && !/^(详情|搜索|导入简历|导出选中|选择文件|查看项目进度|进入求职者数据池|查看待办)/.test((btn.textContent || "").trim())) return;
-  if (btn.dataset.bound === "true") return;
+  // 已由 bindActionButtons 绑定的按钮只允许专属监听器处理一次，
+  // 捕获阶段不再继续执行全局处理，避免一次点击触发两次确认和删除请求。
+  if (btn.dataset.bound === "true") {
+    event.stopImmediatePropagation();
+    return;
+  }
   event.preventDefault();
   withButtonBusy(btn, () => handleGlobalButton(btn)).catch((err) => showToast(`操作失败：${err.message || err}`));
 }, true);
