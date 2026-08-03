@@ -5792,10 +5792,18 @@ async function populateSalaryPositionOptions({ positionId = '', positionName = '
     return;
   }
   if (button.dataset.action === "delete-position") {
+    if (button.dataset.deleting === "true") return;
+    button.dataset.deleting = "true";
     const positions = await window.hrApi.positions();
     const item = positions.find(p => p.id === Number(button.dataset.id));
-    if (!item) throw new Error('未找到岗位');
-    if (!confirm(`确认删除岗位「${item.name}」？删除后会同步清理关联记录。`)) return;
+    if (!item) {
+      delete button.dataset.deleting;
+      throw new Error('未找到岗位');
+    }
+    if (!confirm(`确认删除岗位「${item.name}」？删除后会同步清理关联记录。`)) {
+      delete button.dataset.deleting;
+      return;
+    }
     await window.hrApi.deletePosition(item.id);
     if (document.querySelector('[data-company-list]')) {
       if (window.hrRenderCompanyList) await refreshCustomerList();

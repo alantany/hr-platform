@@ -2744,6 +2744,16 @@ body:has(.dashboard-redesign) .content {
   pointer-events: auto;
   transform: translateY(0);
 }
+/* The final row has no room below it, so keep its preview inside the panel. */
+.customers-page .customer-row:last-child .customer-project-popover {
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform: translateY(4px);
+}
+.customers-page .customer-row:last-child .customer-name-preview:hover .customer-project-popover,
+.customers-page .customer-row:last-child .customer-name-preview:focus-within .customer-project-popover {
+  transform: translateY(0);
+}
 .customer-project-popover-title {
   padding: 12px 18px;
   color: #9aa8b2;
