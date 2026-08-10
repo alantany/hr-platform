@@ -174,6 +174,8 @@ def ensure_schema() -> None:
         # candidates
         cand_cols = {col['name'] for col in inspector.get_columns("candidates")}
         for column, ddl in {
+            "delivery_status": "ALTER TABLE candidates ADD COLUMN delivery_status TEXT NOT NULL DEFAULT '未推荐'",
+            "candidate_warranty_status": "ALTER TABLE candidates ADD COLUMN candidate_warranty_status TEXT NOT NULL DEFAULT ''",
             "gender": "ALTER TABLE candidates ADD COLUMN gender TEXT NOT NULL DEFAULT ''",
             "age": "ALTER TABLE candidates ADD COLUMN age INTEGER",
             "education": "ALTER TABLE candidates ADD COLUMN education TEXT NOT NULL DEFAULT ''",

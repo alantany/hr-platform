@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-08-10（完成 - 简历解析服务远程数据库字段缺失修复与启动自动对齐）
+
+- **数据库模型与自动迁移对齐**：
+  - 在 `backend/app/main.py` 的 `ensure_schema` 自动对齐字典中补齐 `candidates` 表的 `delivery_status` 与 `candidate_warranty_status` 字段。
+  - 在 `backend/scripts/resume_parser_worker.py` 启动守护进程入口加入 `ensure_schema()` 预检调用，保证独立运行解析器时自动检测并补齐远程数据库所有缺失列。
+  - 提供了供远程服务器一键执行的幂等 SQL 升级脚本，彻底解决 `UndefinedColumn` 与字段长度溢出错误。
+
 ## 2026-08-10（完成 - 求职者简历池候选人详情弹窗关闭按钮失效修复）
 
 - **事件传播链路修复**：

@@ -1,5 +1,17 @@
 # Findings
 
+## 2026-08-10（简历解析工具向远程数据库写入报错分析与修复）
+
+1. **Bug 根因分析**：
+   - 报错信息 `(Background on this error at: https://sqlalche.me/e/20/gkpj) (Background on this error at: https://sqlalche.me/e/20/7s2a)` 是 SQLAlchemy 抛出的底层数据库字段错误。
+   - 远程服务器上的 PostgreSQL `candidates` 表若未执行最新的全量字段迁移，会缺少 `delivery_status`、`candidate_warranty_status` 等字段，或者 `work_history` / `project_history` 等长文本字段在远程表中为 `VARCHAR(255)` 类型导致长度超限截断报错。
+   - 且 `resume_parser_worker.py` 原先未在启动时调用 `ensure_schema()` 进行表结构与列校验，导致单独运行 worker 时无法自动补齐远程缺失的字段。
+
+2. **修复方案**：
+   - 在 `backend/app/main.py` 的 `ensure_schema` 中补充 `delivery_status` 与 `candidate_warranty_status` 字段。
+   - 在 `resume_parser_worker.py` 启动主入口中增加 `ensure_schema()` 自动补齐检查，确保服务启动时自动对齐远程库表结构。
+   - 整理并提供可在远程 PostgreSQL 数据库上一键执行的幂等 SQL 补齐脚本。
+
 ## 2026-08-10（求职者简历池候选人详情弹窗关闭按钮失效排查与修复）
 
 1. **Bug 根因分析**：

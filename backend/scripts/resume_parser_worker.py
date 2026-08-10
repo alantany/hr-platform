@@ -250,6 +250,12 @@ def sync_new_downloads(db):
 
 if __name__ == "__main__":
     import time
+    print("Ensuring database schema and columns are up to date...")
+    try:
+        from backend.app.main import ensure_schema
+        ensure_schema()
+    except Exception as e:
+        print(f"Warning: ensure_schema failed ({e}), continuing...")
     print("Starting Resume Parser Worker Daemon...")
     while True:
         db = SessionLocal()
