@@ -77,6 +77,104 @@ def call_llm_for_json(resume_text: str) -> dict:
          
     return json.loads(raw_response.strip())
 
+def sync_candidate_sequence(db):
+    try:
+        db.execute(text("""
+            SELECT setval(
+                pg_get_serial_sequence('candidates', 'id'),
+                COALESCE((SELECT MAX(id) FROM candidates), 1),
+                true
+            ) WHERE pg_get_serial_sequence('candidates', 'id') IS NOT NULL;
+        """))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Warning: sync_candidate_sequence failed: {e}")
+
+def save_candidate_with_retry(db, candidate_name, candidate_agent_id, phone, email, parsed_data, max_retries=2):
+    for attempt in range(max_retries):
+        try:
+            # 查找是否已有候选人
+            candidate = None
+            if candidate_agent_id:
+                candidate = db.query(Candidate).filter(Candidate.candidate_agent_id == candidate_agent_id).first()
+            if not candidate and phone:
+                candidate = db.query(Candidate).filter(Candidate.phone == phone).first()
+            if not candidate and email:
+                candidate = db.query(Candidate).filter(Candidate.email == email).first()
+            if not candidate:
+                candidate = db.query(Candidate).filter(Candidate.name == candidate_name).first()
+            
+            if candidate:
+                # 更新已有候选人
+                candidate.name = candidate_name
+                candidate.phone = phone or candidate.phone
+                candidate.email = email or candidate.email
+                candidate.gender = parsed_data.get("gender") or candidate.gender
+                candidate.birth_date = parsed_data.get("birth_date") or candidate.birth_date
+                if parsed_data.get("age"):
+                    candidate.age = parsed_data.get("age")
+                candidate.city = parsed_data.get("city") or candidate.city
+                candidate.hukou_location = parsed_data.get("hukou_location") or candidate.hukou_location
+                candidate.family_status = parsed_data.get("family_status") or candidate.family_status
+                candidate.job_status = parsed_data.get("job_status") or candidate.job_status
+                candidate.onboard_cycle = parsed_data.get("onboard_cycle") or candidate.onboard_cycle
+                candidate.expected_salary = parsed_data.get("expected_salary") or candidate.expected_salary
+                candidate.job_intention = parsed_data.get("job_intention") or candidate.job_intention
+                candidate.education = parsed_data.get("education") or candidate.education
+                if parsed_data.get("experience_years"):
+                    candidate.experience_years = parsed_data.get("experience_years")
+                candidate.current_title = parsed_data.get("current_title") or candidate.current_title
+                candidate.core_value = parsed_data.get("core_value") or candidate.core_value
+                candidate.certificates = parsed_data.get("certificates") or candidate.certificates
+                candidate.education_detail = parsed_data.get("education_detail") or candidate.education_detail
+                candidate.work_history = parsed_data.get("work_history") or candidate.work_history
+                candidate.project_history = parsed_data.get("project_history") or candidate.project_history
+                if candidate_agent_id and not candidate.candidate_agent_id:
+                    candidate.candidate_agent_id = candidate_agent_id
+            else:
+                # 新增候选人
+                candidate = Candidate(
+                    name=candidate_name,
+                    candidate_agent_id=candidate_agent_id,
+                    phone=phone,
+                    email=email,
+                    gender=parsed_data.get("gender") or "",
+                    birth_date=parsed_data.get("birth_date") or "",
+                    age=parsed_data.get("age") or 0,
+                    city=parsed_data.get("city") or "",
+                    hukou_location=parsed_data.get("hukou_location") or "",
+                    family_status=parsed_data.get("family_status") or "",
+                    job_status=parsed_data.get("job_status") or "离职",
+                    onboard_cycle=parsed_data.get("onboard_cycle") or "",
+                    expected_salary=parsed_data.get("expected_salary") or "",
+                    job_intention=parsed_data.get("job_intention") or "",
+                    education=parsed_data.get("education") or "",
+                    experience_years=parsed_data.get("experience_years") or 0,
+                    current_title=parsed_data.get("current_title") or "",
+                    core_value=parsed_data.get("core_value") or "",
+                    certificates=parsed_data.get("certificates") or "",
+                    education_detail=parsed_data.get("education_detail") or "",
+                    work_history=parsed_data.get("work_history") or "",
+                    project_history=parsed_data.get("project_history") or "",
+                    source="简历库",
+                    status="未锁定",
+                    delivery_status="未推荐",
+                    candidate_warranty_status="",
+                )
+                db.add(candidate)
+            
+            db.flush()
+            return candidate.id
+        except Exception as e:
+            db.rollback()
+            err_msg = str(e)
+            if ("UniqueViolation" in err_msg or "candidates_pkey" in err_msg) and attempt < max_retries - 1:
+                print(f"Detected candidates_pkey unique conflict, auto-calibrating sequence and retrying (attempt {attempt + 1})...")
+                sync_candidate_sequence(db)
+                continue
+            raise e
+
 def process_pending_tasks():
     processed_any = False
     while True:
@@ -89,33 +187,29 @@ def process_pending_tasks():
                 break
             
             processed_any = True
-            print(f"Processing task {task.id} for download_id {task.resume_download_id}...")
+            task_id = task.id
+            download_id = task.resume_download_id
+            print(f"Processing task {task_id} for download_id {download_id}...")
             task.status = "PROCESSING"
             db.commit()
             
             try:
                 # 1. Fetch file_path from recruit.resume_downloads
                 sql = text("SELECT candidate_name, candidate_agent_id, file_path FROM recruit.resume_downloads WHERE id = :id")
-                result = db.execute(sql, {"id": task.resume_download_id}).mappings().first()
+                result = db.execute(sql, {"id": download_id}).mappings().first()
                 if not result:
-                    raise Exception(f"resume_download_id {task.resume_download_id} not found.")
+                    raise Exception(f"resume_download_id {download_id} not found.")
                 
                 file_path = result["file_path"]
                 candidate_agent_id = result.get("candidate_agent_id")
                 
-                # Assuming file_path is like 'data/resumes/test/数据开发工程师'
-                # Prepend 'recruit/' if it's a relative path to root
                 full_path = os.path.join(BASE_DIR, "recruit", file_path)
-                
-                # Check if file exists. If it's a directory (no extension), try to find a file
-                # Sometimes file_path is a directory or misses extension in DB. 
                 if os.path.isdir(full_path):
                      files = os.listdir(full_path)
                      if not files:
                          raise Exception(f"Directory is empty: {full_path}")
-                     full_path = os.path.join(full_path, files[0]) # pick first file
+                     full_path = os.path.join(full_path, files[0])
                 elif not os.path.exists(full_path):
-                     # try to glob it if extension is missing
                      import glob
                      matches = glob.glob(f"{full_path}.*")
                      if matches:
@@ -124,108 +218,55 @@ def process_pending_tasks():
                          raise Exception(f"File not found: {full_path}")
                 
                 print(f"Reading file: {full_path}")
-                
-                # 2. Extract text
                 resume_text = extract_text_from_file(full_path)
                 
-                # 3. Call LLM
                 print("Calling LLM...")
                 parsed_data = call_llm_for_json(resume_text)
                 
-                # 4. Save to Candidate
-                # If name is empty, fallback to candidate_name from DB
                 candidate_name = security.normalize_candidate_name(
                     parsed_data.get("name") or result["candidate_name"] or "未知候选人"
                 )
-                
                 phone = parsed_data.get("phone") or ""
                 email = parsed_data.get("email") or ""
                 
-                # Try to find existing candidate
-                candidate = None
-                if candidate_agent_id:
-                    candidate = db.query(Candidate).filter(Candidate.candidate_agent_id == candidate_agent_id).first()
-                if not candidate and phone:
-                    candidate = db.query(Candidate).filter(Candidate.phone == phone).first()
-                if not candidate and email:
-                    candidate = db.query(Candidate).filter(Candidate.email == email).first()
-                if not candidate:
-                    candidate = db.query(Candidate).filter(Candidate.name == candidate_name).first()
+                candidate_id = save_candidate_with_retry(
+                    db, candidate_name, candidate_agent_id, phone, email, parsed_data
+                )
                 
-                if candidate:
-                    # Update existing candidate
-                    candidate.name = candidate_name
-                    candidate.phone = phone or candidate.phone
-                    candidate.email = email or candidate.email
-                    candidate.gender = parsed_data.get("gender") or candidate.gender
-                    candidate.birth_date = parsed_data.get("birth_date") or candidate.birth_date
-                    if parsed_data.get("age"):
-                        candidate.age = parsed_data.get("age")
-                    candidate.city = parsed_data.get("city") or candidate.city
-                    candidate.hukou_location = parsed_data.get("hukou_location") or candidate.hukou_location
-                    candidate.family_status = parsed_data.get("family_status") or candidate.family_status
-                    candidate.job_status = parsed_data.get("job_status") or candidate.job_status
-                    candidate.onboard_cycle = parsed_data.get("onboard_cycle") or candidate.onboard_cycle
-                    candidate.expected_salary = parsed_data.get("expected_salary") or candidate.expected_salary
-                    candidate.job_intention = parsed_data.get("job_intention") or candidate.job_intention
-                    candidate.education = parsed_data.get("education") or candidate.education
-                    if parsed_data.get("experience_years"):
-                        candidate.experience_years = parsed_data.get("experience_years")
-                    candidate.current_title = parsed_data.get("current_title") or candidate.current_title
-                    candidate.core_value = parsed_data.get("core_value") or candidate.core_value
-                    candidate.certificates = parsed_data.get("certificates") or candidate.certificates
-                    candidate.education_detail = parsed_data.get("education_detail") or candidate.education_detail
-                    candidate.work_history = parsed_data.get("work_history") or candidate.work_history
-                    candidate.project_history = parsed_data.get("project_history") or candidate.project_history
-                    # status remains as is
-                    if candidate_agent_id and not candidate.candidate_agent_id:
-                        candidate.candidate_agent_id = candidate_agent_id
-                    print(f"Updated existing candidate: {candidate.id}")
-                else:
-                    # Insert new candidate
-                    candidate = Candidate(
-                        name=candidate_name,
-                        candidate_agent_id=candidate_agent_id,
-                        phone=phone,
-                        email=email,
-                        gender=parsed_data.get("gender") or "",
-                        birth_date=parsed_data.get("birth_date") or "",
-                        age=parsed_data.get("age") or 0,
-                        city=parsed_data.get("city") or "",
-                        hukou_location=parsed_data.get("hukou_location") or "",
-                        family_status=parsed_data.get("family_status") or "",
-                        job_status=parsed_data.get("job_status") or "离职",
-                        onboard_cycle=parsed_data.get("onboard_cycle") or "",
-                        expected_salary=parsed_data.get("expected_salary") or "",
-                        job_intention=parsed_data.get("job_intention") or "",
-                        education=parsed_data.get("education") or "",
-                        experience_years=parsed_data.get("experience_years") or 0,
-                        current_title=parsed_data.get("current_title") or "",
-                        core_value=parsed_data.get("core_value") or "",
-                        certificates=parsed_data.get("certificates") or "",
-                        education_detail=parsed_data.get("education_detail") or "",
-                        work_history=parsed_data.get("work_history") or "",
-                        project_history=parsed_data.get("project_history") or "",
-                        source="简历库",
-                        status="未锁定"
-                    )
-                    db.add(candidate)
-                    print(f"Inserted new candidate.")
+                # 成功
+                task = db.query(ResumeParseTask).filter(ResumeParseTask.id == task_id).first()
+                if task:
+                    task.candidate_id = candidate_id
+                    task.status = "SUCCESS"
+                    task.error_message = None
+                    db.commit()
+                print(f"Task {task_id} success. Candidate ID: {candidate_id}")
                 
-                db.flush() # get candidate.id
-                
-                task.candidate_id = candidate.id
-                task.status = "SUCCESS"
-                print(f"Task {task.id} success. Candidate ID: {candidate.id}")
-                
-            except Exception as e:
-                task.status = "FAILED"
-                task.error_message = str(e)
-                print(f"Task {task.id} failed: {e}")
-            
-            db.commit()
+            except Exception as task_err:
+                db.rollback()
+                print(f"Task {task_id} failed: {task_err}")
+                # 记录失败状态，继续处理下一个任务，绝不让程序崩溃
+                try:
+                    task = db.query(ResumeParseTask).filter(ResumeParseTask.id == task_id).first()
+                    if task:
+                        task.status = "FAILED"
+                        task.error_message = str(task_err)[:1000]
+                        db.commit()
+                except Exception as save_err:
+                    db.rollback()
+                    print(f"Failed to record task status: {save_err}")
+        except Exception as loop_err:
+            print(f"Error in task processing loop: {loop_err}")
+            try:
+                db.rollback()
+            except Exception:
+                pass
+            break
         finally:
-            db.close()
+            try:
+                db.close()
+            except Exception:
+                pass
 
 def sync_new_downloads(db):
     sql = text("""
@@ -258,13 +299,17 @@ if __name__ == "__main__":
         print(f"Warning: ensure_schema failed ({e}), continuing...")
     print("Starting Resume Parser Worker Daemon...")
     while True:
-        db = SessionLocal()
         try:
-            sync_new_downloads(db)
-        except Exception as e:
-            print(f"Error syncing queue: {e}")
-        finally:
-            db.close()
-            
-        process_pending_tasks()
+            db = SessionLocal()
+            try:
+                sync_new_downloads(db)
+            except Exception as e:
+                db.rollback()
+                print(f"Error syncing queue: {e}")
+            finally:
+                db.close()
+                
+            process_pending_tasks()
+        except Exception as main_err:
+            print(f"Unexpected worker error in main loop: {main_err}")
         time.sleep(10) # wait 10 seconds before checking again

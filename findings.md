@@ -1,5 +1,16 @@
 # Findings
 
+## 2026-08-10（简历解析工具主键序列自愈校准与事务防崩溃加固）
+
+1. **Bug 根因分析**：
+   - 报错 `UniqueViolation: 重复键违反唯一约束"candidates_pkey", DETAIL: 键值"(id)=(210)" 已经存在` 是由于 PostgreSQL 自增序列 `candidates_id_seq` 与数据库已有最大 ID 脱节（例如直接指定 ID 插入或导入后序列未同步前移）。
+   - 在 SQLAlchemy 中，`db.flush()` 发生主键冲突异常后，事务进入 failed 状态；若未先调用 `db.rollback()`，后续在此 Session 上的任何操作（如写入 `FAILED` 状态）都会直接抛出 `PendingRollbackError` 并导致整个 Worker 守护进程异常退出（Crash）。
+
+2. **加固与修复方案**：
+   - 在 `backend/app/main.py` 的 `ensure_schema` 中自动校准所有主键序列（`setval` 为各表 `MAX(id)`）。
+   - 在 `resume_parser_worker.py` 中增加 `save_candidate_with_retry` 机制：当捕获到 `candidates_pkey` 冲突时，自动执行 `sync_candidate_sequence` 重置序列并立即重试入库。
+   - 任务出错时先强制 `db.rollback()`，在干净事务中记录失败状态并直接继续处理下一条，守护进程主循环增加全包围异常捕获，确保单条异常永不导致程序崩溃。
+
 ## 2026-08-10（求职者简历池关键词搜索支持候选人姓名及联系方式）
 
 1. **根因分析**：

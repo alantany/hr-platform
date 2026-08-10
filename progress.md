@@ -1,5 +1,13 @@
 # Progress
 
+## 2026-08-10（完成 - 简历解析服务主键序列自动校准自愈与守护进程防崩溃加固）
+
+- **主键自增序列校准与自愈重试**：
+  - 在 `backend/app/main.py` 的 `ensure_schema` 中增加对系统所有主键序列的自动对齐，防止直接插入固定 ID 后导致主键冲突。
+  - 在 `backend/scripts/resume_parser_worker.py` 中引入 `sync_candidate_sequence` 与 `save_candidate_with_retry`，遇到 `candidates_pkey` 冲突时自动校准序列并重试入库。
+- **事务状态回滚与防 Crash 容错**：
+  - 修复异常后直接 commit 导致 `PendingRollbackError` 的问题，确保任务出错时先 `db.rollback()`，在干净事务中记录失败原因并平滑跳过，外层增加全包围保护，保证守护进程永不崩溃退出。
+
 ## 2026-08-10（完成 - 求职者简历池关键词搜索支持候选人姓名与联系方式及语法修正）
 
 - **搜索字段补齐与相关性权重优化**：

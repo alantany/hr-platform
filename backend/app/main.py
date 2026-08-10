@@ -279,6 +279,37 @@ def ensure_schema() -> None:
                 """
             ))
 
+        # 自动校准 PostgreSQL 自增主键序列（防止直接指定 ID 插入或外部导入后导致主键冲突 candidates_pkey）
+        tables_with_serial = [
+            "candidates",
+            "positions",
+            "projects",
+            "companies",
+            "users",
+            "recommendations",
+            "deliveries",
+            "evaluations",
+            "salary_records",
+            "candidate_mail_records",
+            "candidate_follow_up_records",
+            "candidate_tracking_events",
+            "candidate_ownership_transfers",
+            "resume_parse_tasks",
+            "audit_logs",
+        ]
+        for tbl in tables_with_serial:
+            if tbl in inspector.get_table_names():
+                try:
+                    conn.execute(text(f"""
+                        SELECT setval(
+                            pg_get_serial_sequence('{tbl}', 'id'),
+                            COALESCE((SELECT MAX(id) FROM {tbl}), 1),
+                            true
+                        ) WHERE pg_get_serial_sequence('{tbl}', 'id') IS NOT NULL;
+                    """))
+                except Exception:
+                    pass
+
 
 ensure_schema()
 
