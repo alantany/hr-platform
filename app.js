@@ -1647,6 +1647,8 @@ function buildCandidateSearchHitSnippets(item, keyword) {
     if (out.length >= 2) break;
   }
   return out;
+}
+
 /** L1：核心识别字段（姓名 + 电话 + 邮箱 + 发布岗位名 + 求职意向 + 当前职位名，最高优先级匹配） */
 function buildCandidateL1SearchText(item) {
   if (!item) return "";

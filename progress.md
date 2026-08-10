@@ -1,11 +1,12 @@
 # Progress
 
-## 2026-08-10（完成 - 求职者简历池关键词搜索支持候选人姓名与联系方式）
+## 2026-08-10（完成 - 求职者简历池关键词搜索支持候选人姓名与联系方式及语法修正）
 
 - **搜索字段补齐与相关性权重优化**：
   - 在 `app.js` 的 `buildCandidateL1SearchText` 核心识别层中加入候选人姓名（`name`）、联系电话（`phone`）、邮箱（`email`）及教育经历（`education_detail`）。
   - 当搜索框输入候选人姓名时，直接作为 L1 级核心匹配（最高优先级 Tier 5 置顶排序）。
   - 在 `candidates.html` 列表中加入对匹配姓名的搜索关键词高亮，并优化搜索框 Placeholder 提示。
+  - 修复 `app.js` 中 `buildCandidateSearchHitSnippets` 结尾丢失的闭合花括号，已通过 `node -c app.js` 严格语法校验。
 
 ## 2026-08-10（完成 - 简历解析服务远程数据库字段缺失修复与启动自动对齐）
 
