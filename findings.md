@@ -1,5 +1,15 @@
 # Findings
 
+## 2026-08-10（求职者简历池关键词搜索支持候选人姓名及联系方式）
+
+1. **根因分析**：
+   - 前端检索文本构建函数 `buildCandidateL1SearchText` 与 `buildCandidateSearchText`（`app.js`）此前注释声明为“仅岗位相关全文（姓名/手机/城市等不参与关键词匹配）”，只拼接了 `job_posting_name`、`job_intention`、`current_title`、`work_history`、`project_history`、`core_value`、`certificates`。
+   - 这导致在搜索框输入候选人真实姓名（如“纪宗宝”、“刘占龙”）或电话时，完全无法命中候选人记录。
+
+2. **修复方案**：
+   - 将 `item.name`、`item.phone`、`item.email` 纳入 `buildCandidateL1SearchText`（最高优先级分词命中层，评分为 Tier 5）。
+   - 在 `candidates.html` 中同步支持对候选人姓名在命中关键词时的高亮渲染，并将搜索框 Placeholder 更新为包含姓名提示。
+
 ## 2026-08-10（简历解析工具向远程数据库写入报错分析与修复）
 
 1. **Bug 根因分析**：

@@ -74,7 +74,7 @@
           <div class="candidate-search-keyword">
             <label class="candidate-search-field-label">关键词</label>
             <div class="input-search">
-              <input class="input wide" data-field="candidate-keyword" placeholder="搜索期望岗位、当前职位、技能、工作经历等" />
+              <input class="input wide" data-field="candidate-keyword" placeholder="搜索姓名、期望岗位、当前职位、技能经历等" />
             </div>
           </div>
           <div class="city-selector-wrapper candidate-search-city">
@@ -741,6 +741,10 @@
                     `<div class="candidate-search-snippet"><span class="candidate-search-snippet-label">${s.label}</span>${s.html}</div>`
                   ).join('')}</div>`
                 : '';
+              const candidateNameRaw = i.name || '';
+              const candidateNameHtml = (searchKeyword && typeof window.highlightSearchPartsInText === 'function' && typeof window.collectKeywordHighlightParts === 'function')
+                ? window.highlightSearchPartsInText(candidateNameRaw, window.collectKeywordHighlightParts(searchKeyword))
+                : (typeof window.escapeHtml === 'function' ? window.escapeHtml(candidateNameRaw) : candidateNameRaw);
               const jobPostingRaw = i.job_posting_name || '--';
               const jobPostingNameHtml = (searchKeyword && typeof window.highlightSearchPartsInText === 'function' && typeof window.collectKeywordHighlightParts === 'function')
                 ? window.highlightSearchPartsInText(jobPostingRaw, window.collectKeywordHighlightParts(searchKeyword))
@@ -753,7 +757,7 @@
                     <div class="row-title" style="margin-left: 0;">
                       <div class="avatar-sm" style="display:flex; align-items:center; justify-content:center; background:#f3f4f6;">${i.status === '锁定' ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#f59e0b;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:#15803D;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>'}</div>
                       <div>
-                        <strong>${i.name || ''}</strong>${aiBadge}
+                        <strong>${candidateNameHtml}</strong>${aiBadge}
                         ${candidateTagsHtml}
                         ${aiReasonHtml}
                         ${hitSnippetsHtml}

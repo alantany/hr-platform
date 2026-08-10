@@ -1647,15 +1647,20 @@ function buildCandidateSearchHitSnippets(item, keyword) {
     if (out.length >= 2) break;
   }
   return out;
-}
-
-/** L1：岗位名（发布岗位名称 + 求职意向 + 当前/期望职位名，最高优先） */
+/** L1：核心识别字段（姓名 + 电话 + 邮箱 + 发布岗位名 + 求职意向 + 当前职位名，最高优先级匹配） */
 function buildCandidateL1SearchText(item) {
   if (!item) return "";
-  return _joinSearchParts([item.job_posting_name, item.job_intention, item.current_title]);
+  return _joinSearchParts([
+    item.name,
+    item.phone,
+    item.email,
+    item.job_posting_name,
+    item.job_intention,
+    item.current_title,
+  ]);
 }
 
-/** L2：经历与技能补充（不含职位名，职位名已在 L1） */
+/** L2：经历与技能补充（经历、项目、核心价值、证书、教育背景等） */
 function buildCandidateL2SearchText(item) {
   if (!item) return "";
   return _joinSearchParts([
@@ -1663,10 +1668,11 @@ function buildCandidateL2SearchText(item) {
     item.project_history,
     item.core_value,
     item.certificates,
+    item.education_detail,
   ]);
 }
 
-/** 岗位相关全文 = L1 + L2（姓名/手机/城市等不参与关键词匹配） */
+/** 候选人检索全文 = L1 + L2 */
 function buildCandidateSearchText(item) {
   if (!item) return "";
   return _joinSearchParts([buildCandidateL1SearchText(item), buildCandidateL2SearchText(item)]);
