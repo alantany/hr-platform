@@ -3388,8 +3388,9 @@ async function handleGlobalButton(button) {
     return;
   }
   if (button.dataset.action === "close-candidate-detail-modal") {
-    const modal = document.querySelector('[data-candidate-detail-modal]');
-    if (modal) modal.style.display = 'none';
+    document.querySelectorAll('[data-candidate-detail-modal]').forEach((m) => {
+      m.style.display = 'none';
+    });
     return;
   }
   if (button.dataset.action === "open-batch-recommend-modal") {
@@ -5956,9 +5957,8 @@ document.addEventListener("click", (event) => {
   const explicitActionCheck = btn.dataset.action;
   if (!explicitActionCheck && !/^(详情|搜索|导入简历|导出选中|选择文件|查看项目进度|进入求职者数据池|查看待办)/.test((btn.textContent || "").trim())) return;
   // 已由 bindActionButtons 绑定的按钮只允许专属监听器处理一次，
-  // 捕获阶段不再继续执行全局处理，避免一次点击触发两次确认和删除请求。
+  // 捕获阶段直接返回放行，让事件继续传播到目标按钮的监听器，避免全局捕获抢跑或执行两次。
   if (btn.dataset.bound === "true") {
-    event.stopImmediatePropagation();
     return;
   }
   event.preventDefault();

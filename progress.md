@@ -1,5 +1,13 @@
 # Progress
 
+## 2026-08-10（完成 - 求职者简历池候选人详情弹窗关闭按钮失效修复）
+
+- **事件传播链路修复**：
+  - 修复 `app.js` 中全局捕获监听器（`document.addEventListener("click", ..., true)`）在检测到 `btn.dataset.bound === "true"` 时误用 `event.stopImmediatePropagation()` 阻断事件向下传递的问题。
+  - 改为在捕获阶段直接 `return;` 放行，确保已通过 `bindActionButtons` 绑定的静态按钮（如各弹窗关闭按钮）能够正常在目标与冒泡阶段接收 click 事件并执行专属业务回调。
+- **弹窗关闭健壮性增强**：
+  - 在 `handleGlobalButton` 的 `close-candidate-detail-modal` 动作分支中，改为使用 `document.querySelectorAll('[data-candidate-detail-modal]').forEach(...)` 将页面上匹配的全部候选人详情弹窗隐藏，避免多节点残留导致的显示异常。
+
 ## 2026-07-28（完成 - AI 智能解析持续 Loading Toast 与动态波浪跳点动画上线）
 
 - **智能解析无缝持续 Loading 状态 (Persistent Toast)**：

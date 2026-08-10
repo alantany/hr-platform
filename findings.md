@@ -1,5 +1,19 @@
 # Findings
 
+## 2026-08-10（求职者简历池候选人详情弹窗关闭按钮失效排查与修复）
+
+1. **Bug 根因分析**：
+   - 全局点击事件监听器（`app.js`）以捕获模式运行（`document.addEventListener("click", ..., true)`）。
+   - 在页面初次加载时，`bindActionButtons()` 会遍历页面已有的静态按钮（包含详情弹窗右上角的 `<button class="btn" data-action="close-candidate-detail-modal">关闭</button>`），给它们打上 `dataset.bound = "true"` 并绑定各自的冒泡阶段专属点击监听器。
+   - 当用户在候选人详情弹窗中点击“关闭”按钮时，事件在 **捕获阶段 (Capture Phase)** 先进入 document 的捕获监听器；
+   - 捕获监听器判断 `btn.dataset.bound === "true"` 后，错误地执行了 `event.stopImmediatePropagation()` 并 return。
+   - 在 W3C/DOM 标准规范中，捕获阶段调用 `stopImmediatePropagation()` 会彻底截断事件树的下发，导致事件无法进入目标阶段（Target Phase）和冒泡阶段（Bubble Phase），使按钮自身绑定的专属监听器完全无法触发，而捕获层自己又未做任何关闭处理，最终导致点击关闭按钮毫无反应、弹窗无法关闭。
+   - 相比之下，列表中的“详情”按钮因是异步渲染动态插入 DOM 的，没有被打上 `data-bound="true"`，所以没有被捕获阶段截断。
+
+2. **最小影响修复策略**：
+   - 在 `app.js` 的捕获阶段监听器中，将 `if (btn.dataset.bound === "true") { event.stopImmediatePropagation(); return; }` 改为单纯的 `return;`，放行事件正常向下传播至按钮自身的专属监听器执行。
+   - 在 `handleGlobalButton` 的 `close-candidate-detail-modal` 分支中，优化为遍历页面上所有 `[data-candidate-detail-modal]` 统一隐藏（`style.display = 'none'`），增强弹窗关闭的鲁棒性。
+
 ## 2026-07-28（岗位发布 JD 智能解析与岗位/客户画像 recruit schema）
 
 1. **Recruit Schema 约束与隔离**：
